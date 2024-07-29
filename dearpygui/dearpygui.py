@@ -8920,6 +8920,16 @@ def render_dearpygui_frame(**kwargs) -> None:
 
 	return internal_dpg.render_dearpygui_frame(**kwargs)
 
+def run_dearpygui(**kwargs) -> None:
+	"""	 Render Dear PyGui frames until exit.
+
+	Args:
+	Returns:
+		None
+	"""
+
+	return internal_dpg.run_dearpygui(**kwargs)
+
 def reorder_items(container : Union[int, str], slot : int, new_order : Union[List[int], Tuple[int, ...]], **kwargs) -> None:
 	"""	 Reorders an item's children.
 

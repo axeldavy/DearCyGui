@@ -2466,6 +2466,17 @@ render_dearpygui_frame(PyObject* self, PyObject* args, PyObject* kwargs)
 }
 
 static PyObject*
+run_dearpygui(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+	Py_BEGIN_ALLOW_THREADS;
+	auto window = GContext->viewport;
+	while (GContext->started)
+		mvRenderFrame();
+	Py_END_ALLOW_THREADS;
+	return GetPyNone();
+}
+
+static PyObject*
 create_context(PyObject* self, PyObject* args, PyObject* kwargs)
 {
 	Py_BEGIN_ALLOW_THREADS;

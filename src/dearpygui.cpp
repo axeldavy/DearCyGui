@@ -599,6 +599,7 @@ PyInit__dearpygui(void)
 	MV_ADD_COMMAND(unlock_mutex);
 	MV_ADD_COMMAND(setup_dearpygui);
 	MV_ADD_COMMAND(render_dearpygui_frame);
+	MV_ADD_COMMAND(run_dearpygui);
 	MV_ADD_COMMAND(get_delta_time);
 	MV_ADD_COMMAND(get_total_time);
 	MV_ADD_COMMAND(stop_dearpygui);

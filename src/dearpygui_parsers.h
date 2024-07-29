@@ -667,6 +667,17 @@ InsertParser_Block1(std::map<std::string, mvPythonParser>& parsers)
 		std::vector<mvPythonDataElement> args;
 
 		mvPythonParserSetup setup;
+		setup.about = "Render Dear PyGui frames until exit.";
+		setup.category = { "General" };
+
+		mvPythonParser parser = FinalizeParser(setup, args);
+		parsers.insert({ "run_dearpygui", parser });
+	}
+
+	{
+		std::vector<mvPythonDataElement> args;
+
+		mvPythonParserSetup setup;
 		setup.about = "Destroys the Dear PyGui context.";
 		setup.category = { "General" };
 
