@@ -1870,6 +1870,8 @@ set_frame_callback(PyObject* self, PyObject* args, PyObject* kwargs)
 		&frame, &callback, &user_data))
 		return GetPyNone();
 
+	std::lock_guard<std::recursive_mutex> lk(GContext->mutex);
+
 	if (frame > GContext->callbackRegistry->highestFrame)
 		GContext->callbackRegistry->highestFrame = frame;
 
