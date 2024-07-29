@@ -70,12 +70,13 @@ LoadTextureFromArrayDynamic(unsigned width, unsigned height, float* data)
 }
 
  void*
-LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components)
+LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components, int type)
 {
     mvGraphics& graphics = GContext->graphics;
     auto graphicsData = (mvGraphics_Metal*)graphics.backendSpecifics;
 
     MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA32Float width:width height:height mipmapped:NO];
+    assert(type == 0);
 
     textureDescriptor.usage = MTLTextureUsageShaderRead;
     textureDescriptor.storageMode = MTLStorageModeManaged;
@@ -142,8 +143,9 @@ UpdateTexture(void* texture, unsigned width, unsigned height, std::vector<float>
     [out_srv replaceRegion:MTLRegionMake2D(0, 0, width, height) mipmapLevel:0 withBytes:data.data() bytesPerRow:width * 4 * 4];
 }
 
-    void UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components)
+    void UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components, int type)
 {
     id <MTLTexture> out_srv = (__bridge id <MTLTexture>)texture;
+    (void) type;
     [out_srv replaceRegion:MTLRegionMake2D(0, 0, width, height) mipmapLevel:0 withBytes:data bytesPerRow:width * components * 4];
 }

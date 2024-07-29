@@ -188,6 +188,9 @@ GetModuleConstants()
 
 		ModuleConstants.push_back({ "mvFormat_Float_rgba", 0L });
 		ModuleConstants.push_back({ "mvFormat_Float_rgb", 1L });
+		ModuleConstants.push_back({ "mvFormat_Byte_rgba", 2L });
+		ModuleConstants.push_back({ "mvFormat_Byte_rgb", 3L });
+		ModuleConstants.push_back({ "mvFormat_Byte_rrr", 4L });
 
 		ModuleConstants.push_back({ "mvThemeCat_Core", 0L });
 		ModuleConstants.push_back({ "mvThemeCat_Plots", 1L});

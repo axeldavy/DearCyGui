@@ -19,21 +19,6 @@
 
 static std::unordered_map<GLuint, GLuint> PBO_ids;
 
-static void
-UpdatePixels(GLubyte* dst, const float* data, int size)
-{
-
-    if(!dst)
-        return;
-
-    auto ptr = (float*)dst;
-
-    for(int i = 0; i < size; ++i)
-    {
-        ptr[i] = data[i];
-    }
-}
-
  void
 OutputFrameBufferArray(PymvBuffer* out)
 {
@@ -99,7 +84,7 @@ LoadTextureFromArray(unsigned width, unsigned height, float* data)
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -119,7 +104,7 @@ LoadTextureFromArrayDynamic(unsigned width, unsigned height, float* data)
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -136,29 +121,47 @@ LoadTextureFromArrayDynamic(unsigned width, unsigned height, float* data)
 }
 
  void*
-LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components)
+LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components, int type)
 {
 
     // Create a OpenGL texture identifier
     GLuint image_texture;
+    unsigned type_size;
     glGenTextures(1, &image_texture);
     glBindTexture(GL_TEXTURE_2D, image_texture);
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    if (type == 1 and components == 1) {
+        // RRR: replicate R on other channels
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    }
 
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    if(components == 4)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, data);
-    else
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, data);
+    if (type == 0) {
+        type_size = sizeof(float);
+        if(components == 4)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, data);
+        else
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, data);
+    } else {
+        type_size = 1;
+        if(components == 4)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,  GL_UNSIGNED_BYTE, data);
+        else if(components == 3)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,  GL_UNSIGNED_BYTE, data);
+        else
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED,  GL_UNSIGNED_BYTE, data);
+    }
 
     GLuint pboid;
     glGenBuffers(1, &pboid);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboid);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * components * sizeof(float), 0, GL_STREAM_DRAW);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * components * type_size, 0, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     PBO_ids[image_texture] = pboid;
 
@@ -183,7 +186,7 @@ LoadTextureFromFile(const char* filename, int& width, int& height)
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -237,7 +240,7 @@ UpdateTexture(void* texture, unsigned width, unsigned height, std::vector<float>
     if(ptr)
     {
         // update data directly on the mapped buffer
-        UpdatePixels(ptr, data.data(), data.size());
+        memcpy((void*)ptr, (float*)data.data(), data.size() * sizeof(float));
 
         glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
     }
@@ -262,9 +265,15 @@ UpdateTexture(void* texture, unsigned width, unsigned height, std::vector<float>
 }
 
  void
-UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components)
+UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components, int type)
 {
     auto textureId = (GLuint)(size_t)texture;
+    unsigned type_size;
+
+    if (type == 0)
+        type_size = sizeof(float);
+    else
+        type_size = 1;
 
     // start to modify pixel values ///////////////////
 
@@ -279,12 +288,12 @@ UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, in
     // If you do that, the previous data in PBO will be discarded and
     // glMapBuffer() returns a new allocated pointer immediately
     // even if GPU is still working with the previous data.
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * components * sizeof(float), 0, GL_STREAM_DRAW);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * components * type_size, 0, GL_STREAM_DRAW);
     GLubyte* ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
     if (ptr)
     {
         // update data directly on the mapped buffer
-        UpdatePixels(ptr, data, width*height*components);
+        memcpy((void*)ptr, (void*)data, width*height*components*type_size);
 
         glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
     }
@@ -299,10 +308,19 @@ UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, in
 
     // copy pixels from PBO to texture object
     // Use offset instead of ponter.
-    if(components == 4)
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, 0);
-    else
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_FLOAT, 0);
+    if (type == 0) {
+        if(components == 4)
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, 0);
+        else
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_FLOAT, 0);
+    } else {
+        if(components == 4)
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        else if(components == 3)
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        else
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, 0);
+    }
 
     ///////////////////////////////////////////////////
 

@@ -12,6 +12,7 @@ enum class mvTextureFormat
     RGB32F,
     RGBA8,
     RGB8,
+    RRR8,
 };
 
 enum class mvTextureUsage

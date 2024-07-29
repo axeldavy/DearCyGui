@@ -357,12 +357,13 @@ UpdateTexture(void* texture, unsigned width, unsigned height, std::vector<int>& 
 }
 
  void
-UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components)
+UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components, i32 type)
 {
     mvGraphics_D3D11* graphicsData = (mvGraphics_D3D11*)GContext->graphics.backendSpecifics;
     ID3D11ShaderResourceView* view = (ID3D11ShaderResourceView*)texture;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+    (void) type;
 
     //  Disable GPU access to the vertex buffer data.
     ID3D11Resource* resource;
@@ -386,12 +387,13 @@ UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, in
 }
 
  void*
-LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components)
+LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components, int type)
 {
     mvGraphics_D3D11* graphicsData = (mvGraphics_D3D11*)GContext->graphics.backendSpecifics;
     ID3D11ShaderResourceView* out_srv = nullptr;
 
     DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+    assert(type == 0); // TODO
 
     switch (components)
     {

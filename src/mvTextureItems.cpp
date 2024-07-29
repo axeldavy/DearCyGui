@@ -229,14 +229,15 @@ mvRawTexture::~mvRawTexture()
 
 void mvRawTexture::draw(ImDrawList* drawlist, float x, float y)
 {
+	int type = (_componentType == mvRawTexture::ComponentType::MV_FLOAT_COMPONENT) ? 0 : 1;
 	if (_dirty)
 	{
 
 		if (_value == nullptr)
 			return;
 
-		if (_componentType == ComponentType::MV_FLOAT_COMPONENT)
-			_texture = LoadTextureFromArrayRaw(_permWidth, _permHeight, (float*)_value, _components);
+		
+		_texture = LoadTextureFromArrayRaw(_permWidth, _permHeight, (float*)_value, _components, type);
 
 		if (_texture == nullptr)
 			state.ok = false;
@@ -248,8 +249,8 @@ void mvRawTexture::draw(ImDrawList* drawlist, float x, float y)
 	if (!_updateNeeded)
 		return;
 
-	if (_componentType == ComponentType::MV_FLOAT_COMPONENT)
-		UpdateRawTexture(_texture, _permWidth, _permHeight, (float*)_value, _components);
+	
+	UpdateRawTexture(_texture, _permWidth, _permHeight, (float*)_value, _components, type);
 	_updateNeeded = false;
 }
 
@@ -286,6 +287,21 @@ void mvRawTexture::handleSpecificKeywordArgs(PyObject* dict)
 			_components = 3;
 			_componentType = mvRawTexture::ComponentType::MV_FLOAT_COMPONENT;
 		}
+		else if (format == 2)
+		{
+			_components = 4;
+			_componentType = mvRawTexture::ComponentType::MV_INT_COMPONENT;
+		}
+		else if (format == 3)
+		{
+			_components = 3;
+			_componentType = mvRawTexture::ComponentType::MV_INT_COMPONENT;
+		} else if (format == 4)
+		{
+			_components = 1;
+			_componentType = mvRawTexture::ComponentType::MV_INT_COMPONENT;
+		}
+		assert(False);
 	}
 }
 

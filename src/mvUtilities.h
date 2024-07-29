@@ -32,8 +32,8 @@ void* LoadTextureFromArrayDynamic(u32 width, u32 height, f32* data);
 void  UpdateTexture(void* texture, u32 width, u32 height, std::vector<f32>& data);
 
 // raw textures
-void* LoadTextureFromArrayRaw(u32 width, u32 height, f32* data, i32 components);
-void  UpdateRawTexture(void* texture, u32 width, u32 height, f32* data, i32 components);
+void* LoadTextureFromArrayRaw(u32 width, u32 height, f32* data, i32 components, i32 type);
+void  UpdateRawTexture(void* texture, u32 width, u32 height, f32* data, i32 components, i32 type);
 
 // framebuffer output
 void OutputFrameBuffer(const char* filepath);
