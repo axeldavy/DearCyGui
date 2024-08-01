@@ -1520,6 +1520,19 @@ DearPyGui::draw_window(ImDrawList* drawlist, mvAppItem& item, mvWindowAppItemCon
             if (config.mainWindow)
                 ImGui::PopStyleVar();
 
+            // shouldn't have to do this but do. Fix later
+            item.config.show = false;
+            item.state.lastFrameUpdate = GContext->frame;
+            item.state.hovered = false;
+            item.state.focused = false;
+            item.state.toggledOpen = false;
+            item.state.visible = false;
+
+            if (item.config.alias.empty())
+                mvAddCallback(config.on_close, item.uuid, nullptr, item.config.user_data);
+            else
+                mvAddCallback(config.on_close, item.config.alias, nullptr, item.config.user_data);
+
             // handle popping themes
             cleanup_local_theming(&item);
             return;
