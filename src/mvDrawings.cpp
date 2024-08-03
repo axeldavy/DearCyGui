@@ -52,12 +52,12 @@ void mvDrawArrow::updatePoints()
 void mvDrawArrow::draw(ImDrawList* drawlist, float x, float y)
 {
 
-	mvVec4  tp1 = drawInfo->transform * _p1;
-	mvVec4  tp2 = drawInfo->transform * _p2;
+	mvVec4  tp1 =  _p1;
+	mvVec4  tp2 =  _p2;
 
-	mvVec4  tpp1 = drawInfo->transform * _points[0];
-	mvVec4  tpp2 = drawInfo->transform * _points[1];
-	mvVec4  tpp3 = drawInfo->transform * _points[2];
+	mvVec4  tpp1 =  _points[0];
+	mvVec4  tpp2 =  _points[1];
+	mvVec4  tpp3 =  _points[2];
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -149,10 +149,10 @@ void mvDrawArrow::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawBezierCubic::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tp1 = drawInfo->transform * _p1;
-	mvVec4  tp2 = drawInfo->transform * _p2;
-	mvVec4  tp3 = drawInfo->transform * _p3;
-	mvVec4  tp4 = drawInfo->transform * _p4;
+	mvVec4  tp1 =  _p1;
+	mvVec4  tp2 =  _p2;
+	mvVec4  tp3 =  _p3;
+	mvVec4  tp4 =  _p4;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -241,9 +241,9 @@ void mvDrawBezierCubic::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawBezierQuadratic::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tp1 = drawInfo->transform * _p1;
-	mvVec4  tp2 = drawInfo->transform * _p2;
-	mvVec4  tp3 = drawInfo->transform * _p3;
+	mvVec4  tp1 =  _p1;
+	mvVec4  tp2 =  _p2;
+	mvVec4  tp3 =  _p3;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -322,7 +322,7 @@ void mvDrawBezierQuadratic::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawCircle::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tcenter = drawInfo->transform * _center;
+	mvVec4  tcenter =  _center;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -393,8 +393,8 @@ void mvDrawCircle::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawEllipse::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tpmin = drawInfo->transform * _pmin;
-	mvVec4  tpmax = drawInfo->transform * _pmax;
+	mvVec4  tpmin =  _pmin;
+	mvVec4  tpmax =  _pmax;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -438,7 +438,7 @@ void mvDrawEllipse::draw(ImDrawList* drawlist, float x, float y)
 	finalpoints.reserve(_points.size());
 
 	for (auto& point : points)
-		point = drawInfo->transform * point;
+		point =  point;
 
 	if (ImPlot::GetCurrentContext()->CurrentPlot)
 	{
@@ -531,8 +531,8 @@ void mvDrawImage::draw(ImDrawList* drawlist, float x, float y)
 		else
 			texture = static_cast<mvDynamicTexture*>(_texture.get())->_texture;
 
-		mvVec4  tpmin = drawInfo->transform * _pmin;
-		mvVec4  tpmax = drawInfo->transform * _pmax;
+		mvVec4  tpmin =  _pmin;
+		mvVec4  tpmax =  _pmax;
 
 		if (drawInfo->perspectiveDivide)
 		{
@@ -655,10 +655,10 @@ void mvDrawImageQuad::draw(ImDrawList* drawlist, float x, float y)
 		else
 			texture = static_cast<mvDynamicTexture*>(_texture.get())->_texture;
 
-		mvVec4  tp1 = drawInfo->transform * _p1;
-		mvVec4  tp2 = drawInfo->transform * _p2;
-		mvVec4  tp3 = drawInfo->transform * _p3;
-		mvVec4  tp4 = drawInfo->transform * _p4;
+		mvVec4  tp1 =  _p1;
+		mvVec4  tp2 =  _p2;
+		mvVec4  tp3 =  _p3;
+		mvVec4  tp4 =  _p4;
 
 		if (drawInfo->perspectiveDivide)
 		{
@@ -844,8 +844,8 @@ void mvDrawLayer::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawLine::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tp1 = drawInfo->transform * _p1;
-	mvVec4  tp2 = drawInfo->transform * _p2;
+	mvVec4  tp1 =  _p1;
+	mvVec4  tp2 =  _p2;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -992,7 +992,7 @@ void mvDrawNode::draw(ImDrawList* drawlist, float x, float y)
 		if (!item->config.show)
 			continue;
 
-		item->drawInfo->transform = drawInfo->transform * drawInfo->appliedTransform;
+		item->drawInfo->transform =  drawInfo->appliedTransform;
 
 		item->drawInfo->perspectiveDivide = drawInfo->perspectiveDivide;
 		item->drawInfo->depthClipping = drawInfo->depthClipping;
@@ -1033,7 +1033,7 @@ void mvDrawPolygon::draw(ImDrawList* drawlist, float x, float y)
 	finalpoints.reserve(_points.size());
 
 	for (auto& point : points)
-		point = drawInfo->transform * point;
+		point =  point;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -1200,7 +1200,7 @@ void mvDrawPolyline::draw(ImDrawList* drawlist, float x, float y)
 	finalpoints.reserve(_points.size());
 
 	for (auto& point : points)
-		point = drawInfo->transform * point;
+		point =  point;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -1283,10 +1283,10 @@ void mvDrawPolyline::getSpecificConfiguration(PyObject* dict)
 void mvDrawQuad::draw(ImDrawList* drawlist, float x, float y)
 {
 
-	mvVec4  tp1 = drawInfo->transform * _p1;
-	mvVec4  tp2 = drawInfo->transform * _p2;
-	mvVec4  tp3 = drawInfo->transform * _p3;
-	mvVec4  tp4 = drawInfo->transform * _p4;
+	mvVec4  tp1 =  _p1;
+	mvVec4  tp2 =  _p2;
+	mvVec4  tp3 =  _p3;
+	mvVec4  tp4 =  _p4;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -1383,8 +1383,8 @@ void mvDrawQuad::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawRect::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tpmin = drawInfo->transform * _pmin;
-	mvVec4  tpmax = drawInfo->transform * _pmax;
+	mvVec4  tpmin =  _pmin;
+	mvVec4  tpmax =  _pmax;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -1506,7 +1506,7 @@ void mvDrawRect::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawText::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tpos = drawInfo->transform * _pos;
+	mvVec4  tpos =  _pos;
 
 	if (drawInfo->perspectiveDivide)
 	{
@@ -1570,9 +1570,9 @@ void mvDrawText::getSpecificConfiguration(PyObject* dict)
 
 void mvDrawTriangle::draw(ImDrawList* drawlist, float x, float y)
 {
-	mvVec4  tp1 = drawInfo->transform * _p1;
-	mvVec4  tp2 = drawInfo->transform * _p2;
-	mvVec4  tp3 = drawInfo->transform * _p3;
+	mvVec4  tp1 =  _p1;
+	mvVec4  tp2 =  _p2;
+	mvVec4  tp3 =  _p3;
 
 	if (drawInfo->perspectiveDivide)
 	{
