@@ -50,7 +50,6 @@ mvAppItem::~mvAppItem()
             if (!GContext->IO.manualAliasManagement)
                 GContext->itemRegistry->aliases.erase(config.alias);
         }
-        CleanUpItem(*GContext->itemRegistry, uuid);
     }
 }
 

@@ -701,13 +701,10 @@ GetItemRoot(mvItemRegistry& registry, mvUUID uuid)
 b8
 DeleteItem(mvItemRegistry& registry, mvUUID uuid, b8 childrenOnly, i32 slot)
 {
-
-    CleanUpItem(registry, uuid);
-
+    auto item = GetItem(registry, uuid);
     // delete item's children only
     if(childrenOnly)
     {
-        auto item = GetItem(registry, uuid);
         if (item)
         {
             if (slot > -1 && slot < 4)
@@ -731,22 +728,29 @@ DeleteItem(mvItemRegistry& registry, mvUUID uuid, b8 childrenOnly, i32 slot)
 
     bool deletedItem = false;
 
-    if (DeleteRoot(registry.colormapRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.filedialogRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.stagingRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.viewportMenubarRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.fontRegistryRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.handlerRegistryRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.textureRegistryRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.valueRegistryRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.windowRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.themeRegistryRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.itemTemplatesRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.itemHandlerRegistryRoots, uuid)) deletedItem = true;
-    else if (DeleteRoot(registry.viewportDrawlistRoots, uuid)) deletedItem = true;
+    if (item && !(DearPyGui::GetEntityDesciptionFlags(item->type) & MV_ITEM_DESC_ROOT) && item->info.parentPtr != nullptr) {
+        deletedItem = DeleteChild(item->info.parentPtr, uuid);
+        assert(deletedItem); // for debug to check this is correct
+    }
+    if (!deletedItem) {
+        if (DeleteRoot(registry.colormapRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.filedialogRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.stagingRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.viewportMenubarRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.fontRegistryRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.handlerRegistryRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.textureRegistryRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.valueRegistryRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.windowRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.themeRegistryRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.itemTemplatesRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.itemHandlerRegistryRoots, uuid)) deletedItem = true;
+        else if (DeleteRoot(registry.viewportDrawlistRoots, uuid)) deletedItem = true;
+    }
 
     if (deletedItem)
     {
+        CleanUpItem(registry, uuid);
         RemoveDebugWindow(registry, uuid);
     }
     else
