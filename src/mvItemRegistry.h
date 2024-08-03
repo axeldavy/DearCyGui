@@ -45,7 +45,6 @@ mvWindowAppItem* GetWindow      (mvItemRegistry& registry, mvUUID uuid);
 mvAppItem*       GetItemRoot    (mvItemRegistry& registry, mvUUID uuid);
 
 // item operations
-void             DelaySearch             (mvItemRegistry& registry, mvAppItem* item);
 b8               AddItemWithRuntimeChecks(mvItemRegistry& registry, std::shared_ptr<mvAppItem> item, mvUUID parent, mvUUID before);
 void             ResetTheme              (mvItemRegistry& registry);
 

@@ -635,105 +635,6 @@ AddRoot(mvItemRegistry& registry, std::shared_ptr<mvAppItem> item)
     return true;
 }
 
-static mvAppItem*
-GetChild(mvAppItem* rootitem, mvUUID uuid)
-{
-
-    if (rootitem->uuid == uuid)
-        return rootitem;
-
-    if (rootitem->config.searchLast)
-    {
-        if (rootitem->config.searchDelayed)
-            rootitem->config.searchDelayed = false;
-        else
-        {
-            rootitem->config.searchDelayed = true;
-            DelaySearch(*GContext->itemRegistry, rootitem);
-        }
-    }
-
-    for (auto& childset : rootitem->childslots)
-    {
-        for (auto& childitem : childset)
-        {
-            if (!childitem)
-                continue;
-
-            if (childitem->uuid == uuid)
-                return childitem.get();
-
-            auto child = GetChild(childitem.get(), uuid);
-            if (child)
-                return child;
-        }
-    }
-
-    return nullptr;
-}
-
-static std::shared_ptr<mvAppItem>
-GetChildRef(mvAppItem* rootitem, mvUUID uuid)
-{
-
-    for (auto& childset : rootitem->childslots)
-    {
-        for (auto& item : childset)
-        {
-
-            if (!item)
-                continue;
-
-            if (item->uuid == uuid)
-                return item;
-
-            auto child = GetChildRef(item.get(), uuid);
-            if (child)
-                return child;
-        }
-    }
-
-    return nullptr;
-}
-
-static mvAppItem*
-GetItemRoot(mvItemRegistry& registry, std::vector<std::shared_ptr<mvAppItem>>& roots, mvUUID uuid)
-{
-    for (auto& root : roots)
-    {
-        if (root->uuid == uuid)
-        {
-            return root.get();
-        }
-
-        mvAppItem* child = GetChild(root.get(), uuid);
-        if (child)
-        {
-            registry.delayedSearch.clear();
-            return child;
-        }
-    }
-
-    return nullptr;
-}
-
-static std::shared_ptr<mvAppItem>
-GetRefItemRoot(std::vector<std::shared_ptr<mvAppItem>>& roots, mvUUID uuid)
-{
-
-    for (auto& root : roots)
-    {
-        if (root->uuid == uuid)
-            return root;
-
-        auto child = GetChildRef(root.get(), uuid);
-        if (child)
-            return child;
-    }
-
-    return nullptr;
-}
-
 static void
 RemoveDebugWindow(mvItemRegistry& registry, mvUUID uuid)
 {
@@ -1142,12 +1043,6 @@ ResetTheme(mvItemRegistry& registry)
 {
     for (auto& root : registry.themeRegistryRoots)
         root->config.show = false;
-}
-
-void 
-DelaySearch(mvItemRegistry& registry, mvAppItem* item)
-{
-    registry.delayedSearch.push_back(item);
 }
 
 mvAppItem* 
