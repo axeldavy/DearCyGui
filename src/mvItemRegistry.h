@@ -61,19 +61,11 @@ void             ResetTheme              (mvItemRegistry& registry);
 
 struct mvItemRegistry
 {
-
-    static constexpr i32 CachedContainerCount = 25;
-
     // caching
     mvUUID     lastItemAdded = 0;
     mvUUID     lastContainerAdded = 0;
     mvUUID     lastRootAdded = 0;
-    i32        cachedContainerIndex = 0;
-    i32        cachedItemsIndex = 0;
-    mvUUID     cachedItemsID[CachedContainerCount];
-    mvAppItem* cachedItemsPTR[CachedContainerCount];
-    mvUUID     cachedContainersID[CachedContainerCount];
-    mvAppItem* cachedContainersPTR[CachedContainerCount];
+    std::unordered_map<mvUUID, std::shared_ptr<mvAppItem>> items;
 
     // misc
     std::stack<mvAppItem*>                  containers;      // parent stack, top of stack becomes widget's parent

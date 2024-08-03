@@ -8,14 +8,6 @@
 
 mvItemRegistry::mvItemRegistry()
 {
-    // prefill cached containers
-    for (i32 i = 0; i < CachedContainerCount; i++)
-    {
-        cachedContainersID[i] = 0;
-        cachedContainersPTR[i] = nullptr;
-        cachedItemsID[i] = 0;
-        cachedItemsPTR[i] = nullptr;
-    }
 }
 
 static b8
@@ -45,25 +37,6 @@ TopParent(mvItemRegistry& registry)
     if (!registry.containers.empty())
         return registry.containers.top();
     return nullptr;
-}
-
-static void
-CacheItem(mvItemRegistry& registry, mvAppItem* item)
-{
-    if (DearPyGui::GetEntityDesciptionFlags(item->type) & MV_ITEM_DESC_CONTAINER)
-    {
-        registry.cachedContainersID[registry.cachedContainerIndex] = item->uuid;
-        registry.cachedContainersPTR[registry.cachedContainerIndex] = item;
-        registry.cachedContainerIndex++;
-        if (registry.cachedContainerIndex == registry.CachedContainerCount)
-            registry.cachedContainerIndex = 0;
-    }
-
-    registry.cachedItemsID[registry.cachedItemsIndex] = item->uuid;
-    registry.cachedItemsPTR[registry.cachedItemsIndex] = item;
-    registry.cachedItemsIndex++;
-    if (registry.cachedItemsIndex == registry.CachedContainerCount)
-        registry.cachedItemsIndex = 0;
 }
 
 static void
@@ -730,14 +703,12 @@ GetItemRoot(mvItemRegistry& registry, std::vector<std::shared_ptr<mvAppItem>>& r
     {
         if (root->uuid == uuid)
         {
-            CacheItem(registry, root.get());
             return root.get();
         }
 
         mvAppItem* child = GetChild(root.get(), uuid);
         if (child)
         {
-            CacheItem(registry, child);
             registry.delayedSearch.clear();
             return child;
         }
@@ -1190,43 +1161,9 @@ GetItem(mvItemRegistry& registry, mvUUID uuid)
             return registry.capturedItem.get();
     }
 
-    // check cache
-    for (i32 i = 0; i < registry.CachedContainerCount; i++)
-    {
-        if (registry.cachedContainersID[i] == uuid)
-            return registry.cachedContainersPTR[i];
-        if (registry.cachedItemsID[i] == uuid)
-            return registry.cachedItemsPTR[i];
-    }
-
-    if (auto foundItem = GetItemRoot(registry, registry.colormapRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.colormapRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.filedialogRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.stagingRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.viewportMenubarRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.fontRegistryRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.handlerRegistryRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.textureRegistryRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.valueRegistryRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.windowRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.themeRegistryRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.itemTemplatesRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.itemHandlerRegistryRoots, uuid)) return foundItem;
-    if (auto foundItem = GetItemRoot(registry, registry.viewportDrawlistRoots, uuid)) return foundItem;
-
-    for (auto delayedItem : registry.delayedSearch)
-    {
-        mvAppItem* child = GetChild(delayedItem, uuid);
-        if (child)
-        {
-            CacheItem(registry, child);
-            registry.delayedSearch.clear();
-            return child;
-        }
-    }
-
-    registry.delayedSearch.clear();
-
+    auto foundItem = registry.items.find(uuid);
+    if (foundItem != registry.items.end())
+        return foundItem->second.get();
     return nullptr;
 }
 
@@ -1240,21 +1177,10 @@ GetRefItem(mvItemRegistry& registry, mvUUID uuid)
         if(registry.capturedItem->uuid == uuid)
             return registry.capturedItem;
     }
-        
-    if (auto foundItem = GetRefItemRoot(registry.colormapRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.filedialogRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.stagingRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.viewportMenubarRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.fontRegistryRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.handlerRegistryRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.textureRegistryRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.valueRegistryRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.windowRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.themeRegistryRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.itemTemplatesRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.itemHandlerRegistryRoots, uuid)) return foundItem;
-    else if (auto foundItem = GetRefItemRoot(registry.viewportDrawlistRoots, uuid)) return foundItem;
 
+    auto foundItem = registry.items.find(uuid);
+    if (foundItem != registry.items.end())
+        return foundItem->second;
     return nullptr;
 }
 
@@ -1297,20 +1223,7 @@ ClearItemRegistry(mvItemRegistry& registry)
 void 
 CleanUpItem(mvItemRegistry& registry, mvUUID uuid)
 {
-    for (i32 i = 0; i < registry.CachedContainerCount; i++)
-    {
-        if (registry.cachedContainersID[i] == uuid)
-        {
-            registry.cachedContainersID[i] = 0;
-            registry.cachedContainersPTR[i] = nullptr;
-        }
-
-        if (registry.cachedItemsID[i] == uuid)
-        {
-            registry.cachedItemsID[i] = 0;
-            registry.cachedItemsPTR[i] = nullptr;
-        }
-    }
+    registry.items.erase(uuid);
 }
 
 b8
@@ -1351,8 +1264,6 @@ AddItemWithRuntimeChecks(mvItemRegistry& registry, std::shared_ptr<mvAppItem> it
 
     registry.lastItemAdded = item->uuid;
 
-    CacheItem(registry, item.get());
-
     //---------------------------------------------------------------------------
     // STEP 1: check if an item with this name exists (NO LONGER NEEDED)
     //---------------------------------------------------------------------------
@@ -1371,6 +1282,9 @@ AddItemWithRuntimeChecks(mvItemRegistry& registry, std::shared_ptr<mvAppItem> it
     AddTechnique technique = AddTechnique::NONE;
 
      std::lock_guard<std::recursive_mutex> lk(GContext->mutex);
+
+    
+    registry.items.insert(std::make_pair(item->uuid, item));
 
     //---------------------------------------------------------------------------
     // STEP 2: handle root case
