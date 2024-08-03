@@ -552,6 +552,15 @@ void mvDrawImage::draw(ImDrawList* drawlist, float x, float y)
 			if (mvClipPoint(drawInfo->clipViewport, tpmax)) return;
 		}
 
+		if (drawInfo->clipViewport[4] == 150) {
+			/* Dirty hack to know we are inside plot and draw layer and get limits fast */
+			if (std::max(tpmin.x, tpmax.x) < drawInfo->clipViewport[0] ||
+				std::min(tpmin.x, tpmax.x) > drawInfo->clipViewport[1] || /* >= ? */
+				std::max(tpmin.y, tpmax.y) < drawInfo->clipViewport[2] ||
+				std::min(tpmin.y, tpmax.y) > drawInfo->clipViewport[3])
+				return;
+		}
+
 		if (ImPlot::GetCurrentContext()->CurrentPlot)
 			drawlist->AddImage(texture, ImPlot::PlotToPixels(tpmin), ImPlot::PlotToPixels(tpmax), _uv_min, _uv_max, _color);
 		else
@@ -797,6 +806,10 @@ mvDrawLayer::~mvDrawLayer()
 
 void mvDrawLayer::draw(ImDrawList* drawlist, float x, float y)
 {
+	bool isplot = ImPlot::GetCurrentContext()->CurrentPlot;
+	ImPlotLimits limits;
+	if (isplot)
+	    limits = ImPlot::GetPlotLimits();
 
 	for (auto& item : childslots[2])
 	{
@@ -810,12 +823,15 @@ void mvDrawLayer::draw(ImDrawList* drawlist, float x, float y)
 		item->drawInfo->transform = drawInfo->transform;
 
 		item->drawInfo->cullMode = drawInfo->cullMode;
-		item->drawInfo->clipViewport[0] = drawInfo->clipViewport[0];
-		item->drawInfo->clipViewport[1] = drawInfo->clipViewport[1];
-		item->drawInfo->clipViewport[2] = drawInfo->clipViewport[2];
-		item->drawInfo->clipViewport[3] = drawInfo->clipViewport[3];
-		item->drawInfo->clipViewport[4] = drawInfo->clipViewport[4];
-		item->drawInfo->clipViewport[5] = drawInfo->clipViewport[5];
+		/* Very dirty hack */
+		if (isplot) {
+		item->drawInfo->clipViewport[0] = limits.X.Min;
+		item->drawInfo->clipViewport[1] = limits.X.Max;
+		item->drawInfo->clipViewport[2] = limits.Y.Min;
+		item->drawInfo->clipViewport[3] = limits.Y.Max;
+		item->drawInfo->clipViewport[4] = 150; // Magic number
+		item->drawInfo->clipViewport[5] = 0;
+		}
 		item->draw(drawlist, x, y);
 
 		UpdateAppItemState(item->state);
@@ -863,6 +879,15 @@ void mvDrawLine::draw(ImDrawList* drawlist, float x, float y)
 	{
 		if (mvClipPoint(drawInfo->clipViewport, tp1)) return;
 		if (mvClipPoint(drawInfo->clipViewport, tp2)) return;
+	}
+
+	if (drawInfo->clipViewport[4] == 150) {
+		/* Dirty hack to know we are inside plot and draw layer and get limits fast */
+		if (std::max(tp1.x, tp2.x) < drawInfo->clipViewport[0] ||
+			std::min(tp1.x, tp2.x) > drawInfo->clipViewport[1] || /* >= ? */
+			std::max(tp1.y, tp2.y) < drawInfo->clipViewport[2] ||
+			std::min(tp1.y, tp2.y) > drawInfo->clipViewport[3])
+			return;
 	}
 
 	if (ImPlot::GetCurrentContext()->CurrentPlot)
