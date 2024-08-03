@@ -834,7 +834,7 @@ void mvDrawLayer::draw(ImDrawList* drawlist, float x, float y)
 		}
 		item->draw(drawlist, x, y);
 
-		UpdateAppItemState(item->state);
+		//UpdateAppItemState(item->state); Not sure for which item it is for
 	}
 }
 
@@ -1428,6 +1428,15 @@ void mvDrawRect::draw(ImDrawList* drawlist, float x, float y)
 		if (mvClipPoint(drawInfo->clipViewport, tpmin)) return;
 		if (mvClipPoint(drawInfo->clipViewport, tpmax)) return;
 	}
+
+	if (drawInfo->clipViewport[4] == 150) {
+			/* Dirty hack to know we are inside plot and draw layer and get limits fast */
+			if (std::max(tpmin.x, tpmax.x) < drawInfo->clipViewport[0] ||
+				std::min(tpmin.x, tpmax.x) > drawInfo->clipViewport[1] || /* >= ? */
+				std::max(tpmin.y, tpmax.y) < drawInfo->clipViewport[2] ||
+				std::min(tpmin.y, tpmax.y) > drawInfo->clipViewport[3])
+				return;
+		}
 
 	if (ImPlot::GetCurrentContext()->CurrentPlot)
 	{
