@@ -1,201 +1,29 @@
-<h1 align="center">
-  <br>
-  <a href="https://github.com/hoffstadt/DearPyGui"><img src="https://raw.githubusercontent.com/hoffstadt/DearPyGui/assets/readme/dpg_logo_button.png" alt="Dear PyGui logo"></a>
-</h1>
+## DearPyGui
 
-<h4 align="center">A modern, fast and powerful GUI framework for Python</h4>
+DearPyGui (https://github.com/hoffstadt/DearPyGui) is a project for enabling easy use of Dear ImGui (https://github.com/ocornut/imgui) in Python.
 
-<h1></h1>
+## The goal of DearCyGui
 
-<p align="center">
-  <a href=""><img src="https://img.shields.io/pypi/pyversions/dearpygui" alt="Python versions"></a>
-  <a href="https://pypi.org/project/dearpygui/"><img src="https://img.shields.io/pypi/v/dearpygui" alt="PYPI"></a>
-  <a href="https://pepy.tech/project/dearpygui"><img src="https://pepy.tech/badge/dearpygui" alt="Downloads"></a>
-  <a href="#license"><img src="https://github.com/hoffstadt/DearPyGui/blob/assets/readme/mit_badge.svg" alt="MIT License"></a>
-</p>
+DearPyGui is written in C++. This enables an efficient wrapping of Dear ImGui calls.
 
-<p align="center">
-   <a href="https://github.com/hoffstadt/DearPyGui/actions?workflow=Embedded%20Build"><img src="https://github.com/hoffstadt/DearPyGui/workflows/Embedded%20Build/badge.svg?branch=master" alt="static-analysis"></a>
-   <a href="https://github.com/hoffstadt/DearPyGui/actions?workflow=Static%20Analysis"><img src="https://github.com/hoffstadt/DearPyGui/workflows/Static%20Analysis/badge.svg?branch=master" alt="static-analysis"></a>
-   <a href="https://github.com/hoffstadt/DearPyGui/actions/workflows/Deployment.yml"><img src="https://github.com/hoffstadt/DearPyGui/actions/workflows/Deployment.yml/badge.svg?branch=master" alt="Deployment"></a>
-   <a href="https://dearpygui.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/dearpygui/badge/?version=latest" alt="Documentation Status"></a>
-</p>
+Dear ImGui is an immediate API. Basically every frame everything is redrawn.
+Since Python is significantly slower than C++, the basic idea is that instead of rendering every frame with Python calling Dear ImGui, the Python application instead creates objects that are managed by C++ code. These C++ objects are used to render every frame the objects with Dear ImGui. Thus the main overhead of using Python for the GUI is the application logic + the logic of creating the objects that the C++ will manage.
 
-<h1></h1>
+Why DearCyGui ? Basically DearPyGui has to make many CPython calls in order to retrieve the arguments passed from Python. This has several downsides:
+- This complicates the logic. CPython requires specific handling for various types of arguments, in addition to the Global Interpreter Lock and the Python object refcount.
+- Since the logic is complicated, the code remains simple in order to be easy to maintain and thus some optimizations are left out.
+For example if one calls ```dpg.configure_item(tag, show=True)```, the C++ library has to find if tag corresponds to any object, then the object uses CPython calls for each possible parameter if configure_item passed it, and if so apply the new parameter. Each CPython call is quite costly.
+- In addition some nice features are not implemented. For example instead of creating Python objects, each C++ object corresponds to a UUID and an optional user string tag. As a result the user has to pass the UUID/tag to each call. An alternative more pythonic-way would be to use Python objects instead of UUID/tags. In fact Python enables libraries to provide objects with C++ defined behaviour for various aspects. For example ```dpg.configure_item(tag, show=True)``` could be replaced by ```my_python_object.show = True```. Python enables the C++ library to define what behaviour should happen when specifically show is set.
 
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#how-to-use">How To Use</a> • 
-  <a href="#demo">Demo</a> •
-  <a href="#resources">Resources</a> •
-  <a href="#support">Support</a> •
-  <a href="#tech-stack">Tech stack</a> •
-  <a href="#credits">Credits</a> •
-  <a href="#license">License</a> •
-  <a href="#gallery">Gallery</a>
-</p>
+Basically Cython is a way to fix all the above issues. Cython code looks python-like but it is converted to C/C++ code. It can thus interact to both C++ and Python directly. The required CPython calls are made directly and in an optimized way. This simplifies the logic and enables to implement new behaviours. In addition the Cython provided functions can be accessed either from Python or directly using Cython code. Using Cython code to use the library will enable a performance boost as many CPython calls can be removed. Cython generates code for both paths.
 
-<h1></h1>
+## How can the old API and the new features co-exist
 
-<BR>![Themes](https://raw.githubusercontent.com/hoffstadt/DearPyGui/assets/linuxthemes.PNG) 
-  
-## Features  
-- **Modern look** — Complete theme and style control
-- **Great performance** —  GPU-based rendering and efficient C/C++ code
-- **Stable operation** —  Asynchronous function support
-- **Fast graphs** — Display over 1 million datapoints at 60 fps, zoom and pan
-- **Node editor** — Intuitive user interaction
-- **Built-in demo** — Quickly learn all features
-- **Developer tools** — Theme and resource inspection, runtime metrics, debugger
-- **Cross-platform** — Windows, Linux, MacOS
-- **MIT license**
+DearCyGui strives for retrocompatibility with the old API. One way to achieve this would be to leave the C++ code mostly untouched, and add Cython interfaces to interact directly with the C++ objects. This means that there will be no performance boost unless the Cython paths are used.
 
-<h1></h1>
-<p align="center">
-  <img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/stem.gif" width="380">&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/tables.gif" width="380">
-</p>
-<h1></h1>
+Instead of going this way, this repository tries to go for a harder path: reimplementing part of the logic in Cython. In particular use Cython to handle the CPython calls and remove the direct calls to CPython in the C++ code. And doing so, add all the new features and the performance optimizations that are easy to add thanks to Cython. The compatibility with the old API is maintained by appropriate calls to the Cython objects, but the objects being accessible from Python, newer applications can manipulate them directly.
 
-<h1></h1>
-<p align="center"> 
-<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/pie.gif" width="380">&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/candle.gif" width="380"> 
-</p>
-<h1></h1>
-  
-## Installation
-
-Ensure you have at least Python 3.8 64bit.
- ```
- pip install dearpygui
- or
- pip3 install dearpygui
- ```
- 
-## How to use?
- 
-Using Dear PyGui is as simple as the following Python script.
-  
-```Python
-import dearpygui.dearpygui as dpg
-
-def save_callback():
-    print("Save Clicked")
-
-dpg.create_context()
-dpg.create_viewport()
-dpg.setup_dearpygui()
-
-with dpg.window(label="Example Window"):
-    dpg.add_text("Hello world")
-    dpg.add_button(label="Save", callback=save_callback)
-    dpg.add_input_text(label="string")
-    dpg.add_slider_float(label="float")
-
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
-```
-<br/>
-<p align="center"><a href="https://dearpygui.readthedocs.io/en/latest/tutorials/first-steps.html#first-run"><img src="https://raw.githubusercontent.com/hoffstadt/DearPyGui/assets/readme/first_app.gif" alt="Dear PyGui example window"></a></p>
-                                                                                           
-## Demo
-The built-in demo shows all of Dear PyGui's functionality. Use [this code](https://dearpygui.readthedocs.io/en/latest/tutorials/first-steps.html#demo) to run the demo. The following impression shows a few, but not nearly all, of the available widgets and features. Since the Python code of the demo can be <a href="https://github.com/hoffstadt/DearPyGui/blob/master/dearpygui/demo.py" alt="demo code repository">inspected</a>, you can leverage the demo code to build your own apps.
-<br/><br/>
-<p align="center"><a href="https://dearpygui.readthedocs.io/en/latest/tutorials/first-steps.html#demo"><img src="https://raw.githubusercontent.com/hoffstadt/DearPyGui/assets/readme/demo.gif" alt="Dear PyGui demo"></a></p>
-  
-## Resources
-
-- [API documentation](https://dearpygui.readthedocs.io/en/latest/index.html) :books: 
-- [Development Roadmap](https://github.com/hoffstadt/DearPyGui/projects/4)
-- [FAQ](https://github.com/hoffstadt/DearPyGui/discussions/categories/frequently-asked-questions-faq)
-- [Feature Tracker](https://github.com/hoffstadt/DearPyGui/issues?q=is%3Aissue+is%3Aopen+label%3A%22type%3A+feature%22)
-- [Bug Tracker](https://github.com/hoffstadt/DearPyGui/issues?q=is%3Aissue+is%3Aopen+label%3A%22type%3A+bug%22)
-- [Useful code snippets demonstrating best practices](https://github.com/my1e5/dpg-examples)
-- [Showcase apps including source code](https://github.com/hoffstadt/DearPyGui/wiki/Dear-PyGui-Showcase) :star:
-- [Showcase apps made with older versions of Dear PyGui](https://github.com/hoffstadt/DearPyGui/wiki/Showcase-apps-older-Dear-PyGui-versions)
-- [Useful tools and widgets](https://github.com/hoffstadt/DearPyGui/wiki/Tools-and-Widgets)
-  
-## Support
-
-If you are having issues or want to help, here are some places you can go.
-  - [Discord Forum](https://discord.gg/tyE7Gu4) 💬
-  - [Reddit](https://www.reddit.com/r/DearPyGui/)
-
-[![Chat on Discord](https://img.shields.io/discord/736279277242417272?logo=discord)](https://discord.gg/tyE7Gu4) &nbsp; &nbsp; &nbsp; [![Reddit](https://img.shields.io/reddit/subreddit-subscribers/dearpygui?label=r%2Fdearpygui)](https://www.reddit.com/r/DearPyGui/)
-
-## Tech stack
-Dear PyGui is built on top of <a href="https://github.com/ocornut/imgui" target="_blank">Dear ImGui</a>, including the [ImPlot](https://github.com/epezent/implot) and [imnodes](https://github.com/Nelarius/imnodes) extensions, and is fundamentally different than other Python GUI frameworks. Under the hood, it uses the immediate mode paradigm and your computer's GPU to facilitate extremely dynamic interfaces. In the same manner Dear ImGui provides a simple way to create tools for game developers, Dear PyGui provides a simple way for python developers to create quick and powerful GUIs for scripts. Dear PyGui is written in C/C++ resulting in highly performant Python applications. Dear PyGui is currently supported on the following platforms. 
-<br/>
-  
-| Platform | Graphics API | Newest Version |
-|:---------|:-------------|:---------------|
-| **Windows 10** | _DirectX 11_ | [![PYPI](https://img.shields.io/pypi/v/dearpygui)](https://pypi.org/project/dearpygui/) |
-| **macOS** | _Metal_ | [![PYPI](https://img.shields.io/pypi/v/dearpygui)](https://pypi.org/project/dearpygui/) |
-| **Linux** | _OpenGL 3_ | [![PYPI](https://img.shields.io/pypi/v/dearpygui)](https://pypi.org/project/dearpygui/) |
-| **Raspberry Pi 4** | _OpenGL ES_ | [![PYPI](https://img.shields.io/badge/pypi-v1.6-blue)](https://img.shields.io/badge/pypi-v1.6-blue) |
-
-  
-## Credits
-
-- Developed by [Jonathan Hoffstadt](https://github.com/hoffstadt), [Preston Cothren](https://github.com/Pcothren) and every direct or indirect contributor.
-
-- [Omar Cornut](http://www.miracleworld.net/) for all his incredible work on [Dear ImGui](https://github.com/ocornut/imgui).
-
-- [Evan Pezent](http://evanpezent.com/) for all his work on [ImPlot](https://github.com/epezent/implot).
-
-- [Johann Muszynski](https://github.com/Nelarius) for all of his work on [imnodes](https://github.com/Nelarius/imnodes).
-
-## License
-Dear PyGui is licensed under the [MIT License](https://github.com/hoffstadt/DearPyGui/blob/master/LICENSE).
-  
-## Sponsor
-Continued maintenance and development are a full-time endeavor which we would like to sustain and grow. Ongoing development is financially supported by users and private sponsors. If you enjoy Dear PyGui please consider becoming a [sponsor](https://github.com/hoffstadt/DearPyGui/wiki/Sponsors) or buy us a [cup of coffee](https://www.buymeacoffee.com/DearPyGui).
-
-<img src="https://img.shields.io/github/sponsors/hoffstadt?label=Github%20Sponsors">&nbsp; &nbsp; &nbsp; <img src="https://img.shields.io/opencollective/sponsors/dearpygui?label=Open%20Collective%20Sponsors">
-
-## Gallery
-
-#### Plotting/Graphing
-_Dear PyGui_ includes a plotting API built with [ImPlot](https://github.com/epezent/implot)
-
-<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/controls.gif" width="380">&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/dnd.gif" width="380">
-
-<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/query.gif" width="380">&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/bars.gif" width="380">
-  
-<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/rt.gif" width="380">&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/markers.gif" width="380">
-  
-<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/shaded.gif" width="380">&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/wiki/epezent/implot/screenshots3/heat.gif" width="380">
-
-
-#### Node Editor
-_Dear PyGui_ includes a node editor built with [imnodes](https://github.com/Nelarius/imnodes)
-![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/nodes2.png)
-
-
-#### Canvas
-_Dear PyGui_ includes a drawing API to create custom drawings, plot, and even 2D games.
-![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/tetris.png)
-
-
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/3d.png)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/nodes1.png)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/space.png)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/snake.gif)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/drawing.png)
- 
- <BR>![BasicUsageExample](https://github.com/hoffstadt/DearPyGui/blob/assets/canvas.png?raw=true)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/nodes3.png)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/3d1.png)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/game1.png)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/mandlebrot.gif)
- 
- ![](https://github.com/hoffstadt/DearPyGui/blob/assets/readme/nodes4.png)
+This means performance gains can be obtained even using only Python on the application side:
+- There will be a small performance boost since Cython generates more optimized code to access the input arguments
+- Using the objects instead of the tags in application code will give a more significant boost. For example ```my_python_object.show = True``` will directly call a function that sets the value of ```show```. Unlike with ```dpg.configure_item(tag, show=True)``` which has to check the kwargs dictionnary passed to find which fields need to be updated. Fewer CPython calls are generated.
+- The simplicity brought by using Cython means multithreading can be handled more simply on DearCyGui side. We should be able to manipulate several objects from several Python threads without a global DearPyGui lock.
