@@ -172,9 +172,7 @@ mvHandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 				GContext->viewport->clientHeight = cheight;
 				GContext->viewport->clientWidth = cwidth;
 
-				//GContext->viewport->resized = true;
-				mvOnResize();
-				GContext->viewport->resized = false;
+				GContext->viewport->resized = true;
 
 				if (mvToolManager::GetFontManager().isInvalid())
 				{
@@ -294,7 +292,7 @@ mvHandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	case WM_TIMER:
 	{
 		if (wParam == puIDEvent)
-			mvOnResize();
+			GContext->viewport->resized = true;
 		break;
 	}
 	case WM_SYSCOMMAND:
