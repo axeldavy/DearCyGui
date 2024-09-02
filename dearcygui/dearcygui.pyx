@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import functools
 from libcpp cimport bool
 from libcpp.functional cimport function
+import traceback
 
 cimport cython
 from cython.operator cimport dereference
@@ -659,22 +660,19 @@ cdef mvColor mvImGuiCol_TableRowBgAlt = mvColor(255, 255, 255, 15)
 cdef unsigned int ConvertToUnsignedInt(const mvColor color):
     return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(color.r, color.g, color.b, color.a))
 
-cdef void call_void_callback(void *fun) noexcept nogil:
+cdef void internal_resize_callback(void *fun, int a, int b) noexcept nogil:
     with gil:
         try:
-            callback = <object>fun
-            callback()
+            (<dcgViewport>object).__on_resize(a, b)
         except Exception as e:
-            pass
+            print("An error occured in the viewport resize callback", traceback.format_exc())
 
-cdef void call_intint_callback(void *fun, int a, int b) noexcept nogil:
+cdef void internal_close_callback(void *object) noexcept nogil:
     with gil:
         try:
-            callback = <object>fun
-            callback(a, b)
+            (<dcgViewport>object).__on_close()
         except Exception as e:
-            pass
-
+            print("An error occured in the viewport close callback", traceback.format_exc())
 
 @cython.final
 cdef class dcgViewport:
@@ -915,7 +913,7 @@ cdef class dcgViewport:
         for (key, value) in kwargs.items():
             setattr(self, key, value)
 
-    def __on_resize(self, width, height):
+    cdef void __on_resize(self, int width, int height):
         self.__check_initialized()
         self.viewport.actualHeight = height
         self.viewport.clientHeight = height
@@ -930,7 +928,7 @@ cdef class dcgViewport:
                       self.viewport.clientHeight)
         self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
 
-    def __on_close(self):
+    cdef void __on_close(self):
         self.__check_initialized()
         if self.close_callback is None:
             return
@@ -943,10 +941,10 @@ cdef class dcgViewport:
         mvShowViewport(dereference(self.viewport),
                        minimized,
                        maximized,
-                       call_intint_callback,
-                       <void*>self.__on_resize,
-                       call_void_callback,
-                       <void*>self.__on_close)
+                       internal_resize_callback,
+                       <void*>self,
+                       internal_close_callback,
+                       <void*>self)
         if not(self.graphics_initialized):
             self.graphics = setup_graphics(dereference(self.viewport))
             imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
