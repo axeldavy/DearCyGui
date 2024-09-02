@@ -8,9 +8,7 @@ cdef extern from "mvCore.h" nogil:
 		#mvColor(int r, int g, int b, int a)
 		#mvColor(math.ImVec4 color)
 		#const math.ImVec4 toVec4()
-	unsigned int ConvertToUnsignedInt(const mvColor& color)
-	int MV_APP_UUID
-	int MV_START_UUID
+	#unsigned int ConvertToUnsignedInt(const mvColor& color)
 
 cdef inline mvColor colorFromInts(int r, int g, int b, int a):
 	cdef mvColor color

@@ -10,6 +10,8 @@
 #include "imgui_impl_metal.h"
 #include <stdio.h>
 
+#include <functional>
+
  mvViewport*
 mvCreateViewport(unsigned width, unsigned height)
 {
@@ -97,6 +99,7 @@ mvShowViewport(mvViewport& viewport, bool minimized, bool maximized)
     GContext->viewport->clientHeight = viewport.actualHeight;
     GContext->viewport->clientWidth = viewport.actualWidth;
 
+    /*
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
@@ -129,7 +132,7 @@ mvShowViewport(mvViewport& viewport, bool minimized, bool maximized)
 
     // Setup style
     ImGui::StyleColorsDark();
-    SetDefaultTheme();
+    SetDefaultTheme();*/
 
     ImGui_ImplGlfw_InitForOpenGL(viewportData->handle, true);
 
@@ -161,7 +164,7 @@ mvRestoreViewport(mvViewport& viewport)
 }
 
  void
-mvRenderFrame()
+mvRenderFrame(std::function<void()> render)
 {
     mvViewport* viewport = GContext->viewport;
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
@@ -257,7 +260,7 @@ mvRenderFrame()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        Render();
+        render();
 
         glfwGetWindowPos(viewportData->handle, &viewport->xpos, &viewport->ypos);
 

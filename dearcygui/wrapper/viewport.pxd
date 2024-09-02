@@ -1,5 +1,6 @@
 from dearcygui.wrapper.core cimport mvColor
 from libcpp.string cimport string
+from dearcygui.wrapper.graphics cimport mvGraphics
 
 cdef extern from "mvViewport.h" nogil:
     cdef struct mvViewport:
@@ -35,12 +36,23 @@ cdef extern from "mvViewport.h" nogil:
         int clientHeight
         int xpos
         int ypos
+    ctypedef void (*on_resize_fun)(void*, int, int)
+    ctypedef void (*on_close_fun)(void*)
+    ctypedef void (*render_fun)(void*)
 
     mvViewport* mvCreateViewport  (unsigned width, unsigned height)
     void        mvCleanupViewport (mvViewport& viewport)
-    void        mvShowViewport    (mvViewport& viewport, char minimized, char maximized)
+    void        mvShowViewport    (mvViewport& viewport,
+                                   char minimized,
+                                   char maximized,
+                                   on_resize_fun,
+                                   void *,
+                                   on_close_fun,
+                                   void *)
     void        mvMaximizeViewport(mvViewport& viewport)
     void        mvMinimizeViewport(mvViewport& viewport)
     void        mvRestoreViewport (mvViewport& viewport)
-    void        mvRenderFrame()
+    void        mvRenderFrame(mvViewport& viewport,
+						      render_fun render,
+						      mvGraphics& graphics)
     void        mvToggleFullScreen(mvViewport& viewport)

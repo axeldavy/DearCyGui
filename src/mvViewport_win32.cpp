@@ -1,5 +1,7 @@
 #include "mvWindowsSpecifics.h"
 
+#include <functional>
+
 
 static BYTE gprevious_ime_char;
 static WORD glang_id;
@@ -434,7 +436,7 @@ mvShowViewport(mvViewport& viewport, bool minimized, bool maximized)
 	if (viewport.alwaysOnTop)
 		SetWindowPos(viewportData->handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	/*ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
 	if (GContext->IO.loadIniFile)
 	{
@@ -461,7 +463,7 @@ mvShowViewport(mvViewport& viewport, bool minimized, bool maximized)
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
-	SetDefaultTheme();
+	SetDefaultTheme();*/
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init(viewportData->handle);
@@ -492,11 +494,13 @@ mvCleanupViewport(mvViewport& viewport)
 }
 
 void
-mvRenderFrame()
+mvRenderFrame(mvViewport& viewport,
+			  std::function<void()> render,
+ 			  mvGraphics& graphics)
 {
-	mvPrerender(*GContext->viewport);
-	Render();
-	present(GContext->graphics, GContext->viewport->clearColor, GContext->viewport->vsync);
+	mvPrerender(viewport);
+	render();
+	present(graphics, viewport.clearColor, viewport.vsync);
 }
 
 void

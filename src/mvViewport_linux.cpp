@@ -11,6 +11,8 @@
 #include <stb_image.h>
 #include "mvToolManager.h"
 
+#include <functional>
+
 static void
 glfw_error_callback(int error, const char* description)
 {
@@ -18,32 +20,8 @@ glfw_error_callback(int error, const char* description)
 }
 
 static void
-window_close_callback(GLFWwindow* window)
+mvPrerender(mvViewport* viewport)
 {
-    if (GContext->viewport->disableClose) {
-        mvSubmitCallback([=]() {
-            mvRunCallback(GContext->callbackRegistry->onCloseCallback, 0, nullptr, GContext->callbackRegistry->onCloseCallbackUserData);
-            });
-    }
-    else {
-        GContext->started = false;
-    }
-}
-
-static void
-window_size_callback(GLFWwindow* window, int width, int height)
-{
-    GContext->viewport->actualHeight = height;
-    GContext->viewport->clientHeight = height;
-    GContext->viewport->actualWidth = width;
-    GContext->viewport->clientWidth = width;
-    GContext->viewport->resized = true;
-}
-
-static void
-mvPrerender()
-{
-    mvViewport* viewport = GContext->viewport;
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
     viewport->running = !glfwWindowShouldClose(viewportData->handle);
@@ -127,14 +105,19 @@ mvCleanupViewport(mvViewport& viewport)
 
     glfwDestroyWindow(viewportData->handle);
     glfwTerminate();
-    GContext->started = false;
 
     delete viewportData;
     viewportData = nullptr;
 }
 
  void
-mvShowViewport(mvViewport& viewport, bool minimized, bool maximized)
+mvShowViewport(mvViewport& viewport,
+               bool minimized,
+               bool maximized,
+               on_resize_fun on_resize,
+               void *on_resize_fun_data,
+               on_close_fun on_close,
+               void *on_close_fun_data)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
@@ -193,43 +176,21 @@ mvShowViewport(mvViewport& viewport, bool minimized, bool maximized)
     glfwMakeContextCurrent(viewportData->handle);
     gl3wInit();
 
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigWindowsMoveFromTitleBarOnly = true;
-
-    if (GContext->IO.loadIniFile)
-    {
-        ImGui::LoadIniSettingsFromDisk(GContext->IO.iniFile.c_str());
-        io.IniFilename = nullptr;
-        if (GContext->IO.autoSaveIniFile)
-            io.IniFilename = GContext->IO.iniFile.c_str();
-    }
-    else
-    {
-        if (GContext->IO.iniFile.empty())
-            io.IniFilename = nullptr;
-        else
-            io.IniFilename = GContext->IO.iniFile.c_str();
-    }
-
-    if(GContext->IO.kbdNavigation)
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-
-    if(GContext->IO.docking)
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    
-    io.ConfigDockingWithShift = GContext->IO.dockingShiftOnly;
-
-    // Setup style
-    ImGui::StyleColorsDark();
-    SetDefaultTheme();
-
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(viewportData->handle, true);
         
 
     // Setup callbacks
-    glfwSetWindowSizeCallback(viewportData->handle, window_size_callback);
-    glfwSetWindowCloseCallback(viewportData->handle, window_close_callback);
+    viewportData->resize_callback =
+        [=](GLFWwindow* window, int width, int height) {
+            on_resize(on_resize_fun_data, width, height);
+            };
+    glfwSetWindowSizeCallback(viewportData->handle, viewportData->resize_callback.target<void(GLFWwindow*, int, int)>());
+    viewportData->close_callback =
+        [=](GLFWwindow* window) {
+            on_close(on_close_fun_data);
+            };
+    glfwSetWindowCloseCallback(viewportData->handle, viewportData->close_callback.target<void(GLFWwindow*)>());
 }
     
  void
@@ -254,16 +215,19 @@ mvRestoreViewport(mvViewport& viewport)
 }
 
  void
-mvRenderFrame()
+mvRenderFrame(mvViewport& viewport,
+			  render_fun render,
+              void *render_fun_data,
+ 			  mvGraphics& graphics)
 {
-    mvPrerender();
+    mvPrerender(&viewport);
 
     if (GImGui->CurrentWindow == nullptr)
         return;
 
-    Render();
+    render(render_fun_data);
 
-    present(GContext->graphics, GContext->viewport->clearColor, GContext->viewport->vsync);
+    present(graphics, viewport.clearColor, viewport.vsync);
 }
 
  void

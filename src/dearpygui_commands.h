@@ -2193,7 +2193,7 @@ show_viewport(PyObject* self, PyObject* args, PyObject* kwargs)
 	mvViewport* viewport = GContext->viewport;
 	if (viewport)
 	{
-		mvShowViewport(*viewport, minimized, maximized);
+		assert(False);//mvShowViewport(*viewport, minimized, maximized);
 		GContext->graphics = setup_graphics(*viewport);
 		viewport->shown = true;
 	}
@@ -2603,7 +2603,7 @@ render_dearpygui_frame(PyObject* self, PyObject* args, PyObject* kwargs)
 
 	Py_BEGIN_ALLOW_THREADS;
 	auto window = GContext->viewport;
-	mvRenderFrame();
+	assert(False);//mvRenderFrame();
 	Py_END_ALLOW_THREADS;
 
 	if (GContext->viewport->resized)

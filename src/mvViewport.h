@@ -56,13 +56,27 @@ struct mvViewport
 
 };
 
+typedef void (*on_resize_fun)(void*, int width, int height);
+typedef void (*on_close_fun)(void*);
+typedef void (*render_fun)(void*);
+
 mvViewport* mvCreateViewport  (u32 width, u32 height);
 void        mvCleanupViewport (mvViewport& viewport);
-void        mvShowViewport    (mvViewport& viewport, b8 minimized, b8 maximized);
+void        mvShowViewport    (mvViewport& viewport,
+							   b8 minimized,
+							   b8 maximized,
+							   on_resize_fun on_resize,
+							   void *on_resize_fun_data,
+               				   on_close_fun on_close,
+							   void *on_close_fun_data);
 void        mvMaximizeViewport(mvViewport& viewport);
 void        mvMinimizeViewport(mvViewport& viewport);
 void        mvRestoreViewport (mvViewport& viewport);
-void        mvRenderFrame();
+void        mvRenderFrame(mvViewport& viewport,
+						  void *fun_data,
+						  render_fun render,
+						  void *render_fun_data,
+						  mvGraphics& graphics);
 void        mvToggleFullScreen(mvViewport& viewport);
 
 static void mvOnResize()
