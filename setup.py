@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages, Distribution
 from setuptools.command import build_py
+from setuptools.extension import Extension
+from Cython.Build import cythonize
 import distutils.cmd
 from codecs import open
 import os
@@ -9,7 +11,7 @@ import sys
 import shutil
 import subprocess
 
-wip_version = "1.11.1"
+wip_version = "0.0.1"
 
 def version_number():
     """This function reads the version number which is populated by github actions"""
@@ -43,68 +45,6 @@ def get_platform():
     
     return platforms[sys.platform]
 
-class BinaryDistribution(Distribution):
-    def has_ext_modules(var):
-        return True
-
-class DPGBuildCommand(distutils.cmd.Command):
-  
-  description = 'DPG Build Command'
-  user_options = []
-
-  def initialize_options(self):
-    pass
-
-  def finalize_options(self):
-    pass
-
-  def run(self):
-
-    if os.environ.get('READTHEDOCS') == 'True':
-        self.announce('Using readthedocs hack',level=distutils.log.INFO)
-        return
-
-    if get_platform() == "Windows":
-        command = [r'set PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin";"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin";"C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin";%PATH% && ']
-        command.append("mkdir cmake-build-local && ")
-        command.append("cd cmake-build-local && ")
-        command.append('cmake .. -G "Visual Studio 16 2019" -A "x64" -DMVDIST_ONLY=True -DMVDPG_VERSION=')
-        command.append(version_number() + " -DMV_PY_VERSION=")
-        command.append(str(sys.version_info[0]) + "." + str(sys.version_info[1]) + " && ")
-        command.append("cd .. && cmake --build cmake-build-local --config Release")
-        self.announce('Running command: %s' % "Dear PyGui Build for Windows", level=distutils.log.INFO)
-        subprocess.check_call(''.join(command), env=os.environ, shell=True)
-        src_path = os.path.dirname(os.path.abspath(__file__))
-        shutil.copy("cmake-build-local/DearPyGui/Release/_dearpygui.pyd", src_path +"/output/dearpygui")
-
-    elif get_platform() == "Linux":
-        command = ["mkdir cmake-build-local; "]
-        command.append("cd cmake-build-local; ")
-        command.append('cmake .. -DMVDIST_ONLY=True -DMVDPG_VERSION='+version_number()+ " -DMV_PY_VERSION="+ str(sys.version_info[0]) + "." + str(sys.version_info[1])+"; ")
-        command.append("cd ..; cmake --build cmake-build-local --config Release")
-        self.announce('Running command: %s' % "Dear PyGui Build for Linux",level=distutils.log.INFO)
-        subprocess.check_call(''.join(command), shell=True)
-        src_path = os.path.dirname(os.path.abspath(__file__))
-        shutil.copy("cmake-build-local/DearPyGui/_dearpygui.so", src_path +"/output/dearpygui")
-    
-    elif get_platform() == "OS X":
-        command = ["mkdir cmake-build-local; "]
-        command.append("cd cmake-build-local; ")
-        command.append('cmake .. -DMVDIST_ONLY=True -DMVDPG_VERSION='+version_number()+ " -DMV_PY_VERSION="+ str(sys.version_info[0]) + "." + str(sys.version_info[1])+"; ")
-        command.append("cd ..; cmake --build cmake-build-local --config Release")
-        self.announce('Running command: %s' % "Dear PyGui Build for OS X",level=distutils.log.INFO)
-        subprocess.check_call(''.join(command), shell=True)
-        src_path = os.path.dirname(os.path.abspath(__file__))
-        shutil.copy("cmake-build-local/DearPyGui/_dearpygui.so", src_path +"/output/dearpygui")
-
-    else:
-        self.announce('Command not ready.',level=distutils.log.INFO)
-
-class BuildPyCommand(build_py.build_py):
-  def run(self):
-    self.run_command('dpg_build')
-    build_py.build_py.run(self)
-
 def setup_package():
 
     src_path = os.path.dirname(os.path.abspath(__file__))
@@ -116,60 +56,157 @@ def setup_package():
     with open("./README.md", encoding='utf-8') as f:
         long_description = f.read()
 
-    # create the necessary directories if they do not exist
-    if os.path.isdir(src_path +  "/output"):
-        shutil.rmtree(src_path +  "/output")
-    os.mkdir(src_path + "/output")
-    os.mkdir(src_path + "/output/dearpygui")
+    include_dirs = ["src",
+                    "thirdparty/imgui",
+                    "thirdparty/imgui/backends",
+                    "thirdparty/ImGuiFileDialog",
+                    "thirdparty/imnodes",
+                    "thirdparty/implot",
+                    "thirdparty/gl3w",
+                    "thirdparty/stb"]
+    #"thirdparty/glfw/include",
+    cpp_sources = [
+        "mvContext.cpp",
+        "mvMath.cpp",
+        "mvProfiler.cpp",
+        "dearpygui.cpp",
+        "mvPyUtils.cpp",
+        "mvCustomTypes.cpp",
+        "mvBasicWidgets.cpp",
+        "mvTables.cpp",
+        "mvThemes.cpp",
+        "mvNodes.cpp",
+        "mvDrawings.cpp",
+        "mvGlobalHandlers.cpp",
+        "mvItemHandlers.cpp",
+        "mvValues.cpp",
+        "mvTextureItems.cpp",
+        "mvFontItems.cpp",
+        "mvColors.cpp",
+        "mvPlotting.cpp",
+        "mvContainers.cpp",
+        "mvCallbackRegistry.cpp",
+        "mvLoadingIndicatorCustom.cpp",
+        "mvFontManager.cpp",
+        "mvToolManager.cpp",
+        "mvToolWindow.cpp",
+        "mvAboutWindow.cpp",
+        "mvDocWindow.cpp",
+        "mvMetricsWindow.cpp",
+        "mvStackWindow.cpp",
+        "mvStyleWindow.cpp",
+        "mvDebugWindow.cpp",
+        "mvLayoutWindow.cpp",
+        "mvAppItemState.cpp",
+        "mvAppItem.cpp",
+        "mvItemRegistry.cpp",
+        "mvDatePicker.cpp",
+        "mvTimePicker.cpp",
+        "mvSlider3D.cpp",
+        "mvLoadingIndicator.cpp",
+        "mvFileDialog.cpp",
+        "mvFileExtension.cpp",
+        "thirdparty/imnodes/imnodes.cpp",
+        "thirdparty/implot/implot.cpp",
+        "thirdparty/implot/implot_items.cpp",
+        "thirdparty/implot/implot_demo.cpp",
+        "thirdparty/ImGuiFileDialog/ImGuiFileDialog.cpp",
+        "thirdparty/imgui/misc/cpp/imgui_stdlib.cpp",
+        "thirdparty/imgui/imgui.cpp",
+        "thirdparty/imgui/imgui_demo.cpp",
+        "thirdparty/imgui/imgui_draw.cpp",
+        "thirdparty/imgui/imgui_widgets.cpp",
+        "thirdparty/imgui/imgui_tables.cpp"          
+    ]
 
-    if os.path.isdir(src_path + "/cmake-build-local"):
-        shutil.rmtree(src_path + "/cmake-build-local")
+    compile_args = ["-DIMGUI_DEFINE_MATH_OPERATORS",
+                    "-DMVDIST_ONLY",
+                    "-D_CRT_SECURE_NO_WARNINGS",
+                    "-D_USE_MATH_DEFINES",
+                    "-DMV_DPG_MAJOR_VERSION=1",
+                    "-DMV_DPG_MINOR_VERSION=0",
+                    "-DMV_SANDBOX_VERSION=\"master\""]
+    linking_args = []
+    libraries = []
 
-    # copy add items to temporary location
-    if os.environ.get('READTHEDOCS') == 'True':
-        shutil.copy(src_path + "/dearpygui/_dearpygui_RTD.py", src_path + "/output/dearpygui")
+
+    if get_platform() == "Windows":
+        cpp_sources += [
+            "thirdparty/imgui/misc/freetype/imgui_freetype.cpp",
+            "thirdparty/imgui/backends/imgui_impl_win32.cpp",
+            "thirdparty/imgui/backends/imgui_impl_dx11.cpp",
+            "mvViewport_win32.cpp",
+            "mvUtilities_win32.cpp",
+            "mvGraphics_win32.cpp"
+        ]
+        compile_args += ["-DMV_PLATFORM=\"windows\"", "-DIMGUI_USER_CONFIG=\"mvImGuiConfig.h\""]
+        libraries += ["d3d11", "dxgi", "dwmapi", "freetype"]
+    elif get_platform() == "Linux":
+        cpp_sources += [
+            "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
+            "thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
+            "thirdparty/gl3w/GL/gl3w.c",
+            "mvUtilities_linux.cpp",
+            "mvViewport_linux.cpp",
+            "mvGraphics_linux.cpp"
+        ]
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
+                         "-DIMGUI_IMPL_OPENGL_LOADER_GL3W", "-DMV_PLATFORM=\"linux\"",\
+                         "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",\
+                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+        libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
+    elif get_platform() == "OS X":
+        cpp_sources += [
+            "thirdparty/imgui/backends/imgui_impl_metal.mm",
+            "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
+            "mvViewport_apple.mm",
+            "mvUtilities_apple.mm",
+            "mvGraphics_apple.mm"
+        ]
+        compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
+                         "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\"", \
+                         "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",\
+                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+        linking_args += [
+            "-lglfw",
+			"-undefined dynamic_lookup",
+			"-framework Metal",
+			"-framework MetalKit",
+			"-framework Cocoa",
+			"-framework CoreVideo",
+			"-framework IOKit",
+			"-framework QuartzCore"
+        ]
+        
     else:
-        shutil.copy(src_path + "/dearpygui/dearpygui.py", src_path + "/output/dearpygui")
+        raise ValueError("Unsupported plateform")
 
-    shutil.copy(src_path + "/dearpygui/demo.py", src_path + "/output/dearpygui")
-    shutil.copy(src_path + "/dearpygui/experimental.py", src_path + "/output/dearpygui")
-
-    with open(src_path + "/output/dearpygui/__init__.py", 'w') as file:
-        file.write("__version__='" + version_number() + "'\n")
-
-    if os.environ.get('READTHEDOCS') == 'True':
-
-        os.rename(src_path + "/output/dearpygui/_dearpygui_RTD.py", src_path + "/output/dearpygui/dearpygui.py")
-        with open(src_path + "/output/dearpygui/_dearpygui.py", 'w') as newfile:
-            with open(src_path + "/dearpygui/_dearpygui.pyi", 'r') as file:
-                lines = file.readlines()
-                for line in lines:
-                    if line.__contains__("...") and not line.__contains__("["):
-                        newfile.write("\tpass\n")
-                    elif line.__contains__("dearpygui._dearpygui"):
-                        newfile.write("mvBuffer = 7\n") # hacky
-                        newfile.write("mvVec4 = 7\n") # hacky
-                        newfile.write("mvMat4 = 7\n") # hacky
-                    else:
-                        newfile.write(line)
-    else:
-
-        # copy add items to temporary location
-        shutil.copy(src_path + "/dearpygui/_dearpygui.pyi", src_path + "/output/dearpygui")
-        if get_platform() == "Windows":
-            shutil.copy(src_path + "/thirdparty/Microsoft/vcruntime140_1.dll", src_path + "/output/dearpygui")
+        
+    cpp_sources = [p if "thirdparty" in p else ("src/" + p) for p in cpp_sources]
+    extensions = [
+        Extension(
+            "dearcygui",
+            ["dearcygui/dearcygui.pyx"] + cpp_sources,
+            language="c++",
+            include_dirs=include_dirs,
+            extra_compile_args=compile_args,
+            libraries=libraries,
+            extra_link_args=linking_args
+        ),
+    ]
+    print(extensions)
 
     metadata = dict(
-        name='dearpygui',                                      # Required
+        name='dearcygui',                                      # Required
         version=version_number(),                              # Required
-        author="Jonathan Hoffstadt and Preston Cothren",       # Optional
+        author="Jonathan Hoffstadt, Preston Cothren and Axel Davy",       # Optional
         author_email="jonathanhoffstadt@yahoo.com",            # Optional
-        description='DearPyGui: A simple Python GUI Toolkit',  # Required
+        description='DearCyGui: A simple Python GUI Toolkit',  # Required
         long_description=long_description,                     # Optional
         long_description_content_type='text/markdown',         # Optional
-        url='https://github.com/hoffstadt/DearPyGui',          # Optional
+        url='https://github.com/axeldavy/DearCyGui',          # Optional
         license = 'MIT',
-        python_requires='>=3.7',
+        python_requires='>=3.10',
         classifiers=[
                 'Development Status :: 5 - Production/Stable',
                 'Intended Audience :: Education',
@@ -191,22 +228,9 @@ def setup_package():
                 'Topic :: Software Development :: User Interfaces',
                 'Topic :: Software Development :: Libraries :: Python Modules',
             ],
-        packages=['dearpygui'],
-        package_dir = {'': 'output'},
-        package_data={},
-        distclass=BinaryDistribution,
-        cmdclass={
-        'dpg_build': DPGBuildCommand,
-        'build_py': BuildPyCommand,
-        },
+        packages=['dearcygui'],
+        ext_modules = cythonize(extensions, language_level=3)
     )
-
-    if os.environ.get('READTHEDOCS') == 'True':
-        metadata['package_data']['dearpygui'] = ["__init__.py", "_dearpygui.py", "dearpygui.py", "demo.py", "experimental.py"]
-    elif get_platform() == "Windows":
-        metadata['package_data']['dearpygui'] = ["__init__.py", "_dearpygui.so", "_dearpygui.pyd", "_dearpygui.pyi", "dearpygui.py", "demo.py", "experimental.py", "vcruntime140_1.dll"]
-    else:
-        metadata['package_data']['dearpygui'] = ["__init__.py", "_dearpygui.so", "_dearpygui.pyd", "_dearpygui.pyi", "dearpygui.py", "demo.py", "experimental.py"]
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')
@@ -217,6 +241,7 @@ def setup_package():
         del sys.path[0]
         os.chdir(old_path)
     return
+
 
 if __name__ == '__main__':
     setup_package()
