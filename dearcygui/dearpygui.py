@@ -9024,7 +9024,7 @@ def is_dearpygui_running(**kwargs) -> bool:
         bool
     """
 
-    return internal_dpg.is_dearpygui_running(**kwargs)
+    return dcg_context.running
 
 def is_key_down(key : int, **kwargs) -> bool:
     """     Checks if key is down.
@@ -9325,7 +9325,7 @@ def render_dearpygui_frame(**kwargs) -> None:
         None
     """
 
-    return internal_dpg.render_dearpygui_frame(**kwargs)
+    return dcg_context.viewport.render_frame()
 
 def reorder_items(container : Union[int, str], slot : int, new_order : Union[List[int], Tuple[int, ...]], **kwargs) -> None:
     """     Reorders an item's children.

@@ -2156,7 +2156,9 @@ create_viewport(PyObject* self, PyObject* args, PyObject* kwargs)
 	))
 		return GetPyNone();
 
-	mvViewport* viewport = mvCreateViewport(width, height);
+	assert(False);
+
+	/*mvViewport* viewport = mvCreateViewport(width, height);
 	if (PyObject* item = PyDict_GetItemString(kwargs, "clear_color")) viewport->clearColor = ToColor(item);
 	if (PyObject* item = PyDict_GetItemString(kwargs, "small_icon")) viewport->small_icon = ToString(item);
 	if (PyObject* item = PyDict_GetItemString(kwargs, "large_icon")) viewport->large_icon = ToString(item);
@@ -2175,7 +2177,7 @@ create_viewport(PyObject* self, PyObject* args, PyObject* kwargs)
 	if (PyObject* item = PyDict_GetItemString(kwargs, "title")) { viewport->titleDirty = true; viewport->title = ToString(item); }
 	if (PyObject* item = PyDict_GetItemString(kwargs, "disable_close")) { viewport->modesDirty = true; viewport->disableClose = ToBool(item); }
 
-	GContext->viewport = viewport;
+	GContext->viewport = viewport;*/
 
 	return GetPyNone();
 }

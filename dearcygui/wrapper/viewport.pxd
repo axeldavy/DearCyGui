@@ -40,19 +40,19 @@ cdef extern from "mvViewport.h" nogil:
     ctypedef void (*on_close_fun)(void*)
     ctypedef void (*render_fun)(void*)
 
-    mvViewport* mvCreateViewport  (unsigned width, unsigned height)
+    mvViewport* mvCreateViewport  (unsigned width,
+                                   unsigned height,
+                                   render_fun,
+							       on_resize_fun,
+							       on_close_fun,
+							       void *)
     void        mvCleanupViewport (mvViewport& viewport)
     void        mvShowViewport    (mvViewport& viewport,
                                    char minimized,
-                                   char maximized,
-                                   on_resize_fun,
-                                   void *,
-                                   on_close_fun,
-                                   void *)
+                                   char maximized)
     void        mvMaximizeViewport(mvViewport& viewport)
     void        mvMinimizeViewport(mvViewport& viewport)
     void        mvRestoreViewport (mvViewport& viewport)
     void        mvRenderFrame(mvViewport& viewport,
-						      render_fun render,
 						      mvGraphics& graphics)
     void        mvToggleFullScreen(mvViewport& viewport)

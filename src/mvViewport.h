@@ -15,6 +15,10 @@
 
 struct GLFWwindow;
 
+typedef void (*on_resize_fun)(void*, int width, int height);
+typedef void (*on_close_fun)(void*);
+typedef void (*render_fun)(void*);
+
 struct mvViewport
 {
 	b8 running = true;
@@ -52,30 +56,32 @@ struct mvViewport
 	i32 xpos         = 100;
 	i32 ypos         = 100;
 
-	void* platformSpecifics = nullptr; // platform specifics
+	render_fun render;
+	on_resize_fun on_resize;
+	on_close_fun on_close;
+	void *callback_data;
 
+	void* platformSpecifics = nullptr; // platform specifics
 };
 
 typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);
 
-mvViewport* mvCreateViewport  (u32 width, u32 height);
+mvViewport* mvCreateViewport  (u32 width,
+							   u32 height,
+							   render_fun render,
+							   on_resize_fun on_resize,
+							   on_close_fun on_close,
+							   void *callback_data);
 void        mvCleanupViewport (mvViewport& viewport);
 void        mvShowViewport    (mvViewport& viewport,
 							   b8 minimized,
-							   b8 maximized,
-							   on_resize_fun on_resize,
-							   void *on_resize_fun_data,
-               				   on_close_fun on_close,
-							   void *on_close_fun_data);
+							   b8 maximized);
 void        mvMaximizeViewport(mvViewport& viewport);
 void        mvMinimizeViewport(mvViewport& viewport);
 void        mvRestoreViewport (mvViewport& viewport);
 void        mvRenderFrame(mvViewport& viewport,
-						  void *fun_data,
-						  render_fun render,
-						  void *render_fun_data,
 						  mvGraphics& graphics);
 void        mvToggleFullScreen(mvViewport& viewport);
 

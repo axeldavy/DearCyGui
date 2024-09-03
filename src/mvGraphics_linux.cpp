@@ -27,11 +27,10 @@ cleanup_graphics(mvGraphics& graphics)
 }
 
 void
-present(mvGraphics& graphics, mvColor& clearColor, bool vsync)
+present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vsync)
 {
     MV_PROFILE_SCOPE("Presentation")
 
-    mvViewport* viewport = GContext->viewport;
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
     glfwGetWindowPos(viewportData->handle, &viewport->xpos, &viewport->ypos);

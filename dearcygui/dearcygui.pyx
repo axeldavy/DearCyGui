@@ -660,7 +660,7 @@ cdef mvColor mvImGuiCol_TableRowBgAlt = mvColor(255, 255, 255, 15)
 cdef unsigned int ConvertToUnsignedInt(const mvColor color):
     return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(color.r, color.g, color.b, color.a))
 
-cdef void internal_resize_callback(void *fun, int a, int b) noexcept nogil:
+cdef void internal_resize_callback(void *object, int a, int b) noexcept nogil:
     with gil:
         try:
             (<dcgViewport>object).__on_resize(a, b)
@@ -673,6 +673,9 @@ cdef void internal_close_callback(void *object) noexcept nogil:
             (<dcgViewport>object).__on_close()
         except Exception as e:
             print("An error occured in the viewport close callback", traceback.format_exc())
+
+cdef void internal_render_callback(void *object) noexcept nogil:
+    (<dcgViewport>object).__render()
 
 @cython.final
 cdef class dcgViewport:
@@ -702,7 +705,12 @@ cdef class dcgViewport:
             self.viewport = NULL
 
     cdef initialize(self, unsigned width, unsigned height):
-        self.viewport = mvCreateViewport(width, height)
+        self.viewport = mvCreateViewport(width,
+                                         height,
+                                         internal_render_callback,
+                                         internal_resize_callback,
+                                         internal_close_callback,
+                                         <void*>self)
         self.initialized = True
 
     cdef void __check_initialized(self):
@@ -930,9 +938,29 @@ cdef class dcgViewport:
 
     cdef void __on_close(self):
         self.__check_initialized()
+        if not(<bint>self.viewport.disableClose):
+            self.context.started = False
         if self.close_callback is None:
             return
         self.context.queue.submit(self.close_callback, constants.MV_APP_UUID, None)
+
+    cdef void __render(self) noexcept nogil:
+        return
+
+    def render_frame(self):
+        self.__check_initialized()
+        assert(self.graphics_initialized)
+        with nogil:
+            mvRenderFrame(dereference(self.viewport),
+			    		  self.graphics)
+        if self.viewport.resized:
+            if self.resize_callback is not None:
+                dimensions = (self.viewport.actualWidth,
+                              self.viewport.actualHeight,
+                              self.viewport.clientWidth,
+                              self.viewport.clientHeight)
+                self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
+            self.viewport.resized = False
 
     def show(self, minimized=False, maximized=False):
         cdef imgui.ImGuiStyle* style
@@ -940,11 +968,7 @@ cdef class dcgViewport:
         self.__check_initialized()
         mvShowViewport(dereference(self.viewport),
                        minimized,
-                       maximized,
-                       internal_resize_callback,
-                       <void*>self,
-                       internal_close_callback,
-                       <void*>self)
+                       maximized)
         if not(self.graphics_initialized):
             self.graphics = setup_graphics(dereference(self.viewport))
             imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
@@ -1108,3 +1132,7 @@ cdef class dcgContext:
         if self.started:
             raise ValueError("Cannot call \"setup_dearpygui\" while a Dear PyGUI app is already running.")
         self.started = True
+
+    @property
+    def running(self):
+        return self.started

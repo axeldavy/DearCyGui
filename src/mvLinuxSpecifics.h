@@ -7,6 +7,4 @@
 struct mvViewportData
 {
     GLFWwindow* handle = nullptr;
-    std::function<void(GLFWwindow*, int, int)> resize_callback;
-    std::function<void(GLFWwindow*)> close_callback;
 };

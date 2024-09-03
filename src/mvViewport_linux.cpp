@@ -13,6 +13,20 @@
 
 #include <functional>
 
+static void handle_window_resize(GLFWwindow *window, int width, int height)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->on_resize(viewport->callback_data, width, height);
+}
+
+static void handle_window_close(GLFWwindow *window)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->on_close(viewport->callback_data);
+}
+
 static void
 glfw_error_callback(int error, const char* description)
 {
@@ -65,10 +79,11 @@ mvPrerender(mvViewport* viewport)
     // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
     // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 
-    if (GContext->IO.waitForInput)
-        glfwWaitEvents();
-    else
-        glfwPollEvents();
+    // TODO if (GContext->IO.waitForInput)
+    //    glfwWaitEvents();
+    //else
+        
+    glfwPollEvents();
 
     if (mvToolManager::GetFontManager().isInvalid())
     {
@@ -85,11 +100,20 @@ mvPrerender(mvViewport* viewport)
 }
 
  mvViewport*
-mvCreateViewport(unsigned width, unsigned height)
+mvCreateViewport(unsigned width,
+                 unsigned height,
+                 render_fun render,
+				 on_resize_fun on_resize,
+		         on_close_fun on_close,
+				 void *callback_data)
 {
     mvViewport* viewport = new mvViewport();
     viewport->width = width;
     viewport->height = height;
+    viewport->render = render;
+    viewport->on_resize = on_resize;
+    viewport->on_close = on_close;
+    viewport->callback_data = callback_data;
     viewport->platformSpecifics = new mvViewportData();
     return viewport;
 }
@@ -113,11 +137,7 @@ mvCleanupViewport(mvViewport& viewport)
  void
 mvShowViewport(mvViewport& viewport,
                bool minimized,
-               bool maximized,
-               on_resize_fun on_resize,
-               void *on_resize_fun_data,
-               on_close_fun on_close,
-               void *on_close_fun_data)
+               bool maximized)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
@@ -142,6 +162,7 @@ mvShowViewport(mvViewport& viewport,
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     viewportData->handle = glfwCreateWindow(viewport.actualWidth, viewport.actualHeight, viewport.title.c_str(), nullptr, nullptr);
+    glfwSetWindowUserPointer(viewportData->handle, &viewport);
     glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos);
     glfwSetWindowSizeLimits(viewportData->handle, (int)viewport.minwidth, (int)viewport.minheight, (int)viewport.maxwidth, (int)viewport.maxheight);
 
@@ -180,17 +201,10 @@ mvShowViewport(mvViewport& viewport,
     ImGui_ImplGlfw_InitForOpenGL(viewportData->handle, true);
         
 
-    // Setup callbacks
-    viewportData->resize_callback =
-        [=](GLFWwindow* window, int width, int height) {
-            on_resize(on_resize_fun_data, width, height);
-            };
-    glfwSetWindowSizeCallback(viewportData->handle, viewportData->resize_callback.target<void(GLFWwindow*, int, int)>());
-    viewportData->close_callback =
-        [=](GLFWwindow* window) {
-            on_close(on_close_fun_data);
-            };
-    glfwSetWindowCloseCallback(viewportData->handle, viewportData->close_callback.target<void(GLFWwindow*)>());
+    glfwSetWindowSizeCallback(viewportData->handle,
+                              handle_window_resize);
+    glfwSetWindowCloseCallback(viewportData->handle,
+                               handle_window_close);
 }
     
  void
@@ -216,8 +230,6 @@ mvRestoreViewport(mvViewport& viewport)
 
  void
 mvRenderFrame(mvViewport& viewport,
-			  render_fun render,
-              void *render_fun_data,
  			  mvGraphics& graphics)
 {
     mvPrerender(&viewport);
@@ -225,9 +237,9 @@ mvRenderFrame(mvViewport& viewport,
     if (GImGui->CurrentWindow == nullptr)
         return;
 
-    render(render_fun_data);
+    viewport.render(viewport.callback_data);
 
-    present(graphics, viewport.clearColor, viewport.vsync);
+    present(graphics, &viewport, viewport.clearColor, viewport.vsync);
 }
 
  void
