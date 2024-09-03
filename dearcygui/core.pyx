@@ -652,8 +652,7 @@ cdef class appItem:
             self.prev_sibling.draw(l, x, y)
         return
 
-    #cpdef void delete(self):
-    def delete(self):
+    cpdef void delete_item(self):
         # We are going to change the tree structure, we must lock the global mutex first and foremost
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)

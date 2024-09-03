@@ -140,7 +140,7 @@ cdef class appItem:
     cdef appItem last_drawings_child
     cdef appItem last_payloads_child
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-    #cdef void delete(self)
+    cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
 
 cdef class dcgWindow(appItem):
