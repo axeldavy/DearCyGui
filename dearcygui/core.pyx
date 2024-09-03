@@ -23,8 +23,11 @@ from cython.operator cimport dereference
 # Thus it is the only one allowed to make calls to it
 
 from dearcygui.wrapper cimport *
+# We use unique_lock rather than lock_guard as
+# the latter doesn't support nullary constructor
+# which causes trouble to cython
+from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 
-import threading
 from concurrent.futures import ThreadPoolExecutor
 from libc.stdlib cimport malloc, free
 from .constants import constants
@@ -136,6 +139,7 @@ cdef class dcgViewport:
             self.viewport = NULL
 
     cdef initialize(self, unsigned width, unsigned height):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         self.viewport = mvCreateViewport(width,
                                          height,
                                          internal_render_callback,
@@ -338,6 +342,7 @@ cdef class dcgViewport:
 
     @fullscreen.setter
     def fullscreen(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         if value and not(self.viewport.fullScreen):
             mvToggleFullScreen(dereference(self.viewport))
         elif not(value) and (self.viewport.fullScreen):
@@ -379,6 +384,7 @@ cdef class dcgViewport:
         return
 
     def render_frame(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         self.__check_initialized()
         assert(self.graphics_initialized)
         with nogil:
@@ -394,6 +400,7 @@ cdef class dcgViewport:
             self.viewport.resized = False
 
     def show(self, minimized=False, maximized=False):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef imgui.ImGuiStyle* style
         cdef mvColor* colors
         self.__check_initialized()
@@ -496,7 +503,6 @@ cdef class dcgViewport:
 
 cdef class dcgContext:
     def __init__(self):
-        self.mutex = threading.RLock()
         self.on_close_callback = None
         self.on_frame_callbacks = None
         self.queue = ThreadPoolExecutor(max_workers=1)
@@ -621,16 +627,93 @@ cdef class appItem:
         self.perspectiveDivide = False
         self.depthClipping = False
         self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0 ] # top leftx, top lefty, width, height, min depth, maxdepth
+        self.valid_parent = False
         self.valid_prev_sibling = False
+        self.valid_next_sibling = False
         self.num_children_0 = 0
         self.num_children_widgets = 0
         self.num_children_drawings = 0
         self.num_children_payloads = 0
 
     cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.valid_prev_sibling:
             self.prev_sibling.draw(l, x, y)
         return
+
+    #cpdef void delete(self):
+    def delete(self):
+        # We are going to change the tree structure, we must lock the global mutex first and foremost
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        # Remove this item from the list of elements
+        if self.valid_prev_sibling:
+            self.prev_sibling.next_sibling = self.next_sibling
+            self.prev_sibling.valid_next_sibling = self.valid_next_sibling
+        if self.valid_next_sibling:
+            self.next_sibling.prev_sibling = self.prev_sibling
+            self.next_sibling.valid_prev_sibling = self.valid_prev_sibling
+        if self.valid_parent:
+            self.parent.num_children_0 -= 1
+        # delete all its children recursively
+        if self.num_children_0 > 0:
+            self.last_0_child.__delete_and_siblings()
+        if self.num_children_widgets > 0:
+            self.last_widgets_child.__delete_and_siblings()
+        if self.num_children_drawings > 0:
+            self.last_drawings_child.__delete_and_siblings()
+        if self.num_children_payloads > 0:
+            self.last_payloads_child.__delete_and_siblings()
+        # Free references
+        self.has_valid_parent = False
+        self.valid_prev_sibling = False
+        self.valid_next_sibling = False
+        self.num_children_0 = 0
+        self.num_children_widgets = 0
+        self.num_children_drawings = 0
+        self.num_children_payloads = 0
+        self.context = None
+        self.parent = None
+        self.prev_sibling = None
+        self.next_sibling = None
+        self.last_0_child = None
+        self.last_widgets_child = None
+        self.last_drawings_child = None
+        self.last_payloads_child = None
+
+    cdef void __delete_and_siblings(self):
+        # We are going to change the tree structure, we must lock the global mutex first and foremost
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        # delete all its children recursively
+        if self.num_children_0 > 0:
+            self.last_0_child.__delete_and_siblings()
+        if self.num_children_widgets > 0:
+            self.last_widgets_child.__delete_and_siblings()
+        if self.num_children_drawings > 0:
+            self.last_drawings_child.__delete_and_siblings()
+        if self.num_children_payloads > 0:
+            self.last_payloads_child.__delete_and_siblings()
+        # delete previous sibling
+        if self.valid_prev_sibling:
+            self.prev_sibling.__delete_and_siblings()
+        # Free references
+        self.has_valid_parent = False
+        self.valid_prev_sibling = False
+        self.valid_next_sibling = False
+        self.num_children_0 = 0
+        self.num_children_widgets = 0
+        self.num_children_drawings = 0
+        self.num_children_payloads = 0
+        self.context = None
+        self.parent = None
+        self.prev_sibling = None
+        self.next_sibling = None
+        self.last_0_child = None
+        self.last_widgets_child = None
+        self.last_drawings_child = None
+        self.last_payloads_child = None
+        
 
 cdef class dcgWindow(appItem):
     def __cinit__(self):
@@ -671,6 +754,8 @@ cdef class dcgWindow(appItem):
         self._oldHeight = 200
 
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         if self.valid_prev_sibling:
             self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
         if not(self.show):

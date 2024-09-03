@@ -1,6 +1,7 @@
 from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, ImVec2
 from libcpp.string cimport string
 from libcpp cimport bool
+from dearcygui.wrapper.mutex cimport recursive_mutex
 
 cdef class dcgViewport:
     cdef mvViewport *viewport
@@ -19,7 +20,14 @@ cdef class dcgViewport:
 cdef class dcgContext:
     cdef bint waitOneFrame
     cdef bint started
-    cdef public object mutex
+    # Mutex that must be held for:
+    # . Moving elements in the item tree
+    # . Manual element deletion
+    # . Element inclusion/creation
+    cdef recursive_mutex edition_mutex
+    # Mutex that must be held for any
+    # call to imgui, glfw, etc
+    cdef recursive_mutex imgui_mutex
     cdef float deltaTime # time since last frame
     cdef double time # total time since starting
     cdef int frame # frame count
@@ -41,6 +49,9 @@ cdef class dcgContext:
 cdef class appItem:
     cdef dcgContext context
     cdef long long uuid
+    # Mutex to access or change fields
+    # Not sufficient for parent/sibling/children edition
+    cdef recursive_mutex mutex
     # mvAppItemInfo
     cdef string internalLabel
     cdef int location
@@ -103,12 +114,15 @@ cdef class appItem:
     cdef bint depthClipping
     cdef float[6] clipViewport
     # Relationships
+    cdef bint valid_parent
     cdef appItem parent
     # It is not possible to access an array of children without the gil
     # Thus instead use a list
     # Each element is responsible for calling draw on its sibling
     cdef bint valid_prev_sibling
     cdef appItem prev_sibling
+    cdef bint valid_next_sibling
+    cdef appItem next_sibling
     cdef int num_children_0
     cdef int num_children_widgets
     cdef int num_children_drawings
@@ -118,6 +132,8 @@ cdef class appItem:
     cdef appItem last_drawings_child
     cdef appItem last_payloads_child
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    #cdef void delete(self)
+    cdef void __delete_and_siblings(self)
 
 cdef class dcgWindow(appItem):
     cdef imgui.ImGuiWindowFlags windowflags
