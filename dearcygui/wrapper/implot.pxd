@@ -9,7 +9,7 @@ from dearcygui.wrapper.imgui cimport ImU32
 from dearcygui.wrapper.imgui cimport ImVec2
 from dearcygui.wrapper.imgui cimport ImVec4
 
-cdef extern from "implot.h":
+cdef extern from "implot.h" nogil:
     struct ImPlotContext:
         pass
     int IMPLOT_API
@@ -378,7 +378,7 @@ cdef extern from "implot.h":
         ImPlotFlags_YAxis2 = 1048576
         ImPlotFlags_YAxis3 = 2097152
 
-cdef extern from "implot.h" namespace "ImPlot":
+cdef extern from "implot.h" namespace "ImPlot" nogil:
     struct ImPlotContext:
         pass
     ImPlotContext* CreateContext()

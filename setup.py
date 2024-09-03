@@ -185,15 +185,32 @@ def setup_package():
     cpp_sources = [p if "thirdparty" in p else ("src/" + p) for p in cpp_sources]
     extensions = [
         Extension(
-            "dearcygui",
-            ["dearcygui/dearcygui.pyx"] + cpp_sources,
+            "dearcygui.core",
+            ["dearcygui/core.pyx"] + cpp_sources,
             language="c++",
             include_dirs=include_dirs,
             extra_compile_args=compile_args,
             libraries=libraries,
             extra_link_args=linking_args
-        ),
+        )
     ]
+    secondary_cython_sources = [
+        "dearcygui/constants.pyx",
+    ]
+    for cython_source in secondary_cython_sources:
+        extension_name = cython_source.split("/")[-1].split(".")[0]
+        extensions.append(
+            Extension(
+                "dearcygui."+extension_name,
+                [cython_source],
+                language="c++",
+                include_dirs=include_dirs,
+                extra_compile_args=compile_args,
+                libraries=libraries,
+                depends=["dearcygui._dearcygui"],
+                extra_link_args=linking_args
+            )
+        )
     print(extensions)
 
     metadata = dict(
@@ -231,6 +248,8 @@ def setup_package():
         packages=['dearcygui'],
         ext_modules = cythonize(extensions, language_level=3)
     )
+    metadata["package_data"] = {}
+    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py']
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')

@@ -2,7 +2,7 @@
 
 from dearcygui.wrapper.imgui cimport ImGuiContext, ImVec2
 
-cdef extern from "imnodes.h":
+cdef extern from "imnodes.h" nogil:
     struct ImNodesContext:
         pass
     struct ImGuiContext:
@@ -127,7 +127,7 @@ cdef extern from "imnodes.h":
     ctypedef void* ImNodesMiniMapNodeHoveringCallbackUserData
 
 
-cdef extern from "imnodes.h" namespace "ImNodes":
+cdef extern from "imnodes.h" namespace "ImNodes" nogil:
     struct ImNodesContext:
         pass
     struct ImNodesEditorContext:

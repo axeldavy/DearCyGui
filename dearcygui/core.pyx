@@ -29,7 +29,6 @@ from concurrent.futures import ThreadPoolExecutor
 from libc.stdlib cimport malloc, free
 from .constants import constants
 
-
 cdef extern from "../src/mvContext.h" nogil:
     cdef void initializeImGui()
 
@@ -548,3 +547,344 @@ cdef class dcgContext:
     @property
     def running(self):
         return self.started
+
+cdef class appItem:
+    def __init__(self, context):
+        self.context = context
+
+    def __cinit__(self):
+        self.uuid = 0
+        # mvAppItemInfo
+        self.internalLabel = b""
+        self.location = -1
+        self.showDebug = False
+        # next frame triggers
+        self.focusNextFrame = False
+        self.triggerAlternativeAction = False
+        self.shownLastFrame = False
+        self.hiddenLastFrame = False
+        self.enabledLastFrame = False
+        self.disabledLastFrame = False
+        # previous frame cache
+        self.previousCursorPos = imgui.ImVec2(0., 0.)
+        # dirty flags
+        self.dirty_size = True
+        self.dirtyPos = False
+        # mvAppItemState
+        self.hovered = False
+        self.active = False
+        self.focused = False
+        self.leftclicked = False
+        self.rightclicked = False
+        self.middleclicked = False
+        self.doubleclicked = [False, False, False, False, False]
+        self.visible = False
+        self.edited = False
+        self.activated = False
+        self.deactivated = False
+        self.deactivatedAfterEdit = False
+        self.toggledOpen = False
+        self.mvRectSizeResized = False
+        self.rectMin = imgui.ImVec2(0., 0.)
+        self.rectMax = imgui.ImVec2(0., 0.)
+        self.rectSize = imgui.ImVec2(0., 0.)
+        self.mvPrevRectSize = imgui.ImVec2(0., 0.)
+        self.pos = imgui.ImVec2(0., 0.)
+        self.contextRegionAvail = imgui.ImVec2(0., 0.)
+        self.ok = True
+        self.lastFrameUpdate = 0 # last frame update occured
+        self.parent = None
+        # mvAppItemConfig
+        self.source = 0
+        self.parent = 0
+        self.specifiedLabel = b""
+        self.filter = b""
+        self.alias = b""
+        self.payloadType = b"$$DPG_PAYLOAD"
+        self.width = 0
+        self.height = 0
+        self.indent = -1.
+        self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
+        self.show = True
+        self.enabled = True
+        self.useInternalLabel = True #when false, will use specificed label
+        self.tracked = False
+        self.callback = None
+        self.user_data = None
+        self.dragCallback = None
+        self.dropCallback = None
+        # mvAppItemDrawInfo
+
+        #mvMat4 transform         = mvIdentityMat4();
+        #mvMat4 appliedTransform  = mvIdentityMat4(); // only used by nodes
+        self.cullMode = 0 # mvCullMode_None
+        self.perspectiveDivide = False
+        self.depthClipping = False
+        self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0 ] # top leftx, top lefty, width, height, min depth, maxdepth
+        self.valid_prev_sibling = False
+        self.num_children_0 = 0
+        self.num_children_widgets = 0
+        self.num_children_drawings = 0
+        self.num_children_payloads = 0
+
+    cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
+        if self.valid_prev_sibling:
+            self.prev_sibling.draw(l, x, y)
+        return
+
+cdef class dcgWindow(appItem):
+    def __cinit__(self):
+        self.windowflags = imgui.ImGuiWindowFlags_None
+        self.mainWindow = False
+        self.closing = True
+        self.resized = False
+        self.modal = False
+        self.popup = False
+        self.autosize = False
+        self.no_resize = False
+        self.no_title_bar = False
+        self.no_move = False
+        self.no_scrollbar = False
+        self.no_collapse = False
+        self.horizontal_scrollbar = False
+        self.no_focus_on_appearing = False
+        self.no_bring_to_front_on_focus = False
+        self.menubar = False
+        self.no_close = False
+        self.no_background = False
+        self.collapsed = False
+        self.no_open_over_existing_popup = True
+        self.on_close = None
+        self.min_size = imgui.ImVec2(100., 100.)
+        self.max_size = imgui.ImVec2(30000., 30000.)
+        self.scrollX = 0.
+        self.scrollY = 0.
+        self.scrollMaxX = 0.
+        self.scrollMaxY = 0.
+        self._collapsedDirty = True
+        self._scrollXSet = False
+        self._scrollYSet = False
+        self._oldWindowflags = imgui.ImGuiWindowFlags_None
+        self._oldxpos = 200
+        self._oldypos = 200
+        self._oldWidth = 200
+        self._oldHeight = 200
+
+    cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
+        if self.valid_prev_sibling:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.context.frame == 1:
+            # TODO && !GContext->IO.iniFile.empty() && !(config.windowflags & ImGuiWindowFlags_NoSavedSettings)
+            self.dirtyPos = False
+            self.dirty_size = False
+            self._collapsedDirty = False
+
+        if self.focusNextFrame:
+            imgui.SetNextWindowFocus()
+            self.focusNextFrame = False
+
+        # handle fonts
+        """
+        if self.font:
+            ImFont* fontptr = static_cast<mvFont*>(item.font.get())->getFontPtr();
+            ImGui::PushFont(fontptr);
+        """
+
+        # themes
+        #apply_local_theming(&item);
+
+        # Draw the window
+        imgui.PushID(self.uuid)
+
+        if self.mainWindow:
+            imgui.SetNextWindowBgAlpha(1.0)
+            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0) #to prevent main window corners from showing
+            imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context.viewport.viewport.clientWidth,
+                                           <float>self.context.viewport.viewport.clientHeight),
+                                    <imgui.ImGuiCond>0)
+
+        if self.dirtyPos:
+            imgui.SetNextWindowPos(self.pos, <imgui.ImGuiCond>0)
+            self.dirtyPos = False
+
+        if self.dirty_size:
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.width,
+                                           <float>self.height),
+                                    <imgui.ImGuiCond>0)
+            self.dirty_size = False
+
+        if self._collapsedDirty:
+            imgui.SetNextWindowCollapsed(self.collapsed, <imgui.ImGuiCond>0)
+            self._collapsedDirty = False
+
+        imgui.SetNextWindowSizeConstraints(self.min_size, self.max_size)
+
+        cdef bint opened = True
+        if self.modal or self.popup:
+            if self.shownLastFrame:
+                self.shownLastFrame = False;
+                imgui.OpenPopup(self.internalLabel.c_str(),
+                                imgui.ImGuiPopupFlags_NoOpenOverExistingPopup if self.no_open_over_existing_popup else imgui.ImGuiPopupFlags_None)
+
+            if self.modal:
+                opened = imgui.BeginPopupModal(self.internalLabel.c_str(), <bool*>NULL if self.no_close else &self.show, self.windowflags)
+            else:
+                opened = imgui.BeginPopup(self.internalLabel.c_str(), self.windowflags)
+            if not(opened):
+                if self.mainWindow:
+                    imgui.PopStyleVar(1)
+                    self.show = False
+                    self.lastFrameUpdate = self.context.frame
+                    self.hovered = False
+                    self.focused = False
+                    self.toggledOpen = False
+                    self.visible = False
+
+                with gil:
+                    if self.on_close is not None:
+                        self.context.queue.submit(self.on_close,
+                                                  self.uuid if self.alias.empty() else None,
+                                                  None,
+                                                  self.user_data)
+                #// handle popping themes
+                #cleanup_local_theming(&item);
+
+                imgui.PopID()
+                return
+        else:
+            opened = imgui.Begin(self.internalLabel.c_str(),
+                                 <bool*>NULL if self.no_close else &self.show,
+                                 self.windowflags)
+            if not(opened):
+                if self.mainWindow:
+                    imgui.PopStyleVar(1)
+
+                imgui.End()
+
+                #// handle popping themes
+                #cleanup_local_theming(&item);
+
+                imgui.PopID()
+                return
+        if self.mainWindow:
+            imgui.PopStyleVar(1)
+
+        # Draw the window content
+        cdef imgui.ImDrawList* this_drawlist = imgui.GetWindowDrawList()
+
+        cdef float startx = <float>imgui.GetCursorScreenPos().x
+        cdef float starty = <float>imgui.GetCursorScreenPos().y
+
+        # Each child calls draw for a sibling
+        if self.num_children_0 > 0:
+            self.last_0_child.draw(this_drawlist, startx, starty)
+
+        startx = <float>imgui.GetCursorPosX()
+        starty = <float>imgui.GetCursorPosY()
+        if self.num_children_widgets > 0:
+            self.last_widgets_child.draw(this_drawlist, startx, starty)
+            # TODO if self.children_widgets[i].tracked and show:
+            #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
+
+        startx = <float>imgui.GetCursorScreenPos().x
+        starty = <float>imgui.GetCursorScreenPos().y
+        if self.num_children_drawings > 0:
+            self.last_drawings_child.draw(this_drawlist, startx, starty)
+            # TODO UpdateAppItemState(child->state) if show
+
+        # Post draw
+        """
+        // pop font from stack
+        if (item.font)
+            ImGui::PopFont();
+        """
+
+        #// handle popping themes
+        #cleanup_local_theming(&item);
+
+        if self._scrollXSet:
+            if self.scrollX < 0.0:
+                imgui.SetScrollHereX(1.0)
+            else:
+                imgui.SetScrollX(self.scrollX)
+            self._scrollXSet = False
+
+        if self._scrollYSet:
+            if self.scrollY < 0.0:
+                imgui.SetScrollHereY(1.0)
+            else:
+                imgui.SetScrollY(self.scrollY)
+            self._scrollYSet = False
+        self.scrollX = imgui.GetScrollX()
+        self.scrollY = imgui.GetScrollY()
+        self.scrollMaxX = imgui.GetScrollMaxX()
+        self.scrollMaxY = imgui.GetScrollMaxY()
+
+        self.lastFrameUpdate = self.context.frame
+        self.visible = True
+        self.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+        self.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+        self.rectSize.x = imgui.GetWindowSize().x
+        self.rectSize.y = imgui.GetWindowSize().y
+        self.toggledOpen = imgui.IsWindowCollapsed()
+        if (self.mvPrevRectSize.x != self.rectSize.x or self.mvPrevRectSize.y != self.rectSize.y):
+            self.mvRectSizeResized = True
+            self.mvPrevRectSize.x = self.rectSize.x
+            self.mvPrevRectSize.y = self.rectSize.y
+        else:
+            self.mvRectSizeResized = False
+
+        if (imgui.GetWindowWidth() != <float>self.width or imgui.GetWindowHeight() != <float>self.height):
+            self.width = <int>imgui.GetWindowWidth()
+            self.height = <int>imgui.GetWindowHeight()
+            self.resized = True
+
+        cdef bint focused = self.focused
+        if self.lastFrameUpdate != self.context.frame:
+            focused = False
+
+        self.pos.x = imgui.GetWindowPos().x
+        self.pos.y = imgui.GetWindowPos().y
+
+        cdef float titleBarHeight
+        cdef float x, y
+        cdef imgui.ImVec2 mousePos
+        if focused:
+            titleBarHeight = imgui.GetStyle().FramePadding.y * 2 + imgui.GetFontSize()
+
+            # update mouse
+            mousePos = imgui.GetMousePos()
+            x = mousePos.x - self.pos.x
+            y = mousePos.y - self.pos.y - titleBarHeight
+            #GContext->input.mousePos.x = (int)x;
+            #GContext->input.mousePos.y = (int)y;
+            #GContext->activeWindow = item
+
+        if (self.modal or self.popup):
+            imgui.EndPopup()
+        else:
+            imgui.End()
+
+        self.collapsed = imgui.IsWindowCollapsed()
+
+        # we switched from a show to a no show state
+        if not(self.show):
+            self.lastFrameUpdate = self.context.frame
+            self.hovered = False
+            self.focused = False
+            self.toggledOpen = False
+            self.visible = False
+
+            with gil:
+                 if self.on_close is not None:
+                    self.context.queue.submit(self.on_close,
+                                              self.uuid if self.alias.empty() else None,
+                                              None,
+                                              self.user_data)
+
+        #if (self..handlerRegistry)
+        #    item.handlerRegistry->checkEvents(&item.state);
+        imgui.PopID()

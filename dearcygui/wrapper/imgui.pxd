@@ -2,7 +2,7 @@
 #generated with pxdgen thirdparty/imgui/imgui.h -x c++ -f defines -f includerefs -f importall -w ImGui 
 
 
-cdef extern from "imgui.h":
+cdef extern from "imgui.h" nogil:
     struct ImGuiContext:
         pass
     struct ImFontBuilderIO:
@@ -1698,7 +1698,7 @@ cdef extern from "imgui.h":
 cdef extern from "imgui.h" namespace "ImGuiTextBuffer":
     char EmptyString[1]
 
-cdef extern from "imgui.h" namespace "ImGui":
+cdef extern from "imgui.h" namespace "ImGui" nogil:
     struct ImGuiContext:
         pass
     struct ImDrawListSharedData:
@@ -1762,11 +1762,11 @@ cdef extern from "imgui.h" namespace "ImGui":
     float GetWindowHeight()
     ImGuiViewport* GetWindowViewport()
     void SetNextWindowPos(ImVec2&, ImGuiCond)
-    void SetNextWindowPos(ImVec2&, ImGuiCond, ImVec2&)
+    #void SetNextWindowPos(ImVec2&, ImGuiCond, ImVec2&)
     void SetNextWindowSize(ImVec2&, ImGuiCond)
     void SetNextWindowSizeConstraints(ImVec2&, ImVec2&)
-    void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback)
-    void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback, void*)
+    #void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback)
+    #void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback, void*)
     void SetNextWindowContentSize(ImVec2&)
     void SetNextWindowCollapsed(bint, ImGuiCond)
     void SetNextWindowFocus()
