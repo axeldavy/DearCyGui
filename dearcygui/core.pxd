@@ -11,6 +11,21 @@ cdef class dcgViewport:
     cdef bint initialized
     cdef mvGraphics graphics
     cdef bint graphics_initialized
+    # linked list to objects without parents to draw with their children
+    # The entry point corresponds to the last item of the list (draw last)
+    cdef appItem colormapRoots
+    cdef appItem filedialogRoots
+    cdef appItem stagingRoots
+    cdef appItem viewportMenubarRoots
+    cdef appItem windowRoots
+    cdef appItem fontRegistryRoots
+    cdef appItem handlerRegistryRoots
+    cdef appItem itemHandlerRegistryRoots
+    cdef appItem textureRegistryRoots
+    cdef appItem valueRegistryRoots
+    cdef appItem themeRegistryRoots
+    cdef appItem itemTemplatesRoots
+    cdef appItem viewportDrawlistRoots
     cdef initialize(self, unsigned width, unsigned height)
     cdef void __check_initialized(self)
     cdef void __on_resize(self, int width, int height)
@@ -114,19 +129,12 @@ cdef class appItem:
     cdef bint depthClipping
     cdef float[6] clipViewport
     # Relationships
-    cdef bint valid_parent
     cdef appItem parent
     # It is not possible to access an array of children without the gil
     # Thus instead use a list
     # Each element is responsible for calling draw on its sibling
-    cdef bint valid_prev_sibling
     cdef appItem prev_sibling
-    cdef bint valid_next_sibling
     cdef appItem next_sibling
-    cdef int num_children_0
-    cdef int num_children_widgets
-    cdef int num_children_drawings
-    cdef int num_children_payloads
     cdef appItem last_0_child #  mvFileExtension, mvFontRangeHint, mvNodeLink, mvAnnotation, mvAxisTag, mvDragLine, mvDragPoint, mvDragRect, mvLegend, mvTableColumn
     cdef appItem last_widgets_child
     cdef appItem last_drawings_child

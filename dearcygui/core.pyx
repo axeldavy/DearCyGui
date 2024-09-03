@@ -381,6 +381,24 @@ cdef class dcgViewport:
         self.context.queue.submit(self.close_callback, constants.MV_APP_UUID, None)
 
     cdef void __render(self) noexcept nogil:
+        if self.fontRegistryRoots is not None:
+            self.fontRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.handlerRegistryRoots is not None:
+            self.handlerRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.textureRegistryRoots is not None:
+            self.textureRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.filedialogRoots is not None:
+            self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.colormapRoots is not None:
+            self.colormapRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.windowRoots is not None:
+            self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.viewportMenubarRoots is not None:
+            self.viewportMenubarRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.viewportDrawlistRoots is not None:
+            self.viewportDrawlistRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.windowRoots is not None:
+            self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         return
 
     def render_frame(self):
@@ -627,17 +645,10 @@ cdef class appItem:
         self.perspectiveDivide = False
         self.depthClipping = False
         self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0 ] # top leftx, top lefty, width, height, min depth, maxdepth
-        self.valid_parent = False
-        self.valid_prev_sibling = False
-        self.valid_next_sibling = False
-        self.num_children_0 = 0
-        self.num_children_widgets = 0
-        self.num_children_drawings = 0
-        self.num_children_payloads = 0
 
     cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.valid_prev_sibling:
+        if self.prev_sibling is not None:
             self.prev_sibling.draw(l, x, y)
         return
 
@@ -647,31 +658,20 @@ cdef class appItem:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         # Remove this item from the list of elements
-        if self.valid_prev_sibling:
+        if self.prev_sibling is not None:
             self.prev_sibling.next_sibling = self.next_sibling
-            self.prev_sibling.valid_next_sibling = self.valid_next_sibling
-        if self.valid_next_sibling:
+        if self.next_sibling is not None:
             self.next_sibling.prev_sibling = self.prev_sibling
-            self.next_sibling.valid_prev_sibling = self.valid_prev_sibling
-        if self.valid_parent:
-            self.parent.num_children_0 -= 1
         # delete all its children recursively
-        if self.num_children_0 > 0:
+        if self.last_0_child is not None:
             self.last_0_child.__delete_and_siblings()
-        if self.num_children_widgets > 0:
+        if self.last_widgets_child is not None:
             self.last_widgets_child.__delete_and_siblings()
-        if self.num_children_drawings > 0:
+        if self.last_drawings_child is not None:
             self.last_drawings_child.__delete_and_siblings()
-        if self.num_children_payloads > 0:
+        if self.last_payloads_child is not None:
             self.last_payloads_child.__delete_and_siblings()
         # Free references
-        self.has_valid_parent = False
-        self.valid_prev_sibling = False
-        self.valid_next_sibling = False
-        self.num_children_0 = 0
-        self.num_children_widgets = 0
-        self.num_children_drawings = 0
-        self.num_children_payloads = 0
         self.context = None
         self.parent = None
         self.prev_sibling = None
@@ -686,25 +686,18 @@ cdef class appItem:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         # delete all its children recursively
-        if self.num_children_0 > 0:
+        if self.last_0_child is not None:
             self.last_0_child.__delete_and_siblings()
-        if self.num_children_widgets > 0:
+        if self.last_widgets_child is not None:
             self.last_widgets_child.__delete_and_siblings()
-        if self.num_children_drawings > 0:
+        if self.last_drawings_child is not None:
             self.last_drawings_child.__delete_and_siblings()
-        if self.num_children_payloads > 0:
+        if self.last_payloads_child is not None:
             self.last_payloads_child.__delete_and_siblings()
         # delete previous sibling
-        if self.valid_prev_sibling:
+        if self.prev_sibling is not None:
             self.prev_sibling.__delete_and_siblings()
         # Free references
-        self.has_valid_parent = False
-        self.valid_prev_sibling = False
-        self.valid_next_sibling = False
-        self.num_children_0 = 0
-        self.num_children_widgets = 0
-        self.num_children_drawings = 0
-        self.num_children_payloads = 0
         self.context = None
         self.parent = None
         self.prev_sibling = None
@@ -756,7 +749,7 @@ cdef class dcgWindow(appItem):
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
-        if self.valid_prev_sibling:
+        if self.prev_sibling is not None:
             self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -864,19 +857,19 @@ cdef class dcgWindow(appItem):
         cdef float starty = <float>imgui.GetCursorScreenPos().y
 
         # Each child calls draw for a sibling
-        if self.num_children_0 > 0:
+        if self.last_0_child is not None:
             self.last_0_child.draw(this_drawlist, startx, starty)
 
         startx = <float>imgui.GetCursorPosX()
         starty = <float>imgui.GetCursorPosY()
-        if self.num_children_widgets > 0:
+        if self.last_widgets_child is not None:
             self.last_widgets_child.draw(this_drawlist, startx, starty)
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
         startx = <float>imgui.GetCursorScreenPos().x
         starty = <float>imgui.GetCursorScreenPos().y
-        if self.num_children_drawings > 0:
+        if self.last_drawings_child is not None:
             self.last_drawings_child.draw(this_drawlist, startx, starty)
             # TODO UpdateAppItemState(child->state) if show
 
