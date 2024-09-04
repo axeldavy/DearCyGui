@@ -121,14 +121,12 @@ cdef void internal_render_callback(void *object) noexcept nogil:
 
 @cython.final
 cdef class dcgViewport:
-    def __init__(self, context):
+    def __cinit__(self, context):
         if not(isinstance(context, dcgContext)):
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
         self.resize_callback = None
         self.initialized = False
-
-    def __cinit__(self):
         self.viewport = NULL
         self.graphics_initialized = False
 
@@ -629,17 +627,13 @@ cdef class dcgContext:
         return self.started
 
 cdef class appItem:
-    def __init__(self, context):
+    def __cinit__(self, context):
         if not(isinstance(context, dcgContext)):
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
         self.uuid = self.context.next_uuid.fetch_add(1)
-        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
-
-    def __cinit__(self):
-        self.uuid = 0 # note cinit is called before init
         # mvAppItemInfo
-        self.internalLabel = b""
+        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
         self.location = -1
         self.showDebug = False
         # next frame triggers
