@@ -2,6 +2,7 @@ from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, ImVec2
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
+from libcpp.atomic cimport atomic
 
 """
 Thread safety:
@@ -59,6 +60,7 @@ cdef class dcgViewport:
 
 cdef class dcgContext:
     cdef recursive_mutex mutex
+    cdef atomic[long long] next_uuid
     cdef bint waitOneFrame
     cdef bint started
     # Mutex that must be held for any

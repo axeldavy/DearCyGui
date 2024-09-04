@@ -20,7 +20,7 @@ import warnings
 import functools
 import inspect
 
-from dearcygui import dcgContext, constants
+from dearcygui import dcgContext, dcgWindow, constants
 
 dpg_context = None
 
@@ -189,9 +189,9 @@ def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Ri
         internal_dpg.add_item_clicked_handler(mousebutton, parent=internal_dpg.last_item(), callback=lambda: internal_dpg.configure_item(_internal_popup_id, show=True))
         internal_dpg.bind_item_handler_registry(parent, _handler_reg_id)
         if modal:
-            internal_dpg.add_window(modal=True, show=False, tag=_internal_popup_id, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
+            add_window(modal=True, show=False, tag=_internal_popup_id, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
         else:
-            internal_dpg.add_window(popup=True, show=False, tag=_internal_popup_id, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
+            add_window(popup=True, show=False, tag=_internal_popup_id, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
         internal_dpg.push_container_stack(internal_dpg.last_container())
         yield _internal_popup_id
 
@@ -3013,7 +3013,7 @@ def window(*, label: str =None, user_data: Any =None, use_internal_label: bool =
         if 'id' in kwargs.keys():
             warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
             tag=kwargs['id']
-        widget = internal_dpg.add_window(label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, delay_search=delay_search, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
+        widget = add_window(label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, delay_search=delay_search, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
         internal_dpg.push_container_stack(widget)
         yield widget
     finally:
@@ -7820,8 +7820,10 @@ def add_window(*, label: str =None, user_data: Any =None, use_internal_label: bo
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return internal_dpg.add_window(label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, delay_search=delay_search, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
-
+    item = dcgWindow(dcg_context)
+    item.attach_item(None) # Attach to viewport
+    # TODO configure (label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, delay_search=delay_search, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
+    return dcg_item_manager.set(item, tag)
 def apply_transform(item : Union[int, str], transform : Any, **kwargs) -> None:
     """     New in 1.1. Applies a transformation matrix to a layer.
 

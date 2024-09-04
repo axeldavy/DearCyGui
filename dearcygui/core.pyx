@@ -122,6 +122,8 @@ cdef void internal_render_callback(void *object) noexcept nogil:
 @cython.final
 cdef class dcgViewport:
     def __init__(self, context):
+        if not(isinstance(context, dcgContext)):
+            raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
         self.resize_callback = None
         self.initialized = False
@@ -575,6 +577,7 @@ cdef class dcgContext:
         self.queue = ThreadPoolExecutor(max_workers=1)
 
     def __cinit__(self):
+        self.next_uuid.store(21)
         self.waitOneFrame = False
         self.started = False
         self.deltaTime = 0.
@@ -627,10 +630,14 @@ cdef class dcgContext:
 
 cdef class appItem:
     def __init__(self, context):
+        if not(isinstance(context, dcgContext)):
+            raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
+        self.uuid = self.context.next_uuid.fetch_add(1)
+        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
 
     def __cinit__(self):
-        self.uuid = 0
+        self.uuid = 0 # note cinit is called before init
         # mvAppItemInfo
         self.internalLabel = b""
         self.location = -1
@@ -673,7 +680,6 @@ cdef class appItem:
         self.parent = None
         # mvAppItemConfig
         self.source = 0
-        self.parent = 0
         self.specifiedLabel = b""
         self.filter = b""
         self.alias = b""
