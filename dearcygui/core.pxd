@@ -3,7 +3,32 @@ from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
 
+"""
+Thread safety:
+. The gil must be held whenever a cdef class or Python object
+  is allocated/deallocated or assigned. The Cython compiler will
+  ensure this. Note that Python might free the gil while we are
+  executing to let other threads use it.
+. All items are organized in a tree structure. All items are assigned
+  a mutex. Whenever the tree structure is going to be edited,
+  the parent node must have the mutex lock first and foremost.
+  Then the item mutex (unless the item is being inserted, in which
+  case the item mutex is held first)
+. Whenever access to item fields need to be done atomically, the item
+  mutex must be held. Similarly field edition must hold the mutex.
+
+During rendering of an item, the mutex of all its parent is held.
+Thus we can safely edit the tree structure in another thread (if we have
+managed to lock the relevant mutexes) while rendering is performed.
+
+. As imgui is not thread-safe, all imgui calls are protected by a mutex.
+  To prevent dead-locks, the imgui mutex must be locked first before any
+  item/parent mutex. Alternatively, one can release its mutexes before
+  locking the imgui mutex, to then lock again its previous mutexes.
+"""
+
 cdef class dcgViewport:
+    cdef recursive_mutex mutex
     cdef mvViewport *viewport
     cdef dcgContext context
     cdef public object resize_callback
@@ -33,13 +58,9 @@ cdef class dcgViewport:
     cdef void __render(self) noexcept nogil
 
 cdef class dcgContext:
+    cdef recursive_mutex mutex
     cdef bint waitOneFrame
     cdef bint started
-    # Mutex that must be held for:
-    # . Moving elements in the item tree
-    # . Manual element deletion
-    # . Element inclusion/creation
-    cdef recursive_mutex edition_mutex
     # Mutex that must be held for any
     # call to imgui, glfw, etc
     cdef recursive_mutex imgui_mutex
@@ -62,11 +83,9 @@ cdef class dcgContext:
     cdef object queue
 
 cdef class appItem:
+    cdef recursive_mutex mutex
     cdef dcgContext context
     cdef long long uuid
-    # Mutex to access or change fields
-    # Not sufficient for parent/sibling/children edition
-    cdef recursive_mutex mutex
     # mvAppItemInfo
     cdef string internalLabel
     cdef int location
@@ -140,6 +159,9 @@ cdef class appItem:
     cdef appItem last_drawings_child
     cdef appItem last_payloads_child
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void __lock_parent_mutex(self) noexcept nogil
+    cdef void __unlock_parent_mutex(self) noexcept nogil
+    cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
 

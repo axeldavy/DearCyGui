@@ -131,6 +131,10 @@ cdef class dcgViewport:
         self.graphics_initialized = False
 
     def __dealloc__(self):
+        # TODO: at this point self.context might be NULL
+        # but we should lock imgui_mutex...
+        # Maybe make imgui_mutex a global
+        # and move imgui init/exit outside of dcgContext
         if self.graphics_initialized:
             cleanup_graphics(self.graphics)
         if self.viewport != NULL:
@@ -140,6 +144,7 @@ cdef class dcgViewport:
 
     cdef initialize(self, unsigned width, unsigned height):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         self.viewport = mvCreateViewport(width,
                                          height,
                                          internal_render_callback,
@@ -154,6 +159,7 @@ cdef class dcgViewport:
 
     @property
     def clear_color(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return (self.viewport.clearColor.r,
                 self.viewport.clearColor.g,
@@ -162,6 +168,7 @@ cdef class dcgViewport:
 
     @clear_color.setter
     def clear_color(self, tuple value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int r, g, b, a
         self.__check_initialized()
         (r, g, b, a) = value
@@ -169,180 +176,214 @@ cdef class dcgViewport:
 
     @property
     def small_icon(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return str(self.viewport.small_icon)
 
     @small_icon.setter
     def small_icon(self, str value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.small_icon = value.encode("utf-8")
 
     @property
     def large_icon(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return str(self.viewport.large_icon)
 
     @large_icon.setter
     def large_icon(self, str value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.large_icon = value.encode("utf-8")
 
     @property
     def x_pos(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.xpos
 
     @x_pos.setter
     def x_pos(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.xpos = value
         self.viewport.posDirty = 1
 
     @property
     def y_pos(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.ypos
 
     @y_pos.setter
     def y_pos(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.ypos = value
         self.viewport.posDirty = 1
 
     @property
     def width(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.actualWidth
 
     @width.setter
     def width(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.actualWidth = value
         self.viewport.sizeDirty = 1
 
     @property
     def height(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.actualHeight
 
     @height.setter
     def height(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.actualHeight = value
         self.viewport.sizeDirty = 1
 
     @property
     def resizable(self) -> bint:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.resizable
 
     @resizable.setter
     def resizable(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.resizable = value
         self.viewport.modesDirty = 1
 
     @property
     def vsync(self) -> bint:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.vsync
 
     @vsync.setter
     def vsync(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.vsync = value
 
     @property
     def min_width(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.minwidth
 
     @min_width.setter
     def min_width(self, unsigned value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.minwidth = value
 
     @property
     def max_width(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.maxwidth
 
     @max_width.setter
     def max_width(self, unsigned value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.maxwidth = value
 
     @property
     def min_height(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.minheight
 
     @min_height.setter
     def min_height(self, unsigned value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.minheight = value
 
     @property
     def max_height(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.maxheight
 
     @max_height.setter
     def max_height(self, unsigned value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.maxheight = value
 
     @property
     def always_on_top(self) -> bint:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.alwaysOnTop
 
     @always_on_top.setter
     def always_on_top(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.alwaysOnTop = value
         self.viewport.modesDirty = 1
 
     @property
     def decorated(self) -> bint:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.decorated
 
     @decorated.setter
     def decorated(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.decorated = value
         self.viewport.modesDirty = 1
 
     @property
     def title(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return str(self.viewport.title)
 
     @title.setter
     def title(self, str value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.title = value.encode("utf-8")
         self.viewport.titleDirty = 1
 
     @property
     def disable_close(self) -> bint:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.disableClose
 
     @disable_close.setter
     def disable_close(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.disableClose = value
         self.viewport.modesDirty = 1
 
     @property
     def fullscreen(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.viewport.fullScreen
 
     @fullscreen.setter
     def fullscreen(self, bint value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         if value and not(self.viewport.fullScreen):
             mvToggleFullScreen(dereference(self.viewport))
         elif not(value) and (self.viewport.fullScreen):
@@ -350,14 +391,17 @@ cdef class dcgViewport:
 
     @property
     def shown(self) -> bint:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         return self.viewport.shown
 
     def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         for (key, value) in kwargs.items():
             setattr(self, key, value)
 
     cdef void __on_resize(self, int width, int height):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         self.viewport.actualHeight = height
         self.viewport.clientHeight = height
@@ -373,6 +417,7 @@ cdef class dcgViewport:
         self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
 
     cdef void __on_close(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         if not(<bint>self.viewport.disableClose):
             self.context.started = False
@@ -381,6 +426,8 @@ cdef class dcgViewport:
         self.context.queue.submit(self.close_callback, constants.MV_APP_UUID, None)
 
     cdef void __render(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         if self.fontRegistryRoots is not None:
             self.fontRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.handlerRegistryRoots is not None:
@@ -403,6 +450,7 @@ cdef class dcgViewport:
 
     def render_frame(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
         assert(self.graphics_initialized)
         with nogil:
@@ -419,6 +467,7 @@ cdef class dcgViewport:
 
     def show(self, minimized=False, maximized=False):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         cdef imgui.ImGuiStyle* style
         cdef mvColor* colors
         self.__check_initialized()
@@ -544,6 +593,7 @@ cdef class dcgContext:
         self.started = True
 
     def __del__(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.on_close_callback is not None:
             self.started = True
             self.queue.submit(self.on_close_callback)
@@ -559,17 +609,20 @@ cdef class dcgContext:
         self.queue.shutdown(wait=True)
 
     def initialize_viewport(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.viewport.initialize(width=kwargs["width"],
                                  height=kwargs["height"])
         self.viewport.configure(**kwargs)
 
     def start(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.started:
             raise ValueError("Cannot call \"setup_dearpygui\" while a Dear PyGUI app is already running.")
         self.started = True
 
     @property
     def running(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.started
 
 cdef class appItem:
@@ -652,16 +705,150 @@ cdef class appItem:
             self.prev_sibling.draw(l, x, y)
         return
 
-    cpdef void delete_item(self):
-        # We are going to change the tree structure, we must lock the global mutex first and foremost
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
+    cdef void __lock_parent_mutex(self) noexcept nogil:
+        # We must make sure we lock the correct parent mutex, and for that
+        # we must access self.parent and thus hold the item mutex
+        cdef bint locked = False
+        while not(locked):
+            self.mutex.lock()
+            # If we have no appItem parent, either we
+            # are root (viewport is parent) or have no parent
+            if self.parent is None:
+                locked = self.context.viewport.mutex.try_lock()
+            else:
+                locked = self.parent.mutex.try_lock()
+            self.mutex.unlock()
+
+    cdef void __unlock_parent_mutex(self) noexcept nogil:
+        # Assumes the item mutex is held
+        if self.parent is None:
+            self.context.viewport.mutex.unlock()
+        else:
+            self.parent.mutex.unlock()
+
+    cpdef void detach_item(self):
+        # Detach the item from its parent and siblings
+        # We are going to change the tree structure, we must lock
+        # the parent mutex first and foremost
+        cdef unique_lock[recursive_mutex] m
+        self.__lock_parent_mutex()
+        # Use unique lock for the parent mutex to
+        # simplify handling (parent will change)
+        if self.parent is None:
+            m = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        else:
+            m = unique_lock[recursive_mutex](self.parent.mutex)
+        self.__unlock_parent_mutex()
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        # Remove this item from the list of siblings
+        if self.prev_sibling is not None:
+            self.prev_sibling.mutex.lock()
+            self.prev_sibling.next_sibling = self.next_sibling
+            self.prev_sibling.mutex.unlock()
+        if self.next_sibling is not None:
+            self.next_sibling.mutex.lock()
+            self.next_sibling.prev_sibling = self.prev_sibling
+            self.next_sibling.mutex.unlock()
+        else:
+            # No next sibling. We might be referenced in the
+            # parent
+            if self.parent is None:
+                # viewport is the parent, or no parent
+                if self.context.viewport.colormapRoots is self:
+                    self.context.viewport.colormapRoots = self.prev_sibling
+                elif self.context.viewport.filedialogRoots is self:
+                    self.context.viewport.filedialogRoots = self.prev_sibling
+                elif self.context.viewport.stagingRoots is self:
+                    self.context.viewport.stagingRoots = self.prev_sibling
+                elif self.context.viewport.viewportMenubarRoots is self:
+                    self.context.viewport.viewportMenubarRoots = self.prev_sibling
+                elif self.context.viewport.windowRoots is self:
+                    self.context.viewport.windowRoots = self.prev_sibling
+                elif self.context.viewport.fontRegistryRoots is self:
+                    self.context.viewport.fontRegistryRoots = self.prev_sibling
+                elif self.context.viewport.handlerRegistryRoots is self:
+                    self.context.viewport.handlerRegistryRoots = self.prev_sibling
+                elif self.context.viewport.itemHandlerRegistryRoots is self:
+                    self.context.viewport.itemHandlerRegistryRoots = self.prev_sibling
+                elif self.context.viewport.textureRegistryRoots is self:
+                    self.context.viewport.textureRegistryRoots = self.prev_sibling
+                elif self.context.viewport.valueRegistryRoots is self:
+                    self.context.viewport.valueRegistryRoots = self.prev_sibling
+                elif self.context.viewport.themeRegistryRoots is self:
+                    self.context.viewport.themeRegistryRoots = self.prev_sibling
+                elif self.context.viewport.itemTemplatesRoots is self:
+                    self.context.viewport.itemTemplatesRoots = self.prev_sibling
+                elif self.context.viewport.viewportDrawlistRoots is self:
+                    self.context.viewport.viewportDrawlistRoots = self.prev_sibling
+            else:
+                if self.parent.last_0_child is self:
+                    self.parent.last_0_child = self.prev_sibling
+                elif self.parent.last_widgets_child is self:
+                    self.parent.last_widgets_child = self.prev_sibling
+                elif self.parent.last_drawings_child is self:
+                    self.parent.last_drawings_child = self.prev_sibling
+                elif self.parent.last_payloads_child is self:
+                    self.parent.last_payloads_child = self.prev_sibling
+        # Free references
+        self.parent = None
+        self.prev_sibling = None
+        self.next_sibling = None
+
+    cpdef void delete_item(self):
+        cdef unique_lock[recursive_mutex] m
+        self.detach_item() # must be called before we lock the item mutex
+        m = unique_lock[recursive_mutex](self.mutex)
         # Remove this item from the list of elements
         if self.prev_sibling is not None:
+            self.prev_sibling.mutex.lock()
             self.prev_sibling.next_sibling = self.next_sibling
+            self.prev_sibling.mutex.unlock()
         if self.next_sibling is not None:
+            self.next_sibling.mutex.lock()
             self.next_sibling.prev_sibling = self.prev_sibling
-        # delete all its children recursively
+            self.next_sibling.mutex.unlock()
+        else:
+            # No next sibling. We might be referenced in the
+            # parent
+            if self.parent is None:
+                # viewport is the parent, or no parent
+                if self.context.viewport.colormapRoots is self:
+                    self.context.viewport.colormapRoots = self.prev_sibling
+                elif self.context.viewport.filedialogRoots is self:
+                    self.context.viewport.filedialogRoots = self.prev_sibling
+                elif self.context.viewport.stagingRoots is self:
+                    self.context.viewport.stagingRoots = self.prev_sibling
+                elif self.context.viewport.viewportMenubarRoots is self:
+                    self.context.viewport.viewportMenubarRoots = self.prev_sibling
+                elif self.context.viewport.windowRoots is self:
+                    self.context.viewport.windowRoots = self.prev_sibling
+                elif self.context.viewport.fontRegistryRoots is self:
+                    self.context.viewport.fontRegistryRoots = self.prev_sibling
+                elif self.context.viewport.handlerRegistryRoots is self:
+                    self.context.viewport.handlerRegistryRoots = self.prev_sibling
+                elif self.context.viewport.itemHandlerRegistryRoots is self:
+                    self.context.viewport.itemHandlerRegistryRoots = self.prev_sibling
+                elif self.context.viewport.textureRegistryRoots is self:
+                    self.context.viewport.textureRegistryRoots = self.prev_sibling
+                elif self.context.viewport.valueRegistryRoots is self:
+                    self.context.viewport.valueRegistryRoots = self.prev_sibling
+                elif self.context.viewport.themeRegistryRoots is self:
+                    self.context.viewport.themeRegistryRoots = self.prev_sibling
+                elif self.context.viewport.itemTemplatesRoots is self:
+                    self.context.viewport.itemTemplatesRoots = self.prev_sibling
+                elif self.context.viewport.viewportDrawlistRoots is self:
+                    self.context.viewport.viewportDrawlistRoots = self.prev_sibling
+            else:
+                if self.parent.last_0_child is self:
+                    self.parent.last_0_child = self.prev_sibling
+                elif self.parent.last_widgets_child is self:
+                    self.parent.last_widgets_child = self.prev_sibling
+                elif self.parent.last_drawings_child is self:
+                    self.parent.last_drawings_child = self.prev_sibling
+                elif self.parent.last_payloads_child is self:
+                    self.parent.last_payloads_child = self.prev_sibling
+
+        # delete all children recursively
         if self.last_0_child is not None:
             self.last_0_child.__delete_and_siblings()
         if self.last_widgets_child is not None:
@@ -672,18 +859,16 @@ cdef class appItem:
             self.last_payloads_child.__delete_and_siblings()
         # Free references
         self.context = None
-        self.parent = None
-        self.prev_sibling = None
-        self.next_sibling = None
         self.last_0_child = None
         self.last_widgets_child = None
         self.last_drawings_child = None
         self.last_payloads_child = None
 
     cdef void __delete_and_siblings(self):
-        # We are going to change the tree structure, we must lock the global mutex first and foremost
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.edition_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        # Must only be called from delete_item or itself.
+        # Assumes the parent mutex is already held
+        # and that we don't need to edit the parent last_*_child fields
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         # delete all its children recursively
         if self.last_0_child is not None:
             self.last_0_child.__delete_and_siblings()
