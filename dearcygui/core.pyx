@@ -698,6 +698,7 @@ cdef class appItem:
         self.perspectiveDivide = False
         self.depthClipping = False
         self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0 ] # top leftx, top lefty, width, height, min depth, maxdepth
+        self.attached = False
 
     cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -705,7 +706,7 @@ cdef class appItem:
             self.prev_sibling.draw(l, x, y)
         return
 
-    cdef void __lock_parent_mutex(self) noexcept nogil:
+    cdef void __lock_parent_and_item_mutex(self) noexcept nogil:
         # We must make sure we lock the correct parent mutex, and for that
         # we must access self.parent and thus hold the item mutex
         cdef bint locked = False
@@ -713,33 +714,80 @@ cdef class appItem:
             self.mutex.lock()
             # If we have no appItem parent, either we
             # are root (viewport is parent) or have no parent
-            if self.parent is None:
+            if self.parent is not None:
+                locked = self.parent.mutex.try_lock()
+            elif self.attached:
                 locked = self.context.viewport.mutex.try_lock()
             else:
-                locked = self.parent.mutex.try_lock()
+                locked = True
+            if locked:
+                return
             self.mutex.unlock()
 
     cdef void __unlock_parent_mutex(self) noexcept nogil:
         # Assumes the item mutex is held
-        if self.parent is None:
-            self.context.viewport.mutex.unlock()
-        else:
+        if self.parent is not None:
             self.parent.mutex.unlock()
+        elif self.attached:
+            self.context.viewport.mutex.unlock()
 
-    cpdef void detach_item(self):
+
+    cpdef void attach_item(self, appItem target_parent):
+        # We must ensure a single thread attaches at a given time.
+        # __detach_item_and_lock will lock both the item lock
+        # and the parent lock.
+        cdef unique_lock[recursive_mutex] m
+        cdef unique_lock[recursive_mutex] m2
+        cdef unique_lock[recursive_mutex] m3
+        self.__detach_item_and_lock()
+        # retaining the lock enables to ensure the item is
+        # still detached
+        m = unique_lock[recursive_mutex](self.mutex)
+        self.mutex.unlock()
+
+        if self.context is None:
+            raise ValueError("Trying to attach a deleted item")
+
+        # Lock target parent mutex
+        if target_parent is None:
+            m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        else:
+            m2 = unique_lock[recursive_mutex](target_parent.mutex)
+
+        # Attach to parent
+        if target_parent is None:
+            if isinstance(self, dcgWindow):
+                if self.context.viewport.windowRoots is not None:
+                    m3 = unique_lock[recursive_mutex](self.context.viewport.windowRoots.mutex)
+                    self.context.viewport.windowRoots.next_sibling = self
+                    self.prev_sibling = self.context.viewport.windowRoots
+                self.context.viewport.windowRoots = self
+            else:
+                raise ValueError("Instance of type {} cannot be attached to viewport".format(type(self)))
+        else:
+            raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
+
+    cdef void __detach_item_and_lock(self):
+        # NOTE: the mutex is not locked if we raise an exception.
         # Detach the item from its parent and siblings
         # We are going to change the tree structure, we must lock
         # the parent mutex first and foremost
         cdef unique_lock[recursive_mutex] m
-        self.__lock_parent_mutex()
-        # Use unique lock for the parent mutex to
+        self.__lock_parent_and_item_mutex()
+        # Use unique lock for the mutexes to
         # simplify handling (parent will change)
-        if self.parent is None:
-            m = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        else:
+        if self.parent is not(None):
             m = unique_lock[recursive_mutex](self.parent.mutex)
+        elif self.attached:
+            m = unique_lock[recursive_mutex](self.context.viewport.mutex)
         self.__unlock_parent_mutex()
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+
+        if not(self.attached):
+            return # nothing to do
+        # Unlock now in order to not retain lock on exceptions
+        self.mutex.unlock()
+
         # Remove this item from the list of siblings
         if self.prev_sibling is not None:
             self.prev_sibling.mutex.lock()
@@ -793,11 +841,25 @@ cdef class appItem:
         self.parent = None
         self.prev_sibling = None
         self.next_sibling = None
+        self.attached = False
+        # Lock again before we release the lock from unique_lock
+        self.mutex.lock()
+
+    cpdef void detach_item(self):
+        self.__detach_item_and_lock()
+        self.mutex.unlock()
 
     cpdef void delete_item(self):
         cdef unique_lock[recursive_mutex] m
-        self.detach_item() # must be called before we lock the item mutex
+        self.__detach_item_and_lock()
+        # retaining the lock enables to ensure the item is
+        # still detached
         m = unique_lock[recursive_mutex](self.mutex)
+        self.mutex.unlock()
+
+        if self.context is None:
+            raise ValueError("Trying to delete a deleted item")
+
         # Remove this item from the list of elements
         if self.prev_sibling is not None:
             self.prev_sibling.mutex.lock()

@@ -148,6 +148,7 @@ cdef class appItem:
     cdef bint depthClipping
     cdef float[6] clipViewport
     # Relationships
+    cdef bint attached
     cdef appItem parent
     # It is not possible to access an array of children without the gil
     # Thus instead use a list
@@ -159,8 +160,10 @@ cdef class appItem:
     cdef appItem last_drawings_child
     cdef appItem last_payloads_child
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-    cdef void __lock_parent_mutex(self) noexcept nogil
+    cdef void __lock_parent_and_item_mutex(self) noexcept nogil
     cdef void __unlock_parent_mutex(self) noexcept nogil
+    cpdef void attach_item(self, appItem target_parent)
+    cdef void __detach_item_and_lock(self)
     cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
