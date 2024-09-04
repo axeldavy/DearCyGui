@@ -1249,7 +1249,7 @@ cdef inline imgui.ImU32 parse_color(src):
         color_float4.w = src[3]
     return  imgui.ColorConvertFloat4ToU32(color_float4)
 
-cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint):
+cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint) noexcept nogil:
     cdef imgui.ImVec4 color_float4 = imgui.ColorConvertU32ToFloat4(color_uint)
     dst[0] = color_float4.x
     dst[1] = color_float4.y
@@ -1264,7 +1264,7 @@ cdef class dcgDrawArrow(appItem):
         if hasattr(kwargs, "color"):
             self.color = parse_color(kwargs["color"])
         self.thickness = kwargs.get("thickness", 1.)
-        self.size = kwargs.get("thickness", 4.)
+        self.size = kwargs.get("size", 4.)
         self.__compute_tip()
 
     cdef void __compute_tip(self):
@@ -1302,20 +1302,20 @@ cdef class dcgDrawArrow(appItem):
                         1.]
 
     @property
-    def end(self):
+    def p1(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return list(self.end)
-    @end.setter
-    def end(self, value):
+    @p1.setter
+    def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         read_point(self.end, value)
         self.__compute_tip()
     @property
-    def start(self):
+    def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return list(self.start)
-    @start.setter
-    def start(self, value):
+    @p2.setter
+    def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         read_point(self.start, value)
         self.__compute_tip()
@@ -1391,6 +1391,219 @@ cdef class dcgDrawArrow(appItem):
         parent_drawlist.AddTriangleFilled(itend, itcorner1, itcorner2, self.color)
         parent_drawlist.AddLine(itend, itstart, self.color, thickness)
         parent_drawlist.AddTriangle(itend, itcorner1, itcorner2, self.color, thickness)
+
+
+cdef class dcgDrawBezierCubic(appItem):
+    def __cinit__(self, context, p1, p2, p3, p4, *args, **kwargs):
+        read_point(self.p1, p1)
+        read_point(self.p2, p2)
+        read_point(self.p3, p3)
+        read_point(self.p4, p4)
+        self.color = 4294967295 # 0xffffffff
+        if hasattr(kwargs, "color"):
+            self.color = parse_color(kwargs["color"])
+        self.thickness = kwargs.get("thickness", 0.)
+        self.segments = kwargs.get("segments", 0)
+
+    @property
+    def p1(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p1)
+    @p1.setter
+    def p1(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p1, value)
+    @property
+    def p2(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p2)
+    @p2.setter
+    def p2(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p2, value)
+    @property
+    def p3(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p3)
+    @p3.setter
+    def p3(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p3, value)
+    @property
+    def p4(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p4)
+    @p4.setter
+    def p4(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p4, value)
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color
+        unparse_color(color, self.color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.thickness = value
+    @property
+    def segments(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.segments
+    @segments.setter
+    def segments(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.segments = value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.last_drawings_child is None:
+            return
+
+        cdef float thickness = self.thickness
+        if self.context.viewport.in_plot:
+            thickness *= self.context.viewport.thickness_multiplier
+
+        cdef float[4] p1
+        cdef float[4] p2
+        cdef float[4] p3
+        cdef float[4] p4
+        self.context.viewport.apply_current_transform(p1, self.p1)
+        self.context.viewport.apply_current_transform(p2, self.p2)
+        self.context.viewport.apply_current_transform(p3, self.p3)
+        self.context.viewport.apply_current_transform(p4, self.p4)
+        # TODO: original code doesn't shift when plot. Why ?
+        if not(self.context.viewport.in_plot):
+            p1[0] += parent_x
+            p1[1] += parent_y
+            p2[0] += parent_x
+            p2[1] += parent_y
+            p3[0] += parent_x
+            p3[1] += parent_y
+            p4[0] += parent_x
+            p4[1] += parent_y
+        cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
+        cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
+        cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
+        cdef imgui.ImVec2 ip4 = imgui.ImVec2(p4[0], p4[1])
+        parent_drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self.color, self.thickness, self.segments)
+
+cdef class dcgDrawBezierQuadratic(appItem):
+    def __cinit__(self, context, p1, p2, p3, *args, **kwargs):
+        read_point(self.p1, p1)
+        read_point(self.p2, p2)
+        read_point(self.p3, p3)
+        self.color = 4294967295 # 0xffffffff
+        if hasattr(kwargs, "color"):
+            self.color = parse_color(kwargs["color"])
+        self.thickness = kwargs.get("thickness", 0.)
+        self.segments = kwargs.get("segments", 0)
+
+    @property
+    def p1(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p1)
+    @p1.setter
+    def p1(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p1, value)
+    @property
+    def p2(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p2)
+    @p2.setter
+    def p2(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p2, value)
+    @property
+    def p3(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p3)
+    @p3.setter
+    def p3(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p3, value)
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color
+        unparse_color(color, self.color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.thickness = value
+    @property
+    def segments(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.segments
+    @segments.setter
+    def segments(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.segments = value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.last_drawings_child is None:
+            return
+
+        cdef float thickness = self.thickness
+        if self.context.viewport.in_plot:
+            thickness *= self.context.viewport.thickness_multiplier
+
+        cdef float[4] p1
+        cdef float[4] p2
+        cdef float[4] p3
+        self.context.viewport.apply_current_transform(p1, self.p1)
+        self.context.viewport.apply_current_transform(p2, self.p2)
+        self.context.viewport.apply_current_transform(p3, self.p3)
+        # TODO: original code doesn't shift when plot. Why ?
+        if not(self.context.viewport.in_plot):
+            p1[0] += parent_x
+            p1[1] += parent_y
+            p2[0] += parent_x
+            p2[1] += parent_y
+            p3[0] += parent_x
+            p3[1] += parent_y
+        cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
+        cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
+        cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
+        parent_drawlist.AddBezierQuadratic(ip1, ip2, ip3, self.color, self.thickness, self.segments)
 
 
 cdef class dcgWindow(appItem):

@@ -208,6 +208,25 @@ cdef class dcgDrawArrow(appItem):
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void __compute_tip(self)
 
+cdef class dcgDrawBezierCubic(appItem):
+    cdef float[4] p1
+    cdef float[4] p2
+    cdef float[4] p3
+    cdef float[4] p4
+    cdef imgui.ImU32 color
+    cdef float thickness
+    cdef int segments
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawBezierQuadratic(appItem):
+    cdef float[4] p1
+    cdef float[4] p2
+    cdef float[4] p3
+    cdef imgui.ImU32 color
+    cdef float thickness
+    cdef int segments
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
 
 cdef class dcgWindow(appItem):
     cdef imgui.ImGuiWindowFlags windowflags
