@@ -9585,8 +9585,10 @@ def set_primary_window(window : Union[int, str], value : bool, **kwargs) -> None
     Returns:
         None
     """
-
-    return internal_dpg.set_primary_window(window, value, **kwargs)
+    item = dcg_item_manager.get(window)
+    if not(isinstance(item, dcgWindow)):
+        raise ValueError("{} does not correspond to a window, but {}", window, type(item))
+    item.primary = value
 
 def set_table_row_color(table : Union[int, str], row : int, color : Union[List[int], Tuple[int, ...]], **kwargs) -> None:
     """     Set table row color.

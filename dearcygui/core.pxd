@@ -43,7 +43,7 @@ cdef class dcgViewport:
     cdef appItem filedialogRoots
     cdef appItem stagingRoots
     cdef appItem viewportMenubarRoots
-    cdef appItem windowRoots
+    cdef dcgWindow windowRoots
     cdef appItem fontRegistryRoots
     cdef appItem handlerRegistryRoots
     cdef appItem itemHandlerRegistryRoots
@@ -162,8 +162,8 @@ cdef class appItem:
     cdef appItem last_drawings_child
     cdef appItem last_payloads_child
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-    cdef void __lock_parent_and_item_mutex(self) noexcept nogil
-    cdef void __unlock_parent_mutex(self) noexcept nogil
+    cdef void lock_parent_and_item_mutex(self) noexcept nogil
+    cdef void unlock_parent_mutex(self) noexcept nogil
     cpdef void attach_item(self, appItem target_parent)
     cdef void __detach_item_and_lock(self)
     cpdef void detach_item(self)
