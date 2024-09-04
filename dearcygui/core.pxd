@@ -52,11 +52,25 @@ cdef class dcgViewport:
     cdef appItem themeRegistryRoots
     cdef appItem itemTemplatesRoots
     cdef appItem viewportDrawlistRoots
+    # Temporary info to be accessed during rendering
+    # Shouldn't be accessed outside draw()
+    #mvMat4 transform         = mvIdentityMat4();
+    #mvMat4 appliedTransform  = mvIdentityMat4(); // only used by nodes
+    cdef long cullMode
+    cdef bint perspectiveDivide
+    cdef bint depthClipping
+    cdef float[6] clipViewport
+    cdef bint has_matrix_transform
+    cdef float[4][4] transform
+    cdef bint in_plot
+
+
     cdef initialize(self, unsigned width, unsigned height)
     cdef void __check_initialized(self)
     cdef void __on_resize(self, int width, int height)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
+    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil
 
 cdef class dcgContext:
     cdef recursive_mutex mutex
@@ -142,13 +156,6 @@ cdef class appItem:
     cdef object user_data
     cdef object dragCallback
     cdef object dropCallback
-    # mvAppItemDrawInfo
-    #mvMat4 transform         = mvIdentityMat4();
-    #mvMat4 appliedTransform  = mvIdentityMat4(); // only used by nodes
-    cdef long cullMode
-    cdef bint perspectiveDivide
-    cdef bint depthClipping
-    cdef float[6] clipViewport
     # Relationships
     cdef bint attached
     cdef appItem parent
@@ -169,6 +176,29 @@ cdef class appItem:
     cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
+
+cdef class dcgDrawListItem(appItem):
+    cdef float clip_width
+    cdef float clip_height
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgViewportDrawListItem(appItem):
+    cdef bool front
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawLayerItem(appItem):
+    # mvAppItemDrawInfo
+    cdef long cullMode
+    cdef bint perspectiveDivide
+    cdef bint depthClipping
+    cdef float[6] clipViewport
+    cdef bint has_matrix_transform
+    cdef float[4][4] transform
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class drawingItem(appItem):
+    pass
+
 
 cdef class dcgWindow(appItem):
     cdef imgui.ImGuiWindowFlags windowflags

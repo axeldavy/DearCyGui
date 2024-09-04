@@ -1709,7 +1709,6 @@ void mvViewportDrawlist::draw(ImDrawList* drawlist, float x, float y)
 
 		UpdateAppItemState(item->state);
 	}
-
 }
 
 void mvViewportDrawlist::handleSpecificKeywordArgs(PyObject* dict)

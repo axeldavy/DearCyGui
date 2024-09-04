@@ -129,6 +129,7 @@ cdef class dcgViewport:
         self.initialized = False
         self.viewport = NULL
         self.graphics_initialized = False
+        #mvMat4 transform         = mvIdentityMat4();
 
     def __dealloc__(self):
         # TODO: at this point self.context might be NULL
@@ -428,6 +429,12 @@ cdef class dcgViewport:
     cdef void __render(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        # Initialize drawing state
+        self.cullMode = 0
+        self.perspectiveDivide = False
+        self.depthClipping = False
+        self.has_matrix_transform = False
+        self.in_plot = False
         if self.fontRegistryRoots is not None:
             self.fontRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.handlerRegistryRoots is not None:
@@ -447,6 +454,43 @@ cdef class dcgViewport:
         if self.windowRoots is not None:
             self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         return
+
+    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil:
+        # assumes imgui + viewport mutex are held
+        cdef float[4] transformed_p
+        if self.has_matrix_transform:
+            transformed_p[0] = self.transform[0][0] * src_p[0] + \
+                               self.transform[0][1] * src_p[1] + \
+                               self.transform[0][2] * src_p[2] + \
+                               self.transform[0][3] * src_p[3]
+            transformed_p[1] = self.transform[1][0] * src_p[0] + \
+                               self.transform[1][1] * src_p[1] + \
+                               self.transform[1][2] * src_p[2] + \
+                               self.transform[1][3] * src_p[3]
+            transformed_p[2] = self.transform[2][0] * src_p[0] + \
+                               self.transform[2][1] * src_p[1] + \
+                               self.transform[2][2] * src_p[2] + \
+                               self.transform[2][3] * src_p[3]
+            transformed_p[3] = self.transform[3][0] * src_p[0] + \
+                               self.transform[3][1] * src_p[1] + \
+                               self.transform[3][2] * src_p[2] + \
+                               self.transform[3][3] * src_p[3]
+        else:
+            transformed_p = src_p
+        cdef imgui.ImVec2 plot_transformed
+        if self.in_plot:
+            plot_transformed = \
+                implot.PlotToPixels(<double>transformed_p[0],
+                                    <double>transformed_p[1],
+                                    -1,
+                                    -1)
+            transformed_p[0] = plot_transformed.x
+            transformed_p[1] = plot_transformed.y
+        dst_p[0] = transformed_p[0]
+        dst_p[1] = transformed_p[1]
+        dst_p[2] = transformed_p[2]
+        dst_p[3] = transformed_p[3]
+
 
     def render_frame(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
@@ -690,14 +734,6 @@ cdef class appItem:
         self.user_data = None
         self.dragCallback = None
         self.dropCallback = None
-        # mvAppItemDrawInfo
-
-        #mvMat4 transform         = mvIdentityMat4();
-        #mvMat4 appliedTransform  = mvIdentityMat4(); // only used by nodes
-        self.cullMode = 0 # mvCullMode_None
-        self.perspectiveDivide = False
-        self.depthClipping = False
-        self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0 ] # top leftx, top lefty, width, height, min depth, maxdepth
         self.attached = False
 
     cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
@@ -953,7 +989,226 @@ cdef class appItem:
         self.last_widgets_child = None
         self.last_drawings_child = None
         self.last_payloads_child = None
+
+cdef class dcgDrawListItem(appItem):
+    def __cinit__(self, context, int width, int height, *args, **kwargs):
+        self.clip_width = <float>width
+        self.clip_height = <float>height
+    @property
+    def width(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return <int>self.clip_width
+    @width.setter
+    def width(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.clip_width = <float>value
+    @property
+    def height(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return <int>self.clip_height
+    @height.setter
+    def height(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.clip_height = <float>value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.last_drawings_child is None:
+            return
+        if self.clip_width <= 0 or self.clip_height <= 0:
+            # Wasn't done in the original code, but seems a sensible thing to do
+            return
+        cdef imgui.ImDrawList* internal_drawlist = imgui.GetWindowDrawList()
+
+        # Reset current drawInfo
+        self.context.viewport.cullMode = 0 # mvCullMode_None
+        self.context.viewport.perspectiveDivide = False
+        self.context.viewport.depthClipping = False
+        self.context.viewport.has_matrix_transform = False
+        self.context.viewport.in_plot = False
+
+        cdef float startx = <float>imgui.GetCursorScreenPos().x
+        cdef float starty = <float>imgui.GetCursorScreenPos().y
+
+        imgui.PushClipRect(imgui.ImVec2(startx, starty),
+                           imgui.ImVec2(startx + self.clip_width,
+                                        starty + self.clip_height),
+                           True)
+
+        self.last_drawings_child.draw(internal_drawlist, startx, starty)
+        # Child UpdateAppItemState(item->state); ?
+
+        imgui.PopClipRect()
+
+        if imgui.InvisibleButton(self.internalLabel.c_str(),
+                                 imgui.ImVec2(self.clip_width,
+                                              self.clip_height),
+                                 imgui.ImGuiButtonFlags_MouseButtonLeft | \
+                                 imgui.ImGuiButtonFlags_MouseButtonRight | \
+                                 imgui.ImGuiButtonFlags_MouseButtonMiddle):
+            with gil:
+                self.context.queue.submit(self.callback,
+                                          self.uuid if self.alias.empty() else None,
+                                          None,
+                                          self.user_data)
+
+        # UpdateAppItemState(state); ?
+
+        # TODO:
+        """
+        if (handlerRegistry)
+		handlerRegistry->checkEvents(&state);
+
+	    if (ImGui::IsItemHovered())
+	    {
+		    ImVec2 mousepos = ImGui::GetMousePos();
+	    	GContext->input.mouseDrawingPos.x = (int)(mousepos.x - _startx);
+    		GContext->input.mouseDrawingPos.y = (int)(mousepos.y - _starty);
+	    }
+        -> This is very weird. Seems to be used by get_drawing_mouse_pos and
+        set only here. But it is not set for the other drawlist
+        elements when they are hovered...
+        """
         
+
+cdef class dcgViewportDrawListItem(appItem):
+    def __cinit__(self, *args, **kwargs):
+        self.front = kwargs.get("front", True)
+    @property
+    def front(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.front
+    @front.setter
+    def front(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.front = value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.last_drawings_child is None:
+            return
+
+        # Reset current drawInfo
+        self.context.viewport.cullMode = 0 # mvCullMode_None
+        self.context.viewport.perspectiveDivide = False
+        self.context.viewport.depthClipping = False
+        self.context.viewport.has_matrix_transform = False
+        self.context.viewport.in_plot = False
+
+        cdef imgui.ImDrawList* internal_drawlist = \
+            imgui.GetForegroundDrawList() if self.front else \
+            imgui.GetBackgroundDrawList()
+        self.last_drawings_child.draw(internal_drawlist, 0., 0.)
+        # Child UpdateAppItemState(item->state); ?
+
+cdef class dcgDrawLayerItem(appItem):
+    def __cinit__(self, *args, **kwargs):
+        self.cullMode = kwargs.get("cull_mode", 0) # mvCullMode_None == 0
+        self.perspectiveDivide = kwargs.get("perspective_divide", False)
+        self.depthClipping = kwargs.get("depth_clipping", False)
+        self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0]
+        self.has_matrix_transform = False
+
+    @property
+    def perspective_divide(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.perspectiveDivide
+    @perspective_divide.setter
+    def perspective_divide(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.perspectiveDivide = value
+    @property
+    def depth_clipping(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.depthClipping
+    @depth_clipping.setter
+    def depth_clipping(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.depthClipping = value
+    @property
+    def cull_mode(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.cullMode
+    @cull_mode.setter
+    def cull_mode(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.cullMode = value
+
+    def clip_space(self,
+                   float topleftx,
+                   float toplefty,
+                   float width,
+                   float height,
+                   float mindepth,
+                   float maxdepth):
+        self.clipViewport[0] = topleftx
+        self.clipViewport[1] = toplefty + height
+        self.clipViewport[2] = width
+        self.clipViewport[3] = height
+        self.clipViewport[4] = mindepth
+        self.clipViewport[5] = maxdepth
+        self.transform[0] = [width, 0., 0., topleftx + (width / 2.)]
+        self.transform[0] = [0., -height, 0., toplefty + (height / 2.)]
+        self.transform[0] = [0., 0., 0.25, 0.5]
+        self.transform[1] = [0., 0., 0., 1.]
+        self.has_matrix_transform = True
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.last_drawings_child is None:
+            return
+
+        # Reset current drawInfo - except in_plot as we keep parent_drawlist
+        self.context.viewport.cullMode = self.cullMode
+        self.context.viewport.perspectiveDivide = self.perspectiveDivide
+        self.context.viewport.depthClipping = self.depthClipping
+        if self.depthClipping:
+            self.context.viewport.clipViewport = self.clipViewport
+        #if self.has_matrix_transform and self.context.viewport.has_matrix_transform:
+        #    TODO
+        #    matrix_fourfour_mul(self.context.viewport.transform, self.transform)
+        #elif
+        if self.has_matrix_transform:
+            self.context.viewport.has_matrix_transform = True
+            self.context.viewport.transform = self.transform
+        # As we inherit from parent_drawlist
+        # We don't change self.in_plot
+
+        # draw children
+        self.last_drawings_child.draw(parent_drawlist, parent_x, parent_y)
+        # Child UpdateAppItemState(item->state); ?
+
+cdef class drawingItem(appItem):
+    def __cinit__(self, *args, **kwargs):
+        return
+
 
 cdef class dcgWindow(appItem):
     def __cinit__(self, *args, **kwargs):
