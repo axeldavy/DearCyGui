@@ -30,6 +30,8 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 
 from concurrent.futures import ThreadPoolExecutor
 from libc.stdlib cimport malloc, free
+from libcpp.cmath cimport atan, sin, cos
+from libc.math cimport M_PI
 from .constants import constants
 
 cdef extern from "../src/mvContext.h" nogil:
@@ -477,6 +479,16 @@ cdef class dcgViewport:
                                self.transform[3][3] * src_p[3]
         else:
             transformed_p = src_p
+
+        if self.perspectiveDivide:
+            if transformed_p[3] != 0.:
+                transformed_p[0] /= transformed_p[3]
+                transformed_p[1] /= transformed_p[3]
+                transformed_p[2] /= transformed_p[3]
+            transformed_p[3] = 1.
+
+        # TODO clipViewport
+
         cdef imgui.ImVec2 plot_transformed
         if self.in_plot:
             plot_transformed = \
@@ -990,7 +1002,7 @@ cdef class appItem:
         self.last_drawings_child = None
         self.last_payloads_child = None
 
-cdef class dcgDrawListItem(appItem):
+cdef class dcgDrawList(appItem):
     def __cinit__(self, context, int width, int height, *args, **kwargs):
         self.clip_width = <float>width
         self.clip_height = <float>height
@@ -1080,7 +1092,7 @@ cdef class dcgDrawListItem(appItem):
         """
         
 
-cdef class dcgViewportDrawListItem(appItem):
+cdef class dcgViewportDrawList(appItem):
     def __cinit__(self, *args, **kwargs):
         self.front = kwargs.get("front", True)
     @property
@@ -1119,7 +1131,7 @@ cdef class dcgViewportDrawListItem(appItem):
         self.last_drawings_child.draw(internal_drawlist, 0., 0.)
         # Child UpdateAppItemState(item->state); ?
 
-cdef class dcgDrawLayerItem(appItem):
+cdef class dcgDrawLayer(appItem):
     def __cinit__(self, *args, **kwargs):
         self.cullMode = kwargs.get("cull_mode", 0) # mvCullMode_None == 0
         self.perspectiveDivide = kwargs.get("perspective_divide", False)
@@ -1205,9 +1217,180 @@ cdef class dcgDrawLayerItem(appItem):
         self.last_drawings_child.draw(parent_drawlist, parent_x, parent_y)
         # Child UpdateAppItemState(item->state); ?
 
-cdef class drawingItem(appItem):
-    def __cinit__(self, *args, **kwargs):
-        return
+cdef inline void read_point(float* dst, src):
+    cdef int src_size = len(src)
+    dst[0] = 0.
+    dst[1] = 0.
+    dst[2] = 0.
+    dst[3] = 0.
+    if src_size > 0:
+        dst[0] = src[0]
+    if src_size > 1:
+        dst[1] = src[1]
+    if src_size > 2:
+        dst[2] = src[2]
+    if src_size > 3:
+        dst[3] = src[3]
+
+cdef inline imgui.ImU32 parse_color(src):
+    cdef int src_size = len(src)
+    cdef imgui.ImVec4 color_float4
+    color_float4.x = 1.
+    color_float4.y = 1.
+    color_float4.z = 1.
+    color_float4.w = 1.
+    if src_size > 0:
+        color_float4.x = src[0]
+    if src_size > 1:
+        color_float4.y = src[1]
+    if src_size > 2:
+        color_float4.z = src[2]
+    if src_size > 3:
+        color_float4.w = src[3]
+    return  imgui.ColorConvertFloat4ToU32(color_float4)
+
+cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint):
+    cdef imgui.ImVec4 color_float4 = imgui.ColorConvertU32ToFloat4(color_uint)
+    dst[0] = color_float4.x
+    dst[1] = color_float4.y
+    dst[2] = color_float4.z
+    dst[3] = color_float4.w
+
+cdef class dcgDrawArrow(appItem):
+    def __cinit__(self, context, p1, p2, *args, **kwargs):
+        read_point(self.end, p1)
+        read_point(self.start, p2)
+        self.color = 4294967295 # 0xffffffff
+        if hasattr(kwargs, "color"):
+            self.color = parse_color(kwargs["color"])
+        self.thickness = kwargs.get("thickness", 1.)
+        self.size = kwargs.get("thickness", 4.)
+        self.__compute_tip()
+
+    cdef void __compute_tip(self):
+        # Copy paste from original code
+
+        cdef float xsi = self.end[0]
+        cdef float xfi = self.start[0]
+        cdef float ysi = self.end[1]
+        cdef float yfi = self.start[1]
+
+        # length of arrow head
+        cdef double xoffset = self.size
+        cdef double yoffset = self.size
+
+        # get pointer angle w.r.t +X (in radians)
+        cdef double angle = 0.0
+        if xsi >= xfi and ysi >= yfi:
+            angle = atan((ysi - yfi) / (xsi - xfi))
+        elif xsi < xfi and ysi >= yfi:
+            angle = M_PI + atan((ysi - yfi) / (xsi - xfi))
+        elif xsi < xfi and ysi < yfi:
+            angle = -M_PI + atan((ysi - yfi) / (xsi - xfi))
+        elif xsi >= xfi and ysi < yfi:
+            angle = atan((ysi - yfi) / (xsi - xfi))
+
+        cdef float x1 = <float>(xsi - xoffset * cos(angle))
+        cdef float y1 = <float>(ysi - yoffset * sin(angle))
+        self.corner1 = [x1 - 0.5 * self.size * sin(angle),
+                        y1 + 0.5 * self.size * cos(angle),
+                        0.,
+                        1.]
+        self.corner2 = [x1 + 0.5 * self.size * cos((M_PI / 2.0) - angle),
+                        y1 - 0.5 * self.size * sin((M_PI / 2.0) - angle),
+                        0.,
+                        1.]
+
+    @property
+    def end(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.end)
+    @end.setter
+    def end(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.end, value)
+        self.__compute_tip()
+    @property
+    def start(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.start)
+    @start.setter
+    def start(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.start, value)
+        self.__compute_tip()
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color
+        unparse_color(color, self.color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.thickness = value
+        self.__compute_tip()
+    @property
+    def size(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.size
+    @size.setter
+    def size(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.size = value
+        self.__compute_tip()
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+        if self.last_drawings_child is None:
+            return
+
+        cdef float thickness = self.thickness
+        if self.context.viewport.in_plot:
+            thickness *= self.context.viewport.thickness_multiplier
+
+        cdef float[4] tstart
+        cdef float[4] tend
+        cdef float[4] tcorner1
+        cdef float[4] tcorner2
+        self.context.viewport.apply_current_transform(tstart, self.start)
+        self.context.viewport.apply_current_transform(tend, self.end)
+        self.context.viewport.apply_current_transform(tcorner1, self.corner1)
+        self.context.viewport.apply_current_transform(tcorner2, self.corner2)
+        # TODO: original code doesn't shift when plot. Why ?
+        if not(self.context.viewport.in_plot):
+            tstart[0] += parent_x
+            tstart[1] += parent_y
+            tend[0] += parent_x
+            tend[1] += parent_y
+            tcorner1[0] += parent_x
+            tcorner1[1] += parent_y
+            tcorner2[0] += parent_x
+            tcorner2[1] += parent_y
+        cdef imgui.ImVec2 itstart = imgui.ImVec2(tstart[0], tstart[1])
+        cdef imgui.ImVec2 itend  = imgui.ImVec2(tend[0], tend[1])
+        cdef imgui.ImVec2 itcorner1 = imgui.ImVec2(tcorner1[0], tcorner1[1])
+        cdef imgui.ImVec2 itcorner2 = imgui.ImVec2(tcorner2[0], tcorner2[1])
+        parent_drawlist.AddTriangleFilled(itend, itcorner1, itcorner2, self.color)
+        parent_drawlist.AddLine(itend, itstart, self.color, thickness)
+        parent_drawlist.AddTriangle(itend, itcorner1, itcorner2, self.color, thickness)
 
 
 cdef class dcgWindow(appItem):

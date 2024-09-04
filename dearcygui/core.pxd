@@ -63,6 +63,7 @@ cdef class dcgViewport:
     cdef bint has_matrix_transform
     cdef float[4][4] transform
     cdef bint in_plot
+    cdef float thickness_multiplier # in plots
 
 
     cdef initialize(self, unsigned width, unsigned height)
@@ -177,16 +178,16 @@ cdef class appItem:
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
 
-cdef class dcgDrawListItem(appItem):
+cdef class dcgDrawList(appItem):
     cdef float clip_width
     cdef float clip_height
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgViewportDrawListItem(appItem):
+cdef class dcgViewportDrawList(appItem):
     cdef bool front
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLayerItem(appItem):
+cdef class dcgDrawLayer(appItem):
     # mvAppItemDrawInfo
     cdef long cullMode
     cdef bint perspectiveDivide
@@ -196,8 +197,16 @@ cdef class dcgDrawLayerItem(appItem):
     cdef float[4][4] transform
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class drawingItem(appItem):
-    pass
+cdef class dcgDrawArrow(appItem):
+    cdef float[4] start
+    cdef float[4] end
+    cdef float[4] corner1
+    cdef float[4] corner2
+    cdef imgui.ImU32 color
+    cdef float thickness
+    cdef float size
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void __compute_tip(self)
 
 
 cdef class dcgWindow(appItem):
