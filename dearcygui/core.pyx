@@ -627,7 +627,7 @@ cdef class dcgContext:
         return self.started
 
 cdef class appItem:
-    def __cinit__(self, context):
+    def __cinit__(self, context, *args, **kwargs):
         if not(isinstance(context, dcgContext)):
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
@@ -956,7 +956,7 @@ cdef class appItem:
         
 
 cdef class dcgWindow(appItem):
-    def __cinit__(self):
+    def __cinit__(self, *args, **kwargs):
         self.windowflags = imgui.ImGuiWindowFlags_None
         self.mainWindow = False
         self.closing = True
