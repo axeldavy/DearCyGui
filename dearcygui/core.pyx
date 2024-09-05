@@ -683,7 +683,7 @@ cdef class dcgContext:
         return self.started
 
 cdef class appItem:
-    def __cinit__(self, context, *args, **kwargs):
+    def __cinit__(self, context):
         if not(isinstance(context, dcgContext)):
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
@@ -747,6 +747,11 @@ cdef class appItem:
         self.dragCallback = None
         self.dropCallback = None
         self.attached = False
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        # TODO
+        return
 
     cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1003,9 +1008,21 @@ cdef class appItem:
         self.last_payloads_child = None
 
 cdef class dcgDrawList(appItem):
-    def __cinit__(self, context, int width, int height, *args, **kwargs):
-        self.clip_width = <float>width
-        self.clip_height = <float>height
+    def __cinit__(self):
+        self.clip_width = 0
+        self.clip_height = 0
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        if len(args) == 2:
+            # positional arguments
+            self.clip_width = <float>args[0]
+            self.clip_height = <float>args[1]
+        elif len(args) == 0:
+            # Only optional arguments
+            pass
+        else:
+            raise ValueError("Invalid arguments passed to dcgDrawList. Expected width and height")
     @property
     def width(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1093,8 +1110,12 @@ cdef class dcgDrawList(appItem):
         
 
 cdef class dcgViewportDrawList(appItem):
-    def __cinit__(self, *args, **kwargs):
-        self.front = kwargs.get("front", True)
+    def __cinit__(self):
+        self.front = True
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        self.front = kwargs.get("front", self.front)
     @property
     def front(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1132,13 +1153,18 @@ cdef class dcgViewportDrawList(appItem):
         # Child UpdateAppItemState(item->state); ?
 
 cdef class dcgDrawLayer(appItem):
-    def __cinit__(self, *args, **kwargs):
-        self.cullMode = kwargs.get("cull_mode", 0) # mvCullMode_None == 0
-        self.perspectiveDivide = kwargs.get("perspective_divide", False)
-        self.depthClipping = kwargs.get("depth_clipping", False)
+    def __cinit__(self):
+        self.cullMode = 0 # mvCullMode_None == 0
+        self.perspectiveDivide = False
+        self.depthClipping = False
         self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0]
         self.has_matrix_transform = False
-
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        self.cullMode = kwargs.get("cull_mode", self.cullMode)
+        self.perspectiveDivide = kwargs.get("perspective_divide", self.perspectiveDivide)
+        self.depthClipping = kwargs.get("depth_clipping", self.depthClipping)
     @property
     def perspective_divide(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1258,13 +1284,23 @@ cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint) noexcept nogil:
 
 cdef class dcgDrawArrow(appItem):
     def __cinit__(self, context, p1, p2, *args, **kwargs):
-        read_point(self.end, p1)
-        read_point(self.start, p2)
+        # p1, p2, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
+        self.thickness = 1.
+        self.size = 4.
+
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        if len(args) == 2:
+            read_point(self.end, args[0])
+            read_point(self.start, args[1])
+        elif len(args) != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawArrow. Expected p1 and p2")
         if hasattr(kwargs, "color"):
             self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", 1.)
-        self.size = kwargs.get("size", 4.)
+        self.thickness = kwargs.get("thickness", self.thickness)
+        self.size = kwargs.get("size", self.size)
         self.__compute_tip()
 
     cdef void __compute_tip(self):
@@ -1394,17 +1430,26 @@ cdef class dcgDrawArrow(appItem):
 
 
 cdef class dcgDrawBezierCubic(appItem):
-    def __cinit__(self, context, p1, p2, p3, p4, *args, **kwargs):
-        read_point(self.p1, p1)
-        read_point(self.p2, p2)
-        read_point(self.p3, p3)
-        read_point(self.p4, p4)
+    def __cinit__(self):
+        # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
+        self.thickness = 0.
+        self.segments = 0.
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        if len(args) == 4:
+            (p1, p2, p3, p4) = args
+            read_point(self.p1, p1)
+            read_point(self.p2, p2)
+            read_point(self.p3, p3)
+            read_point(self.p4, p4)
+        elif args != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawBezierCubic. Expected p1, p2, p3 and p4")
         if hasattr(kwargs, "color"):
             self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", 0.)
-        self.segments = kwargs.get("segments", 0)
-
+        self.thickness = kwargs.get("thickness", self.thickness)
+        self.segments = kwargs.get("segments", self.segments)
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1507,16 +1552,25 @@ cdef class dcgDrawBezierCubic(appItem):
         parent_drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self.color, self.thickness, self.segments)
 
 cdef class dcgDrawBezierQuadratic(appItem):
-    def __cinit__(self, context, p1, p2, p3, *args, **kwargs):
-        read_point(self.p1, p1)
-        read_point(self.p2, p2)
-        read_point(self.p3, p3)
+    def __cinit__(self):
+        # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
+        self.thickness = 0.
+        self.segments = 0.
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        if len(args) == 3:
+            (p1, p2, p3) = args
+            read_point(self.p1, p1)
+            read_point(self.p2, p2)
+            read_point(self.p3, p3)
+        elif args != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawBezierQuadratic. Expected p1, p2 and p3")
         if hasattr(kwargs, "color"):
             self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", 0.)
-        self.segments = kwargs.get("segments", 0)
-
+        self.thickness = kwargs.get("thickness", self.thickness)
+        self.segments = kwargs.get("segments", self.segments)
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1607,7 +1661,7 @@ cdef class dcgDrawBezierQuadratic(appItem):
 
 
 cdef class dcgWindow(appItem):
-    def __cinit__(self, *args, **kwargs):
+    def __cinit__(self):
         self.windowflags = imgui.ImGuiWindowFlags_None
         self.mainWindow = False
         self.closing = True
