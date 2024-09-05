@@ -31,6 +31,7 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from concurrent.futures import ThreadPoolExecutor
 from libc.stdlib cimport malloc, free
 from libcpp.cmath cimport atan, sin, cos
+from libcpp.vector cimport vector
 from libc.math cimport M_PI
 from .constants import constants
 
@@ -457,7 +458,7 @@ cdef class dcgViewport:
             self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         return
 
-    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil:
+    cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil:
         # assumes imgui + viewport mutex are held
         cdef float[4] transformed_p
         if self.has_matrix_transform:
@@ -498,6 +499,10 @@ cdef class dcgViewport:
                                     -1)
             transformed_p[0] = plot_transformed.x
             transformed_p[1] = plot_transformed.y
+        else:
+            # Unsure why the original code doesn't do it in the in_plot path
+            transformed_p[0] += dx
+            transformed_p[1] += dy
         dst_p[0] = transformed_p[0]
         dst_p[1] = transformed_p[1]
         dst_p[2] = transformed_p[2]
@@ -1283,7 +1288,7 @@ cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint) noexcept nogil:
     dst[3] = color_float4.w
 
 cdef class dcgDrawArrow(appItem):
-    def __cinit__(self, context, p1, p2, *args, **kwargs):
+    def __cinit__(self):
         # p1, p2, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
         self.thickness = 1.
@@ -1395,8 +1400,6 @@ cdef class dcgDrawArrow(appItem):
             self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
-        if self.last_drawings_child is None:
-            return
 
         cdef float thickness = self.thickness
         if self.context.viewport.in_plot:
@@ -1406,20 +1409,10 @@ cdef class dcgDrawArrow(appItem):
         cdef float[4] tend
         cdef float[4] tcorner1
         cdef float[4] tcorner2
-        self.context.viewport.apply_current_transform(tstart, self.start)
-        self.context.viewport.apply_current_transform(tend, self.end)
-        self.context.viewport.apply_current_transform(tcorner1, self.corner1)
-        self.context.viewport.apply_current_transform(tcorner2, self.corner2)
-        # TODO: original code doesn't shift when plot. Why ?
-        if not(self.context.viewport.in_plot):
-            tstart[0] += parent_x
-            tstart[1] += parent_y
-            tend[0] += parent_x
-            tend[1] += parent_y
-            tcorner1[0] += parent_x
-            tcorner1[1] += parent_y
-            tcorner2[0] += parent_x
-            tcorner2[1] += parent_y
+        self.context.viewport.apply_current_transform(tstart, self.start, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(tend, self.end, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(tcorner1, self.corner1, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(tcorner2, self.corner2, parent_x, parent_y)
         cdef imgui.ImVec2 itstart = imgui.ImVec2(tstart[0], tstart[1])
         cdef imgui.ImVec2 itend  = imgui.ImVec2(tend[0], tend[1])
         cdef imgui.ImVec2 itcorner1 = imgui.ImVec2(tcorner1[0], tcorner1[1])
@@ -1434,7 +1427,7 @@ cdef class dcgDrawBezierCubic(appItem):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
         self.thickness = 0.
-        self.segments = 0.
+        self.segments = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         super().configure(**kwargs)
@@ -1520,8 +1513,6 @@ cdef class dcgDrawBezierCubic(appItem):
             self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
-        if self.last_drawings_child is None:
-            return
 
         cdef float thickness = self.thickness
         if self.context.viewport.in_plot:
@@ -1531,20 +1522,10 @@ cdef class dcgDrawBezierCubic(appItem):
         cdef float[4] p2
         cdef float[4] p3
         cdef float[4] p4
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
-        self.context.viewport.apply_current_transform(p4, self.p4)
-        # TODO: original code doesn't shift when plot. Why ?
-        if not(self.context.viewport.in_plot):
-            p1[0] += parent_x
-            p1[1] += parent_y
-            p2[0] += parent_x
-            p2[1] += parent_y
-            p3[0] += parent_x
-            p3[1] += parent_y
-            p4[0] += parent_x
-            p4[1] += parent_y
+        self.context.viewport.apply_current_transform(p1, self.p1, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p2, self.p2, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p3, self.p3, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p4, self.p4, parent_x, parent_y)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -1556,7 +1537,7 @@ cdef class dcgDrawBezierQuadratic(appItem):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
         self.thickness = 0.
-        self.segments = 0.
+        self.segments = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         super().configure(**kwargs)
@@ -1633,8 +1614,6 @@ cdef class dcgDrawBezierQuadratic(appItem):
             self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
-        if self.last_drawings_child is None:
-            return
 
         cdef float thickness = self.thickness
         if self.context.viewport.in_plot:
@@ -1643,22 +1622,269 @@ cdef class dcgDrawBezierQuadratic(appItem):
         cdef float[4] p1
         cdef float[4] p2
         cdef float[4] p3
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
-        # TODO: original code doesn't shift when plot. Why ?
-        if not(self.context.viewport.in_plot):
-            p1[0] += parent_x
-            p1[1] += parent_y
-            p2[0] += parent_x
-            p2[1] += parent_y
-            p3[0] += parent_x
-            p3[1] += parent_y
+        self.context.viewport.apply_current_transform(p1, self.p1, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p2, self.p2, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p3, self.p3, parent_x, parent_y)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
         parent_drawlist.AddBezierQuadratic(ip1, ip2, ip3, self.color, self.thickness, self.segments)
 
+
+cdef class dcgDrawCircle(appItem):
+    def __cinit__(self):
+        # center is zero init by cython
+        self.color = 4294967295 # 0xffffffff
+        self.fill = 4294967295
+        self.radius = 1.
+        self.thickness = 1.
+        self.segments = 0
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        if len(args) == 2:
+            (center, radius) = args
+            read_point(self.center, center)
+            self.radius = radius
+        elif args != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawCircle. Expected center and radius")
+        if hasattr(kwargs, "color"):
+            self.color = parse_color(kwargs["color"])
+        if hasattr(kwargs, "fill"):
+            self.fill = parse_color(kwargs["fill"])
+        self.thickness = kwargs.get("thickness", self.thickness)
+        self.segments = kwargs.get("segments", self.segments)
+    @property
+    def center(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.center)
+    @center.setter
+    def center(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.center, value)
+    @property
+    def radius(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.radius)
+    @radius.setter
+    def radius(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.radius = value
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color
+        unparse_color(color, self.color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color = parse_color(value)
+    @property
+    def fill(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] fill
+        unparse_color(fill, self.fill)
+        return list(fill)
+    @fill.setter
+    def fill(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.fill = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.thickness = value
+    @property
+    def segments(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.segments
+    @segments.setter
+    def segments(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.segments = value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show):
+            return
+
+        cdef float thickness = self.thickness
+        cdef float radius = self.radius
+        if self.context.viewport.in_plot:
+            thickness *= self.context.viewport.thickness_multiplier
+            radius *= self.context.viewport.thickness_multiplier
+
+        cdef float[4] center
+        self.context.viewport.apply_current_transform(center, self.center, parent_x, parent_y)
+        cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
+        if self.fill != 0: # TODO or 4294967295 ?
+            parent_drawlist.AddCircleFilled(icenter, radius, self.fill, self.segments)
+        parent_drawlist.AddCircle(icenter, radius, self.color, self.segments, thickness)
+
+
+cdef class dcgDrawEllipse(appItem):
+    def __cinit__(self):
+        # pmin/pmax is zero init by cython
+        self.color = 4294967295 # 0xffffffff
+        self.fill = 4294967295
+        self.thickness = 1.
+        self.segments = 0
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        cdef bint recompute_points = False
+        if len(args) == 2:
+            (pmin, pmax) = args
+            read_point(self.pmin, pmin)
+            read_point(self.pmax, pmax)
+            recompute_points = True
+        elif args != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawEllipse. Expected pmin and pmax")
+        # pmin/pmax can also be passed as optional arguments
+        if hasattr(kwargs, "pmin"):
+            read_point(self.pmin, kwargs["pmin"])
+            recompute_points = True
+        if hasattr(kwargs, "pmax"):
+            read_point(self.pmin, kwargs["pmax"])
+            recompute_points = True
+        if hasattr(kwargs, "color"):
+            self.color = parse_color(kwargs["color"])
+        if hasattr(kwargs, "fill"):
+            self.fill = parse_color(kwargs["fill"])
+        self.thickness = kwargs.get("thickness", self.thickness)
+        self.segments = kwargs.get("segments", self.segments)
+        if recompute_points:
+            self.__fill_points()
+    cdef void __fill_points(self):
+        cdef int segments = max(self.segments, 3)
+        cdef float width = self.pmax[0] - self.pmin[0]
+        cdef float height = self.pmax[1] - self.pmin[1]
+        cdef float cx = width / 2. + self.pmin[0]
+        cdef float cy = height / 2. + self.pmin[1]
+        cdef float radian_inc = (M_PI * 2.) / <float>segments
+        self.points.clear()
+        self.points.reserve(segments+1)
+        cdef int i
+        # vector needs float4 rather than float[4]
+        cdef float4 p
+        p.p[2] = self.pmax[2]
+        p.p[3] = self.pmax[3]
+        width = abs(width)
+        height = abs(height)
+        for i in range(segments):
+            p.p[0] = cx + cos(<float>i * radian_inc) * width / 2.
+            p.p[1] = cy - sin(<float>i * radian_inc) * height / 2.
+            self.points.push_back(p)
+        self.points.push_back(self.points[0])
+    @property
+    def pmin(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.pmin)
+    @pmin.setter
+    def pmin(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.pmin, value)
+        self.__fill_points()
+    @property
+    def pmax(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.pmax)
+    @pmax.setter
+    def pmax(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.pmax, value)
+        self.__fill_points()
+    @property
+    def radius(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.radius)
+    @radius.setter
+    def radius(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.radius = value
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color
+        unparse_color(color, self.color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color = parse_color(value)
+    @property
+    def fill(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] fill
+        unparse_color(fill, self.fill)
+        return list(fill)
+    @fill.setter
+    def fill(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.fill = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.thickness = value
+    @property
+    def segments(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.segments
+    @segments.setter
+    def segments(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.segments = value
+        self.__fill_points()
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        if not(self.show) or self.points.size() < 3:
+            return
+
+        cdef float thickness = self.thickness
+        if self.context.viewport.in_plot:
+            thickness *= self.context.viewport.thickness_multiplier
+
+        cdef vector[imgui.ImVec2] transformed_points
+        transformed_points.reserve(self.points.size())
+        cdef int i
+        cdef float[4] p
+        for i in range(<int>self.points.size()):
+            self.context.viewport.apply_current_transform(p, self.points[i].p, parent_x, parent_y)
+            transformed_points.push_back(imgui.ImVec2(p[0], p[1]))
+        # TODO imgui requires clockwise order for correct AA
+        # Reverse order if needed
+        if self.fill != 0: # TODO or 4294967295 ?
+            parent_drawlist.AddConvexPolyFilled(transformed_points.data(),
+                                                <int>transformed_points.size(),
+                                                self.fill)
+        parent_drawlist.AddPolyline(transformed_points.data(),
+                                    <int>transformed_points.size(),
+                                    self.color,
+                                    0,
+                                    thickness)
 
 cdef class dcgWindow(appItem):
     def __cinit__(self):

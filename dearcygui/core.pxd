@@ -1,8 +1,9 @@
-from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, ImVec2
+from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, float4
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
 from libcpp.atomic cimport atomic
+from libcpp.vector cimport vector
 
 """
 Thread safety:
@@ -71,7 +72,7 @@ cdef class dcgViewport:
     cdef void __on_resize(self, int width, int height)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
-    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil
+    cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
 
 cdef class dcgContext:
     cdef recursive_mutex mutex
@@ -227,6 +228,25 @@ cdef class dcgDrawBezierQuadratic(appItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
+cdef class dcgDrawCircle(appItem):
+    cdef float[4] center
+    cdef float radius
+    cdef imgui.ImU32 color
+    cdef imgui.ImU32 fill
+    cdef float thickness
+    cdef int segments
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawEllipse(appItem):
+    cdef float[4] pmin
+    cdef float[4] pmax
+    cdef imgui.ImU32 color
+    cdef imgui.ImU32 fill
+    cdef float thickness
+    cdef int segments
+    cdef vector[float4] points
+    cdef void __fill_points(self)
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
 cdef class dcgWindow(appItem):
     cdef imgui.ImGuiWindowFlags windowflags
