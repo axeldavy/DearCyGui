@@ -57,7 +57,7 @@ cdef class dcgViewport:
     # Shouldn't be accessed outside draw()
     #mvMat4 transform         = mvIdentityMat4();
     #mvMat4 appliedTransform  = mvIdentityMat4(); // only used by nodes
-    cdef long cullMode
+    #cdef long cullMode -> unused
     cdef bint perspectiveDivide
     cdef bint depthClipping
     cdef float[6] clipViewport
@@ -198,6 +198,9 @@ cdef class dcgDrawLayer(appItem):
     cdef float[4][4] transform
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
+# Draw Node ? Seems to be exactly like Drawlayer, but with only
+# the matrix settable (via apply_transform). -> merge to drawlayer
+
 cdef class dcgDrawArrow(appItem):
     cdef float[4] start
     cdef float[4] end
@@ -247,6 +250,71 @@ cdef class dcgDrawEllipse(appItem):
     cdef vector[float4] points
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawLine(appItem):
+    cdef float[4] p1
+    cdef float[4] p2
+    cdef imgui.ImU32 color
+    cdef float thickness
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawPolyline(appItem):
+    cdef imgui.ImU32 color
+    cdef float thickness
+    cdef bint closed
+    cdef vector[float4] points
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawPolygon(appItem):
+    cdef imgui.ImU32 color
+    cdef imgui.ImU32 fill
+    cdef float thickness
+    cdef vector[float4] points
+    cdef int[:,:] triangulation_indices
+    cdef void __triangulate(self)
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawQuad(appItem):
+    cdef float[4] p1
+    cdef float[4] p2
+    cdef float[4] p3
+    cdef float[4] p4
+    cdef imgui.ImU32 color
+    cdef imgui.ImU32 fill
+    cdef float thickness
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawRect(appItem):
+    cdef float[4] pmin
+    cdef float[4] pmax
+    cdef imgui.ImU32 color
+    cdef imgui.ImU32 color_upper_left
+    cdef imgui.ImU32 color_upper_right
+    cdef imgui.ImU32 color_bottom_left
+    cdef imgui.ImU32 color_bottom_right
+    cdef imgui.ImU32 fill
+    cdef float rounding
+    cdef float thickness
+    cdef bint multicolor
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+"""
+cdef class dgcDrawText(appItem):
+    cdef float[4] pos
+    cdef string text
+    cdef imgui.ImU32 color
+    cdef float size
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+"""
+cdef class dcgDrawTriangle(appItem):
+    cdef float[4] p1
+    cdef float[4] p2
+    cdef float[4] p3
+    cdef imgui.ImU32 color
+    cdef imgui.ImU32 fill
+    cdef float thickness
+    cdef int cull_mode
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
 
 cdef class dcgWindow(appItem):
     cdef imgui.ImGuiWindowFlags windowflags
