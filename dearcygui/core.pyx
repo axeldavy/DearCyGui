@@ -2801,7 +2801,7 @@ cdef class dcgDrawRect(drawableItem):
         if "color_bottom_right" in kwargs:
             self.color_bottom_right = parse_color(kwargs.pop("color_bottom_right"))
         if "corner_colors" in kwargs and kwargs["corner_colors"] is not None:
-            (color_bottom_right, color_bottom_left, color_upper_left, color_upper_right) = \
+            (color_upper_right, color_upper_left, color_bottom_right, color_bottom_left) = \
                 kwargs.pop("corner_colors")
             self.color_upper_left = parse_color(color_upper_left)
             self.color_upper_right = parse_color(color_upper_right)
@@ -2947,15 +2947,16 @@ cdef class dcgDrawRect(drawableItem):
             swap(col_up_right, col_bot_right)
 
         # imgui requires clockwise order + convex for correct AA
-        if self.fill & imgui.IM_COL32_A_MASK != 0:
-            if self.multicolor:
+        if self.multicolor:
+            if (col_up_left|col_up_right|col_bot_left|col_up_right) & imgui.IM_COL32_A_MASK != 0:
                 parent_drawlist.AddRectFilledMultiColor(ipmin,
                                                         ipmax,
                                                         col_up_left,
                                                         col_up_right,
                                                         col_bot_left,
                                                         col_bot_right)
-            else:
+        else:
+            if self.fill & imgui.IM_COL32_A_MASK != 0:
                 parent_drawlist.AddRectFilled(ipmin,
                                               ipmax,
                                               self.fill,
