@@ -8,7 +8,6 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
-#include <stb_image.h>
 #include "mvToolManager.h"
 
 #include <functional>
@@ -173,6 +172,7 @@ mvShowViewport(mvViewport& viewport,
 
     std::vector<GLFWimage> images;
 
+    /*
     if (!viewport.small_icon.empty())
     {
         int image_width, image_height;
@@ -195,6 +195,7 @@ mvShowViewport(mvViewport& viewport,
 
     if (!images.empty())
         glfwSetWindowIcon(viewportData->handle, images.size(), images.data());
+    */
 
     // A single thread can use a context at a time
     viewportData->gl_context.lock();
@@ -292,6 +293,14 @@ void mvWakeRendering(mvViewport& viewport)
 void mvMakeRenderingContextCurrent(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
+    /* TODO 
+     * Find a way to avoid being stuck on vsync (swapBuffers needs the
+       context to be current).
+       Maybe shared context:
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        GLFWwindow* sharedWindow = glfwCreateWindow(1, 1, "", NULL, window);
+        But probably needs some extra care for GL init
+    */
     viewportData->gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
 }

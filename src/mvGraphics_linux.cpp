@@ -39,21 +39,20 @@ present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vs
 
     glfwGetWindowPos(viewportData->handle, &viewport->xpos, &viewport->ypos);
 
-    glfwSwapInterval(viewport->vsync ? 1 : 0); // Enable vsync
-
     // Rendering
     ImGui::Render();
     int display_w, display_h;
-    glfwGetFramebufferSize(viewportData->handle, &display_w, &display_h);
-
     viewportData->gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
+    glfwGetFramebufferSize(viewportData->handle, &display_w, &display_h);
+
+    glfwSwapInterval(viewport->vsync ? 1 : 0); // Enable vsync
     glViewport(0, 0, display_w, display_h);
     glClearColor(viewport->clearColor.r, viewport->clearColor.g, viewport->clearColor.b, viewport->clearColor.a);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
 
     glfwSwapBuffers(viewportData->handle);
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
 }

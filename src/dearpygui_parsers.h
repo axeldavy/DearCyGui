@@ -7,7 +7,6 @@
 #include "mvCustomTypes.h"
 #include "mvPyUtils.h"
 #include "mvViewport.h"
-#include <stb_image.h>
 #include "mvProfiler.h"
 
 static void

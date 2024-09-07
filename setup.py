@@ -62,8 +62,7 @@ def setup_package():
                     "thirdparty/ImGuiFileDialog",
                     "thirdparty/imnodes",
                     "thirdparty/implot",
-                    "thirdparty/gl3w",
-                    "thirdparty/stb"]
+                    "thirdparty/gl3w"]
     #"thirdparty/glfw/include",
     cpp_sources = [
         "mvContext.cpp",

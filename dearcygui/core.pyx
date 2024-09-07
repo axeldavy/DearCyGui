@@ -786,7 +786,15 @@ cdef class baseItem:
             else:
                 raise ValueError("Instance of type {} cannot be attached to viewport".format(type(self)))
         else:
-            raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
+            if isinstance(self, drawableItem) and isinstance(target_parent, drawableContainerItem):
+                if target_parent.last_drawings_child is not None:
+                    m3 = unique_lock[recursive_mutex](target_parent.last_drawings_child.mutex)
+                    target_parent.last_drawings_child.next_sibling = self
+                self.prev_sibling = target_parent.last_drawings_child
+                self.parent = target_parent
+                target_parent.last_drawings_child = <drawableItem>self
+            else:
+                raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
         self.attached = True
 
     cdef void __detach_item_and_lock(self):
@@ -1004,7 +1012,7 @@ cdef class drawableItem(baseItem):
         self.draw_prev_siblings(l, x, y)
 
 
-cdef class uiItem(drawableItem):
+cdef class uiItem(drawableContainerItem):
     def __cinit__(self):
         # mvAppItemInfo
         self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
@@ -1072,7 +1080,7 @@ cdef class uiItem(drawableItem):
         return
 
 
-cdef class dcgDrawList(drawableItem):
+cdef class dcgDrawList(drawableContainerItem):
     def __cinit__(self):
         self.clip_width = 0
         self.clip_height = 0
@@ -1172,7 +1180,7 @@ cdef class dcgDrawList(drawableItem):
         """
         
 
-cdef class dcgViewportDrawList(drawableItem):
+cdef class dcgViewportDrawList(drawableContainerItem):
     def __cinit__(self):
         self.front = True
     def configure(self, **kwargs):
@@ -1213,7 +1221,7 @@ cdef class dcgViewportDrawList(drawableItem):
             imgui.GetBackgroundDrawList()
         self.last_drawings_child.draw(internal_drawlist, 0., 0.)
 
-cdef class dcgDrawLayer(drawableItem):
+cdef class dcgDrawLayer(drawableContainerItem):
     def __cinit__(self):
         self.cullMode = 0 # mvCullMode_None == 0
         self.perspectiveDivide = False
@@ -1332,6 +1340,8 @@ cdef class dcgDrawLayer(drawableItem):
         self.last_drawings_child.draw(parent_drawlist, parent_x, parent_y)
 
 cdef inline void read_point(float* dst, src):
+    if src is None:
+        raise TypeError("Point data must be tuple/list, not None")
     cdef int src_size = len(src)
     dst[0] = 0.
     dst[1] = 0.
@@ -1347,6 +1357,8 @@ cdef inline void read_point(float* dst, src):
         dst[3] = src[3]
 
 cdef inline imgui.ImU32 parse_color(src):
+    if src is None:
+        raise TypeError("Color data must be tuple/list, not None")
     cdef int src_size = len(src)
     cdef imgui.ImVec4 color_float4
     color_float4.x = 1.
@@ -1968,6 +1980,297 @@ cdef class dcgDrawEllipse(drawableItem):
                                     thickness)
 
 
+cdef class dcgDrawImage(drawableItem):
+    def __cinit__(self):
+        self.uv = [0., 0., 1., 1.]
+        self.color_multiplier = 4294967295 # 0xffffffff
+
+    def configure(self, *args, **kwargs):
+        if len(args) == 3:
+            texture = args[0]
+            if texture == 2:#MV_ATLAS_UUID:
+                assert(False) # TODO
+            else:
+                if not(isinstance(texture, dcgTexture)):
+                    raise TypeError("texture input must be a dcgTexture")
+                self.texture = <dcgTexture>texture
+            read_point(self.pmin, args[1])
+            read_point(self.pmax, args[2])
+        elif args != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, pmin, pmax")
+        if "pmin" in kwargs:
+            read_point(self.pmin, kwargs.pop("pmin"))
+        if "pmax" in kwargs:
+            read_point(self.pmax, kwargs.pop("pmax"))
+        if "texture_tag" in kwargs:
+            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to dcgTexture reference")
+        if "texture" in kwargs:
+            texture = kwargs.pop("texture")
+            if not(isinstance(texture, dcgTexture)):
+                raise TypeError("texture input must be a dcgTexture")
+            self.texture = <dcgTexture>texture
+        if "uv_max" in kwargs:
+            uv_max = kwargs.pop("uv_max")
+            self.uv[2] = uv_max[0]
+            self.uv[3] = uv_max[1]
+        if "uv_min" in kwargs:
+            uv_min = kwargs.pop("uv_min")
+            self.uv[0] = uv_min[0]
+            self.uv[1] = uv_min[1]
+        if "color" in kwargs:
+            #TODO warn_once()
+            self.color_multiplier = parse_color(kwargs.pop("color"))
+        if "color_multiplier" in kwargs:
+            self.color_multiplier = parse_color(kwargs.pop("color_multiplier"))
+        super().configure(**kwargs)
+
+    @property
+    def texture(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.texture
+    @texture.setter
+    def texture(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(isinstance(value, dcgTexture)):
+            raise TypeError("texture must be a dcgTexture")
+        self.texture = value
+    @property
+    def pmin(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.pmin)
+    @pmin.setter
+    def pmin(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.pmin, value)
+    @property
+    def pmax(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.pmax)
+    @pmax.setter
+    def pmax(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.pmax, value)
+    @property
+    def uv(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.uv)
+    @uv.setter
+    def uv(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.uv, value)
+    @property
+    def color_multiplier(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color_multiplier
+        unparse_color(color_multiplier, self.color_multiplier)
+        return list(color_multiplier)
+    @color_multiplier.setter
+    def color_multiplier(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color_multiplier = parse_color(value)
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
+        if not(self.show) or self.texture is None:
+            return
+
+        cdef unique_lock[recursive_mutex] m4 = unique_lock[recursive_mutex](self.texture.mutex)
+
+        cdef float[4] pmin
+        cdef float[4] pmax
+        self.context.viewport.apply_current_transform(pmin, self.pmin, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(pmax, self.pmax, parent_x, parent_y)
+        cdef imgui.ImVec2 ipmin = imgui.ImVec2(pmin[0], pmin[1])
+        cdef imgui.ImVec2 ipmax = imgui.ImVec2(pmax[0], pmax[1])
+        cdef imgui.ImVec2 uvmin = imgui.ImVec2(self.uv[0], self.uv[1])
+        cdef imgui.ImVec2 uvmax = imgui.ImVec2(self.uv[2], self.uv[3])
+        parent_drawlist.AddImage(self.texture.allocated_texture, ipmin, ipmax, uvmin, uvmax, self.color_multiplier)
+
+
+cdef class dcgDrawImageQuad(drawableItem):
+    def __cinit__(self):
+        # last two fields are unused
+        self.uv1 = [0., 0., 0., 0.]
+        self.uv2 = [0., 0., 0., 0.]
+        self.uv3 = [0., 0., 0., 0.]
+        self.uv4 = [0., 0., 0., 0.]
+        self.color_multiplier = 4294967295 # 0xffffffff
+
+    def configure(self, *args, **kwargs):
+        if len(args) == 5:
+            texture = args[0]
+            if texture == 2:#MV_ATLAS_UUID:
+                assert(False) # TODO
+            else:
+                if not(isinstance(texture, dcgTexture)):
+                    raise TypeError("texture input must be a dcgTexture")
+                self.texture = <dcgTexture>texture
+            read_point(self.p1, args[1])
+            read_point(self.p2, args[2])
+            read_point(self.p3, args[3])
+            read_point(self.p4, args[4])
+        elif args != 0:
+            raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, p1, p2, p3, p4")
+        if "p1" in kwargs:
+            read_point(self.p1, kwargs.pop("p1"))
+        if "p2" in kwargs:
+            read_point(self.p2, kwargs.pop("p2"))
+        if "p3" in kwargs:
+            read_point(self.p3, kwargs.pop("p3"))
+        if "p4" in kwargs:
+            read_point(self.p4, kwargs.pop("p4"))
+        if "texture_tag" in kwargs:
+            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to dcgTexture reference")
+        if "texture" in kwargs:
+            texture = kwargs.pop("texture")
+            if not(isinstance(texture, dcgTexture)):
+                raise TypeError("texture input must be a dcgTexture")
+            self.texture = <dcgTexture>texture
+        if "uv1" in kwargs:
+            read_point(self.uv1, kwargs.pop("uv1"))
+        if "uv2" in kwargs:
+            read_point(self.uv2, kwargs.pop("uv2"))
+        if "uv3" in kwargs:
+            read_point(self.uv3, kwargs.pop("uv3"))
+        if "uv4" in kwargs:
+            read_point(self.uv4, kwargs.pop("uv4"))
+        if "color" in kwargs:
+            #TODO warn_once()
+            self.color_multiplier = parse_color(kwargs.pop("color"))
+        if "color_multiplier" in kwargs:
+            self.color_multiplier = parse_color(kwargs.pop("color_multiplier"))
+        super().configure(**kwargs)
+
+    @property
+    def texture(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.texture
+    @texture.setter
+    def texture(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(isinstance(value, dcgTexture)):
+            raise TypeError("texture must be a dcgTexture")
+        self.texture = value
+    @property
+    def p1(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p1)
+    @p1.setter
+    def p1(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p1, value)
+    @property
+    def p2(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p2)
+    @p2.setter
+    def p2(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p2, value)
+    @property
+    def p3(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p3)
+    @p3.setter
+    def p3(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p3, value)
+    @property
+    def p4(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.p4)
+    @p4.setter
+    def p4(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.p4, value)
+    @property
+    def uv1(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.uv1)[:2]
+    @uv1.setter
+    def uv1(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.uv1, value)
+    @property
+    def uv2(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.uv2)[:2]
+    @uv2.setter
+    def uv2(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.uv2, value)
+    @property
+    def uv3(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.uv3)[:2]
+    @uv3.setter
+    def uv3(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.uv3, value)
+    @property
+    def uv4(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return list(self.uv4)[:2]
+    @uv4.setter
+    def uv4(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        read_point(self.uv4, value)
+    @property
+    def color_multiplier(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef float[4] color_multiplier
+        unparse_color(color_multiplier, self.color_multiplier)
+        return list(color_multiplier)
+    @color_multiplier.setter
+    def color_multiplier(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.color_multiplier = parse_color(value)
+
+    cdef void draw(self,
+                   imgui.ImDrawList* parent_drawlist,
+                   float parent_x,
+                   float parent_y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
+        if not(self.show) or self.texture is None:
+            return
+
+        cdef unique_lock[recursive_mutex] m4 = unique_lock[recursive_mutex](self.texture.mutex)
+
+        cdef float[4] p1
+        cdef float[4] p2
+        cdef float[4] p3
+        cdef float[4] p4
+        cdef imgui.ImVec2 ip1
+        cdef imgui.ImVec2 ip2
+        cdef imgui.ImVec2 ip3
+        cdef imgui.ImVec2 ip4
+
+        self.context.viewport.apply_current_transform(p1, self.p1, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p2, self.p2, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p3, self.p3, parent_x, parent_y)
+        self.context.viewport.apply_current_transform(p4, self.p4, parent_x, parent_y)
+        ip1 = imgui.ImVec2(p1[0], p1[1])
+        ip2 = imgui.ImVec2(p2[0], p2[1])
+        ip3 = imgui.ImVec2(p3[0], p3[1])
+        ip4 = imgui.ImVec2(p4[0], p4[1])
+        cdef imgui.ImVec2 iuv1 = imgui.ImVec2(self.uv1[0], self.uv1[1])
+        cdef imgui.ImVec2 iuv2 = imgui.ImVec2(self.uv2[0], self.uv2[1])
+        cdef imgui.ImVec2 iuv3 = imgui.ImVec2(self.uv3[0], self.uv3[1])
+        cdef imgui.ImVec2 iuv4 = imgui.ImVec2(self.uv4[0], self.uv4[1])
+        parent_drawlist.AddImageQuad(self.texture.allocated_texture, \
+            ip1, ip2, ip3, ip4, iuv1, iuv2, iuv3, iuv4, self.color_multiplier)
+
+
+
 cdef class dcgDrawLine(drawableItem):
     def __cinit__(self):
         # p1, p2 are zero init by cython
@@ -2497,7 +2800,7 @@ cdef class dcgDrawRect(drawableItem):
             self.color_bottom_left = parse_color(kwargs.pop("color_bottom_left"))
         if "color_bottom_right" in kwargs:
             self.color_bottom_right = parse_color(kwargs.pop("color_bottom_right"))
-        if "corner_colors" in kwargs:
+        if "corner_colors" in kwargs and kwargs["corner_colors"] is not None:
             (color_bottom_right, color_bottom_left, color_upper_left, color_upper_right) = \
                 kwargs.pop("corner_colors")
             self.color_upper_left = parse_color(color_upper_left)
@@ -3215,10 +3518,10 @@ cdef class dcgTexture(baseItem):
 
     def __delalloc__(self):
         # Note: textures might be referenced during imgui rendering.
-        # Thus we must there is no rendering to free a texture.
+        # Thus we must wait there is no rendering to free a texture.
         if self.allocated_texture != NULL:
             if not(self.context.imgui_mutex.try_lock()):
-                with nogil: # rendering can take some time to avoid holding the gil
+                with nogil: # rendering can take some time so avoid holding the gil
                     self.context.imgui_mutex.lock()
             mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
             mvFreeTexture(self.allocated_texture)

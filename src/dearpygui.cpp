@@ -8,7 +8,6 @@
 #include "mvCustomTypes.h"
 #include "mvPyUtils.h"
 #include "mvViewport.h"
-#include <stb_image.h>
 #include "mvProfiler.h"
 #include "dearpygui_commands.h"
 #include "dearpygui_parsers.h"

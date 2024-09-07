@@ -151,11 +151,14 @@ cdef class drawableItem(baseItem):
     cdef void draw_prev_siblings(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
+cdef class drawableContainerItem(drawableItem):
+    pass
+
 """
 UI item
 A drawable item with various UI states
 """
-cdef class uiItem(drawableItem):
+cdef class uiItem(drawableContainerItem):
     # mvAppItemInfo
     cdef int location
     cdef bint showDebug
@@ -213,16 +216,16 @@ cdef class uiItem(drawableItem):
 Drawing Items
 """
 
-cdef class dcgDrawList(drawableItem):
+cdef class dcgDrawList(drawableContainerItem):
     cdef float clip_width
     cdef float clip_height
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgViewportDrawList(drawableItem):
+cdef class dcgViewportDrawList(drawableContainerItem):
     cdef bool front
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLayer(drawableItem):
+cdef class dcgDrawLayer(drawableContainerItem):
     # mvAppItemDrawInfo
     cdef long cullMode
     cdef bint perspectiveDivide
@@ -283,6 +286,28 @@ cdef class dcgDrawEllipse(drawableItem):
     cdef int segments
     cdef vector[float4] points
     cdef void __fill_points(self)
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawImage(drawableItem):
+    cdef float[4] pmin
+    cdef float[4] pmax
+    cdef float[4] uv
+    cdef imgui.ImU32 color_multiplier
+    cdef dcgTexture texture
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+cdef class dcgDrawImageQuad(drawableItem):
+    cdef float[4] p1
+    cdef float[4] p2
+    cdef float[4] p3
+    cdef float[4] p4
+    cdef float[4] pmax
+    cdef float[4] uv1
+    cdef float[4] uv2
+    cdef float[4] uv3
+    cdef float[4] uv4
+    cdef imgui.ImU32 color_multiplier
+    cdef dcgTexture texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
 cdef class dcgDrawLine(drawableItem):

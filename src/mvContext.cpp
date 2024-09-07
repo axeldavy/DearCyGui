@@ -14,7 +14,6 @@
 #include "mvToolManager.h"
 #include <imnodes.h>
 #include <thread>
-#include <stb_image.h>
 #include "mvCustomTypes.h"
 #include "mvAppItemCommons.h"
 #include "mvItemRegistry.h"

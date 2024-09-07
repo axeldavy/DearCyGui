@@ -7,8 +7,8 @@
 #include "mvCustomTypes.h"
 #include "mvPyUtils.h"
 #include "mvViewport.h"
-#include "stb_image.h"
-#include "stb_image_write.h"
+//#include "stb_image.h"
+//#include "stb_image_write.h"
 #include "mvProfiler.h"
 #include "mvUtilities.h"
 #include <string.h>
@@ -2333,6 +2333,8 @@ get_frame_count(PyObject* self, PyObject* args, PyObject* kwargs)
 static PyObject*
 load_image(PyObject* self, PyObject* args, PyObject* kwargs)
 {
+	return GetPyNone();
+#if 0
 	const char* file;
 	f32 gamma = 1.0f;
 	f32 gamma_scale = 1.0f;
@@ -2343,6 +2345,7 @@ load_image(PyObject* self, PyObject* args, PyObject* kwargs)
 
 	// Vout = (Vin / 255)^v; Where v = gamma
 
+	/**/
 	if (stbi_is_hdr(file))
 	{
 		stbi_hdr_to_ldr_gamma(gamma);
@@ -2377,7 +2380,9 @@ load_image(PyObject* self, PyObject* args, PyObject* kwargs)
 	PyTuple_SetItem(result, 2, PyLong_FromLong(4));
 	PyTuple_SetItem(result, 3, newbuffer);
 
+
 	return result;
+#endif
 }
 
 /*  returns 1 iff str ends with suffix  */
@@ -2476,6 +2481,7 @@ save_image(PyObject* self, PyObject* args, PyObject* kwargs)
 		return GetPyNone();
 	}
 
+#if 0
 	switch (imageType)
 	{
         case MV_IMAGE_TYPE_PNG_:
@@ -2510,7 +2516,7 @@ save_image(PyObject* self, PyObject* args, PyObject* kwargs)
         }
         default: break;
 	}
-
+#endif
 	return GetPyNone();
 }
 
