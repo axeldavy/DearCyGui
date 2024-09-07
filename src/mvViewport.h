@@ -39,6 +39,7 @@ struct mvViewport
 	b8 decorated   = true;
     b8 fullScreen  = false;
 	b8 disableClose = false;
+	b8 waitForEvents = false;
 
 	// position/size
 	b8  sizeDirty    = false;
@@ -84,6 +85,9 @@ void        mvRestoreViewport (mvViewport& viewport);
 void        mvRenderFrame(mvViewport& viewport,
 						  mvGraphics& graphics);
 void        mvToggleFullScreen(mvViewport& viewport);
+void        mvWakeRendering(mvViewport& viewport);
+void        mvMakeRenderingContextCurrent(mvViewport& viewport);
+void        mvReleaseRenderingContext(mvViewport& viewport);
 
 static void mvOnResize()
 {

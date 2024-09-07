@@ -35,6 +35,9 @@ from libcpp.cmath cimport atan, sin, cos
 from libcpp.vector cimport vector
 from libc.math cimport M_PI
 
+import numpy as np
+cimport numpy as cnp
+
 import scipy
 import scipy.spatial
 from .constants import constants
@@ -398,6 +401,15 @@ cdef class dcgViewport:
             print("TODO: fullscreen(false)")
 
     @property
+    def waitForInputs(self):
+        return self.viewport.waitForEvents
+
+    @waitForInputs.setter
+    def waitForInputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        self.viewport.waitForEvents = value
+
+    @property
     def shown(self) -> bint:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
@@ -442,24 +454,22 @@ cdef class dcgViewport:
         self.depthClipping = False
         self.has_matrix_transform = False
         self.in_plot = False
-        if self.fontRegistryRoots is not None:
-            self.fontRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.handlerRegistryRoots is not None:
-            self.handlerRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.textureRegistryRoots is not None:
-            self.textureRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.filedialogRoots is not None:
-            self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.colormapRoots is not None:
-            self.colormapRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        #if self.fontRegistryRoots is not None:
+        #    self.fontRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        #if self.handlerRegistryRoots is not None:
+        #    self.handlerRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        #if self.textureRegistryRoots is not None:
+        #    self.textureRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        #if self.filedialogRoots is not None:
+        #    self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        #if self.colormapRoots is not None:
+        #    self.colormapRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.windowRoots is not None:
             self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.viewportMenubarRoots is not None:
-            self.viewportMenubarRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        #if self.viewportMenubarRoots is not None:
+        #    self.viewportMenubarRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.viewportDrawlistRoots is not None:
             self.viewportDrawlistRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.windowRoots is not None:
-            self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         return
 
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil:
@@ -632,6 +642,18 @@ cdef class dcgViewport:
             self.graphics_initialized = True
         self.viewport.shown = 1
 
+    def wake(self):
+        """
+        In case rendering is waiting for an input (waitForInputs),
+        generate a fake input to force rendering.
+
+        This is useful if you have updated the content asynchronously
+        and want to show the update
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        mvWakeRendering(dereference(self.viewport))
+
 
 cdef class dcgContext:
     def __init__(self):
@@ -691,81 +713,18 @@ cdef class dcgContext:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.started
 
-cdef class appItem:
+cdef class baseItem:
     def __cinit__(self, context):
         if not(isinstance(context, dcgContext)):
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
         self.uuid = self.context.next_uuid.fetch_add(1)
-        # mvAppItemInfo
-        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
-        self.location = -1
-        self.showDebug = False
-        # next frame triggers
-        self.focusNextFrame = False
-        self.triggerAlternativeAction = False
-        self.shownLastFrame = False
-        self.hiddenLastFrame = False
-        self.enabledLastFrame = False
-        self.disabledLastFrame = False
-        # previous frame cache
-        self.previousCursorPos = imgui.ImVec2(0., 0.)
-        # dirty flags
-        self.dirty_size = True
-        self.dirtyPos = False
-        # mvAppItemState
-        self.hovered = False
-        self.active = False
-        self.focused = False
-        self.leftclicked = False
-        self.rightclicked = False
-        self.middleclicked = False
-        self.doubleclicked = [False, False, False, False, False]
-        self.visible = False
-        self.edited = False
-        self.activated = False
-        self.deactivated = False
-        self.deactivatedAfterEdit = False
-        self.toggledOpen = False
-        self.mvRectSizeResized = False
-        self.rectMin = imgui.ImVec2(0., 0.)
-        self.rectMax = imgui.ImVec2(0., 0.)
-        self.rectSize = imgui.ImVec2(0., 0.)
-        self.mvPrevRectSize = imgui.ImVec2(0., 0.)
-        self.pos = imgui.ImVec2(0., 0.)
-        self.contextRegionAvail = imgui.ImVec2(0., 0.)
-        self.ok = True
-        self.lastFrameUpdate = 0 # last frame update occured
-        self.parent = None
-        # mvAppItemConfig
-        self.source = 0
-        self.specifiedLabel = b""
-        self.filter = b""
-        self.alias = b""
-        self.payloadType = b"$$DPG_PAYLOAD"
-        self.width = 0
-        self.height = 0
-        self.indent = -1.
-        self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
-        self.show = True
-        self.enabled = True
-        self.useInternalLabel = True #when false, will use specificed label
-        self.tracked = False
-        self.callback = None
-        self.user_data = None
-        self.dragCallback = None
-        self.dropCallback = None
-        self.attached = False
 
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         # TODO
-        return
-
-    cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(l, x, y)
+        if len(kwargs) > 0:
+            print("Unused configure parameters: ", kwargs)
         return
 
     cdef void lock_parent_and_item_mutex(self) noexcept nogil:
@@ -774,7 +733,7 @@ cdef class appItem:
         cdef bint locked = False
         while not(locked):
             self.mutex.lock()
-            # If we have no appItem parent, either we
+            # If we have no baseItem parent, either we
             # are root (viewport is parent) or have no parent
             if self.parent is not None:
                 locked = self.parent.mutex.try_lock()
@@ -794,7 +753,7 @@ cdef class appItem:
             self.context.viewport.mutex.unlock()
 
 
-    cpdef void attach_item(self, appItem target_parent):
+    cpdef void attach_item(self, baseItem target_parent):
         # We must ensure a single thread attaches at a given time.
         # __detach_item_and_lock will lock both the item lock
         # and the parent lock.
@@ -1016,13 +975,109 @@ cdef class appItem:
         self.last_drawings_child = None
         self.last_payloads_child = None
 
-cdef class dcgDrawList(appItem):
+
+cdef class drawableItem(baseItem):
+    def __cinit__(self):
+        self.show = True
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.show = kwargs.pop("show", self.show)
+        super().configure(**kwargs)
+
+    @property
+    def show(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return <bint>self.show
+    @show.setter
+    def show(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.show = value
+
+    cdef void draw_prev_siblings(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<drawableItem>self.prev_sibling).draw(l, x, y)
+
+    cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.draw_prev_siblings(l, x, y)
+
+
+cdef class uiItem(drawableItem):
+    def __cinit__(self):
+        # mvAppItemInfo
+        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
+        self.location = -1
+        self.showDebug = False
+        # next frame triggers
+        self.focusNextFrame = False
+        self.triggerAlternativeAction = False
+        self.shownLastFrame = False
+        self.hiddenLastFrame = False
+        self.enabledLastFrame = False
+        self.disabledLastFrame = False
+        # previous frame cache
+        self.previousCursorPos = imgui.ImVec2(0., 0.)
+        # dirty flags
+        self.dirty_size = True
+        self.dirtyPos = False
+        # mvAppItemState
+        self.hovered = False
+        self.active = False
+        self.focused = False
+        self.leftclicked = False
+        self.rightclicked = False
+        self.middleclicked = False
+        self.doubleclicked = [False, False, False, False, False]
+        self.visible = False
+        self.edited = False
+        self.activated = False
+        self.deactivated = False
+        self.deactivatedAfterEdit = False
+        self.toggledOpen = False
+        self.mvRectSizeResized = False
+        self.rectMin = imgui.ImVec2(0., 0.)
+        self.rectMax = imgui.ImVec2(0., 0.)
+        self.rectSize = imgui.ImVec2(0., 0.)
+        self.mvPrevRectSize = imgui.ImVec2(0., 0.)
+        self.pos = imgui.ImVec2(0., 0.)
+        self.contextRegionAvail = imgui.ImVec2(0., 0.)
+        self.ok = True
+        self.lastFrameUpdate = 0 # last frame update occured
+        self.parent = None
+        # mvAppItemConfig
+        self.source = 0
+        self.specifiedLabel = b""
+        self.filter = b""
+        self.alias = b""
+        self.payloadType = b"$$DPG_PAYLOAD"
+        self.width = 0
+        self.height = 0
+        self.indent = -1.
+        self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
+        self.enabled = True
+        self.useInternalLabel = True #when false, will use specificed label
+        self.tracked = False
+        self.callback = None
+        self.user_data = None
+        self.dragCallback = None
+        self.dropCallback = None
+        self.attached = False
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        # TODO
+        return
+
+
+cdef class dcgDrawList(drawableItem):
     def __cinit__(self):
         self.clip_width = 0
         self.clip_height = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
         if len(args) == 2:
             # positional arguments
             self.clip_width = <float>args[0]
@@ -1032,6 +1087,7 @@ cdef class dcgDrawList(appItem):
             pass
         else:
             raise ValueError("Invalid arguments passed to dcgDrawList. Expected width and height")
+        super().configure(**kwargs)
     @property
     def width(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1056,8 +1112,7 @@ cdef class dcgDrawList(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
         if self.last_drawings_child is None:
@@ -1083,7 +1138,6 @@ cdef class dcgDrawList(appItem):
                            True)
 
         self.last_drawings_child.draw(internal_drawlist, startx, starty)
-        # Child UpdateAppItemState(item->state); ?
 
         imgui.PopClipRect()
 
@@ -1118,13 +1172,13 @@ cdef class dcgDrawList(appItem):
         """
         
 
-cdef class dcgViewportDrawList(appItem):
+cdef class dcgViewportDrawList(drawableItem):
     def __cinit__(self):
         self.front = True
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.front = kwargs.pop("front", self.front)
         super().configure(**kwargs)
-        self.front = kwargs.get("front", self.front)
     @property
     def front(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1141,8 +1195,7 @@ cdef class dcgViewportDrawList(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
         if self.last_drawings_child is None:
@@ -1159,9 +1212,8 @@ cdef class dcgViewportDrawList(appItem):
             imgui.GetForegroundDrawList() if self.front else \
             imgui.GetBackgroundDrawList()
         self.last_drawings_child.draw(internal_drawlist, 0., 0.)
-        # Child UpdateAppItemState(item->state); ?
 
-cdef class dcgDrawLayer(appItem):
+cdef class dcgDrawLayer(drawableItem):
     def __cinit__(self):
         self.cullMode = 0 # mvCullMode_None == 0
         self.perspectiveDivide = False
@@ -1170,13 +1222,13 @@ cdef class dcgDrawLayer(appItem):
         self.has_matrix_transform = False
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
-        self.cullMode = kwargs.get("cull_mode", self.cullMode)
-        self.perspectiveDivide = kwargs.get("perspective_divide", self.perspectiveDivide)
-        self.depthClipping = kwargs.get("depth_clipping", self.depthClipping)
+        self.cullMode = kwargs.pop("cull_mode", self.cullMode)
+        self.perspectiveDivide = kwargs.pop("perspective_divide", self.perspectiveDivide)
+        self.depthClipping = kwargs.pop("depth_clipping", self.depthClipping)
         if "transform" in kwargs:
             # call the property setter
-            (<object>self).transform = kwargs["transform"]
+            (<object>self).transform = kwargs.pop("transform")
+        super().configure(**kwargs)
     @property
     def perspective_divide(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1254,8 +1306,7 @@ cdef class dcgDrawLayer(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
         if self.last_drawings_child is None:
@@ -1279,7 +1330,6 @@ cdef class dcgDrawLayer(appItem):
 
         # draw children
         self.last_drawings_child.draw(parent_drawlist, parent_x, parent_y)
-        # Child UpdateAppItemState(item->state); ?
 
 cdef inline void read_point(float* dst, src):
     cdef int src_size = len(src)
@@ -1320,7 +1370,7 @@ cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint) noexcept nogil:
     dst[2] = color_float4.z
     dst[3] = color_float4.w
 
-cdef class dcgDrawArrow(appItem):
+cdef class dcgDrawArrow(drawableItem):
     def __cinit__(self):
         # p1, p2, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1329,16 +1379,16 @@ cdef class dcgDrawArrow(appItem):
 
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
         if len(args) == 2:
             read_point(self.end, args[0])
             read_point(self.start, args[1])
         elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawArrow. Expected p1 and p2")
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.size = kwargs.get("size", self.size)
+            self.color = parse_color(kwargs.pop("color"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.size = kwargs.pop("size", self.size)
+        super().configure(**kwargs)
         self.__compute_tip()
 
     cdef void __compute_tip(self):
@@ -1429,8 +1479,7 @@ cdef class dcgDrawArrow(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -1455,7 +1504,7 @@ cdef class dcgDrawArrow(appItem):
         parent_drawlist.AddTriangle(itend, itcorner1, itcorner2, self.color, thickness)
 
 
-cdef class dcgDrawBezierCubic(appItem):
+cdef class dcgDrawBezierCubic(drawableItem):
     def __cinit__(self):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1463,7 +1512,6 @@ cdef class dcgDrawBezierCubic(appItem):
         self.segments = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
         if len(args) == 4:
             (p1, p2, p3, p4) = args
             read_point(self.p1, p1)
@@ -1473,9 +1521,10 @@ cdef class dcgDrawBezierCubic(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawBezierCubic. Expected p1, p2, p3 and p4")
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.segments = kwargs.get("segments", self.segments)
+            self.color = parse_color(kwargs.pop("color"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.segments = kwargs.pop("segments", self.segments)
+        super().configure(**kwargs)
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1542,8 +1591,7 @@ cdef class dcgDrawBezierCubic(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -1565,7 +1613,7 @@ cdef class dcgDrawBezierCubic(appItem):
         cdef imgui.ImVec2 ip4 = imgui.ImVec2(p4[0], p4[1])
         parent_drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self.color, self.thickness, self.segments)
 
-cdef class dcgDrawBezierQuadratic(appItem):
+cdef class dcgDrawBezierQuadratic(drawableItem):
     def __cinit__(self):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1573,7 +1621,6 @@ cdef class dcgDrawBezierQuadratic(appItem):
         self.segments = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
         if len(args) == 3:
             (p1, p2, p3) = args
             read_point(self.p1, p1)
@@ -1582,9 +1629,10 @@ cdef class dcgDrawBezierQuadratic(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawBezierQuadratic. Expected p1, p2 and p3")
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.segments = kwargs.get("segments", self.segments)
+            self.color = parse_color(kwargs.pop("color"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.segments = kwargs.pop("segments", self.segments)
+        super().configure(**kwargs)
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1643,8 +1691,7 @@ cdef class dcgDrawBezierQuadratic(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -1664,7 +1711,7 @@ cdef class dcgDrawBezierQuadratic(appItem):
         parent_drawlist.AddBezierQuadratic(ip1, ip2, ip3, self.color, self.thickness, self.segments)
 
 
-cdef class dcgDrawCircle(appItem):
+cdef class dcgDrawCircle(drawableItem):
     def __cinit__(self):
         # center is zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1674,7 +1721,6 @@ cdef class dcgDrawCircle(appItem):
         self.segments = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
         if len(args) == 2:
             (center, radius) = args
             read_point(self.center, center)
@@ -1682,11 +1728,12 @@ cdef class dcgDrawCircle(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawCircle. Expected center and radius")
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
-            self.fill = parse_color(kwargs["fill"])
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.segments = kwargs.get("segments", self.segments)
+            self.fill = parse_color(kwargs.pop("fill"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.segments = kwargs.pop("segments", self.segments)
+        super().configure(**kwargs)
     @property
     def center(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1747,8 +1794,7 @@ cdef class dcgDrawCircle(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -1766,7 +1812,7 @@ cdef class dcgDrawCircle(appItem):
         parent_drawlist.AddCircle(icenter, radius, self.color, self.segments, thickness)
 
 
-cdef class dcgDrawEllipse(appItem):
+cdef class dcgDrawEllipse(drawableItem):
     # TODO: I adapted the original code,
     # But these deserves rewrite: call the imgui Ellipse functions instead
     # and add rotation parameter
@@ -1778,7 +1824,6 @@ cdef class dcgDrawEllipse(appItem):
         self.segments = 0
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
         cdef bint recompute_points = False
         if len(args) == 2:
             (pmin, pmax) = args
@@ -1789,17 +1834,18 @@ cdef class dcgDrawEllipse(appItem):
             raise ValueError("Invalid arguments passed to dcgDrawEllipse. Expected pmin and pmax")
         # pmin/pmax can also be passed as optional arguments
         if "pmin" in kwargs:
-            read_point(self.pmin, kwargs["pmin"])
+            read_point(self.pmin, kwargs.pop("pmin"))
             recompute_points = True
         if "pmax" in kwargs:
-            read_point(self.pmax, kwargs["pmax"])
+            read_point(self.pmax, kwargs.pop("pmax"))
             recompute_points = True
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
-            self.fill = parse_color(kwargs["fill"])
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.segments = kwargs.get("segments", self.segments)
+            self.fill = parse_color(kwargs.pop("fill"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.segments = kwargs.pop("segments", self.segments)
+        super().configure(**kwargs)
         if recompute_points:
             self.__fill_points()
     cdef void __fill_points(self):
@@ -1894,8 +1940,7 @@ cdef class dcgDrawEllipse(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.points.size() < 3:
             return
 
@@ -1923,7 +1968,7 @@ cdef class dcgDrawEllipse(appItem):
                                     thickness)
 
 
-cdef class dcgDrawLine(appItem):
+cdef class dcgDrawLine(drawableItem):
     def __cinit__(self):
         # p1, p2 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1935,12 +1980,13 @@ cdef class dcgDrawLine(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawLine. Expected p1, p2")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs["p1"])
+            read_point(self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs["p2"])
+            read_point(self.p2, kwargs.pop("p2"))
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
-        self.thickness = kwargs.get("thickness", self.thickness)
+            self.color = parse_color(kwargs.pop("color"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        super().configure(**kwargs)
 
     @property
     def p1(self):
@@ -1992,8 +2038,7 @@ cdef class dcgDrawLine(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -2009,7 +2054,7 @@ cdef class dcgDrawLine(appItem):
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         parent_drawlist.AddLine(ip1, ip2, self.color, thickness)
 
-cdef class dcgDrawPolyline(appItem):
+cdef class dcgDrawPolyline(drawableItem):
     def __cinit__(self):
         # points is empty init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2022,7 +2067,7 @@ cdef class dcgDrawPolyline(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawPolyline. Expected list of points")
         if "points" in kwargs:
-            points = kwargs["points"]
+            points = kwargs.pop("points")
         cdef float4 p
         cdef int i
         if not(points is None):
@@ -2031,9 +2076,10 @@ cdef class dcgDrawPolyline(appItem):
                 read_point(p.p, points[i])
                 self.points.push_back(p)
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
-        self.closed = kwargs.get("closed", self.closed)
-        self.thickness = kwargs.get("thickness", self.thickness)
+            self.color = parse_color(kwargs.pop("color"))
+        self.closed = kwargs.pop("closed", self.closed)
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        super().configure(**kwargs)
 
     @property
     def points(self):
@@ -2041,7 +2087,7 @@ cdef class dcgDrawPolyline(appItem):
         res = []
         cdef float4 p
         cdef int i
-        for i in range(self.points.size()):
+        for i in range(<int>self.points.size()):
             res.append(self.points[i].p)
         return res
     @points.setter
@@ -2087,8 +2133,7 @@ cdef class dcgDrawPolyline(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.points.size() < 2:
             return
 
@@ -2119,7 +2164,7 @@ cdef inline bint is_counter_clockwise(imgui.ImVec2 p1,
     cdef float det = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)
     return det > 0.
 
-cdef class dcgDrawPolygon(appItem):
+cdef class dcgDrawPolygon(drawableItem):
     def __cinit__(self):
         # points is empty init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2132,7 +2177,7 @@ cdef class dcgDrawPolygon(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawPolygon. Expected list of points")
         if "points" in kwargs:
-            points = kwargs["points"]
+            points = kwargs.pop("points")
         cdef float4 p
         cdef int i
         if not(points is None):
@@ -2141,11 +2186,12 @@ cdef class dcgDrawPolygon(appItem):
                 read_point(p.p, points[i])
                 self.points.push_back(p)
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
-            self.fill = parse_color(kwargs["fill"])
-        self.closed = kwargs.get("closed", self.closed)
-        self.thickness = kwargs.get("thickness", self.thickness)
+            self.fill = parse_color(kwargs.pop("fill"))
+        self.closed = kwargs.pop("closed", self.closed)
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        super().configure(**kwargs)
 
     # ImGui Polygon fill requires clockwise order and convex polygon.
     # We want to be more lenient -> triangulate
@@ -2155,7 +2201,7 @@ cdef class dcgDrawPolygon(appItem):
         # TODO: optimize with arrays
         points = []
         cdef int i
-        for i in range(self.points.size()):
+        for i in range(<int>self.points.size()):
             # For now perform only in 2D
             points.append([self.points[i].p[0], self.points[i].p[1]])
         # order is counter clock-wise
@@ -2167,7 +2213,7 @@ cdef class dcgDrawPolygon(appItem):
         res = []
         cdef float4 p
         cdef int i
-        for i in range(self.points.size()):
+        for i in range(<int>self.points.size()):
             res.append(self.points[i].p)
         return res
     @points.setter
@@ -2216,8 +2262,7 @@ cdef class dcgDrawPolygon(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.points.size() < 2:
             return
 
@@ -2267,7 +2312,7 @@ cdef class dcgDrawPolygon(appItem):
             parent_drawlist.AddLine(ipoints[0], ipoints[<int>self.points.size()-1], self.color, thickness)
 
 
-cdef class dcgDrawQuad(appItem):
+cdef class dcgDrawQuad(drawableItem):
     def __cinit__(self):
         # p1, p2, p3, p4 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2283,18 +2328,19 @@ cdef class dcgDrawQuad(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2, p3 and p4")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs["p1"])
+            read_point(self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs["p2"])
+            read_point(self.p2, kwargs.pop("p2"))
         if "p3" in kwargs:
-            read_point(self.p3, kwargs["p3"])
+            read_point(self.p3, kwargs.pop("p3"))
         if "p4" in kwargs:
-            read_point(self.p4, kwargs["p4"])
+            read_point(self.p4, kwargs.pop("p4"))
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
-            self.fill = parse_color(kwargs["fill"])
-        self.thickness = kwargs.get("thickness", self.thickness)
+            self.fill = parse_color(kwargs.pop("fill"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        super().configure(**kwargs)
 
     @property
     def p1(self):
@@ -2364,8 +2410,7 @@ cdef class dcgDrawQuad(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -2415,7 +2460,7 @@ cdef class dcgDrawQuad(appItem):
         parent_drawlist.AddLine(ip4, ip1, self.color, thickness)
 
 
-cdef class dcgDrawRect(appItem):
+cdef class dcgDrawRect(drawableItem):
     def __cinit__(self):
         self.pmin = [0., 0., 0., 0.]
         self.pmax = [1., 1., 0., 0.]
@@ -2437,33 +2482,34 @@ cdef class dcgDrawRect(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawRect. Expected pmin and pmax")
         if "pmin" in kwargs:
-            read_point(self.pmin, kwargs["pmin"])
+            read_point(self.pmin, kwargs.pop("pmin"))
         if "pmax" in kwargs:
-            read_point(self.pmax, kwargs["pmax"])
+            read_point(self.pmax, kwargs.pop("pmax"))
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
-            self.fill = parse_color(kwargs["fill"])
+            self.fill = parse_color(kwargs.pop("fill"))
         if "color_upper_left" in kwargs:
-            self.color_upper_left = parse_color(kwargs["color_upper_left"])
+            self.color_upper_left = parse_color(kwargs.pop("color_upper_left"))
         if "color_upper_right" in kwargs:
-            self.color_upper_right = parse_color(kwargs["color_upper_right"])
+            self.color_upper_right = parse_color(kwargs.pop("color_upper_right"))
         if "color_bottom_left" in kwargs:
-            self.color_bottom_left = parse_color(kwargs["color_bottom_left"])
+            self.color_bottom_left = parse_color(kwargs.pop("color_bottom_left"))
         if "color_bottom_right" in kwargs:
-            self.color_bottom_right = parse_color(kwargs["color_bottom_right"])
+            self.color_bottom_right = parse_color(kwargs.pop("color_bottom_right"))
         if "corner_colors" in kwargs:
             (color_bottom_right, color_bottom_left, color_upper_left, color_upper_right) = \
-                kwargs["corner_colors"]
+                kwargs.pop("corner_colors")
             self.color_upper_left = parse_color(color_upper_left)
             self.color_upper_right = parse_color(color_upper_right)
             self.color_bottom_left = parse_color(color_bottom_left)
             self.color_bottom_right = parse_color(color_bottom_right)
-        self.rounding = kwargs.get("rounding", self.rounding)
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.multicolor = kwargs.get("multicolor", self.multicolor)
+        self.rounding = kwargs.pop("rounding", self.rounding)
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.multicolor = kwargs.pop("multicolor", self.multicolor)
         if self.multicolor:
             self.rounding = 0.
+        super().configure(**kwargs)
 
     @property
     def pmin(self):
@@ -2565,8 +2611,7 @@ cdef class dcgDrawRect(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -2620,8 +2665,8 @@ cdef class dcgDrawRect(appItem):
                                 self.rounding,
                                 imgui.ImDrawFlags_RoundCornersAll,
                                 thickness)
-"""
-cdef class dgcDrawText(appItem):
+
+cdef class dgcDrawText(drawableItem):
     def __cinit__(self):
         self.color = 4294967295 # 0xffffffff
         self.size = 1.
@@ -2631,17 +2676,18 @@ cdef class dgcDrawText(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dgcDrawText. Expected pos")
         if "pos" in kwargs:
-            read_point(self.p1, kwargs["pos"])
+            read_point(self.pos, kwargs.pop("pos"))
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "text" in kwargs:
-            self.text = bytes(str(kwargs["text"]), 'utf-8')
-        self.size = kwargs.get("size", self.size)
+            self.text = bytes(str(kwargs.pop("text")), 'utf-8')
+        self.size = kwargs.pop("size", self.size)
+        super().configure(**kwargs)
 
     @property
     def pos(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return list(self.posp1)
+        return list(self.pos)
     @pos.setter
     def pos(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2680,26 +2726,22 @@ cdef class dgcDrawText(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
-        cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
-            thickness *= self.context.viewport.thickness_multiplier
-
         cdef float[4] p
 
-        self.context.viewport.apply_current_transform(p, self.p, parent_x, parent_y)
-        ip = imgui.ImVec2(p[0], p[1])
+        self.context.viewport.apply_current_transform(p, self.pos, parent_x, parent_y)
+        cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
 
         # TODO fontptr
 
         #parent_drawlist.AddText(fontptr, self.size, ip, self.color, self.text.c_str())
-"""
+        parent_drawlist.AddText(NULL, 0., ip, self.color, self.text.c_str())
 
-cdef class dcgDrawTriangle(appItem):
+
+cdef class dcgDrawTriangle(drawableItem):
     def __cinit__(self):
         # p1, p2, p3 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2715,17 +2757,18 @@ cdef class dcgDrawTriangle(appItem):
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2 and p3")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs["p1"])
+            read_point(self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs["p2"])
+            read_point(self.p2, kwargs.pop("p2"))
         if "p3" in kwargs:
-            read_point(self.p3, kwargs["p3"])
+            read_point(self.p3, kwargs.pop("p3"))
         if "color" in kwargs:
-            self.color = parse_color(kwargs["color"])
+            self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
-            self.fill = parse_color(kwargs["fill"])
-        self.thickness = kwargs.get("thickness", self.thickness)
-        self.cull_mode = kwargs.get("cull_mode", self.cull_mode)
+            self.fill = parse_color(kwargs.pop("fill"))
+        self.thickness = kwargs.pop("thickness", self.thickness)
+        self.cull_mode = kwargs.pop("cull_mode", self.cull_mode)
+        super().configure(**kwargs)
 
     @property
     def p1(self):
@@ -2795,8 +2838,7 @@ cdef class dcgDrawTriangle(appItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
 
@@ -2837,7 +2879,7 @@ cdef class dcgDrawTriangle(appItem):
                 parent_drawlist.AddTriangleFilled(ip1, ip2, ip3, self.fill)
             parent_drawlist.AddTriangle(ip1, ip2, ip3, self.color, thickness)
 
-cdef class dcgWindow(appItem):
+cdef class dcgWindow(uiItem):
     def __cinit__(self):
         self.windowflags = imgui.ImGuiWindowFlags_None
         self.mainWindow = False
@@ -2875,11 +2917,74 @@ cdef class dcgWindow(appItem):
         self._oldWidth = 200
         self._oldHeight = 200
 
+    @property
+    def primary(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.mainWindow
+
+    @primary.setter
+    def primary(self, bint value):
+        self.lock_parent_and_item_mutex()
+        if self.attached and self.parent is not None:
+            # Non-root window. Cannot make primary
+            self.unlock_parent_mutex()
+            self.mutex.unlock()
+            raise ValueError("Cannot make sub-window primary")
+        if not(self.attached):
+            self.unlock_parent_mutex() # should have no effect
+            self.mutex.unlock()
+            raise ValueError("Window must be attached before becoming primary")
+        # window is in viewport children
+        # Move the mutexes to unique_lock for easier exception handling
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        self.unlock_parent_mutex()
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        if self.mainWindow == value:
+            return # Nothing to do
+        self.mainWindow = value
+        if value:
+            # backup previous state
+            self._oldWindowflags = self.windowflags
+            self._oldxpos = self.pos.x
+            self._oldypos = self.pos.y
+            self._oldWidth = self.width
+            self._oldHeight = self.height
+            # Make primary
+            self.windowflags = \
+                imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
+                imgui.ImGuiWindowFlags_NoSavedSettings | \
+			    imgui.ImGuiWindowFlags_NoResize | \
+                imgui.ImGuiWindowFlags_NoCollapse | \
+                imgui.ImGuiWindowFlags_NoTitleBar
+        else:
+            # Propagate menubar to previous state
+            if (self.windowflags & imgui.ImGuiWindowFlags_MenuBar) != 0:
+                self._oldWindowflags |= imgui.ImGuiWindowFlags_MenuBar
+            # Restore previous state
+            self.windowflags = self._oldWindowflags
+            self.pos.x = self._oldxpos
+            self.pos.y = self._oldypos
+            self.width = self._oldWidth
+            self.height = self._oldHeight
+            # Tell imgui to update the window shape
+            self.dirtyPos = True
+            self.dirty_size = True
+
+        # Re-tell imgui the window hierarchy
+        cdef dcgWindow w = self.context.viewport.windowRoots
+        cdef dcgWindow next = None
+        while w is not None:
+            w.mutex.lock()
+            w.focusNextFrame = True
+            next = w.prev_sibling
+            w.mutex.unlock()
+            # TODO: previous code did restore previous states on each window. Figure out why
+            w = next
+
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            self.prev_sibling.draw(parent_drawlist, parent_x, parent_y)
+        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
         if self.context.frame == 1:
@@ -3096,67 +3201,135 @@ cdef class dcgWindow(appItem):
         #    item.handlerRegistry->checkEvents(&item.state);
         imgui.PopID()
 
+
+
+cdef class dcgTexture(baseItem):
+    def __cinit__(self):
+        self.hint_dynamic = False
+        self.dynamic = False
+        self.allocated_texture = NULL
+        self.width = 0
+        self.height = 0
+        self.num_chans = 0
+        self.filtering_mode = 0
+
+    def __delalloc__(self):
+        # Note: textures might be referenced during imgui rendering.
+        # Thus we must there is no rendering to free a texture.
+        if self.allocated_texture != NULL:
+            if not(self.context.imgui_mutex.try_lock()):
+                with nogil: # rendering can take some time to avoid holding the gil
+                    self.context.imgui_mutex.lock()
+            mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
+            mvFreeTexture(self.allocated_texture)
+            mvReleaseRenderingContext(dereference(self.context.viewport.viewport))
+            self.context.imgui_mutex.unlock()
+
+    def configure(self, *args, **kwargs):
+        if len(args) == 1:
+            self.set_content(np.ascontiguousarray(args[0]))
+        elif len(args) != 0:
+            raise ValueError("Invalid arguments passed to dcgTexture. Expected content")
+        self.filtering_mode = 1 if kwargs.pop("nearest_neighbor_upsampling", False) else 0
+        return super().configure(**kwargs)
+
     @property
-    def primary(self):
+    def hint_dynamic(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self.mainWindow
+        return self.hint_dynamic
+    @hint_dynamic.setter
+    def hint_dynamic(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.hint_dynamic = self.value
+    @property
+    def nearest_neighbor_upsampling(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return True if self.filtering_mode == 1 else 0
+    @nearest_neighbor_upsampling.setter
+    def nearest_neighbor_upsampling(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.filtering_mode = 1 if value else 0
+    @property
+    def width(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.width
+    @property
+    def height(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.height
+    @property
+    def num_chans(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.num_chans
 
-    @primary.setter
-    def primary(self, bint value):
-        self.lock_parent_and_item_mutex()
-        if self.attached and self.parent is not None:
-            # Non-root window. Cannot make primary
-            self.unlock_parent_mutex()
-            self.mutex.unlock()
-            raise ValueError("Cannot make sub-window primary")
-        if not(self.attached):
-            self.unlock_parent_mutex() # should have no effect
-            self.mutex.unlock()
-            raise ValueError("Window must be attached before becoming primary")
-        # window is in viewport children
-        # Move the mutexes to unique_lock for easier exception handling
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        self.unlock_parent_mutex()
+    def set_value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.set_content(np.ascontiguousarray(value))
+
+    cdef void set_content(self, cnp.ndarray content):
+        # The write mutex is to ensure order of processing of set_content
+        # as we might release the item mutex to wait for imgui to render
+        cdef unique_lock[recursive_mutex] m
+        with nogil:
+            # The mutex might be held for a long time, see below.
+            # Thus we release the gil before trying to lock
+            m = unique_lock[recursive_mutex](self.write_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
-        if self.mainWindow == value:
-            return # Nothing to do
-        self.mainWindow = value
-        if value:
-            # backup previous state
-            self._oldWindowflags = self.windowflags
-            self._oldxpos = self.pos.x
-            self._oldypos = self.pos.y
-            self._oldWidth = self.width
-            self._oldHeight = self.height
-            # Make primary
-            self.windowflags = \
-                imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
-                imgui.ImGuiWindowFlags_NoSavedSettings | \
-			    imgui.ImGuiWindowFlags_NoResize | \
-                imgui.ImGuiWindowFlags_NoCollapse | \
-                imgui.ImGuiWindowFlags_NoTitleBar
-        else:
-            # Propagate menubar to previous state
-            if (self.windowflags & imgui.ImGuiWindowFlags_MenuBar) != 0:
-                self._oldWindowflags |= imgui.ImGuiWindowFlags_MenuBar
-            # Restore previous state
-            self.windowflags = self._oldWindowflags
-            self.pos.x = self._oldxpos
-            self.pos.y = self._oldypos
-            self.width = self._oldWidth
-            self.height = self._oldHeight
-            # Tell imgui to update the window shape
-            self.dirtyPos = True
-            self.dirty_size = True
+        if content.ndim > 3 or content.ndim == 0:
+            raise ValueError("Invalid number of texture dimensions")
+        cdef int height = 1
+        cdef int width = 1
+        cdef int num_chans = 1
+        assert(content.flags['C_CONTIGUOUS'])
+        if content.ndim >= 1:
+            height = content.shape[0]
+        if content.ndim >= 2:
+            width = content.shape[1]
+        if content.ndim >= 3:
+            num_chans = content.shape[2]
+        if width * height * num_chans == 0:
+            raise ValueError("Cannot set empty texture")
 
-        # Re-tell imgui the window hierarchy
-        cdef dcgWindow w = self.context.viewport.windowRoots
-        cdef dcgWindow next = None
-        while w is not None:
-            w.mutex.lock()
-            w.focusNextFrame = True
-            next = w.prev_sibling
-            w.mutex.unlock()
-            # TODO: previous code did restore previous states on each window. Figure out why
-            w = next
+        # TODO: there must be a faster test
+        if not(content.dtype == np.float32 or content.dtype == np.uint8):
+            content = np.ascontiguousarray(content, dtype=np.float32)
 
+        cdef bint reuse = self.allocated_texture != NULL
+        reuse = reuse and (self.width != width or self.height != height or self.num_chans != num_chans)
+        cdef unsigned buffer_type = 1 if content.dtype == np.uint8 else 0
+        with nogil:
+            if self.allocated_texture != NULL and not(reuse):
+                # We must wait there is no rendering since the current rendering might reference the texture
+                # Release current lock to not block rendering
+                # Wait we can prevent rendering
+                if not(self.context.imgui_mutex.try_lock()):
+                    m2.unlock()
+                    # rendering can take some time, fortunately we avoid holding the gil
+                    self.context.imgui_mutex.lock()
+                    m2.lock()
+                mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
+                mvFreeTexture(self.allocated_texture)
+                self.context.imgui_mutex.unlock()
+                self.allocated_texture = NULL
+            else:
+                mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
+
+            # Note we don't need the imgui mutex to create or upload textures.
+            # In the case of GL, as only one thread can access GL data at a single
+            # time, MakeRenderingContextCurrent and ReleaseRenderingContext enable
+            # to upload/create textures from various threads. They hold a mutex.
+            # That mutex is held in the relevant parts of frame rendering.
+
+            self.width = width
+            self.height = height
+            self.num_chans = num_chans
+
+            if not(reuse):
+                self.dynamic = self.hint_dynamic
+                self.allocated_texture = mvAllocateTexture(width, height, num_chans, self.dynamic, buffer_type, self.filtering_mode)
+
+            if self.dynamic:
+                mvUpdateDynamicTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
+            else:
+                mvUpdateStaticTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
+            mvReleaseRenderingContext(dereference(self.context.viewport.viewport))

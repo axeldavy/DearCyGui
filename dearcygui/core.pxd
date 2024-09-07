@@ -4,6 +4,7 @@ from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
 from libcpp.atomic cimport atomic
 from libcpp.vector cimport vector
+cimport numpy as cnp
 
 """
 Thread safety:
@@ -40,19 +41,19 @@ cdef class dcgViewport:
     cdef bint graphics_initialized
     # linked list to objects without parents to draw with their children
     # The entry point corresponds to the last item of the list (draw last)
-    cdef appItem colormapRoots
-    cdef appItem filedialogRoots
-    cdef appItem stagingRoots
-    cdef appItem viewportMenubarRoots
+    cdef baseItem colormapRoots
+    cdef baseItem filedialogRoots
+    cdef baseItem stagingRoots
+    cdef baseItem viewportMenubarRoots
     cdef dcgWindow windowRoots
-    cdef appItem fontRegistryRoots
-    cdef appItem handlerRegistryRoots
-    cdef appItem itemHandlerRegistryRoots
-    cdef appItem textureRegistryRoots
-    cdef appItem valueRegistryRoots
-    cdef appItem themeRegistryRoots
-    cdef appItem itemTemplatesRoots
-    cdef appItem viewportDrawlistRoots
+    cdef baseItem fontRegistryRoots
+    cdef baseItem handlerRegistryRoots
+    cdef baseItem itemHandlerRegistryRoots
+    cdef baseItem textureRegistryRoots
+    cdef baseItem valueRegistryRoots
+    cdef baseItem themeRegistryRoots
+    cdef baseItem itemTemplatesRoots
+    cdef dcgViewportDrawList viewportDrawlistRoots
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
     #mvMat4 transform         = mvIdentityMat4();
@@ -100,12 +101,62 @@ cdef class dcgContext:
     cdef public object on_frame_callbacks
     cdef object queue
 
-cdef class appItem:
+"""
+Main item types
+"""
+
+"""
+baseItem:
+An item that can be inserted in a tree structure.
+It is inserted in a tree, attached with be set to True
+In the case the parent is either another baseItem or the viewport (top of the tree)
+
+A parent only points to the last children of the list of its children,
+for the four main children categories.
+
+A child then points to its previous and next sibling of its category
+"""
+cdef class baseItem:
     cdef recursive_mutex mutex
     cdef dcgContext context
     cdef long long uuid
-    # mvAppItemInfo
     cdef string internalLabel
+    # Relationships
+    cdef bint attached
+    cdef baseItem parent
+    # It is not possible to access an array of children without the gil
+    # Thus instead use a list
+    # Each element is responsible for calling draw on its sibling
+    cdef baseItem prev_sibling
+    cdef baseItem next_sibling
+    cdef drawableItem last_0_child #  mvFileExtension, mvFontRangeHint, mvNodeLink, mvAnnotation, mvAxisTag, mvDragLine, mvDragPoint, mvDragRect, mvLegend, mvTableColumn
+    cdef drawableItem last_widgets_child
+    cdef drawableItem last_drawings_child
+    cdef baseItem last_payloads_child
+    cdef void lock_parent_and_item_mutex(self) noexcept nogil
+    cdef void unlock_parent_mutex(self) noexcept nogil
+    cpdef void attach_item(self, baseItem target_parent)
+    cdef void __detach_item_and_lock(self)
+    cpdef void detach_item(self)
+    cpdef void delete_item(self)
+    cdef void __delete_and_siblings(self)
+
+"""
+drawable item:
+A baseItem which can be drawn and has a show state
+"""
+
+cdef class drawableItem(baseItem):
+    cdef bool show
+    cdef void draw_prev_siblings(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+"""
+UI item
+A drawable item with various UI states
+"""
+cdef class uiItem(drawableItem):
+    # mvAppItemInfo
     cdef int location
     cdef bint showDebug
     cdef bint focusNextFrame
@@ -150,7 +201,6 @@ cdef class appItem:
     cdef int height
     cdef float indent
     cdef float trackOffset
-    cdef bool show
     cdef bint enabled
     cdef bint useInternalLabel
     cdef bint tracked
@@ -158,37 +208,21 @@ cdef class appItem:
     cdef object user_data
     cdef object dragCallback
     cdef object dropCallback
-    # Relationships
-    cdef bint attached
-    cdef appItem parent
-    # It is not possible to access an array of children without the gil
-    # Thus instead use a list
-    # Each element is responsible for calling draw on its sibling
-    cdef appItem prev_sibling
-    cdef appItem next_sibling
-    cdef appItem last_0_child #  mvFileExtension, mvFontRangeHint, mvNodeLink, mvAnnotation, mvAxisTag, mvDragLine, mvDragPoint, mvDragRect, mvLegend, mvTableColumn
-    cdef appItem last_widgets_child
-    cdef appItem last_drawings_child
-    cdef appItem last_payloads_child
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-    cdef void lock_parent_and_item_mutex(self) noexcept nogil
-    cdef void unlock_parent_mutex(self) noexcept nogil
-    cpdef void attach_item(self, appItem target_parent)
-    cdef void __detach_item_and_lock(self)
-    cpdef void detach_item(self)
-    cpdef void delete_item(self)
-    cdef void __delete_and_siblings(self)
 
-cdef class dcgDrawList(appItem):
+"""
+Drawing Items
+"""
+
+cdef class dcgDrawList(drawableItem):
     cdef float clip_width
     cdef float clip_height
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgViewportDrawList(appItem):
+cdef class dcgViewportDrawList(drawableItem):
     cdef bool front
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLayer(appItem):
+cdef class dcgDrawLayer(drawableItem):
     # mvAppItemDrawInfo
     cdef long cullMode
     cdef bint perspectiveDivide
@@ -201,7 +235,7 @@ cdef class dcgDrawLayer(appItem):
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
 
-cdef class dcgDrawArrow(appItem):
+cdef class dcgDrawArrow(drawableItem):
     cdef float[4] start
     cdef float[4] end
     cdef float[4] corner1
@@ -212,7 +246,7 @@ cdef class dcgDrawArrow(appItem):
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void __compute_tip(self)
 
-cdef class dcgDrawBezierCubic(appItem):
+cdef class dcgDrawBezierCubic(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -222,7 +256,7 @@ cdef class dcgDrawBezierCubic(appItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawBezierQuadratic(appItem):
+cdef class dcgDrawBezierQuadratic(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -231,7 +265,7 @@ cdef class dcgDrawBezierQuadratic(appItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawCircle(appItem):
+cdef class dcgDrawCircle(drawableItem):
     cdef float[4] center
     cdef float radius
     cdef imgui.ImU32 color
@@ -240,7 +274,7 @@ cdef class dcgDrawCircle(appItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawEllipse(appItem):
+cdef class dcgDrawEllipse(drawableItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -251,21 +285,21 @@ cdef class dcgDrawEllipse(appItem):
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLine(appItem):
+cdef class dcgDrawLine(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawPolyline(appItem):
+cdef class dcgDrawPolyline(drawableItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
     cdef vector[float4] points
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawPolygon(appItem):
+cdef class dcgDrawPolygon(drawableItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -274,7 +308,7 @@ cdef class dcgDrawPolygon(appItem):
     cdef void __triangulate(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawQuad(appItem):
+cdef class dcgDrawQuad(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -284,7 +318,7 @@ cdef class dcgDrawQuad(appItem):
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawRect(appItem):
+cdef class dcgDrawRect(drawableItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -297,15 +331,15 @@ cdef class dcgDrawRect(appItem):
     cdef float thickness
     cdef bint multicolor
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-"""
-cdef class dgcDrawText(appItem):
+
+cdef class dgcDrawText(drawableItem):
     cdef float[4] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-"""
-cdef class dcgDrawTriangle(appItem):
+
+cdef class dcgDrawTriangle(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -315,8 +349,11 @@ cdef class dcgDrawTriangle(appItem):
     cdef int cull_mode
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
+"""
+UI items
+"""
 
-cdef class dcgWindow(appItem):
+cdef class dcgWindow(uiItem):
     cdef imgui.ImGuiWindowFlags windowflags
     cdef bint mainWindow
     cdef bint closing
@@ -353,3 +390,19 @@ cdef class dcgWindow(appItem):
     cdef int  _oldWidth
     cdef int  _oldHeight
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+
+"""
+Bindable elements
+"""
+
+cdef class dcgTexture(baseItem):
+    cdef recursive_mutex write_mutex
+    cdef bint hint_dynamic
+    cdef bint dynamic
+    cdef void* allocated_texture
+    cdef int width
+    cdef int height
+    cdef int num_chans
+    cdef int filtering_mode
+    cdef void set_content(self, cnp.ndarray content)

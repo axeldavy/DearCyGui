@@ -1,11 +1,5 @@
 #include "mvUtilities.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -19,21 +13,7 @@
 
 static std::unordered_map<GLuint, GLuint> PBO_ids;
 
-static void
-UpdatePixels(GLubyte* dst, const float* data, int size)
-{
-
-    if(!dst)
-        return;
-
-    auto ptr = (float*)dst;
-
-    for(int i = 0; i < size; ++i)
-    {
-        ptr[i] = data[i];
-    }
-}
-
+/*
  void
 OutputFrameBufferArray(PymvBuffer* out)
 {
@@ -67,246 +47,102 @@ OutputFrameBufferArray(PymvBuffer* out)
         free(data);
     }
 }
+*/
 
- void
-OutputFrameBuffer(const char* filepath)
+void* mvAllocateTexture(u32 width, u32 height, u32 num_chans, u32 dynamic, u32 type, u32 filtering_mode)
 {
-    mvViewport* viewport = GContext->viewport;
-    auto viewportData = (mvViewportData*)viewport->platformSpecifics;
-
-    int display_w, display_h;
-    glfwGetFramebufferSize(viewportData->handle, &display_w, &display_h);
-
-    stbi_flip_vertically_on_write(true);
-    GLint ReadType = GL_UNSIGNED_BYTE;
-    GLint ReadFormat = GL_RGBA;
-    glGetIntegerv(GL_IMPLEMENTATION_COLOR_READ_TYPE, &ReadType);
-    glGetIntegerv(GL_IMPLEMENTATION_COLOR_READ_FORMAT, &ReadFormat);
-    auto data = (GLubyte*)malloc(4 * display_w * display_h);
-    glReadPixels(0, 0, display_w, display_h, ReadFormat,  ReadType, data);
-    stbi_write_png(filepath, display_w, display_h, 4, data, display_w*4);
-    free(data);
-}
-
- void*
-LoadTextureFromArray(unsigned width, unsigned height, float* data)
-{
-
-    // Create a OpenGL texture identifier
     GLuint image_texture;
-    glGenTextures(1, &image_texture);
-    glBindTexture(GL_TEXTURE_2D, image_texture);
-
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Upload pixels into texture
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, data);
-
-    return reinterpret_cast<void *>(image_texture);
-}
-
- void*
-LoadTextureFromArrayDynamic(unsigned width, unsigned height, float* data)
-{
-
-    // Create a OpenGL texture identifier
-    GLuint image_texture;
-    glGenTextures(1, &image_texture);
-    glBindTexture(GL_TEXTURE_2D, image_texture);
-
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Upload pixels into texture
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, data);
-
     GLuint pboid;
-    glGenBuffers(1, &pboid);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboid);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width*height*4*sizeof(float), 0, GL_STREAM_DRAW);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    PBO_ids[image_texture] = pboid;
+    unsigned type_size = (type == 1) ? 1 : 4;
 
-    return reinterpret_cast<void *>(image_texture);
-}
-
- void*
-LoadTextureFromArrayRaw(unsigned width, unsigned height, float* data, int components)
-{
-
-    // Create a OpenGL texture identifier
-    GLuint image_texture;
     glGenTextures(1, &image_texture);
     glBindTexture(GL_TEXTURE_2D, image_texture);
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (filtering_mode == 0) ? GL_LINEAR : GL_NEAREST);
 
-    // Upload pixels into texture
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    if(components == 4)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, data);
-    else
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, data);
+    // Duplicate the first channel on g and b to display as gray
+    if (num_chans == 1) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    }
 
+    glGenBuffers(1, &pboid);
+    PBO_ids[image_texture] = pboid;
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboid);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
+
+void mvFreeTexture(void* texture)
+{
+    GLuint out_srv = (GLuint)(size_t)texture;
     GLuint pboid;
-    glGenBuffers(1, &pboid);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboid);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * components * sizeof(float), 0, GL_STREAM_DRAW);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    PBO_ids[image_texture] = pboid;
 
-    return reinterpret_cast<void*>(image_texture);
-}
-
- void*
-LoadTextureFromFile(const char* filename, int& width, int& height)
-{
-
-    // Load from file
-    int image_width = 0;
-    int image_height = 0;
-    unsigned char* image_data = stbi_load(filename, &image_width, &image_height, nullptr, 4);
-    if (image_data == nullptr)
-        return nullptr;
-
-    // Create a OpenGL texture identifier
-    GLuint image_texture;
-    glGenTextures(1, &image_texture);
-    glBindTexture(GL_TEXTURE_2D, image_texture);
-
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Upload pixels into texture
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-    stbi_image_free(image_data);
-
-    width = image_width;
-    height = image_height;
-
-    return reinterpret_cast<void *>(image_texture);;
-}
-
- bool
-UnloadTexture(const std::string& filename)
-{
-    // TODO : decide if cleanup is necessary
-    return true;
-}
-
- void
-FreeTexture(void* texture)
-{
-    auto out_srv = (GLuint)(size_t)texture;
-
-    if(PBO_ids.count(out_srv) != 0)
+    if(PBO_ids.count(out_srv) != 0) {
+        pboid = PBO_ids[out_srv];
+        glDeleteBuffers(1, &pboid);
         PBO_ids.erase(out_srv);
+    }
 
     glDeleteTextures(1, &out_srv);
 }
 
- void
-UpdateTexture(void* texture, unsigned width, unsigned height, std::vector<float>& data)
+void mvUpdateDynamicTexture(void* texture, u32 width, u32 height, u32 num_chans, u32 type, void* data)
 {
     auto textureId = (GLuint)(size_t)texture;
+    unsigned gl_format = GL_RGBA;
+    unsigned gl_type = GL_FLOAT;
+    unsigned type_size = 4;
 
-    // start to copy from PBO to texture object ///////
-
-    // bind the texture and PBO
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO_ids[textureId]);
-
-    // copy pixels from PBO to texture object
-    // Use offset instead of ponter.
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, 0);
-
-    ///////////////////////////////////////////////////
-
-    // start to modify pixel values ///////////////////
-
-    // bind PBO to update pixel values
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO_ids[textureId]);
-
-    // map the buffer object into client's memory
-    // Note that glMapBuffer() causes sync issue.
-    // If GPU is working with this buffer, glMapBuffer() will wait(stall)
-    // for GPU to finish its job. To avoid waiting (stall), you can call
-    // first glBufferData() with NULL pointer before glMapBuffer().
-    // If you do that, the previous data in PBO will be discarded and
-    // glMapBuffer() returns a new allocated pointer immediately
-    // even if GPU is still working with the previous data.
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width*height*4*sizeof(float), 0, GL_STREAM_DRAW);
-    GLubyte* ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-    if(ptr)
+    switch (num_chans)
     {
-        // update data directly on the mapped buffer
-        UpdatePixels(ptr, data.data(), data.size());
-
-        glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
+    case 4:
+        gl_format = GL_RGBA;
+        break;
+    case 3:
+        gl_format = GL_RGB;
+        break;
+    case 2:
+        gl_format = GL_RG;
+        break;
+    case 1:
+    default:
+        gl_format = GL_RED;
+        break;
     }
 
-    ///////////////////////////////////////////////////
-
-    // it is good idea to release PBOs with ID 0 after use.
-    // Once bound with 0, all pixel operations behave normal ways.
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-}
-
- void
-UpdateRawTexture(void* texture, unsigned width, unsigned height, float* data, int components)
-{
-    auto textureId = (GLuint)(size_t)texture;
-
-    // start to copy from PBO to texture object ///////
-
-    // bind the texture and PBO
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO_ids[textureId]);
-
-    // copy pixels from PBO to texture object
-    // Use offset instead of ponter.
-    if(components == 4)
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, 0);
-    else
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_FLOAT, 0);
-
-    ///////////////////////////////////////////////////
-
-    // start to modify pixel values ///////////////////
+    if (type == 1) {
+        gl_type = GL_UNSIGNED_BYTE;
+        type_size = 1;
+    }
 
     // bind PBO to update pixel values
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO_ids[textureId]);
 
-    // map the buffer object into client's memory
-    // Note that glMapBuffer() causes sync issue.
-    // If GPU is working with this buffer, glMapBuffer() will wait(stall)
-    // for GPU to finish its job. To avoid waiting (stall), you can call
-    // first glBufferData() with NULL pointer before glMapBuffer().
-    // If you do that, the previous data in PBO will be discarded and
-    // glMapBuffer() returns a new allocated pointer immediately
-    // even if GPU is still working with the previous data.
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * components * sizeof(float), 0, GL_STREAM_DRAW);
+    // allocate a new buffer
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * num_chans * type_size, 0, GL_STREAM_DRAW);
+
+    // tequest access to the buffer
     GLubyte* ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
     if (ptr)
     {
         // update data directly on the mapped buffer
-        UpdatePixels(ptr, data, width*height*components);
+        memcpy(ptr, data, width * height * num_chans * type_size);
 
         glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
     }
 
-    ///////////////////////////////////////////////////
+    // bind the texture
+    glBindTexture(GL_TEXTURE_2D, textureId);
 
-    // it is good idea to release PBOs with ID 0 after use.
-    // Once bound with 0, all pixel operations behave normal ways.
+    // copy pixels from PBO to texture object
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format, gl_type, NULL);
+
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
+
+void mvUpdateStaticTexture(void* texture, u32 width, u32 height, u32 num_chans, u32 type, void* data)
+{
+    mvUpdateDynamicTexture(texture, width, height, num_chans, type, data);
 }

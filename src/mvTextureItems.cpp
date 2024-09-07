@@ -103,7 +103,6 @@ void mvTextureRegistry::show_debugger()
 
 mvDynamicTexture::~mvDynamicTexture()
 {
-	FreeTexture(_texture);
 }
 
 PyObject* mvDynamicTexture::getPyValue()
@@ -139,20 +138,6 @@ void mvDynamicTexture::setDataSource(mvUUID dataSource)
 
 void mvDynamicTexture::draw(ImDrawList* drawlist, float x, float y)
 {
-	if (_dirty)
-	{
-
-		_texture = LoadTextureFromArrayDynamic(_permWidth, _permHeight, _value->data());
-
-		if (_texture == nullptr)
-			state.ok = false;
-
-		_dirty = false;
-		return;
-	}
-
-	UpdateTexture(_texture, _permWidth, _permHeight, *_value);
-
 }
 
 void mvDynamicTexture::handleSpecificRequiredArgs(PyObject* dict)
@@ -214,32 +199,12 @@ void mvRawTexture::setPyValue(PyObject* value)
 
 mvRawTexture::~mvRawTexture()
 {
-	FreeTexture(_texture);
-
 	mvGlobalIntepreterLock gil;
 	Py_XDECREF(_buffer);
 }
 
 void mvRawTexture::draw(ImDrawList* drawlist, float x, float y)
 {
-	if (_dirty)
-	{
-
-		if (_value == nullptr)
-			return;
-
-		if (_componentType == ComponentType::MV_FLOAT_COMPONENT)
-			_texture = LoadTextureFromArrayRaw(_permWidth, _permHeight, (float*)_value, _components);
-
-		if (_texture == nullptr)
-			state.ok = false;
-
-		_dirty = false;
-		return;
-	}
-
-	if (_componentType == ComponentType::MV_FLOAT_COMPONENT)
-		UpdateRawTexture(_texture, _permWidth, _permHeight, (float*)_value, _components);
 
 }
 
@@ -289,8 +254,6 @@ mvStaticTexture::~mvStaticTexture()
 {
 	if (uuid == MV_ATLAS_UUID)
 		return;
-	//UnloadTexture(_name);
-	FreeTexture(_texture);
 }
 
 void mvStaticTexture::draw(ImDrawList* drawlist, float x, float y)
@@ -307,8 +270,6 @@ void mvStaticTexture::draw(ImDrawList* drawlist, float x, float y)
 		config.width = ImGui::GetIO().Fonts->TexWidth;
 		config.height = ImGui::GetIO().Fonts->TexHeight;
 	}
-	else
-		_texture = LoadTextureFromArray(_permWidth, _permHeight, _value->data());
 
 	if (_texture == nullptr)
 	{

@@ -67,23 +67,19 @@ mvPrerender(mvViewport* viewport)
         viewport->titleDirty = false;
     }
 
-    if (glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
-    {
-        glfwWaitEvents();
-        return;
-    }
-
     // Poll and handle events (inputs, window resize, etc.)
     // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
     // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
     // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
     // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 
-    // TODO if (GContext->IO.waitForInput)
-    //    glfwWaitEvents();
-    //else
-        
-    glfwPollEvents();
+    if (viewport->waitForEvents || glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
+        glfwWaitEvents();
+    else
+        glfwPollEvents();
+
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
 
     if (mvToolManager::GetFontManager().isInvalid())
     {
@@ -94,6 +90,8 @@ mvPrerender(mvViewport* viewport)
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
@@ -124,7 +122,11 @@ mvCleanupViewport(mvViewport& viewport)
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
     // Cleanup
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
     ImGui_ImplOpenGL3_Shutdown();
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
     ImGui_ImplGlfw_Shutdown();
 
     glfwDestroyWindow(viewportData->handle);
@@ -194,6 +196,9 @@ mvShowViewport(mvViewport& viewport,
     if (!images.empty())
         glfwSetWindowIcon(viewportData->handle, images.size(), images.data());
 
+    // A single thread can use a context at a time
+    viewportData->gl_context.lock();
+
     glfwMakeContextCurrent(viewportData->handle);
     gl3wInit();
 
@@ -205,6 +210,8 @@ mvShowViewport(mvViewport& viewport,
                               handle_window_resize);
     glfwSetWindowCloseCallback(viewportData->handle,
                                handle_window_close);
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
 }
     
  void
@@ -232,6 +239,7 @@ mvRestoreViewport(mvViewport& viewport)
 mvRenderFrame(mvViewport& viewport,
  			  mvGraphics& graphics)
 {
+    auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     mvPrerender(&viewport);
 
     if (GImGui->CurrentWindow == nullptr)
@@ -274,4 +282,23 @@ mvToggleFullScreen(mvViewport& viewport)
         glfwSetWindowMonitor(viewportData->handle, monitor, 0, 0, mode->width, mode->height, framerate);
         viewport.fullScreen = true;
     }
+}
+
+void mvWakeRendering(mvViewport& viewport)
+{
+    glfwPostEmptyEvent();
+}
+
+void mvMakeRenderingContextCurrent(mvViewport& viewport)
+{
+    auto viewportData = (mvViewportData*)viewport.platformSpecifics;
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
+}
+
+void mvReleaseRenderingContext(mvViewport& viewport)
+{
+    auto viewportData = (mvViewportData*)viewport.platformSpecifics;
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
 }

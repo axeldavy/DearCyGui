@@ -10,7 +10,11 @@ setup_graphics(mvViewport& viewport)
     mvGraphics graphics{};
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     const char* glsl_version = "#version 130";
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
     ImGui_ImplOpenGL3_Init(glsl_version);
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
     return graphics;
 }
 
@@ -42,10 +46,14 @@ present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vs
     int display_w, display_h;
     glfwGetFramebufferSize(viewportData->handle, &display_w, &display_h);
 
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
     glViewport(0, 0, display_w, display_h);
     glClearColor(viewport->clearColor.r, viewport->clearColor.g, viewport->clearColor.b, viewport->clearColor.a);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
 
     glfwSwapBuffers(viewportData->handle);
 }

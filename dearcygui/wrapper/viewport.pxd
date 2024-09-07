@@ -21,6 +21,7 @@ cdef extern from "mvViewport.h" nogil:
         char decorated
         char fullScreen
         char disableClose
+        char waitForEvents
 
         char sizeDirty
         char posDirty
@@ -56,3 +57,29 @@ cdef extern from "mvViewport.h" nogil:
     void        mvRenderFrame(mvViewport& viewport,
 						      mvGraphics& graphics)
     void        mvToggleFullScreen(mvViewport& viewport)
+    void        mvWakeRendering(mvViewport& viewport)
+    void        mvMakeRenderingContextCurrent(mvViewport& viewport)
+    void        mvReleaseRenderingContext(mvViewport& viewport)
+
+
+cdef extern from "mvUtilities.h" nogil:
+    void* mvAllocateTexture(unsigned width,
+                            unsigned height,
+                            unsigned num_chans,
+                            unsigned dynamic,
+                            unsigned type,
+                            unsigned filtering_mode)
+    void mvFreeTexture(void* texture)
+
+    void mvUpdateDynamicTexture(void* texture,
+                                unsigned width,
+                                unsigned height,
+                                unsigned num_chans,
+                                unsigned type,
+                                void* data)
+    void mvUpdateStaticTexture(void* texture,
+                               unsigned width,
+                               unsigned height,
+                               unsigned num_chans,
+                               unsigned type,
+                               void* data)

@@ -19,22 +19,8 @@ typedef _object PyObject;
 
 struct PymvBuffer;
 
-// general
-void FreeTexture(void* texture);
-b8 UnloadTexture(const std::string& filename);
-	
-// static textures
-void* LoadTextureFromFile(const char* filename, i32& width, i32& height);
-void* LoadTextureFromArray(u32 width, u32 height, f32* data);
+void* mvAllocateTexture(u32 width, u32 height, u32 num_chans, u32 dynamic, u32 type, u32 filtering_mode);
+void mvFreeTexture(void* texture);
 
-// dynamic textures
-void* LoadTextureFromArrayDynamic(u32 width, u32 height, f32* data);
-void  UpdateTexture(void* texture, u32 width, u32 height, std::vector<f32>& data);
-
-// raw textures
-void* LoadTextureFromArrayRaw(u32 width, u32 height, f32* data, i32 components);
-void  UpdateRawTexture(void* texture, u32 width, u32 height, f32* data, i32 components);
-
-// framebuffer output
-void OutputFrameBuffer(const char* filepath);
-void OutputFrameBufferArray(PymvBuffer* out);
+void mvUpdateDynamicTexture(void* texture, u32 width, u32 height, u32 num_chans, u32 type, void* data);
+void mvUpdateStaticTexture(void* texture, u32 width, u32 height, u32 num_chans, u32 type, void* data);

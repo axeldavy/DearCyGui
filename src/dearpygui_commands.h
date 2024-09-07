@@ -2520,6 +2520,7 @@ output_frame_buffer(PyObject* self, PyObject* args, PyObject* kwargs)
 	const char* file = "";
 	PyObject* callback = nullptr;
 
+	/*
 	if (!Parse((GetParsers())["output_frame_buffer"], args, kwargs, __FUNCTION__,
 		&file, &callback))
 		return GetPyNone();
@@ -2564,7 +2565,7 @@ output_frame_buffer(PyObject* self, PyObject* args, PyObject* kwargs)
 	{
 		mvThrowPythonError(mvErrorCode::mvNone, "File path for 'output_frame_buffer(...)' must be of the form 'name.png'.");
 		return GetPyNone();
-	}
+	}*/
 
 	return GetPyNone();
 }
