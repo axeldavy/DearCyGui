@@ -63,113 +63,7 @@ def setup_package():
                     "thirdparty/imnodes",
                     "thirdparty/implot",
                     "thirdparty/gl3w"]
-    #"thirdparty/glfw/include",
-    """
-    cpp_sources = [
-        "mvContext.cpp",
-        "mvMath.cpp",
-        "mvProfiler.cpp",
-        "dearpygui.cpp",
-        "mvPyUtils.cpp",
-        "mvCustomTypes.cpp",
-        "mvBasicWidgets.cpp",
-        "mvTables.cpp",
-        "mvThemes.cpp",
-        "mvNodes.cpp",
-        "mvDrawings.cpp",
-        "mvGlobalHandlers.cpp",
-        "mvItemHandlers.cpp",
-        "mvValues.cpp",
-        "mvTextureItems.cpp",
-        "mvFontItems.cpp",
-        "mvColors.cpp",
-        "mvPlotting.cpp",
-        "mvContainers.cpp",
-        "mvCallbackRegistry.cpp",
-        "mvLoadingIndicatorCustom.cpp",
-        "mvFontManager.cpp",
-        "mvToolManager.cpp",
-        "mvToolWindow.cpp",
-        "mvAboutWindow.cpp",
-        "mvDocWindow.cpp",
-        "mvMetricsWindow.cpp",
-        "mvStackWindow.cpp",
-        "mvStyleWindow.cpp",
-        "mvDebugWindow.cpp",
-        "mvLayoutWindow.cpp",
-        "mvAppItemState.cpp",
-        "mvAppItem.cpp",
-        "mvItemRegistry.cpp",
-        "mvDatePicker.cpp",
-        "mvTimePicker.cpp",
-        "mvSlider3D.cpp",
-        "mvLoadingIndicator.cpp",
-        "mvFileDialog.cpp",
-        "mvFileExtension.cpp",
-        "thirdparty/imnodes/imnodes.cpp",
-        "thirdparty/implot/implot.cpp",
-        "thirdparty/implot/implot_items.cpp",
-        "thirdparty/implot/implot_demo.cpp",
-        "thirdparty/ImGuiFileDialog/ImGuiFileDialog.cpp",
-        "thirdparty/imgui/misc/cpp/imgui_stdlib.cpp",
-        "thirdparty/imgui/imgui.cpp",
-        "thirdparty/imgui/imgui_demo.cpp",
-        "thirdparty/imgui/imgui_draw.cpp",
-        "thirdparty/imgui/imgui_widgets.cpp",
-        "thirdparty/imgui/imgui_tables.cpp"          
-    ]
-    if get_platform() == "Windows":
-        cpp_sources += [
-            "thirdparty/imgui/misc/freetype/imgui_freetype.cpp",
-            "thirdparty/imgui/backends/imgui_impl_win32.cpp",
-            "thirdparty/imgui/backends/imgui_impl_dx11.cpp",
-            "mvViewport_win32.cpp",
-            "mvUtilities_win32.cpp",
-            "mvGraphics_win32.cpp"
-        ]
-        compile_args += ["-DMV_PLATFORM=\"windows\"", "-DIMGUI_USER_CONFIG=\"mvImGuiConfig.h\""]
-        libraries += ["d3d11", "dxgi", "dwmapi", "freetype"]
-    elif get_platform() == "Linux":
-        cpp_sources += [
-            "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
-            "thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
-            "thirdparty/gl3w/GL/gl3w.c",
-            "mvUtilities_linux.cpp",
-            "mvViewport_linux.cpp",
-            "mvGraphics_linux.cpp"
-        ]
-        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
-                         "-DIMGUI_IMPL_OPENGL_LOADER_GL3W", "-DMV_PLATFORM=\"linux\"",\
-                         "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",\
-                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
-        libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
-    elif get_platform() == "OS X":
-        cpp_sources += [
-            "thirdparty/imgui/backends/imgui_impl_metal.mm",
-            "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
-            "mvViewport_apple.mm",
-            "mvUtilities_apple.mm",
-            "mvGraphics_apple.mm"
-        ]
-        compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
-                         "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\"", \
-                         "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",\
-                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
-        linking_args += [
-            "-lglfw",
-			"-undefined dynamic_lookup",
-			"-framework Metal",
-			"-framework MetalKit",
-			"-framework Cocoa",
-			"-framework CoreVideo",
-			"-framework IOKit",
-			"-framework QuartzCore"
-        ]
-        
-    else:
-        raise ValueError("Unsupported plateform")
-    cpp_sources = [p if "thirdparty" in p else ("src/" + p) for p in cpp_sources]
-    """
+
     cpp_sources = [
         "dearcygui/backends/glfw_gl3_backend.cpp",
         "thirdparty/imnodes/imnodes.cpp",
@@ -228,6 +122,9 @@ def setup_package():
     ]
     secondary_cython_sources = [
         "dearcygui/constants.pyx",
+        "dearcygui/draw.pyx",
+        "dearcygui/plot.pyx",
+        "dearcygui/window.pyx",
     ]
     for cython_source in secondary_cython_sources:
         extension_name = cython_source.split("/")[-1].split(".")[0]
@@ -238,9 +135,6 @@ def setup_package():
                 language="c++",
                 include_dirs=include_dirs,
                 extra_compile_args=compile_args,
-                libraries=libraries,
-                depends=["dearcygui._dearcygui"],
-                extra_link_args=linking_args
             )
         )
     print(extensions)

@@ -46,7 +46,7 @@ cdef class dcgViewport:
     cdef baseItem filedialogRoots
     cdef baseItem stagingRoots
     cdef baseItem viewportMenubarRoots
-    cdef dcgWindow windowRoots
+    cdef dcgWindow_ windowRoots
     cdef baseItem fontRegistryRoots
     cdef baseItem handlerRegistryRoots
     cdef baseItem itemHandlerRegistryRoots
@@ -54,7 +54,7 @@ cdef class dcgViewport:
     cdef baseItem valueRegistryRoots
     cdef baseItem themeRegistryRoots
     cdef baseItem itemTemplatesRoots
-    cdef dcgViewportDrawList viewportDrawlistRoots
+    cdef dcgViewportDrawList_ viewportDrawlistRoots
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
     #mvMat4 transform         = mvIdentityMat4();
@@ -234,16 +234,16 @@ cdef class uiItem(drawableContainerItem):
 Drawing Items
 """
 
-cdef class dcgDrawList(drawableContainerItem):
+cdef class dcgDrawList_(drawableContainerItem):
     cdef float clip_width
     cdef float clip_height
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgViewportDrawList(drawableContainerItem):
+cdef class dcgViewportDrawList_(drawableContainerItem):
     cdef bool front
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLayer(drawableContainerItem):
+cdef class dcgDrawLayer_(drawableContainerItem):
     # mvAppItemDrawInfo
     cdef long cullMode
     cdef bint perspectiveDivide
@@ -256,7 +256,7 @@ cdef class dcgDrawLayer(drawableContainerItem):
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
 
-cdef class dcgDrawArrow(drawableItem):
+cdef class dcgDrawArrow_(drawableItem):
     cdef float[4] start
     cdef float[4] end
     cdef float[4] corner1
@@ -267,7 +267,7 @@ cdef class dcgDrawArrow(drawableItem):
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void __compute_tip(self)
 
-cdef class dcgDrawBezierCubic(drawableItem):
+cdef class dcgDrawBezierCubic_(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -277,7 +277,7 @@ cdef class dcgDrawBezierCubic(drawableItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawBezierQuadratic(drawableItem):
+cdef class dcgDrawBezierQuadratic_(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -286,7 +286,7 @@ cdef class dcgDrawBezierQuadratic(drawableItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawCircle(drawableItem):
+cdef class dcgDrawCircle_(drawableItem):
     cdef float[4] center
     cdef float radius
     cdef imgui.ImU32 color
@@ -295,7 +295,7 @@ cdef class dcgDrawCircle(drawableItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawEllipse(drawableItem):
+cdef class dcgDrawEllipse_(drawableItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -306,15 +306,15 @@ cdef class dcgDrawEllipse(drawableItem):
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawImage(drawableItem):
+cdef class dcgDrawImage_(drawableItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef float[4] uv
     cdef imgui.ImU32 color_multiplier
-    cdef dcgTexture texture
+    cdef dcgTexture_ texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawImageQuad(drawableItem):
+cdef class dcgDrawImageQuad_(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -325,24 +325,24 @@ cdef class dcgDrawImageQuad(drawableItem):
     cdef float[4] uv3
     cdef float[4] uv4
     cdef imgui.ImU32 color_multiplier
-    cdef dcgTexture texture
+    cdef dcgTexture_ texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLine(drawableItem):
+cdef class dcgDrawLine_(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawPolyline(drawableItem):
+cdef class dcgDrawPolyline_(drawableItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
     cdef vector[float4] points
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawPolygon(drawableItem):
+cdef class dcgDrawPolygon_(drawableItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -351,7 +351,7 @@ cdef class dcgDrawPolygon(drawableItem):
     cdef void __triangulate(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawQuad(drawableItem):
+cdef class dcgDrawQuad_(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -361,7 +361,7 @@ cdef class dcgDrawQuad(drawableItem):
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawRect(drawableItem):
+cdef class dcgDrawRect_(drawableItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -375,14 +375,14 @@ cdef class dcgDrawRect(drawableItem):
     cdef bint multicolor
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dgcDrawText(drawableItem):
+cdef class dgcDrawText_(drawableItem):
     cdef float[4] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawTriangle(drawableItem):
+cdef class dcgDrawTriangle_(drawableItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -396,7 +396,7 @@ cdef class dcgDrawTriangle(drawableItem):
 UI items
 """
 
-cdef class dcgWindow(uiItem):
+cdef class dcgWindow_(uiItem):
     cdef imgui.ImGuiWindowFlags windowflags
     cdef bint mainWindow
     cdef bint closing
@@ -439,7 +439,7 @@ cdef class dcgWindow(uiItem):
 Bindable elements
 """
 
-cdef class dcgTexture(baseItem):
+cdef class dcgTexture_(baseItem):
     cdef recursive_mutex write_mutex
     cdef bint hint_dynamic
     cdef bint dynamic
@@ -449,3 +449,10 @@ cdef class dcgTexture(baseItem):
     cdef int num_chans
     cdef int filtering_mode
     cdef void set_content(self, cnp.ndarray content)
+
+
+"""
+Utils that the other pyx may use
+"""
+cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4) noexcept nogil
+cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32) noexcept nogil
