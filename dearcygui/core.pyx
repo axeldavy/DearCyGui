@@ -127,7 +127,13 @@ cdef void internal_close_callback(void *object) noexcept nogil:
 cdef void internal_render_callback(void *object) noexcept nogil:
     (<dcgViewport>object).__render()
 
+# The no gc clear flag enforces that in case
+# of no-reference cycle detected, the dcgContext is freed last.
+# The cycle is due to dcgContext referencing dcgViewport
+# and vice-versa
+
 @cython.final
+@cython.no_gc_clear
 cdef class dcgViewport:
     def __cinit__(self, context):
         if not(isinstance(context, dcgContext)):
@@ -652,7 +658,6 @@ cdef class dcgViewport:
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         mvWakeRendering(dereference(self.viewport))
 
-
 cdef class dcgContext:
     def __init__(self):
         self.on_close_callback = None
@@ -677,6 +682,9 @@ cdef class dcgContext:
 
     def __dealloc__(self):
         self.started = True
+        imnodes.DestroyContext(self.imnodes_context)
+        implot.DestroyContext(self.implot_context)
+        imgui.DestroyContext(self.imgui_context)
 
     def __del__(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -684,10 +692,6 @@ cdef class dcgContext:
             self.started = True
             self.queue.submit(self.on_close_callback)
             self.started = False
-
-        imnodes.DestroyContext(self.imnodes_context)
-        implot.DestroyContext(self.implot_context)
-        imgui.DestroyContext(self.imgui_context)
 
         #mvToolManager::Reset()
         #ClearItemRegistry(*GContext->itemRegistry)
