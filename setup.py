@@ -64,6 +64,7 @@ def setup_package():
                     "thirdparty/implot",
                     "thirdparty/gl3w"]
     #"thirdparty/glfw/include",
+    """
     cpp_sources = [
         "mvContext.cpp",
         "mvMath.cpp",
@@ -117,18 +118,6 @@ def setup_package():
         "thirdparty/imgui/imgui_widgets.cpp",
         "thirdparty/imgui/imgui_tables.cpp"          
     ]
-
-    compile_args = ["-DIMGUI_DEFINE_MATH_OPERATORS",
-                    "-DMVDIST_ONLY",
-                    "-D_CRT_SECURE_NO_WARNINGS",
-                    "-D_USE_MATH_DEFINES",
-                    "-DMV_DPG_MAJOR_VERSION=1",
-                    "-DMV_DPG_MINOR_VERSION=0",
-                    "-DMV_SANDBOX_VERSION=\"master\""]
-    linking_args = []
-    libraries = []
-
-
     if get_platform() == "Windows":
         cpp_sources += [
             "thirdparty/imgui/misc/freetype/imgui_freetype.cpp",
@@ -179,9 +168,53 @@ def setup_package():
         
     else:
         raise ValueError("Unsupported plateform")
-
-        
     cpp_sources = [p if "thirdparty" in p else ("src/" + p) for p in cpp_sources]
+    """
+    cpp_sources = [
+        "dearcygui/backends/glfw_gl3_backend.cpp",
+        "thirdparty/imnodes/imnodes.cpp",
+        "thirdparty/implot/implot.cpp",
+        "thirdparty/implot/implot_items.cpp",
+        "thirdparty/implot/implot_demo.cpp",
+        "thirdparty/ImGuiFileDialog/ImGuiFileDialog.cpp",
+        "thirdparty/imgui/misc/cpp/imgui_stdlib.cpp",
+        "thirdparty/imgui/imgui.cpp",
+        "thirdparty/imgui/imgui_demo.cpp",
+        "thirdparty/imgui/imgui_draw.cpp",
+        "thirdparty/imgui/imgui_widgets.cpp",
+        "thirdparty/imgui/imgui_tables.cpp",
+        "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
+        "thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
+        "thirdparty/gl3w/GL/gl3w.c"
+    ]
+
+    compile_args = ["-DIMGUI_DEFINE_MATH_OPERATORS",
+                    "-DMVDIST_ONLY",
+                    "-D_CRT_SECURE_NO_WARNINGS",
+                    "-D_USE_MATH_DEFINES",
+                    "-DMV_DPG_MAJOR_VERSION=1",
+                    "-DMV_DPG_MINOR_VERSION=0",
+                    "-DIMGUI_IMPL_OPENGL_LOADER_GL3W",
+                    "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",
+                    "-DMV_SANDBOX_VERSION=\"master\""]
+    linking_args = []
+    libraries = []
+
+    if get_platform() == "Linux":
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
+                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+        libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
+    elif get_platform() == "OS X":
+        compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
+                         "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\"", \
+                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+        linking_args += [
+            "-lglfw"
+        ]
+
+    else:
+        raise ValueError("Unsupported plateform")
+
     extensions = [
         Extension(
             "dearcygui.core",

@@ -1,4 +1,5 @@
-from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, implot, imnodes, float4
+from dearcygui.wrapper cimport imgui, implot, imnodes, float4
+from dearcygui.backends.backend cimport mvViewport, mvGraphics
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex

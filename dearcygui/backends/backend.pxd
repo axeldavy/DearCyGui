@@ -1,8 +1,15 @@
-from dearcygui.wrapper.core cimport mvColor
 from libcpp.string cimport string
-from dearcygui.wrapper.graphics cimport mvGraphics
 
-cdef extern from "mvViewport.h" nogil:
+cdef extern from "backend.h" nogil:
+    ctypedef struct mvColor:
+        float r,g,b,a
+        #mvColor()
+        #mvColor(float r, float g, float b, float a)
+        #mvColor(int r, int g, int b, int a)
+        #mvColor(math.ImVec4 color)
+        #const math.ImVec4 toVec4()
+    #unsigned int ConvertToUnsignedInt(const mvColor& color)
+
     cdef struct mvViewport:
         char running
         char shown
@@ -41,12 +48,21 @@ cdef extern from "mvViewport.h" nogil:
     ctypedef void (*on_close_fun)(void*)
     ctypedef void (*render_fun)(void*)
 
+    struct mvGraphics:
+        bint ok
+        void* backendSpecifics
+
+    mvGraphics setup_graphics(mvViewport&)
+    void resize_swapchain(mvGraphics&, int, int)
+    void cleanup_graphics(mvGraphics&)
+    void present(mvGraphics&, mvColor&, bint)
+
     mvViewport* mvCreateViewport  (unsigned width,
                                    unsigned height,
                                    render_fun,
-							       on_resize_fun,
-							       on_close_fun,
-							       void *)
+                                   on_resize_fun,
+                                   on_close_fun,
+                                   void *)
     void        mvCleanupViewport (mvViewport& viewport)
     void        mvShowViewport    (mvViewport& viewport,
                                    char minimized,
@@ -55,14 +71,12 @@ cdef extern from "mvViewport.h" nogil:
     void        mvMinimizeViewport(mvViewport& viewport)
     void        mvRestoreViewport (mvViewport& viewport)
     void        mvRenderFrame(mvViewport& viewport,
-						      mvGraphics& graphics)
+                              mvGraphics& graphics)
     void        mvToggleFullScreen(mvViewport& viewport)
     void        mvWakeRendering(mvViewport& viewport)
     void        mvMakeRenderingContextCurrent(mvViewport& viewport)
     void        mvReleaseRenderingContext(mvViewport& viewport)
 
-
-cdef extern from "mvUtilities.h" nogil:
     void* mvAllocateTexture(unsigned width,
                             unsigned height,
                             unsigned num_chans,
@@ -83,3 +97,11 @@ cdef extern from "mvUtilities.h" nogil:
                                unsigned num_chans,
                                unsigned type,
                                void* data)
+
+cdef inline mvColor colorFromInts(int r, int g, int b, int a):
+    cdef mvColor color
+    color.r = r/255.
+    color.g = g/255.
+    color.b = b/255.
+    color.a = a/255.
+    return color

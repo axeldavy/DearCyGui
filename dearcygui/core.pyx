@@ -23,6 +23,7 @@ from cython.operator cimport dereference
 # Thus it is the only one allowed to make calls to it
 
 from dearcygui.wrapper cimport *
+from dearcygui.backends.backend cimport *
 # We use unique_lock rather than lock_guard as
 # the latter doesn't support nullary constructor
 # which causes trouble to cython
@@ -41,9 +42,6 @@ cimport numpy as cnp
 import scipy
 import scipy.spatial
 from .constants import constants
-
-cdef extern from "../src/mvContext.h" nogil:
-    cdef void initializeImGui()
 
 cdef mvColor MV_BASE_COL_bgColor = mvColor(37, 37, 38, 255)
 cdef mvColor MV_BASE_COL_lightBgColor = mvColor(82, 82, 85, 255)
