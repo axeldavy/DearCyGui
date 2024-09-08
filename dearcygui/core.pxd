@@ -1,4 +1,4 @@
-from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, float4
+from dearcygui.wrapper cimport mvViewport, mvGraphics, imgui, implot, imnodes, float4
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
@@ -75,6 +75,7 @@ cdef class dcgViewport:
     cdef void __render(self) noexcept nogil
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
 
+
 cdef class dcgContext:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
@@ -88,6 +89,9 @@ cdef class dcgContext:
     cdef int frame # frame count
     cdef int framerate # frame rate
     cdef public dcgViewport viewport
+    cdef imgui.ImGuiContext* imgui_context
+    cdef implot.ImPlotContext* implot_context
+    cdef imnodes.ImNodesContext* imnodes_context
     #cdef dcgGraphics graphics
     cdef bint resetTheme
     #cdef dcgIO IO
@@ -100,6 +104,19 @@ cdef class dcgContext:
     cdef public object on_close_callback
     cdef public object on_frame_callbacks
     cdef object queue
+
+# Each .so has its own current context. To be able to work
+# with various .so and contexts, we must ensure the correct
+# context is current. The call is almost free as it's just
+# a pointer that is set.
+cdef inline void ensure_correct_imgui_context(dcgContext context):
+    imgui.SetCurrentContext(context.imgui_context)
+
+cdef inline void ensure_correct_imgplot_context(dcgContext context):
+    implot.SetCurrentContext(context.implot_context)
+
+cdef inline void ensure_correct_imnodes_context(dcgContext context):
+    imnodes.SetCurrentContext(context.imnodes_context)
 
 """
 Main item types

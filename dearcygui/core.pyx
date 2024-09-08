@@ -672,9 +672,9 @@ cdef class dcgContext:
         self.viewport = dcgViewport(self)
         self.resetTheme = False
         imgui.IMGUI_CHECKVERSION()
-        imgui.CreateContext()
-        implot.CreateContext()
-        imnodes.CreateContext()
+        self.imgui_context = imgui.CreateContext()
+        self.implot_context = implot.CreateContext()
+        self.imnodes_context = imnodes.CreateContext()
         #mvToolManager::GetFontManager()._dirty = true;
 
     def __dealloc__(self):
@@ -687,9 +687,9 @@ cdef class dcgContext:
             self.queue.submit(self.on_close_callback)
             self.started = False
 
-        imnodes.DestroyContext()
-        implot.DestroyContext()
-        imgui.DestroyContext()
+        imnodes.DestroyContext(self.imnodes_context)
+        implot.DestroyContext(self.implot_context)
+        imgui.DestroyContext(self.imgui_context)
 
         #mvToolManager::Reset()
         #ClearItemRegistry(*GContext->itemRegistry)
