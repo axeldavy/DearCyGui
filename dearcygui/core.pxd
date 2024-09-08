@@ -166,7 +166,8 @@ cdef class baseItem:
     cdef baseItem last_payloads_child
     cdef void lock_parent_and_item_mutex(self) noexcept nogil
     cdef void unlock_parent_mutex(self) noexcept nogil
-    cpdef void attach_item(self, baseItem target_parent)
+    cpdef void attach_to_parent(self, baseItem target_parent)
+    cpdef void attach_before(self, baseItem target_before)
     cdef void __detach_item_and_lock(self)
     cpdef void detach_item(self)
     cpdef void delete_item(self)
@@ -181,6 +182,60 @@ cdef class drawableItem(baseItem):
     cdef bool show
     cdef void draw_prev_siblings(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+
+"""
+Handler item
+"""
+
+cdef struct itemState:
+    bint can_be_active
+    bint can_be_activated
+    bint can_be_clicked
+    bint can_be_deactivated
+    bint can_be_deactivated_after_edited
+    bint can_be_edited
+    bint can_be_focused
+    bint can_be_hovered
+    bint can_be_toggled
+    bint has_rect_min
+    bint has_rect_max
+    bint has_rect_size
+    bint has_content_region
+    bint hovered
+    bint active
+    bint focused
+    bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
+    bint[<int>imgui.ImGuiMouseButton_COUNT] doubleclicked
+    bint edited
+    bint activated
+    bint deactivated
+    bint deactivated_after_edited
+    bint toggled
+    bint resized
+    imgui.ImVec2 rect_min
+    imgui.ImVec2 rect_max
+    imgui.ImVec2 rect_size
+    imgui.ImVec2 content_region
+
+cdef void updateCurrentItemState(itemState *)
+cdef object outputCurrentItemState(itemState *)
+
+"""
+cdef class itemHandler(baseItem):
+    cdef bint enabled
+    cpdef void attach_item(self, dcgItemHandlerRegistry target_parent)
+
+cdef class dcgHandlerRegistry:
+    cdef dcgContext context
+    cdef bint enabled
+    cdef void run_handlers(self, baseItem, itemState*)
+
+cdef class dcgItemHandlerRegistry:
+    cdef dcgContext context
+    cdef itemHandler last_item_handler
+    cdef bint enabled
+    cdef void run_handlers(self, baseItem, itemState*)
+"""
 
 """
 UI item
@@ -200,27 +255,10 @@ cdef class uiItem(drawableItem):
     cdef bint dirty_size
     cdef bint dirtyPos
     # mvAppItemState
-    cdef bint hovered
-    cdef bint active
-    cdef bint focused
-    cdef bint leftclicked
-    cdef bint rightclicked
-    cdef bint middleclicked
-    cdef bint[5] doubleclicked
-    cdef bint visible
-    cdef bint edited
-    cdef bint activated
-    cdef bint deactivated
-    cdef bint deactivatedAfterEdit
-    cdef bint toggledOpen
-    cdef bint mvRectSizeResized
-    cdef imgui.ImVec2 rectMin
-    cdef imgui.ImVec2 rectMax
-    cdef imgui.ImVec2 rectSize
-    cdef imgui.ImVec2 mvPrevRectSize
-    cdef imgui.ImVec2 pos
-    cdef imgui.ImVec2 contextRegionAvail
+    cdef itemState state
     cdef bint ok
+    cdef bint visible
+    cdef imgui.ImVec2 pos
     cdef int lastFrameUpdate
     # mvAppItemConfig
     cdef long long source

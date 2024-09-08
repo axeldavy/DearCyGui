@@ -74,16 +74,21 @@ class dcgItemManager:
 
     def attach(self, item, parent=None, before=None):
         # TODO: before
-        print("attach", item, parent, before)
+        if before is not None and before != 0:
+            if type(before) == int:
+                parent = self.uuid_to_item[before]
+            elif type(before) == str:
+                before = self.uuid_to_item[self.tag_to_uuid[before]]
+            item.attach_before(before)
+            return
         if parent is None or parent == 0:
             parent = self.parent_queue[-1] if len(self.parent_queue) > 0 else None
         else:
             if type(parent) == int:
-                parent =  self.uuid_to_item[parent]
+                parent = self.uuid_to_item[parent]
             elif type(parent) == str:
                 parent = self.uuid_to_item[self.tag_to_uuid[parent]]
-        print("attach", item, parent, before)
-        item.attach_item(parent)
+        item.attach_to_parent(parent)
 
     def create_configure_attach(self, target_class, *args, **kwargs):
         item = target_class(dcg_context)
@@ -7862,7 +7867,7 @@ def add_window(*, label: str =None, user_data: Any =None, use_internal_label: bo
 
     item = dcgWindow(dcg_context)
     item.configure(label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, delay_search=delay_search, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
-    item.attach_item(None)
+    item.attach_to_parent(None)
     return dcg_item_manager.set(item, tag)
 def apply_transform(item : Union[int, str], transform : Any, **kwargs) -> None:
     """     New in 1.1. Applies a transformation matrix to a layer.

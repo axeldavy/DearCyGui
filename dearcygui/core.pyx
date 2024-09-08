@@ -764,7 +764,7 @@ cdef class baseItem:
             self.context.viewport.mutex.unlock()
 
 
-    cpdef void attach_item(self, baseItem target_parent):
+    cpdef void attach_to_parent(self, baseItem target_parent):
         # We must ensure a single thread attaches at a given time.
         # __detach_item_and_lock will lock both the item lock
         # and the parent lock.
@@ -809,6 +809,66 @@ cdef class baseItem:
                 target_parent.last_drawings_child = <drawableItem>self
             else:
                 raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
+        self.attached = True
+
+    cpdef void attach_before(self, baseItem target_before):
+        # We must ensure a single thread attaches at a given time.
+        # __detach_item_and_lock will lock both the item lock
+        # and the parent lock.
+        cdef unique_lock[recursive_mutex] m
+        cdef unique_lock[recursive_mutex] m2
+        cdef unique_lock[recursive_mutex] m3
+        self.__detach_item_and_lock()
+        # retaining the lock enables to ensure the item is
+        # still detached
+        m = unique_lock[recursive_mutex](self.mutex)
+        self.mutex.unlock()
+
+        if self.context is None:
+            raise ValueError("Trying to attach a deleted item")
+
+        if target_before is None:
+            raise ValueError("target before cannot be None")
+
+        # Lock target mutex and its parent mutex
+        target_before.lock_parent_and_item_mutex()
+
+        if not(target_before.attached):
+            target_before.unlock_parent_mutex()
+            target_before.mutex.unlock()
+            # We can bind to an unattached parent, but not
+            # to unattached siblings. Could be implemented, but not trivial
+            raise ValueError("Trying to attach to an un-attached sibling. Not yet supported")
+
+        if (target_before.parent is None) and (target_before.attached):
+            m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+        else:
+            m2 = unique_lock[recursive_mutex](target_before.parent.mutex)
+        m3 = unique_lock[recursive_mutex](target_before.mutex)
+        target_before.unlock_parent_mutex()
+        target_before.mutex.unlock()
+
+        # Check the elements can indeed be siblings
+        if not(self.can_have_sibling):
+            raise ValueError("Instance of type {} cannot have a sibling".format(type(self)))
+        if not(target_before.can_have_sibling):
+            raise ValueError("Instance of type {} cannot have a sibling".format(type(target_before)))
+        if self.element_child_category != target_before.element_child_category:
+            raise ValueError("Instance of type {} cannot be sibling to {}".format(type(self), type(target_before)))
+
+        # Attach to sibling
+        cdef baseItem prev_sibling = target_before.prev_sibling
+        # Potential deadlocks are avoided by the fact that we hold the parent
+        # mutex and any lock of a next sibling must hold the parent
+        # mutex.
+        if prev_sibling is not None:
+            prev_sibling.mutex.lock()
+            prev_sibling.next_sibling = self
+        self.prev_sibling = prev_sibling
+        self.next_sibling = target_before
+        target_before.prev_sibling = self
+        if prev_sibling is not None:
+            prev_sibling.mutex.unlock()
         self.attached = True
 
     cdef void __detach_item_and_lock(self):
@@ -1026,6 +1086,91 @@ cdef class drawableItem(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(l, x, y)
 
+"""
+States and handlers
+"""
+
+cdef void updateCurrentItemState(itemState *state):
+    """
+    Updates the state of the last imgui object
+    """
+    if state.can_be_hovered:
+        state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+    if state.can_be_active:
+        state.active = imgui.IsItemActive()
+    if state.can_be_activated:
+        state.activated = imgui.IsItemActivated()
+    cdef int i
+    if state.can_be_clicked:
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            state.clicked[i] = state.hovered and imgui.IsItemClicked(i)
+            state.doubleclicked[i] = state.hovered and imgui.IsMouseDoubleClicked(i)
+    if state.can_be_deactivated:
+        state.deactivated = imgui.IsItemDeactivated()
+    if state.can_be_deactivated_after_edited:
+        state.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
+    if state.can_be_edited:
+        state.edited = imgui.IsItemEdited()
+    if state.can_be_focused:
+        state.focused = imgui.IsItemFocused()
+    if state.can_be_toggled:
+        state.toggled = imgui.IsItemToggledOpen()
+    if state.has_rect_min:
+        state.rect_min = imgui.GetItemRectMin()
+    if state.has_rect_max:
+        state.rect_max = imgui.GetItemRectMax()
+    cdef imgui.ImVec2 rect_size
+    if state.has_rect_size:
+        rect_size = imgui.GetItemRectSize()
+        state.resized = rect_size.x != state.rect_size.x or \
+                        rect_size.y != state.rect_size.y
+        state.rect_size = rect_size
+    if state.has_content_region:
+        state.content_region = imgui.GetContentRegionAvail()
+
+cdef inline object IntPairFromVec2(imgui.ImVec2 v):
+    return (<int>v.x, <int>v.y)
+
+cdef object outputCurrentItemState(itemState *state):
+    """
+    Helper function to return the current dict of item state
+    """
+    output = {}
+    if state.can_be_hovered:
+        output["hovered"] = state.hovered
+    if state.can_be_active:
+        output["active"] = state.active
+    if state.can_be_activated:
+        output["activated"] = state.activated
+    if state.can_be_clicked:
+        output["clicked"] = max(state.clicked)
+        output["left_clicked"] = state.clicked[0]
+        output["middle_clicked"] = state.clicked[2]
+        output["right_clicked"] = state.clicked[1]
+    if state.can_be_deactivated:
+        output["deactivated"] = state.deactivated
+    if state.can_be_deactivated_after_edited:
+        output["deactivated_after_edit"] = state.deactivated_after_edited
+    if state.can_be_edited:
+        output["edited"] = state.edited
+    if state.can_be_focused:
+        output["focused"] = state.focused
+    if state.can_be_toggled:
+        output["toggle_open"] = state.toggled
+    if state.has_rect_min:
+        output["rect_min"] = IntPairFromVec2(state.rect_min)
+    if state.has_rect_max:
+        output["rect_max"] = IntPairFromVec2(state.rect_max)
+    if state.has_rect_size:
+        output["rect_size"] = IntPairFromVec2(state.rect_size)
+        output["resized"] = state.resized
+    if state.has_content_region:
+        output["content_region_avail"] = IntPairFromVec2(state.content_region)
+    output["ok"] = True # Original code only set this to False on missing texture or invalid style
+    # TODO: add pos, visible to the dict
+    return output
+
+
 
 cdef class uiItem(drawableItem):
     def __cinit__(self):
@@ -1046,26 +1191,6 @@ cdef class uiItem(drawableItem):
         self.dirty_size = True
         self.dirtyPos = False
         # mvAppItemState
-        self.hovered = False
-        self.active = False
-        self.focused = False
-        self.leftclicked = False
-        self.rightclicked = False
-        self.middleclicked = False
-        self.doubleclicked = [False, False, False, False, False]
-        self.visible = False
-        self.edited = False
-        self.activated = False
-        self.deactivated = False
-        self.deactivatedAfterEdit = False
-        self.toggledOpen = False
-        self.mvRectSizeResized = False
-        self.rectMin = imgui.ImVec2(0., 0.)
-        self.rectMax = imgui.ImVec2(0., 0.)
-        self.rectSize = imgui.ImVec2(0., 0.)
-        self.mvPrevRectSize = imgui.ImVec2(0., 0.)
-        self.pos = imgui.ImVec2(0., 0.)
-        self.contextRegionAvail = imgui.ImVec2(0., 0.)
         self.ok = True
         self.lastFrameUpdate = 0 # last frame update occured
         self.parent = None
@@ -1964,7 +2089,7 @@ cdef class dcgWindow_(uiItem):
         self.collapsed = False
         self.no_open_over_existing_popup = True
         self.on_close = None
-        self.min_size = imgui.ImVec2(100., 100.)
+        self.min_size = imgui.ImVec2(100., 100.) # tODO state ?
         self.max_size = imgui.ImVec2(30000., 30000.)
         self.scrollX = 0.
         self.scrollY = 0.
@@ -1984,6 +2109,9 @@ cdef class dcgWindow_(uiItem):
         self.can_have_payload_child = True
         self.can_have_nonviewport_parent = True
         self.element_toplevel_category = 4
+        self.state.can_be_hovered = True
+        self.state.can_be_focused = True
+        self.state.has_rect_size = True
 
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
@@ -2054,9 +2182,9 @@ cdef class dcgWindow_(uiItem):
                     imgui.PopStyleVar(1)
                     self.show = False
                     self.lastFrameUpdate = self.context.frame
-                    self.hovered = False
-                    self.focused = False
-                    self.toggledOpen = False
+                    self.state.hovered = False
+                    self.state.focused = False
+                    self.state.toggled = False
                     self.visible = False
 
                 with gil:
@@ -2141,24 +2269,20 @@ cdef class dcgWindow_(uiItem):
 
         self.lastFrameUpdate = self.context.frame
         self.visible = True
-        self.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-        self.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-        self.rectSize.x = imgui.GetWindowSize().x
-        self.rectSize.y = imgui.GetWindowSize().y
-        self.toggledOpen = imgui.IsWindowCollapsed()
-        if (self.mvPrevRectSize.x != self.rectSize.x or self.mvPrevRectSize.y != self.rectSize.y):
-            self.mvRectSizeResized = True
-            self.mvPrevRectSize.x = self.rectSize.x
-            self.mvPrevRectSize.y = self.rectSize.y
-        else:
-            self.mvRectSizeResized = False
+        self.state.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+        self.state.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+        cdef imgui.ImVec2 rect_size = imgui.GetWindowSize()
+        self.state.toggled = imgui.IsWindowCollapsed()
+        self.state.resized = rect_size.x != self.state.rect_size.x or \
+                             rect_size.y != self.state.rect_size.y
+        self.state.rect_size = imgui.GetWindowSize()
 
-        if (imgui.GetWindowWidth() != <float>self.width or imgui.GetWindowHeight() != <float>self.height):
-            self.width = <int>imgui.GetWindowWidth()
-            self.height = <int>imgui.GetWindowHeight()
+        if (rect_size.x != <float>self.width or rect_size.y != <float>self.height):
+            self.width = <int>rect_size.x
+            self.height = <int>rect_size.y
             self.resized = True
 
-        cdef bint focused = self.focused
+        cdef bint focused = self.state.focused
         if self.lastFrameUpdate != self.context.frame:
             focused = False
 
@@ -2189,9 +2313,9 @@ cdef class dcgWindow_(uiItem):
         # we switched from a show to a no show state
         if not(self.show):
             self.lastFrameUpdate = self.context.frame
-            self.hovered = False
-            self.focused = False
-            self.toggledOpen = False
+            self.state.hovered = False
+            self.state.focused = False
+            self.state.toggled = False
             self.visible = False
 
             with gil:
