@@ -717,6 +717,15 @@ cdef class baseItem:
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
         self.uuid = self.context.next_uuid.fetch_add(1)
+        self.can_have_0_child = False
+        self.can_have_widget_child = False
+        self.can_have_drawing_child = False
+        self.can_have_payload_child = False
+        self.can_have_sibling = False
+        self.can_have_nonviewport_parent = False
+        self.element_child_category = -1
+        self.can_have_nonviewport_parent = False
+        self.element_toplevel_category = -1
 
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -775,7 +784,8 @@ cdef class baseItem:
 
         # Attach to parent
         if target_parent is None:
-            if isinstance(self, dcgWindow_):
+            if self.element_toplevel_category == 4:
+                assert(isinstance(self, dcgWindow_))
                 if self.context.viewport.windowRoots is not None:
                     m3 = unique_lock[recursive_mutex](self.context.viewport.windowRoots.mutex)
                     self.context.viewport.windowRoots.next_sibling = self
@@ -784,7 +794,9 @@ cdef class baseItem:
             else:
                 raise ValueError("Instance of type {} cannot be attached to viewport".format(type(self)))
         else:
-            if isinstance(self, drawableItem) and isinstance(target_parent, drawableContainerItem):
+            if self.can_have_nonviewport_parent and \
+               self.element_child_category == 2 and \
+               target_parent.can_have_drawing_child:
                 if target_parent.last_drawings_child is not None:
                     m3 = unique_lock[recursive_mutex](target_parent.last_drawings_child.mutex)
                     target_parent.last_drawings_child.next_sibling = self
@@ -985,6 +997,7 @@ cdef class baseItem:
 cdef class drawableItem(baseItem):
     def __cinit__(self):
         self.show = True
+        self.can_have_sibling = True
 
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1010,7 +1023,7 @@ cdef class drawableItem(baseItem):
         self.draw_prev_siblings(l, x, y)
 
 
-cdef class uiItem(drawableContainerItem):
+cdef class uiItem(drawableItem):
     def __cinit__(self):
         # mvAppItemInfo
         self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
@@ -1077,11 +1090,16 @@ cdef class uiItem(drawableContainerItem):
         # TODO
         return
 
+cdef class drawingItem(drawableItem):
+    def __cinit__(self):
+        self.can_have_nonviewport_parent = True
+        self.element_child_category = 2
 
-cdef class dcgDrawList_(drawableContainerItem):
+cdef class dcgDrawList_(drawingItem):
     def __cinit__(self):
         self.clip_width = 0
         self.clip_height = 0
+        self.can_have_drawing_child = True
 
     cdef void draw(self,
                    imgui.ImDrawList* parent_drawlist,
@@ -1150,9 +1168,10 @@ cdef class dcgDrawList_(drawableContainerItem):
         """
         
 
-cdef class dcgViewportDrawList_(drawableContainerItem):
+cdef class dcgViewportDrawList_(drawingItem):
     def __cinit__(self):
         self.front = True
+        self.can_have_drawing_child = True
 
     cdef void draw(self,
                    imgui.ImDrawList* parent_drawlist,
@@ -1179,13 +1198,14 @@ cdef class dcgViewportDrawList_(drawableContainerItem):
             imgui.GetBackgroundDrawList()
         self.last_drawings_child.draw(internal_drawlist, 0., 0.)
 
-cdef class dcgDrawLayer_(drawableContainerItem):
+cdef class dcgDrawLayer_(drawingItem):
     def __cinit__(self):
         self.cullMode = 0 # mvCullMode_None == 0
         self.perspectiveDivide = False
         self.depthClipping = False
         self.clipViewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0]
         self.has_matrix_transform = False
+        self.can_have_drawing_child = True
 
     cdef void draw(self,
                    imgui.ImDrawList* parent_drawlist,
@@ -1219,7 +1239,7 @@ cdef class dcgDrawLayer_(drawableContainerItem):
         # draw children
         self.last_drawings_child.draw(parent_drawlist, parent_x, parent_y)
 
-cdef class dcgDrawArrow_(drawableItem):
+cdef class dcgDrawArrow_(drawingItem):
     def __cinit__(self):
         # p1, p2, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1292,7 +1312,7 @@ cdef class dcgDrawArrow_(drawableItem):
         parent_drawlist.AddTriangle(itend, itcorner1, itcorner2, self.color, thickness)
 
 
-cdef class dcgDrawBezierCubic_(drawableItem):
+cdef class dcgDrawBezierCubic_(drawingItem):
     def __cinit__(self):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1328,7 +1348,7 @@ cdef class dcgDrawBezierCubic_(drawableItem):
         cdef imgui.ImVec2 ip4 = imgui.ImVec2(p4[0], p4[1])
         parent_drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self.color, self.thickness, self.segments)
 
-cdef class dcgDrawBezierQuadratic_(drawableItem):
+cdef class dcgDrawBezierQuadratic_(drawingItem):
     def __cinit__(self):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1362,7 +1382,7 @@ cdef class dcgDrawBezierQuadratic_(drawableItem):
         parent_drawlist.AddBezierQuadratic(ip1, ip2, ip3, self.color, self.thickness, self.segments)
 
 
-cdef class dcgDrawCircle_(drawableItem):
+cdef class dcgDrawCircle_(drawingItem):
     def __cinit__(self):
         # center is zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1396,7 +1416,7 @@ cdef class dcgDrawCircle_(drawableItem):
         parent_drawlist.AddCircle(icenter, radius, self.color, self.segments, thickness)
 
 
-cdef class dcgDrawEllipse_(drawableItem):
+cdef class dcgDrawEllipse_(drawingItem):
     # TODO: I adapted the original code,
     # But these deserves rewrite: call the imgui Ellipse functions instead
     # and add rotation parameter
@@ -1464,7 +1484,7 @@ cdef class dcgDrawEllipse_(drawableItem):
                                     thickness)
 
 
-cdef class dcgDrawImage_(drawableItem):
+cdef class dcgDrawImage_(drawingItem):
     def __cinit__(self):
         self.uv = [0., 0., 1., 1.]
         self.color_multiplier = 4294967295 # 0xffffffff
@@ -1493,7 +1513,7 @@ cdef class dcgDrawImage_(drawableItem):
         parent_drawlist.AddImage(self.texture.allocated_texture, ipmin, ipmax, uvmin, uvmax, self.color_multiplier)
 
 
-cdef class dcgDrawImageQuad_(drawableItem):
+cdef class dcgDrawImageQuad_(drawingItem):
     def __cinit__(self):
         # last two fields are unused
         self.uv1 = [0., 0., 0., 0.]
@@ -1541,7 +1561,7 @@ cdef class dcgDrawImageQuad_(drawableItem):
 
 
 
-cdef class dcgDrawLine_(drawableItem):
+cdef class dcgDrawLine_(drawingItem):
     def __cinit__(self):
         # p1, p2 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1570,7 +1590,7 @@ cdef class dcgDrawLine_(drawableItem):
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         parent_drawlist.AddLine(ip1, ip2, self.color, thickness)
 
-cdef class dcgDrawPolyline_(drawableItem):
+cdef class dcgDrawPolyline_(drawingItem):
     def __cinit__(self):
         # points is empty init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1615,7 +1635,7 @@ cdef inline bint is_counter_clockwise(imgui.ImVec2 p1,
     cdef float det = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)
     return det > 0.
 
-cdef class dcgDrawPolygon_(drawableItem):
+cdef class dcgDrawPolygon_(drawingItem):
     def __cinit__(self):
         # points is empty init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1693,7 +1713,7 @@ cdef class dcgDrawPolygon_(drawableItem):
             parent_drawlist.AddLine(ipoints[0], ipoints[<int>self.points.size()-1], self.color, thickness)
 
 
-cdef class dcgDrawQuad_(drawableItem):
+cdef class dcgDrawQuad_(drawingItem):
     def __cinit__(self):
         # p1, p2, p3, p4 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1757,7 +1777,7 @@ cdef class dcgDrawQuad_(drawableItem):
         parent_drawlist.AddLine(ip4, ip1, self.color, thickness)
 
 
-cdef class dcgDrawRect_(drawableItem):
+cdef class dcgDrawRect_(drawingItem):
     def __cinit__(self):
         self.pmin = [0., 0., 0., 0.]
         self.pmax = [1., 1., 0., 0.]
@@ -1834,7 +1854,7 @@ cdef class dcgDrawRect_(drawableItem):
                                 imgui.ImDrawFlags_RoundCornersAll,
                                 thickness)
 
-cdef class dgcDrawText_(drawableItem):
+cdef class dgcDrawText_(drawingItem):
     def __cinit__(self):
         self.color = 4294967295 # 0xffffffff
         self.size = 1.
@@ -1861,7 +1881,7 @@ cdef class dgcDrawText_(drawableItem):
         parent_drawlist.AddText(NULL, 0., ip, self.color, self.text.c_str())
 
 
-cdef class dcgDrawTriangle_(drawableItem):
+cdef class dcgDrawTriangle_(drawingItem):
     def __cinit__(self):
         # p1, p2, p3 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -1954,6 +1974,12 @@ cdef class dcgWindow_(uiItem):
         self._oldypos = 200
         self._oldWidth = 200
         self._oldHeight = 200
+        self.can_have_0_child = True
+        self.can_have_widget_child = True
+        self.can_have_drawing_child = True
+        self.can_have_payload_child = True
+        self.can_have_nonviewport_parent = True
+        self.element_toplevel_category = 4
 
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)

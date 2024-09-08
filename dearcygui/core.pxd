@@ -139,6 +139,19 @@ cdef class baseItem:
     cdef dcgContext context
     cdef long long uuid
     cdef string internalLabel
+    # Attributes set by subclasses
+    # to indicate what kind of parent
+    # and children they can have
+    cdef bint can_have_0_child
+    cdef bint can_have_widget_child
+    cdef bint can_have_drawing_child
+    cdef bint can_have_payload_child
+    cdef bint can_have_sibling
+    cdef bint can_have_nonviewport_parent
+    cdef int element_child_category
+    cdef bint can_have_viewport_parent
+    cdef int element_toplevel_category
+
     # Relationships
     cdef bint attached
     cdef baseItem parent
@@ -169,14 +182,11 @@ cdef class drawableItem(baseItem):
     cdef void draw_prev_siblings(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class drawableContainerItem(drawableItem):
-    pass
-
 """
 UI item
 A drawable item with various UI states
 """
-cdef class uiItem(drawableContainerItem):
+cdef class uiItem(drawableItem):
     # mvAppItemInfo
     cdef int location
     cdef bint showDebug
@@ -234,16 +244,19 @@ cdef class uiItem(drawableContainerItem):
 Drawing Items
 """
 
-cdef class dcgDrawList_(drawableContainerItem):
+cdef class drawingItem(drawableItem):
+    pass
+
+cdef class dcgDrawList_(drawingItem):
     cdef float clip_width
     cdef float clip_height
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgViewportDrawList_(drawableContainerItem):
+cdef class dcgViewportDrawList_(drawingItem):
     cdef bool front
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLayer_(drawableContainerItem):
+cdef class dcgDrawLayer_(drawingItem):
     # mvAppItemDrawInfo
     cdef long cullMode
     cdef bint perspectiveDivide
@@ -256,7 +269,7 @@ cdef class dcgDrawLayer_(drawableContainerItem):
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
 
-cdef class dcgDrawArrow_(drawableItem):
+cdef class dcgDrawArrow_(drawingItem):
     cdef float[4] start
     cdef float[4] end
     cdef float[4] corner1
@@ -267,7 +280,7 @@ cdef class dcgDrawArrow_(drawableItem):
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void __compute_tip(self)
 
-cdef class dcgDrawBezierCubic_(drawableItem):
+cdef class dcgDrawBezierCubic_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -277,7 +290,7 @@ cdef class dcgDrawBezierCubic_(drawableItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawBezierQuadratic_(drawableItem):
+cdef class dcgDrawBezierQuadratic_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -286,7 +299,7 @@ cdef class dcgDrawBezierQuadratic_(drawableItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawCircle_(drawableItem):
+cdef class dcgDrawCircle_(drawingItem):
     cdef float[4] center
     cdef float radius
     cdef imgui.ImU32 color
@@ -295,7 +308,7 @@ cdef class dcgDrawCircle_(drawableItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawEllipse_(drawableItem):
+cdef class dcgDrawEllipse_(drawingItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -306,7 +319,7 @@ cdef class dcgDrawEllipse_(drawableItem):
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawImage_(drawableItem):
+cdef class dcgDrawImage_(drawingItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef float[4] uv
@@ -314,7 +327,7 @@ cdef class dcgDrawImage_(drawableItem):
     cdef dcgTexture_ texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawImageQuad_(drawableItem):
+cdef class dcgDrawImageQuad_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -328,21 +341,21 @@ cdef class dcgDrawImageQuad_(drawableItem):
     cdef dcgTexture_ texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawLine_(drawableItem):
+cdef class dcgDrawLine_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawPolyline_(drawableItem):
+cdef class dcgDrawPolyline_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
     cdef vector[float4] points
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawPolygon_(drawableItem):
+cdef class dcgDrawPolygon_(drawingItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -351,7 +364,7 @@ cdef class dcgDrawPolygon_(drawableItem):
     cdef void __triangulate(self)
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawQuad_(drawableItem):
+cdef class dcgDrawQuad_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -361,7 +374,7 @@ cdef class dcgDrawQuad_(drawableItem):
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawRect_(drawableItem):
+cdef class dcgDrawRect_(drawingItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -375,14 +388,14 @@ cdef class dcgDrawRect_(drawableItem):
     cdef bint multicolor
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dgcDrawText_(drawableItem):
+cdef class dgcDrawText_(drawingItem):
     cdef float[4] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-cdef class dcgDrawTriangle_(drawableItem):
+cdef class dcgDrawTriangle_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
