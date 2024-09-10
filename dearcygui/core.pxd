@@ -113,11 +113,16 @@ cdef class dcgContext:
 cdef inline void ensure_correct_imgui_context(dcgContext context):
     imgui.SetCurrentContext(context.imgui_context)
 
-cdef inline void ensure_correct_imgplot_context(dcgContext context):
+cdef inline void ensure_correct_implot_context(dcgContext context):
     implot.SetCurrentContext(context.implot_context)
 
 cdef inline void ensure_correct_imnodes_context(dcgContext context):
     imnodes.SetCurrentContext(context.imnodes_context)
+
+cdef inline void ensure_correct_im_context(dcgContext context):
+    ensure_correct_imgui_context(context)
+    ensure_correct_implot_context(context)
+    ensure_correct_imnodes_context(context)
 
 """
 Main item types
@@ -161,7 +166,7 @@ cdef class baseItem:
     cdef baseItem prev_sibling
     cdef baseItem next_sibling
     cdef drawableItem last_0_child #  mvFileExtension, mvFontRangeHint, mvNodeLink, mvAnnotation, mvAxisTag, mvDragLine, mvDragPoint, mvDragRect, mvLegend, mvTableColumn
-    cdef drawableItem last_widgets_child
+    cdef uiItem last_widgets_child
     cdef drawableItem last_drawings_child
     cdef baseItem last_payloads_child
     cdef void lock_parent_and_item_mutex(self) noexcept nogil
@@ -182,101 +187,6 @@ cdef class drawableItem(baseItem):
     cdef bool show
     cdef void draw_prev_siblings(self, imgui.ImDrawList*, float, float) noexcept nogil
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-
-"""
-Handler item
-"""
-
-cdef struct itemState:
-    bint can_be_active
-    bint can_be_activated
-    bint can_be_clicked
-    bint can_be_deactivated
-    bint can_be_deactivated_after_edited
-    bint can_be_edited
-    bint can_be_focused
-    bint can_be_hovered
-    bint can_be_toggled
-    bint has_rect_min
-    bint has_rect_max
-    bint has_rect_size
-    bint has_content_region
-    bint hovered
-    bint active
-    bint focused
-    bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
-    bint[<int>imgui.ImGuiMouseButton_COUNT] doubleclicked
-    bint edited
-    bint activated
-    bint deactivated
-    bint deactivated_after_edited
-    bint toggled
-    bint resized
-    imgui.ImVec2 rect_min
-    imgui.ImVec2 rect_max
-    imgui.ImVec2 rect_size
-    imgui.ImVec2 content_region
-
-cdef void updateCurrentItemState(itemState *)
-cdef object outputCurrentItemState(itemState *)
-
-"""
-cdef class itemHandler(baseItem):
-    cdef bint enabled
-    cpdef void attach_item(self, dcgItemHandlerRegistry target_parent)
-
-cdef class dcgHandlerRegistry:
-    cdef dcgContext context
-    cdef bint enabled
-    cdef void run_handlers(self, baseItem, itemState*)
-
-cdef class dcgItemHandlerRegistry:
-    cdef dcgContext context
-    cdef itemHandler last_item_handler
-    cdef bint enabled
-    cdef void run_handlers(self, baseItem, itemState*)
-"""
-
-"""
-UI item
-A drawable item with various UI states
-"""
-cdef class uiItem(drawableItem):
-    # mvAppItemInfo
-    cdef int location
-    cdef bint showDebug
-    cdef bint focusNextFrame
-    cdef bint triggerAlternativeAction
-    cdef bint shownLastFrame
-    cdef bint hiddenLastFrame
-    cdef bint enabledLastFrame
-    cdef bint disabledLastFrame
-    cdef imgui.ImVec2 previousCursorPos
-    cdef bint dirty_size
-    cdef bint dirtyPos
-    # mvAppItemState
-    cdef itemState state
-    cdef bint ok
-    cdef bint visible
-    cdef imgui.ImVec2 pos
-    cdef int lastFrameUpdate
-    # mvAppItemConfig
-    cdef long long source
-    cdef string specifiedLabel
-    cdef string filter
-    cdef string alias
-    cdef string payloadType
-    cdef int width
-    cdef int height
-    cdef float indent
-    cdef float trackOffset
-    cdef bint enabled
-    cdef bint useInternalLabel
-    cdef bint tracked
-    cdef object callback
-    cdef object user_data
-    cdef object dragCallback
-    cdef object dropCallback
 
 """
 Drawing Items
@@ -447,14 +357,105 @@ cdef class dcgDrawTriangle_(drawingItem):
 UI items
 """
 
+cdef object outputCurrentItemState(itemState *)
+
+"""
+cdef class itemHandler(baseItem):
+    cdef bint enabled
+    cpdef void attach_item(self, dcgItemHandlerRegistry target_parent)
+
+cdef class dcgHandlerRegistry:
+    cdef dcgContext context
+    cdef bint enabled
+    cdef void run_handlers(self, baseItem, itemState*)
+
+cdef class dcgItemHandlerRegistry:
+    cdef dcgContext context
+    cdef itemHandler last_item_handler
+    cdef bint enabled
+    cdef void run_handlers(self, baseItem, itemState*)
+"""
+
+"""
+UI item
+A drawable item with various UI states
+"""
+
+cdef struct itemState:
+    bint can_be_active
+    bint can_be_activated
+    bint can_be_clicked
+    bint can_be_deactivated
+    bint can_be_deactivated_after_edited
+    bint can_be_edited
+    bint can_be_focused
+    bint can_be_hovered
+    bint can_be_toggled
+    bint has_rect_min
+    bint has_rect_max
+    bint has_rect_size
+    bint has_content_region
+    bint hovered
+    bint active
+    bint focused
+    bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
+    bint[<int>imgui.ImGuiMouseButton_COUNT] double_clicked
+    bint edited
+    bint activated
+    bint deactivated
+    bint deactivated_after_edited
+    bint toggled
+    bint resized
+    imgui.ImVec2 rect_min
+    imgui.ImVec2 rect_max
+    imgui.ImVec2 rect_size
+    imgui.ImVec2 content_region
+    # Item: indicates if the item was in the clipped region of the window
+    # Window: indicates if the window was rendered
+    bint visible
+    # relative position to the parent window or the viewport if a window
+    imgui.ImVec2 relative_position
+
+
+cdef class uiItem(drawableItem):
+    # mvAppItemInfo
+    #cdef int location -> for table
+    #cdef bint enabled -> 
+    #cdef bint enabled_update_requested -> for editable fields
+    # mvAppItemState
+    cdef itemState state
+    cdef bint focus_update_requested
+    cdef bint show_update_requested
+    cdef bint size_update_requested
+    cdef bint pos_update_requested
+    cdef int last_frame_update
+    # mvAppItemConfig
+    #cdef long long source -> data source. To move
+    #cdef string specifiedLabel
+    #cdef string filter -> to move
+    cdef string alias
+    cdef string payloadType
+    cdef int width
+    cdef int height
+    cdef float indent
+    #cdef float trackOffset
+    cdef bint useInternalLabel
+    #cdef bint tracked
+    #cdef object callback
+    #cdef object user_data
+    cdef object dragCallback
+    cdef object dropCallback
+
+    cdef void propagate_hidden_state_to_children(self) noexcept nogil
+    cdef void set_hidden_and_propagate(self) noexcept nogil
+
 cdef class dcgWindow_(uiItem):
-    cdef imgui.ImGuiWindowFlags windowflags
-    cdef bint mainWindow
-    cdef bint closing
+    cdef imgui.ImGuiWindowFlags window_flags
+    cdef bint main_window
     cdef bint resized
     cdef bint modal
     cdef bint popup
-    cdef bint autosize
+    #cdef bint autosize
     cdef bint no_resize
     cdef bint no_title_bar
     cdef bint no_move
@@ -464,27 +465,24 @@ cdef class dcgWindow_(uiItem):
     cdef bint no_focus_on_appearing
     cdef bint no_bring_to_front_on_focus
     cdef bint menubar
-    cdef bint no_close
+    cdef bint has_close_button
     cdef bint no_background
     cdef bint collapsed
     cdef bint no_open_over_existing_popup
     cdef object on_close
     cdef imgui.ImVec2 min_size
     cdef imgui.ImVec2 max_size
-    cdef float scrollX
-    cdef float scrollY
-    cdef float scrollMaxX
-    cdef float scrollMaxY
-    cdef bint _collapsedDirty
-    cdef bint _scrollXSet
-    cdef bint _scrollYSet
-    cdef imgui.ImGuiWindowFlags _oldWindowflags
-    cdef float _oldxpos
-    cdef float _oldypos
-    cdef int  _oldWidth
-    cdef int  _oldHeight
+    cdef float scroll_x
+    cdef float scroll_y
+    cdef float scroll_max_x
+    cdef float scroll_max_y
+    cdef bint collapse_update_requested
+    cdef bint scroll_x_update_requested
+    cdef bint scroll_y_update_requested
+    cdef imgui.ImGuiWindowFlags backup_window_flags
+    cdef imgui.ImVec2 backup_pos
+    cdef imgui.ImVec2 backup_rect_size
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-
 
 """
 Bindable elements

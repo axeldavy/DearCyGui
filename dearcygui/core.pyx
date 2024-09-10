@@ -143,23 +143,22 @@ cdef class dcgViewport:
         self.initialized = False
         self.viewport = NULL
         self.graphics_initialized = False
-        #mvMat4 transform         = mvIdentityMat4();
 
     def __dealloc__(self):
-        # TODO: at this point self.context might be NULL
-        # but we should lock imgui_mutex...
-        # Maybe make imgui_mutex a global
-        # and move imgui init/exit outside of dcgContext
+        # NOTE: Called BEFORE the context is released.
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
+        ensure_correct_im_context(self.context)
         if self.graphics_initialized:
             cleanup_graphics(self.graphics)
         if self.viewport != NULL:
             mvCleanupViewport(dereference(self.viewport))
-            #free(self.viewport) deleted by mvCleanupViewport
+            #self.viewport is freed by mvCleanupViewport
             self.viewport = NULL
 
     cdef initialize(self, unsigned width, unsigned height):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        ensure_correct_im_context(self.context)
         self.viewport = mvCreateViewport(width,
                                          height,
                                          internal_render_callback,
@@ -399,6 +398,7 @@ cdef class dcgViewport:
     def fullscreen(self, bint value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        ensure_correct_im_context(self.context)
         if value and not(self.viewport.fullScreen):
             mvToggleFullScreen(dereference(self.viewport))
         elif not(value) and (self.viewport.fullScreen):
@@ -477,6 +477,9 @@ cdef class dcgViewport:
         return
 
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil:
+        """
+        Used during rendering as helper to convert drawing coordinates to pixel coordinates
+        """
         # assumes imgui + viewport mutex are held
         cdef float[4] transformed_p
         if self.has_matrix_transform:
@@ -531,6 +534,10 @@ cdef class dcgViewport:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         self.__check_initialized()
+        # Note: imgui calls are only allowed during the frame rendering, thus we can
+        # make this call only here. In addition we could only lock the imgui_mutex
+        # here for this reason.
+        ensure_correct_im_context(self.context)
         assert(self.graphics_initialized)
         with nogil:
             mvRenderFrame(dereference(self.viewport),
@@ -550,11 +557,13 @@ cdef class dcgViewport:
         cdef imgui.ImGuiStyle* style
         cdef mvColor* colors
         self.__check_initialized()
+        ensure_correct_im_context(self.context)
         mvShowViewport(dereference(self.viewport),
                        minimized,
                        maximized)
         if not(self.graphics_initialized):
             self.graphics = setup_graphics(dereference(self.viewport))
+            """
             imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
             # TODO if (GContext->IO.autoSaveIniFile). if (!GContext->IO.iniFile.empty())
 			# io.IniFilename = GContext->IO.iniFile.c_str();
@@ -642,7 +651,7 @@ cdef class dcgViewport:
             imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_BoxSelectorOutline] = ConvertToUnsignedInt(mvColor(61, 133, 224, 150))
             imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_GridBackground] = ConvertToUnsignedInt(mvColor(35, 35, 35, 255))
             imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_GridLine] = ConvertToUnsignedInt(mvColor(0, 0, 0, 255))
-
+            """
             self.graphics_initialized = True
         self.viewport.shown = 1
 
@@ -1087,137 +1096,9 @@ cdef class drawableItem(baseItem):
         self.draw_prev_siblings(l, x, y)
 
 """
-States and handlers
+Drawing items
 """
 
-cdef void updateCurrentItemState(itemState *state):
-    """
-    Updates the state of the last imgui object
-    """
-    if state.can_be_hovered:
-        state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
-    if state.can_be_active:
-        state.active = imgui.IsItemActive()
-    if state.can_be_activated:
-        state.activated = imgui.IsItemActivated()
-    cdef int i
-    if state.can_be_clicked:
-        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            state.clicked[i] = state.hovered and imgui.IsItemClicked(i)
-            state.doubleclicked[i] = state.hovered and imgui.IsMouseDoubleClicked(i)
-    if state.can_be_deactivated:
-        state.deactivated = imgui.IsItemDeactivated()
-    if state.can_be_deactivated_after_edited:
-        state.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
-    if state.can_be_edited:
-        state.edited = imgui.IsItemEdited()
-    if state.can_be_focused:
-        state.focused = imgui.IsItemFocused()
-    if state.can_be_toggled:
-        state.toggled = imgui.IsItemToggledOpen()
-    if state.has_rect_min:
-        state.rect_min = imgui.GetItemRectMin()
-    if state.has_rect_max:
-        state.rect_max = imgui.GetItemRectMax()
-    cdef imgui.ImVec2 rect_size
-    if state.has_rect_size:
-        rect_size = imgui.GetItemRectSize()
-        state.resized = rect_size.x != state.rect_size.x or \
-                        rect_size.y != state.rect_size.y
-        state.rect_size = rect_size
-    if state.has_content_region:
-        state.content_region = imgui.GetContentRegionAvail()
-
-cdef inline object IntPairFromVec2(imgui.ImVec2 v):
-    return (<int>v.x, <int>v.y)
-
-cdef object outputCurrentItemState(itemState *state):
-    """
-    Helper function to return the current dict of item state
-    """
-    output = {}
-    if state.can_be_hovered:
-        output["hovered"] = state.hovered
-    if state.can_be_active:
-        output["active"] = state.active
-    if state.can_be_activated:
-        output["activated"] = state.activated
-    if state.can_be_clicked:
-        output["clicked"] = max(state.clicked)
-        output["left_clicked"] = state.clicked[0]
-        output["middle_clicked"] = state.clicked[2]
-        output["right_clicked"] = state.clicked[1]
-    if state.can_be_deactivated:
-        output["deactivated"] = state.deactivated
-    if state.can_be_deactivated_after_edited:
-        output["deactivated_after_edit"] = state.deactivated_after_edited
-    if state.can_be_edited:
-        output["edited"] = state.edited
-    if state.can_be_focused:
-        output["focused"] = state.focused
-    if state.can_be_toggled:
-        output["toggle_open"] = state.toggled
-    if state.has_rect_min:
-        output["rect_min"] = IntPairFromVec2(state.rect_min)
-    if state.has_rect_max:
-        output["rect_max"] = IntPairFromVec2(state.rect_max)
-    if state.has_rect_size:
-        output["rect_size"] = IntPairFromVec2(state.rect_size)
-        output["resized"] = state.resized
-    if state.has_content_region:
-        output["content_region_avail"] = IntPairFromVec2(state.content_region)
-    output["ok"] = True # Original code only set this to False on missing texture or invalid style
-    # TODO: add pos, visible to the dict
-    return output
-
-
-
-cdef class uiItem(drawableItem):
-    def __cinit__(self):
-        # mvAppItemInfo
-        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
-        self.location = -1
-        self.showDebug = False
-        # next frame triggers
-        self.focusNextFrame = False
-        self.triggerAlternativeAction = False
-        self.shownLastFrame = False
-        self.hiddenLastFrame = False
-        self.enabledLastFrame = False
-        self.disabledLastFrame = False
-        # previous frame cache
-        self.previousCursorPos = imgui.ImVec2(0., 0.)
-        # dirty flags
-        self.dirty_size = True
-        self.dirtyPos = False
-        # mvAppItemState
-        self.ok = True
-        self.lastFrameUpdate = 0 # last frame update occured
-        self.parent = None
-        # mvAppItemConfig
-        self.source = 0
-        self.specifiedLabel = b""
-        self.filter = b""
-        self.alias = b""
-        self.payloadType = b"$$DPG_PAYLOAD"
-        self.width = 0
-        self.height = 0
-        self.indent = -1.
-        self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
-        self.enabled = True
-        self.useInternalLabel = True #when false, will use specificed label
-        self.tracked = False
-        self.callback = None
-        self.user_data = None
-        self.dragCallback = None
-        self.dropCallback = None
-        self.attached = False
-
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
-        # TODO
-        return
 
 cdef class drawingItem(drawableItem):
     def __cinit__(self):
@@ -2066,15 +1947,190 @@ cdef class dcgDrawTriangle_(drawingItem):
                 parent_drawlist.AddTriangleFilled(ip1, ip2, ip3, self.fill)
             parent_drawlist.AddTriangle(ip1, ip2, ip3, self.color, thickness)
 
+"""
+UI elements
+"""
+
+"""
+UI States
+"""
+
+cdef void updateCurrentItemState(itemState *state) noexcept nogil:
+    """
+    Updates the state of the last imgui object. Windows
+    """
+    if state.can_be_hovered:
+        state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+    if state.can_be_active:
+        state.active = imgui.IsItemActive()
+    if state.can_be_activated:
+        state.activated = imgui.IsItemActivated()
+    cdef int i
+    if state.can_be_clicked:
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            state.clicked[i] = state.hovered and imgui.IsItemClicked(i)
+            state.double_clicked[i] = state.hovered and imgui.IsMouseDoubleClicked(i)
+    if state.can_be_deactivated:
+        state.deactivated = imgui.IsItemDeactivated()
+    if state.can_be_deactivated_after_edited:
+        state.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
+    if state.can_be_edited:
+        state.edited = imgui.IsItemEdited()
+    if state.can_be_focused:
+        state.focused = imgui.IsItemFocused()
+    if state.can_be_toggled:
+        state.toggled = imgui.IsItemToggledOpen()
+    if state.has_rect_min:
+        state.rect_min = imgui.GetItemRectMin()
+    if state.has_rect_max:
+        state.rect_max = imgui.GetItemRectMax()
+    cdef imgui.ImVec2 rect_size
+    if state.has_rect_size:
+        rect_size = imgui.GetItemRectSize()
+        state.resized = rect_size.x != state.rect_size.x or \
+                        rect_size.y != state.rect_size.y
+        state.rect_size = rect_size
+    if state.has_content_region:
+        state.content_region = imgui.GetContentRegionAvail()
+    state.visible = imgui.IsItemVisible()
+    state.relative_position = imgui.GetCursorPos()
+
+cdef void updateCurrentItemStateAsHidden(itemState *state) noexcept nogil:
+    """
+    Indicates the object is hidden
+    """
+    state.hovered = False
+    state.active = False
+    state.activated = False
+    cdef int i
+    if state.can_be_clicked:
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            state.clicked[i] = False
+            state.double_clicked[i] = False
+    state.deactivated = False
+    state.deactivated_after_edited = False
+    state.edited = False
+    state.focused = False
+    state.toggled = False
+    state.resized = False
+    state.visible = False
+
+cdef inline object IntPairFromVec2(imgui.ImVec2 v):
+    return (<int>v.x, <int>v.y)
+
+cdef object outputCurrentItemState(itemState *state):
+    """
+    Helper function to return the current dict of item state
+    """
+    output = {}
+    if state.can_be_hovered:
+        output["hovered"] = state.hovered
+    if state.can_be_active:
+        output["active"] = state.active
+    if state.can_be_activated:
+        output["activated"] = state.activated
+    if state.can_be_clicked:
+        output["clicked"] = max(state.clicked)
+        output["left_clicked"] = state.clicked[0]
+        output["middle_clicked"] = state.clicked[2]
+        output["right_clicked"] = state.clicked[1]
+    if state.can_be_deactivated:
+        output["deactivated"] = state.deactivated
+    if state.can_be_deactivated_after_edited:
+        output["deactivated_after_edit"] = state.deactivated_after_edited
+    if state.can_be_edited:
+        output["edited"] = state.edited
+    if state.can_be_focused:
+        output["focused"] = state.focused
+    if state.can_be_toggled:
+        output["toggle_open"] = state.toggled
+    if state.has_rect_min:
+        output["rect_min"] = IntPairFromVec2(state.rect_min)
+    if state.has_rect_max:
+        output["rect_max"] = IntPairFromVec2(state.rect_max)
+    if state.has_rect_size:
+        output["rect_size"] = IntPairFromVec2(state.rect_size)
+        output["resized"] = state.resized
+    if state.has_content_region:
+        output["content_region_avail"] = IntPairFromVec2(state.content_region)
+    output["ok"] = True # Original code only set this to False on missing texture or invalid style
+    output["visible"] = state.visible
+    output["pos"] = (state.relative_position.x, state.relative_position.y)
+    return output
+
+"""
+UI styles
+"""
+
+
+"""
+UI input event handlers
+"""
+
+
+cdef class uiItem(drawableItem):
+    def __cinit__(self):
+        # mvAppItemInfo
+        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
+        #self.location = -1
+        # next frame triggers
+        self.focus_update_requested = False
+        self.show_update_requested = False
+        self.size_update_requested = True
+        self.pos_update_requested = False
+        self.last_frame_update = 0 # last frame update occured
+        # mvAppItemConfig
+        #self.source = 0
+        #self.specifiedLabel = b""
+        #self.filter = b""
+        self.alias = b""
+        self.payloadType = b"$$DPG_PAYLOAD"
+        self.width = 0
+        self.height = 0
+        self.indent = -1.
+        #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
+        #self.enabled = True
+        self.useInternalLabel = True #when false, will use specificed label
+        #self.tracked = False
+        #self.callback = None
+        #self.user_data = None
+        self.dragCallback = None
+        self.dropCallback = None
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        # TODO
+        return
+
+    cdef void propagate_hidden_state_to_children(self) noexcept nogil:
+        """
+        The item is hidden (closed window, etc).
+        Propagate the hidden state to children
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.last_widgets_child is not None:
+            self.last_widgets_child.set_hidden_and_propagate()
+
+    cdef void set_hidden_and_propagate(self) noexcept nogil:
+        """
+        A parent item is hidden. Propagate to children and siblings
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.last_widgets_child is not None:
+            self.last_widgets_child.set_hidden_and_propagate()
+        if self.prev_sibling is not None:
+            (<uiItem>self.prev_sibling).set_hidden_and_propagate()
+        updateCurrentItemStateAsHidden(&self.state)
+
+
 cdef class dcgWindow_(uiItem):
     def __cinit__(self):
-        self.windowflags = imgui.ImGuiWindowFlags_None
-        self.mainWindow = False
-        self.closing = True
-        self.resized = False
+        self.window_flags = imgui.ImGuiWindowFlags_None
+        self.main_window = False
         self.modal = False
         self.popup = False
-        self.autosize = False
+        #self.autosize = False
         self.no_resize = False
         self.no_title_bar = False
         self.no_move = False
@@ -2084,25 +2140,27 @@ cdef class dcgWindow_(uiItem):
         self.no_focus_on_appearing = False
         self.no_bring_to_front_on_focus = False
         self.menubar = False
-        self.no_close = False
+        self.has_close_button = True
         self.no_background = False
         self.collapsed = False
+        self.collapse_update_requested = False
         self.no_open_over_existing_popup = True
         self.on_close = None
-        self.min_size = imgui.ImVec2(100., 100.) # tODO state ?
-        self.max_size = imgui.ImVec2(30000., 30000.)
-        self.scrollX = 0.
-        self.scrollY = 0.
-        self.scrollMaxX = 0.
-        self.scrollMaxY = 0.
-        self._collapsedDirty = True
-        self._scrollXSet = False
-        self._scrollYSet = False
-        self._oldWindowflags = imgui.ImGuiWindowFlags_None
-        self._oldxpos = 200
-        self._oldypos = 200
-        self._oldWidth = 200
-        self._oldHeight = 200
+        self.state.rect_min = imgui.ImVec2(100., 100.) # tODO state ?
+        self.state.rect_max = imgui.ImVec2(30000., 30000.)
+        self.scroll_x = 0.
+        self.scroll_y = 0.
+        self.scroll_x_update_requested = False
+        self.scroll_y_update_requested = False
+        # Read-only states
+        self.scroll_max_x = 0.
+        self.scroll_max_y = 0.
+
+        # backup states when we set/unset primary
+        #self.backup_window_flags = imgui.ImGuiWindowFlags_None
+        #self.backup_pos = self.state.relative_position
+        #self.backup_rect_size = self.state.rect_size
+        # Type info
         self.can_have_0_child = True
         self.can_have_widget_child = True
         self.can_have_drawing_child = True
@@ -2112,22 +2170,66 @@ cdef class dcgWindow_(uiItem):
         self.state.can_be_hovered = True
         self.state.can_be_focused = True
         self.state.has_rect_size = True
+        self.state.has_rect_min = True
+        self.state.has_rect_max = True
 
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
-        if not(self.show):
-            return
-        if self.context.frame == 1:
-            # TODO && !GContext->IO.iniFile.empty() && !(config.windowflags & ImGuiWindowFlags_NoSavedSettings)
-            self.dirtyPos = False
-            self.dirty_size = False
-            self._collapsedDirty = False
 
-        if self.focusNextFrame:
-            imgui.SetNextWindowFocus()
-            self.focusNextFrame = False
+        if not(self.show):
+            if self.show_update_requested:
+                self.set_hidden_and_propagate()
+                self.show_update_requested = True
+            return
+
+        if self.focus_update_requested:
+            if self.state.focused:
+                imgui.SetNextWindowFocus()
+            self.focus_update_requested = False
+
+        if self.pos_update_requested:
+            imgui.SetNextWindowPos(self.state.relative_position, <imgui.ImGuiCond>0)
+            self.pos_update_requested = False
+
+        if self.size_update_requested:
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.width,
+                                                 <float>self.height),
+                                    <imgui.ImGuiCond>0)
+            self.size_update_requested = False
+
+        if self.collapse_update_requested:
+            imgui.SetNextWindowCollapsed(self.collapsed, <imgui.ImGuiCond>0)
+            self.collapse_update_requested = False
+
+        imgui.SetNextWindowSizeConstraints(self.state.rect_min, self.state.rect_max)
+
+        cdef imgui.ImVec2 scroll_requested
+        if self.scroll_x_update_requested or self.scroll_y_update_requested:
+            scroll_requested = imgui.ImVec2(-1., -1.) # -1 means no effect
+            if self.scroll_x_update_requested:
+                if self.scroll_x < 0.:
+                    scroll_requested.x = 1. # from previous code. Not sure why
+                else:
+                    scroll_requested.x = self.scroll_x
+                self.scroll_x_update_requested = False
+
+            if self.scroll_y_update_requested:
+                if self.scroll_y < 0.:
+                    scroll_requested.y = 1.
+                else:
+                    scroll_requested.y = self.scroll_y
+                self.scroll_y_update_requested = False
+            imgui.SetNextWindowScroll(scroll_requested)
+
+        if self.main_window:
+            imgui.SetNextWindowBgAlpha(1.0)
+            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0) #to prevent main window corners from showing
+            imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context.viewport.viewport.clientWidth,
+                                           <float>self.context.viewport.viewport.clientHeight),
+                                    <imgui.ImGuiCond>0)
 
         # handle fonts
         """
@@ -2142,102 +2244,87 @@ cdef class dcgWindow_(uiItem):
         # Draw the window
         imgui.PushID(self.uuid)
 
-        if self.mainWindow:
-            imgui.SetNextWindowBgAlpha(1.0)
-            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0) #to prevent main window corners from showing
-            imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context.viewport.viewport.clientWidth,
-                                           <float>self.context.viewport.viewport.clientHeight),
-                                    <imgui.ImGuiCond>0)
-
-        if self.dirtyPos:
-            imgui.SetNextWindowPos(self.pos, <imgui.ImGuiCond>0)
-            self.dirtyPos = False
-
-        if self.dirty_size:
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.width,
-                                           <float>self.height),
-                                    <imgui.ImGuiCond>0)
-            self.dirty_size = False
-
-        if self._collapsedDirty:
-            imgui.SetNextWindowCollapsed(self.collapsed, <imgui.ImGuiCond>0)
-            self._collapsedDirty = False
-
-        imgui.SetNextWindowSizeConstraints(self.min_size, self.max_size)
-
-        cdef bint opened = True
+        cdef bint visible = True
+        # Modal/Popup windows must be manually opened
         if self.modal or self.popup:
-            if self.shownLastFrame:
-                self.shownLastFrame = False;
+            if self.show_update_requested and self.show:
+                self.show_update_requested = False
                 imgui.OpenPopup(self.internalLabel.c_str(),
                                 imgui.ImGuiPopupFlags_NoOpenOverExistingPopup if self.no_open_over_existing_popup else imgui.ImGuiPopupFlags_None)
 
-            if self.modal:
-                opened = imgui.BeginPopupModal(self.internalLabel.c_str(), <bool*>NULL if self.no_close else &self.show, self.windowflags)
-            else:
-                opened = imgui.BeginPopup(self.internalLabel.c_str(), self.windowflags)
-            if not(opened):
-                if self.mainWindow:
-                    imgui.PopStyleVar(1)
-                    self.show = False
-                    self.lastFrameUpdate = self.context.frame
-                    self.state.hovered = False
-                    self.state.focused = False
-                    self.state.toggled = False
-                    self.visible = False
-
-                with gil:
-                    if self.on_close is not None:
-                        self.context.queue.submit(self.on_close,
-                                                  self.uuid if self.alias.empty() else None,
-                                                  None,
-                                                  self.user_data)
-                #// handle popping themes
-                #cleanup_local_theming(&item);
-
-                imgui.PopID()
-                return
+        # Begin drawing the window
+        if self.modal:
+            visible = imgui.BeginPopupModal(self.internalLabel.c_str(), &self.show if self.has_close_button else <bool*>NULL, self.window_flags)
+        elif self.popup:
+            visible = imgui.BeginPopup(self.internalLabel.c_str(), self.window_flags)
         else:
-            opened = imgui.Begin(self.internalLabel.c_str(),
-                                 <bool*>NULL if self.no_close else &self.show,
-                                 self.windowflags)
-            if not(opened):
-                if self.mainWindow:
-                    imgui.PopStyleVar(1)
+            visible = imgui.Begin(self.internalLabel.c_str(),
+                                  &self.show if self.has_close_button else <bool*>NULL,
+                                  self.window_flags)
 
-                imgui.End()
+        # not(visible) means either closed or clipped
+        # if has_close_button, show can be switched from True to False if closed
 
-                #// handle popping themes
-                #cleanup_local_theming(&item);
+        cdef imgui.ImDrawList* this_drawlist
+        cdef float startx, starty
 
-                imgui.PopID()
-                return
-        if self.mainWindow:
-            imgui.PopStyleVar(1)
+        if visible:
+            # Draw the window content
+            this_drawlist = imgui.GetWindowDrawList()
+            startx = <float>imgui.GetCursorScreenPos().x
+            starty = <float>imgui.GetCursorScreenPos().y
 
-        # Draw the window content
-        cdef imgui.ImDrawList* this_drawlist = imgui.GetWindowDrawList()
+            if self.last_0_child is not None:
+                self.last_0_child.draw(this_drawlist, startx, starty)
 
-        cdef float startx = <float>imgui.GetCursorScreenPos().x
-        cdef float starty = <float>imgui.GetCursorScreenPos().y
-
-        # Each child calls draw for a sibling
-        if self.last_0_child is not None:
-            self.last_0_child.draw(this_drawlist, startx, starty)
-
-        startx = <float>imgui.GetCursorPosX()
-        starty = <float>imgui.GetCursorPosY()
-        if self.last_widgets_child is not None:
-            self.last_widgets_child.draw(this_drawlist, startx, starty)
+            startx = <float>imgui.GetCursorPosX()
+            starty = <float>imgui.GetCursorPosY()
+            if self.last_widgets_child is not None:
+                self.last_widgets_child.draw(this_drawlist, startx, starty)
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
-        startx = <float>imgui.GetCursorScreenPos().x
-        starty = <float>imgui.GetCursorScreenPos().y
-        if self.last_drawings_child is not None:
-            self.last_drawings_child.draw(this_drawlist, startx, starty)
-            # TODO UpdateAppItemState(child->state) if show
+            startx = <float>imgui.GetCursorScreenPos().x
+            starty = <float>imgui.GetCursorScreenPos().y
+            if self.last_drawings_child is not None:
+                self.last_drawings_child.draw(this_drawlist, startx, starty)
+
+        if (self.modal or self.popup):
+            if visible:
+                # End() is called automatically for modal and popup windows if not visible
+                imgui.EndPopup()
+        else:
+            imgui.End()
+
+        if self.main_window:
+            imgui.PopStyleVar(1)
+
+        cdef imgui.ImVec2 rect_size
+        if visible:
+            # Set current states
+            self.state.visible = True
+            self.state.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self.state.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            rect_size = imgui.GetWindowSize()
+            self.state.resized = rect_size.x != self.state.rect_size.x or \
+                                 rect_size.y != self.state.rect_size.y
+            # TODO: investigate why width and height could be != state.rect_size
+            if (rect_size.x != <float>self.width or rect_size.y != <float>self.height):
+                self.width = <int>rect_size.x
+                self.height = <int>rect_size.y
+                self.resized = True
+            self.state.rect_size = rect_size
+            self.last_frame_update = self.context.frame
+            self.state.relative_position = imgui.GetWindowPos()
+        else:
+            # Window is hidden or closed
+            if not(self.state.visible): # This is not new
+                # Propagate the info
+                self.set_hidden_and_propagate()
+
+        self.collapsed = imgui.IsWindowCollapsed()
+        self.state.toggled = self.collapsed
+
 
         # Post draw
         """
@@ -2248,47 +2335,7 @@ cdef class dcgWindow_(uiItem):
 
         #// handle popping themes
         #cleanup_local_theming(&item);
-
-        if self._scrollXSet:
-            if self.scrollX < 0.0:
-                imgui.SetScrollHereX(1.0)
-            else:
-                imgui.SetScrollX(self.scrollX)
-            self._scrollXSet = False
-
-        if self._scrollYSet:
-            if self.scrollY < 0.0:
-                imgui.SetScrollHereY(1.0)
-            else:
-                imgui.SetScrollY(self.scrollY)
-            self._scrollYSet = False
-        self.scrollX = imgui.GetScrollX()
-        self.scrollY = imgui.GetScrollY()
-        self.scrollMaxX = imgui.GetScrollMaxX()
-        self.scrollMaxY = imgui.GetScrollMaxY()
-
-        self.lastFrameUpdate = self.context.frame
-        self.visible = True
-        self.state.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-        self.state.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-        cdef imgui.ImVec2 rect_size = imgui.GetWindowSize()
-        self.state.toggled = imgui.IsWindowCollapsed()
-        self.state.resized = rect_size.x != self.state.rect_size.x or \
-                             rect_size.y != self.state.rect_size.y
-        self.state.rect_size = imgui.GetWindowSize()
-
-        if (rect_size.x != <float>self.width or rect_size.y != <float>self.height):
-            self.width = <int>rect_size.x
-            self.height = <int>rect_size.y
-            self.resized = True
-
-        cdef bint focused = self.state.focused
-        if self.lastFrameUpdate != self.context.frame:
-            focused = False
-
-        self.pos.x = imgui.GetWindowPos().x
-        self.pos.y = imgui.GetWindowPos().y
-
+        """
         cdef float titleBarHeight
         cdef float x, y
         cdef imgui.ImVec2 mousePos
@@ -2302,32 +2349,27 @@ cdef class dcgWindow_(uiItem):
             #GContext->input.mousePos.x = (int)x;
             #GContext->input.mousePos.y = (int)y;
             #GContext->activeWindow = item
+        """
 
-        if (self.modal or self.popup):
-            imgui.EndPopup()
-        else:
-            imgui.End()
-
-        self.collapsed = imgui.IsWindowCollapsed()
-
-        # we switched from a show to a no show state
-        if not(self.show):
-            self.lastFrameUpdate = self.context.frame
-            self.state.hovered = False
-            self.state.focused = False
-            self.state.toggled = False
-            self.visible = False
-
+        cdef bint closed = not(self.show) or (not(visible) and (self.modal or self.popup))
+        if closed:
+            self.show = False
             with gil:
                  if self.on_close is not None:
                     self.context.queue.submit(self.on_close,
                                               self.uuid if self.alias.empty() else None,
                                               None,
                                               self.user_data)
+        self.show_update_requested = False
 
         #if (self..handlerRegistry)
         #    item.handlerRegistry->checkEvents(&item.state);
         imgui.PopID()
+
+
+"""
+Textures
+"""
 
 
 
