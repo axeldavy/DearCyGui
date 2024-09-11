@@ -353,28 +353,6 @@ cdef class dcgDrawTriangle_(drawingItem):
     cdef int cull_mode
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
-"""
-UI items
-"""
-
-cdef object outputCurrentItemState(itemState *)
-
-"""
-cdef class itemHandler(baseItem):
-    cdef bint enabled
-    cpdef void attach_item(self, dcgItemHandlerRegistry target_parent)
-
-cdef class dcgHandlerRegistry:
-    cdef dcgContext context
-    cdef bint enabled
-    cdef void run_handlers(self, baseItem, itemState*)
-
-cdef class dcgItemHandlerRegistry:
-    cdef dcgContext context
-    cdef itemHandler last_item_handler
-    cdef bint enabled
-    cdef void run_handlers(self, baseItem, itemState*)
-"""
 
 """
 UI item
@@ -416,6 +394,18 @@ cdef struct itemState:
     # relative position to the parent window or the viewport if a window
     imgui.ImVec2 relative_position
 
+cdef class itemHandler(baseItem):
+    cdef bint enabled
+    cdef void check_bind(self, uiItem)
+    cdef void run_handler(self, uiItem) noexcept nogil
+    cdef void run_callback(self, uiItem) noexcept nogil
+
+cdef class dcgItemHandlerRegistry(baseItem):
+    #cdef dcgContext context
+    cdef itemHandler last_item_handler
+    cdef bint enabled
+    cdef void check_bind(self, uiItem)
+    cdef void run_handlers(self, uiItem) noexcept nogil
 
 cdef class uiItem(drawableItem):
     # mvAppItemInfo
@@ -445,9 +435,13 @@ cdef class uiItem(drawableItem):
     #cdef object user_data
     cdef object dragCallback
     cdef object dropCallback
+    cdef dcgItemHandlerRegistry handlers
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate(self) noexcept nogil
+    cdef object output_current_item_state(self)
+    cdef void update_current_state(self) noexcept nogil
+    cdef void update_current_state_as_hidden(self) noexcept nogil
 
 cdef class dcgWindow_(uiItem):
     cdef imgui.ImGuiWindowFlags window_flags

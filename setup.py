@@ -123,7 +123,9 @@ def setup_package():
     secondary_cython_sources = [
         "dearcygui/constants.pyx",
         "dearcygui/draw.pyx",
+        "dearcygui/handler.pyx",
         "dearcygui/plot.pyx",
+        "dearcygui/widget.pyx",
         "dearcygui/window.pyx",
     ]
     for cython_source in secondary_cython_sources:

@@ -181,7 +181,7 @@ cdef class dcgViewport:
                 self.viewport.clearColor.a)
 
     @clear_color.setter
-    def clear_color(self, tuple value):
+    def clear_color(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int r, g, b, a
         self.__check_initialized()
@@ -1079,11 +1079,22 @@ cdef class drawableItem(baseItem):
 
     @property
     def show(self):
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return <bint>self.show
     @show.setter
     def show(self, bint value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if isinstance(self, uiItem):
+            # TODO: try to overwrite the method instead
+            (<uiItem>self).show_update_requested = True
         self.show = value
 
     cdef void draw_prev_siblings(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
@@ -1155,7 +1166,7 @@ cdef class dcgDrawList_(drawingItem):
                                  imgui.ImGuiButtonFlags_MouseButtonMiddle):
             with gil:
                 self.context.queue.submit(self.callback,
-                                          self.uuid if self.alias.empty() else None,
+                                          self,
                                           None,
                                           self.user_data)
 
@@ -1952,113 +1963,6 @@ UI elements
 """
 
 """
-UI States
-"""
-
-cdef void updateCurrentItemState(itemState *state) noexcept nogil:
-    """
-    Updates the state of the last imgui object. Windows
-    """
-    if state.can_be_hovered:
-        state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
-    if state.can_be_active:
-        state.active = imgui.IsItemActive()
-    if state.can_be_activated:
-        state.activated = imgui.IsItemActivated()
-    cdef int i
-    if state.can_be_clicked:
-        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            state.clicked[i] = state.hovered and imgui.IsItemClicked(i)
-            state.double_clicked[i] = state.hovered and imgui.IsMouseDoubleClicked(i)
-    if state.can_be_deactivated:
-        state.deactivated = imgui.IsItemDeactivated()
-    if state.can_be_deactivated_after_edited:
-        state.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
-    if state.can_be_edited:
-        state.edited = imgui.IsItemEdited()
-    if state.can_be_focused:
-        state.focused = imgui.IsItemFocused()
-    if state.can_be_toggled:
-        state.toggled = imgui.IsItemToggledOpen()
-    if state.has_rect_min:
-        state.rect_min = imgui.GetItemRectMin()
-    if state.has_rect_max:
-        state.rect_max = imgui.GetItemRectMax()
-    cdef imgui.ImVec2 rect_size
-    if state.has_rect_size:
-        rect_size = imgui.GetItemRectSize()
-        state.resized = rect_size.x != state.rect_size.x or \
-                        rect_size.y != state.rect_size.y
-        state.rect_size = rect_size
-    if state.has_content_region:
-        state.content_region = imgui.GetContentRegionAvail()
-    state.visible = imgui.IsItemVisible()
-    state.relative_position = imgui.GetCursorPos()
-
-cdef void updateCurrentItemStateAsHidden(itemState *state) noexcept nogil:
-    """
-    Indicates the object is hidden
-    """
-    state.hovered = False
-    state.active = False
-    state.activated = False
-    cdef int i
-    if state.can_be_clicked:
-        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            state.clicked[i] = False
-            state.double_clicked[i] = False
-    state.deactivated = False
-    state.deactivated_after_edited = False
-    state.edited = False
-    state.focused = False
-    state.toggled = False
-    state.resized = False
-    state.visible = False
-
-cdef inline object IntPairFromVec2(imgui.ImVec2 v):
-    return (<int>v.x, <int>v.y)
-
-cdef object outputCurrentItemState(itemState *state):
-    """
-    Helper function to return the current dict of item state
-    """
-    output = {}
-    if state.can_be_hovered:
-        output["hovered"] = state.hovered
-    if state.can_be_active:
-        output["active"] = state.active
-    if state.can_be_activated:
-        output["activated"] = state.activated
-    if state.can_be_clicked:
-        output["clicked"] = max(state.clicked)
-        output["left_clicked"] = state.clicked[0]
-        output["middle_clicked"] = state.clicked[2]
-        output["right_clicked"] = state.clicked[1]
-    if state.can_be_deactivated:
-        output["deactivated"] = state.deactivated
-    if state.can_be_deactivated_after_edited:
-        output["deactivated_after_edit"] = state.deactivated_after_edited
-    if state.can_be_edited:
-        output["edited"] = state.edited
-    if state.can_be_focused:
-        output["focused"] = state.focused
-    if state.can_be_toggled:
-        output["toggle_open"] = state.toggled
-    if state.has_rect_min:
-        output["rect_min"] = IntPairFromVec2(state.rect_min)
-    if state.has_rect_max:
-        output["rect_max"] = IntPairFromVec2(state.rect_max)
-    if state.has_rect_size:
-        output["rect_size"] = IntPairFromVec2(state.rect_size)
-        output["resized"] = state.resized
-    if state.has_content_region:
-        output["content_region_avail"] = IntPairFromVec2(state.content_region)
-    output["ok"] = True # Original code only set this to False on missing texture or invalid style
-    output["visible"] = state.visible
-    output["pos"] = (state.relative_position.x, state.relative_position.y)
-    return output
-
-"""
 UI styles
 """
 
@@ -2067,6 +1971,42 @@ UI styles
 UI input event handlers
 """
 
+cdef class itemHandler(baseItem):
+    def __cinit__(self):
+        self.enabled = True
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.enabled = kwargs.pop("enabled", self.enabled)
+        self.enabled = kwargs.pop("show", self.enabled)
+        return super().configure(**kwargs)
+    @property
+    def enabled(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.enabled
+    @enabled.setter
+    def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.enabled = value
+    cdef void check_bind(self, uiItem item):
+        return
+    cdef void run_handler(self, uiItem item) noexcept nogil:
+        return
+    cdef void run_callback(self, uiItem item) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        with gil:
+            self.context.queue.submit(self.callback,
+                                      self,
+                                      item,
+                                      self.user_data)
+
+cdef class dcgItemHandlerRegistry(baseItem):
+    cdef void check_bind(self, uiItem item):
+        pass
+    cdef void run_handlers(self, uiItem item) noexcept nogil:
+        pass
+
+cdef inline object IntPairFromVec2(imgui.ImVec2 v):
+    return (<int>v.x, <int>v.y)
 
 cdef class uiItem(drawableItem):
     def __cinit__(self):
@@ -2097,11 +2037,105 @@ cdef class uiItem(drawableItem):
         self.dragCallback = None
         self.dropCallback = None
 
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
-        # TODO
-        return
+    cdef void update_current_state(self) noexcept nogil:
+        """
+        Updates the state of the last imgui object.
+        """
+        if self.state.can_be_hovered:
+            self.state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        if self.state.can_be_active:
+            self.state.active = imgui.IsItemActive()
+        if self.state.can_be_activated:
+            self.state.activated = imgui.IsItemActivated()
+        cdef int i
+        if self.state.can_be_clicked:
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.clicked[i] = self.state.hovered and imgui.IsItemClicked(i)
+                self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
+        if self.state.can_be_deactivated:
+            self.state.deactivated = imgui.IsItemDeactivated()
+        if self.state.can_be_deactivated_after_edited:
+            self.state.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
+        if self.state.can_be_edited:
+            self.state.edited = imgui.IsItemEdited()
+        if self.state.can_be_focused:
+            self.state.focused = imgui.IsItemFocused()
+        if self.state.can_be_toggled:
+            self.state.toggled = imgui.IsItemToggledOpen()
+        if self.state.has_rect_min:
+            self.state.rect_min = imgui.GetItemRectMin()
+        if self.state.has_rect_max:
+            self.state.rect_max = imgui.GetItemRectMax()
+        cdef imgui.ImVec2 rect_size
+        if self.state.has_rect_size:
+            rect_size = imgui.GetItemRectSize()
+            self.state.resized = rect_size.x != self.state.rect_size.x or \
+                                 rect_size.y != self.state.rect_size.y
+            self.state.rect_size = rect_size
+        if self.state.has_content_region:
+            self.state.content_region = imgui.GetContentRegionAvail()
+        self.state.visible = imgui.IsItemVisible()
+        self.state.relative_position = imgui.GetCursorPos()
+
+    cdef void update_current_state_as_hidden(self) noexcept nogil:
+        """
+        Indicates the object is hidden
+        """
+        self.state.hovered = False
+        self.state.active = False
+        self.state.activated = False
+        cdef int i
+        if self.state.can_be_clicked:
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.clicked[i] = False
+                self.state.double_clicked[i] = False
+        self.state.deactivated = False
+        self.state.deactivated_after_edited = False
+        self.state.edited = False
+        self.state.focused = False
+        self.state.toggled = False
+        self.state.resized = False
+        self.state.visible = False
+
+    cdef object output_current_item_state(self):
+        """
+        Helper function to return the current dict of item state
+        """
+        output = {}
+        if self.state.can_be_hovered:
+            output["hovered"] = self.state.hovered
+        if self.state.can_be_active:
+            output["active"] = self.state.active
+        if self.state.can_be_activated:
+            output["activated"] = self.state.activated
+        if self.state.can_be_clicked:
+            output["clicked"] = max(self.state.clicked)
+            output["left_clicked"] = self.state.clicked[0]
+            output["middle_clicked"] = self.state.clicked[2]
+            output["right_clicked"] = self.state.clicked[1]
+        if self.state.can_be_deactivated:
+            output["deactivated"] = self.state.deactivated
+        if self.state.can_be_deactivated_after_edited:
+            output["deactivated_after_edit"] = self.state.deactivated_after_edited
+        if self.state.can_be_edited:
+            output["edited"] = self.state.edited
+        if self.state.can_be_focused:
+            output["focused"] = self.state.focused
+        if self.state.can_be_toggled:
+            output["toggle_open"] = self.state.toggled
+        if self.state.has_rect_min:
+            output["rect_min"] = IntPairFromVec2(self.state.rect_min)
+        if self.state.has_rect_max:
+            output["rect_max"] = IntPairFromVec2(self.state.rect_max)
+        if self.state.has_rect_size:
+            output["rect_size"] = IntPairFromVec2(self.state.rect_size)
+            output["resized"] = self.state.resized
+        if self.state.has_content_region:
+            output["content_region_avail"] = IntPairFromVec2(self.state.content_region)
+        output["ok"] = True # Original code only set this to False on missing texture or invalid style
+        output["visible"] = self.state.visible
+        output["pos"] = (self.state.relative_position.x, self.state.relative_position.y)
+        return output
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil:
         """
@@ -2121,7 +2155,305 @@ cdef class uiItem(drawableItem):
             self.last_widgets_child.set_hidden_and_propagate()
         if self.prev_sibling is not None:
             (<uiItem>self.prev_sibling).set_hidden_and_propagate()
-        updateCurrentItemStateAsHidden(&self.state)
+        self.update_current_state_as_hidden()
+
+    def bind_handlers(self, dcgItemHandlerRegistry handlers):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        # Check the list of handlers can use our states. Else raise error
+        handlers.check_bind(self)
+        # yes: bind
+        self.handlers = handlers
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        super().configure(**kwargs)
+        # TODO
+        return
+
+    # TODO: Find a better way to share all this attributes while avoiding AttributeError
+
+    @property
+    def active(self):
+        """
+        Readonly attribute: is the item active
+        """
+        if not(self.state.can_be_active):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.active
+
+    @property
+    def activated(self):
+        """
+        Readonly attribute: has the item just turned active
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_activated):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.activated
+
+    @property
+    def clicked(self):
+        """
+        Readonly attribute: has the item just been clicked.
+        The returned value is a tuple of len 5 containing the individual test
+        mouse buttons (up to 5 buttons)
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_clicked):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return tuple(self.state.clicked)
+
+    @property
+    def double_clicked(self):
+        """
+        Readonly attribute: has the item just been double-clicked.
+        The returned value is a tuple of len 5 containing the individual test
+        mouse buttons (up to 5 buttons)
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_clicked):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.double_clicked
+
+    @property
+    def deactivated(self):
+        """
+        Readonly attribute: has the item just turned un-active
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_deactivated):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.deactivated
+
+    @property
+    def deactivated_after_edited(self):
+        """
+        Readonly attribute: has the item just turned un-active after having
+        been edited.
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_deactivated_after_edited):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.deactivated_after_edited
+
+    @property
+    def edited(self):
+        """
+        Readonly attribute: has the item just been edited
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_edited):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.edited
+
+    @property
+    def focused(self):
+        """
+        Writable attribute: Is the item focused ?
+        For windows it means the window is at the top,
+        while for items it could mean the keyboard inputs are redirected to it.
+        """
+        if not(self.state.can_be_focused):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.focused
+
+    @focused.setter
+    def focused(self, bint value):
+        """
+        Writable attribute: Is the item focused ?
+        For windows it means the window is at the top,
+        while for items it could mean the keyboard inputs are redirected to it.
+        """
+        if not(self.state.can_be_focused):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.state.focused = value
+        self.focus_update_requested = True
+
+    @property
+    def hovered(self):
+        """
+        Readonly attribute: Is the mouse inside the region of the item.
+        Only one element is hovered at a time, thus
+        subitems/subwindows take priority over their parent.
+        """
+        if not(self.state.can_be_hovered):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.hovered
+
+    @property
+    def resized(self):
+        """
+        Readonly attribute: has the item size just changed
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.has_rect_size):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.resized
+
+    @property
+    def toggled(self):
+        """
+        Has a menu/bar trigger been hit for the item
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        if not(self.state.can_be_toggled):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.toggled
+
+    @property
+    def visible(self):
+        """
+        True if the item was rendered (inside the rendering region + show = True
+        for the item and its ancestors). Not impacted by occlusion.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.state.visible
+
+    @property
+    def content_region_avail(self):
+        """
+        Region available for the current element size if scrolling was disallowed
+        """
+        if not(self.state.has_content_region):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return IntPairFromVec2(self.state.content_region)
+
+    @property
+    def rect_min(self):
+        """
+        Requested minimum size (width, height) allowed for the item.
+        Writable attribute
+        """
+        if not(self.state.has_rect_min):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return IntPairFromVec2(self.state.rect_min)
+
+    @rect_min.setter
+    def rect_min(self, value):
+        if not(self.state.has_rect_min):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        if len(value) != 2:
+            raise ValueError("Expected tuple for rect_min: (width, height)")
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.state.rect_min.x = value[0]
+        self.state.rect_min.y = value[1]
+
+    @property
+    def rect_max(self):
+        """
+        Requested minimum size (width, height) allowed for the item.
+        Writable attribute
+        """
+        if not(self.state.has_rect_max):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return IntPairFromVec2(self.state.rect_max)
+
+    @rect_max.setter
+    def rect_max(self, value):
+        if not(self.state.has_rect_max):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        if len(value) != 2:
+            raise ValueError("Expected tuple for rect_max: (width, height)")
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.state.rect_max.x = value[0]
+        self.state.rect_max.y = value[1]
+
+    @property
+    def width(self):
+        """
+        Writable attribute: requested width of the item.
+        When it is written, it is set to a 'requested value' that is not
+        entirely guaranteed to be enforced
+        Specific values:
+            . Windows: 0 means fit to take the maximum size available
+            . Some Items: <0. means align of ... pixels to the right of the window
+            . Some Items: 0 can mean use remaining space or fit to content 
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.width
+
+    @width.setter
+    def width(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.width = value
+        self.state.rect_size.x = value
+        self.size_update_requested = True
+
+    @property
+    def height(self):
+        """
+        Writable attribute: requested height of the item.
+        When it is written, it is set to a 'requested value' that is not
+        entirely guaranteed to be enforced.
+        Specific values:
+            . Windows: 0 means fit to take the maximum size available
+            . Some Items: <0. means align of ... pixels to the right of the window
+            . Some Items: 0 can mean use remaining space or fit to content 
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.height
+
+    @height.setter
+    def height(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.height = value
+        self.state.rect_size.y = value
+        self.size_update_requested = True
+
+    @property
+    def rect_size(self):
+        """
+        Readonly attribute: actual (width, height) of the element
+        """
+        if not(self.state.has_rect_size):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return IntPairFromVec2(self.state.rect_size)
+
+    @property
+    def pos(self):
+        """
+        Writable attribute: Relative position (x, y) of the element inside
+        the drawable region of the parent
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return IntPairFromVec2(self.state.relative_position)
+
+    @pos.setter
+    def pos(self, value):
+        if len(value) == 0:
+            # Used to indicate "keep default value" during init
+            return
+        if len(value) != 2:
+            raise ValueError("Expected tuple for pos: (x, y)")
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.state.relative_position.x = value[0]
+        self.state.relative_position.y = value[1]
+        self.pos_update_requested = True
+
 
 
 cdef class dcgWindow_(uiItem):
@@ -2130,18 +2462,7 @@ cdef class dcgWindow_(uiItem):
         self.main_window = False
         self.modal = False
         self.popup = False
-        #self.autosize = False
-        self.no_resize = False
-        self.no_title_bar = False
-        self.no_move = False
-        self.no_scrollbar = False
-        self.no_collapse = False
-        self.horizontal_scrollbar = False
-        self.no_focus_on_appearing = False
-        self.no_bring_to_front_on_focus = False
-        self.menubar = False
         self.has_close_button = True
-        self.no_background = False
         self.collapsed = False
         self.collapse_update_requested = False
         self.no_open_over_existing_popup = True
@@ -2172,6 +2493,7 @@ cdef class dcgWindow_(uiItem):
         self.state.has_rect_size = True
         self.state.has_rect_min = True
         self.state.has_rect_max = True
+        self.state.has_content_region = True
 
     cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
@@ -2323,7 +2645,9 @@ cdef class dcgWindow_(uiItem):
                 self.set_hidden_and_propagate()
 
         self.collapsed = imgui.IsWindowCollapsed()
-        self.state.toggled = self.collapsed
+        self.state.toggled = imgui.IsWindowAppearing() # Original code used Collapsed
+        self.scroll_x = imgui.GetScrollX()
+        self.scroll_y = imgui.GetScrollY()
 
 
         # Post draw
@@ -2357,7 +2681,7 @@ cdef class dcgWindow_(uiItem):
             with gil:
                  if self.on_close is not None:
                     self.context.queue.submit(self.on_close,
-                                              self.uuid if self.alias.empty() else None,
+                                              self,
                                               None,
                                               self.user_data)
         self.show_update_requested = False

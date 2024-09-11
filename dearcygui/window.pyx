@@ -4,6 +4,7 @@ from .core cimport *
 
 cdef class dcgWindow(dcgWindow_):
     def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         remaining = {}
         for (key, value) in kwargs.items():
             if hasattr(self, key):
@@ -14,6 +15,7 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_title_bar(self):
+        """Writable attribute to disable the title-bar"""
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoTitleBar) else False
 
@@ -26,6 +28,7 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_resize(self):
+        """Writable attribute to block resizing"""
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoResize) else False
 
@@ -38,6 +41,7 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_move(self):
+        """Writable attribute the window to be move with interactions"""
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoMove) else False
 
@@ -50,6 +54,9 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_scrollbar(self):
+        """Writable attribute to indicate the window should have no scrollbar
+           Does not disable scrolling via mouse or keyboard
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoScrollbar) else False
 
@@ -62,6 +69,9 @@ cdef class dcgWindow(dcgWindow_):
     
     @property
     def no_scroll_with_mouse(self):
+        """Writable attribute to indicate the mouse wheel
+           should have no effect on scrolling of this window
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoScrollWithMouse) else False
 
@@ -74,6 +84,8 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_collapse(self):
+        """Writable attribute to disable user collapsing window by double-clicking on it
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoCollapse) else False
 
@@ -86,6 +98,9 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def autosize(self):
+        """Writable attribute to tell the window should
+           automatically resize to fit its content
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysAutoResize) else False
 
@@ -98,6 +113,10 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_background(self):
+        """
+        Writable attribute to disable drawing background
+        color and outside border
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoBackground) else False
 
@@ -110,6 +129,9 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_saved_settings(self):
+        """
+        Writable attribute to never load/save settings in .ini file
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoSavedSettings) else False
 
@@ -122,6 +144,11 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_mouse_inputs(self):
+        """
+        Writable attribute to disable mouse input event catching of the window.
+        Events such as clicked, hovering, etc will be passed to items behind the
+        window.
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoMouseInputs) else False
 
@@ -133,7 +160,27 @@ cdef class dcgWindow(dcgWindow_):
             self.window_flags |= imgui.ImGuiWindowFlags_NoMouseInputs
 
     @property
+    def no_keyboard_inputs(self):
+        """
+        Writable attribute to disable keyboard manipulation (scroll).
+        The window will not take focus of the keyboard.
+        Does not affect items inside the window.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoNav) else False
+
+    @no_keyboard_inputs.setter
+    def no_keyboard_inputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoNav
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoNav
+
+    @property
     def menubar(self):
+        """
+        Writable attribute to indicate whether the window should have a menu bar
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_MenuBar) else False
 
@@ -149,6 +196,9 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def horizontal_scrollbar(self):
+        """
+        Writable attribute to enable having an horizontal scrollbar
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_HorizontalScrollbar) else False
 
@@ -161,6 +211,11 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_focus_on_appearing(self):
+        """
+        Writable attribute to indicate when the windows moves from
+        an un-shown to a shown item shouldn't be made automatically
+        focused
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoFocusOnAppearing) else False
 
@@ -173,6 +228,10 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_bring_to_front_on_focus(self):
+        """
+        Writable attribute to indicate when the window takes focus (click on it, etc)
+        it shouldn't be shown in front of other windows
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoBringToFrontOnFocus) else False
 
@@ -185,6 +244,10 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def always_show_vertical_scrollvar(self):
+        """
+        Writable attribute to tell to always show a vertical scrollbar
+        even when the size does not require it
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar) else False
 
@@ -197,6 +260,11 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def always_show_horizontal_scrollvar(self):
+        """
+        Writable attribute to tell to always show a horizontal scrollbar
+        even when the size does not require it (only if horizontal scrollbar
+        are enabled)
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar) else False
 
@@ -209,6 +277,10 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def unsaved_document(self):
+        """
+        Writable attribute to display a dot next to the title, as if the window
+        contains unsaved changes.
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_UnsavedDocument) else False
 
@@ -221,6 +293,9 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def disallow_docking(self):
+        """
+        Writable attribute to disable docking for the window
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return True if (self.window_flags & imgui.ImGuiWindowFlags_NoDocking) else False
 
@@ -233,6 +308,10 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def no_open_over_existing_popup(self):
+        """
+        Writable attribute for modal and popup windows to prevent them from
+        showing if there is already an existing popup/modal window
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.no_open_over_existing_popup
 
@@ -243,6 +322,12 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def modal(self):
+        """
+        Writable attribute to indicate the window is a modal window.
+        Modal windows are similar to popup windows, but they have a close
+        button and are not closed by clicking outside.
+        Clicking has no effect of items outside the modal window until it is closed.
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.modal
 
@@ -253,6 +338,12 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def popup(self):
+        """
+        Writable attribute to indicate the window is a popup window.
+        Popup windows are centered (unless a pos is set), do not have a
+        close button, and are closed when they lose focus (clicking outside the
+        window).
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.popup
 
@@ -263,6 +354,10 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def has_close_button(self):
+        """
+        Writable attribute to indicate the window has a close button.
+        Has effect only for normal and modal windows.
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.has_close_button and not(self.popup)
 
@@ -273,6 +368,9 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def collapsed(self):
+        """
+        Writable attribute to collapse (~minimize) or uncollapse the window
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.collapsed 
 
@@ -282,35 +380,13 @@ cdef class dcgWindow(dcgWindow_):
         self.collapsed = value
         self.collapse_update_requested = True
 
-    # TODO move to uiItem ?
-    @property
-    def min_size(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return (self.state.rect_min.x, self.state.rect_min.y)
-
-    @min_size.setter
-    def min_size(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        assert(len(value) == 2)
-        self.state.rect_min.x = value[0]
-        self.state.rect_min.y = value[1]
-
-    @property
-    def max_size(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return (self.state.rect_max.x, self.state.rect_max.y)
-
-    @max_size.setter
-    def max_size(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        assert(len(value) == 2)
-        self.state.rect_max.x = value[0]
-        self.state.rect_max.y = value[1]
-
-    # TODO size ?
-
     @property
     def on_close(self):
+        """
+        Callback to call when the window is closed.
+        Note closing the window does not destroy or unattach the item.
+        Instead it is switched to a show=False state.
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.on_close
 
@@ -321,6 +397,18 @@ cdef class dcgWindow(dcgWindow_):
 
     @property
     def primary(self):
+        """
+        Writable attribute: Indicate if the window is the primary window.
+        There is maximum one primary window. The primary window covers the whole
+        viewport and can be used to draw on the background.
+        It is equivalent to setting:
+        no_bring_to_front_on_focus
+        no_saved_settings
+        no_resize
+        no_collapse
+        no_title_bar
+        and running item.focused = True on all the other windows
+        """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.main_window
 
