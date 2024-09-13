@@ -35,8 +35,8 @@ cdef class dcgViewport:
     cdef recursive_mutex mutex
     cdef mvViewport *viewport
     cdef dcgContext context
-    cdef public object resize_callback
-    cdef public object close_callback
+    cdef public dcgCallback resize_callback
+    cdef public dcgCallback close_callback
     cdef bint initialized
     cdef mvGraphics graphics
     cdef bint graphics_initialized
@@ -77,6 +77,11 @@ cdef class dcgViewport:
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
 
 
+cdef class dcgCallback:
+    cdef object callback
+    cdef int num_args
+    cdef object user_data
+
 cdef class dcgContext:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
@@ -102,9 +107,14 @@ cdef class dcgContext:
     #cdef dcgInput input
     #cdef UUID activeWindow
     #cdef UUID focusedItem
-    cdef public object on_close_callback
+    cdef dcgCallback on_close_callback
     cdef public object on_frame_callbacks
     cdef object queue
+    cdef void queue_callback_noarg(self, dcgCallback, object) noexcept nogil
+    cdef void queue_callback_arg1int(self, dcgCallback, object, int) noexcept nogil
+    cdef void queue_callback_arg1float(self, dcgCallback, object, float) noexcept nogil
+    cdef void queue_callback_arg1int1float(self, dcgCallback, object, int, float) noexcept nogil
+    cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
 
 # Each .so has its own current context. To be able to work
 # with various .so and contexts, we must ensure the correct
@@ -354,6 +364,18 @@ cdef class dcgDrawTriangle_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
 
+cdef class globalHandler(baseItem):
+    cdef bint enabled
+    cdef dcgCallback callback
+    cdef void run_handler(self) noexcept nogil
+    cdef void run_callback(self) noexcept nogil
+
+cdef class dcgGlobalHandlerRegistry(baseItem):
+    #cdef dcgContext context
+    cdef globalHandler last_handler
+    cdef bint enabled
+    cdef void run_handlers(self) noexcept nogil
+
 """
 UI item
 A drawable item with various UI states
@@ -396,6 +418,7 @@ cdef struct itemState:
 
 cdef class itemHandler(baseItem):
     cdef bint enabled
+    cdef dcgCallback callback
     cdef void check_bind(self, uiItem)
     cdef void run_handler(self, uiItem) noexcept nogil
     cdef void run_callback(self, uiItem) noexcept nogil
@@ -433,8 +456,8 @@ cdef class uiItem(drawableItem):
     #cdef bint tracked
     #cdef object callback
     #cdef object user_data
-    cdef object dragCallback
-    cdef object dropCallback
+    cdef dcgCallback dragCallback
+    cdef dcgCallback dropCallback
     cdef dcgItemHandlerRegistry handlers
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
@@ -463,7 +486,7 @@ cdef class dcgWindow_(uiItem):
     cdef bint no_background
     cdef bint collapsed
     cdef bint no_open_over_existing_popup
-    cdef object on_close
+    cdef dcgCallback on_close_callback
     cdef imgui.ImVec2 min_size
     cdef imgui.ImVec2 max_size
     cdef float scroll_x

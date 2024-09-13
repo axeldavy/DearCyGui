@@ -438,6 +438,7 @@ cdef class dcgViewport:
                       self.viewport.actualHeight,
                       self.viewport.clientWidth,
                       self.viewport.clientHeight)
+        # TODO: queue
         self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
 
     cdef void __on_close(self):
@@ -667,6 +668,26 @@ cdef class dcgViewport:
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         mvWakeRendering(dereference(self.viewport))
 
+
+cdef class dcgCallback:
+    def __cinit__(self, callback):
+        if not(callable(callback)):
+            raise TypeError("dcgCallback requires a callable object")
+        self.callback = callback
+        self.num_args = callback.__code__.co_argcount
+        if self.num_args > 3:
+            raise ValueError("Callback function takes too many arguments")
+
+    def __call__(self, item, call_info, user_data):
+        if self.num_args == 3:
+            self.callback(item, call_info, user_data)
+        elif self.num_args == 2:
+            self.callback(item, call_info)
+        elif self.num_args == 1:
+            self.callback(item)
+        else:
+            self.callback()
+
 cdef class dcgContext:
     def __init__(self):
         self.on_close_callback = None
@@ -699,13 +720,43 @@ cdef class dcgContext:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.on_close_callback is not None:
             self.started = True
-            self.queue.submit(self.on_close_callback)
+            self.queue_callback_noarg(self.on_close_callback, self)
             self.started = False
 
         #mvToolManager::Reset()
         #ClearItemRegistry(*GContext->itemRegistry)
 
         self.queue.shutdown(wait=True)
+
+    cdef void queue_callback_noarg(self, dcgCallback callback, object parent_item) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            self.queue.submit(callback, parent_item, None, None)
+
+    cdef void queue_callback_arg1int(self, dcgCallback callback, object parent_item, int arg1) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            self.queue.submit(callback, parent_item, arg1, None)
+
+    cdef void queue_callback_arg1float(self, dcgCallback callback, object parent_item, float arg1) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            self.queue.submit(callback, parent_item, arg1, None)
+
+    cdef void queue_callback_arg1int1float(self, dcgCallback callback, object parent_item, int arg1, float arg2) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            self.queue.submit(callback, parent_item, (arg1, arg2), None)
+
+    cdef void queue_callback_arg2float(self, dcgCallback callback, object parent_item, float arg1, float arg2) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            self.queue.submit(callback, parent_item, (arg1, arg2), None)
 
     def initialize_viewport(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1158,17 +1209,15 @@ cdef class dcgDrawList_(drawingItem):
 
         imgui.PopClipRect()
 
+        """
         if imgui.InvisibleButton(self.internalLabel.c_str(),
                                  imgui.ImVec2(self.clip_width,
                                               self.clip_height),
                                  imgui.ImGuiButtonFlags_MouseButtonLeft | \
                                  imgui.ImGuiButtonFlags_MouseButtonRight | \
                                  imgui.ImGuiButtonFlags_MouseButtonMiddle):
-            with gil:
-                self.context.queue.submit(self.callback,
-                                          self,
-                                          None,
-                                          self.user_data)
+            self.context.queue_callback_noarg(self.callback, self)
+        """
 
         # UpdateAppItemState(state); ?
 
@@ -1959,6 +2008,38 @@ cdef class dcgDrawTriangle_(drawingItem):
             parent_drawlist.AddTriangle(ip1, ip2, ip3, self.color, thickness)
 
 """
+Global handlers
+"""
+cdef class globalHandler(baseItem):
+    def __cinit__(self):
+        self.enabled = True
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.enabled = kwargs.pop("enabled", self.enabled)
+        self.enabled = kwargs.pop("show", self.enabled)
+        callback = kwargs.pop("callback", self.callback)
+        self.callback = callback if isinstance(callback, dcgCallback) else dcgCallback(callback)
+        return super().configure(**kwargs)
+    @property
+    def enabled(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.enabled
+    @enabled.setter
+    def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.enabled = value
+    cdef void run_handler(self) noexcept nogil:
+        return
+    cdef void run_callback(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.context.queue_callback_noarg(self.callback, self)
+
+cdef class dcgGlobalHandlerRegistry(baseItem):
+    cdef void run_handlers(self) noexcept nogil:
+        return
+
+
+"""
 UI elements
 """
 
@@ -1993,11 +2074,7 @@ cdef class itemHandler(baseItem):
         return
     cdef void run_callback(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        with gil:
-            self.context.queue.submit(self.callback,
-                                      self,
-                                      item,
-                                      self.user_data)
+        self.context.queue_callback_noarg(self.callback, self)
 
 cdef class dcgItemHandlerRegistry(baseItem):
     cdef void check_bind(self, uiItem item):
@@ -2678,12 +2755,8 @@ cdef class dcgWindow_(uiItem):
         cdef bint closed = not(self.show) or (not(visible) and (self.modal or self.popup))
         if closed:
             self.show = False
-            with gil:
-                 if self.on_close is not None:
-                    self.context.queue.submit(self.on_close,
-                                              self,
-                                              None,
-                                              self.user_data)
+            self.context.queue_callback_noarg(self.on_close_callback,
+                                              self)
         self.show_update_requested = False
 
         #if (self..handlerRegistry)

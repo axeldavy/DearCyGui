@@ -1,7 +1,6 @@
 
 #generated with pxdgen thirdparty/imgui/imgui.h -x c++ -f defines -f includerefs -f importall -w ImGui 
 
-
 cdef extern from "imgui.h" nogil:
     struct ImGuiContext:
         pass
@@ -2316,3 +2315,6 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     ImGuiKey GetKeyIndex(ImGuiKey)
 
 
+
+cdef extern from "imgui_internal.h" namespace "ImGui" nogil:
+    ImGuiKeyData* GetKeyData(ImGuiKey)
