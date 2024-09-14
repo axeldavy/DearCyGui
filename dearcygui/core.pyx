@@ -3195,8 +3195,57 @@ cdef class dcgTexture_(baseItem):
             mvReleaseRenderingContext(dereference(self.context.viewport.viewport))
 
 
+cdef class theme:
+    cdef void push(self) noexcept nogil:
+        return
+    cdef void pop(self) noexcept nogil:
+        return
+
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4 color_float4) noexcept nogil:
     return imgui.ColorConvertFloat4ToU32(color_float4)
 
 cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32 color_uint) noexcept nogil:
     return imgui.ColorConvertU32ToFloat4(color_uint)
+
+cdef const char* imgui_GetStyleColorName(int i) noexcept nogil:
+    return imgui.GetStyleColorName(<imgui.ImGuiCol>i)
+
+cdef void imgui_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
+    imgui.PushStyleColor(<imgui.ImGuiCol>i, val)
+
+cdef void imgui_PopStyleColor(int count) noexcept nogil:
+    imgui.PopStyleColor(count)
+
+cdef void imnodes_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
+    imnodes.PushColorStyle(<imnodes.ImNodesCol>i, val)
+
+cdef void imnodes_PopStyleColor(int count) noexcept nogil:
+    cdef int i
+    for i in range(count):
+        imnodes.PopColorStyle()
+
+cdef const char* implot_GetStyleColorName(int i) noexcept nogil:
+    return implot.GetStyleColorName(<implot.ImPlotCol>i)
+
+cdef void implot_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
+    implot.PushStyleColor(<implot.ImPlotCol>i, val)
+
+cdef void implot_PopStyleColor(int count) noexcept nogil:
+    implot.PopStyleColor(count)
+
+def color_as_int(val):
+    cdef imgui.ImU32 color = parse_color(val)
+    return int(color)
+
+def color_as_ints(val):
+    cdef imgui.ImU32 color = parse_color(val)
+    cdef imgui.ImVec4 color_vec = imgui.ColorConvertU32ToFloat4(color)
+    return (int(255. * color_vec.x),
+            int(255. * color_vec.y),
+            int(255. * color_vec.z),
+            int(255. * color_vec.w))
+
+def color_as_floats(val):
+    cdef imgui.ImU32 color = parse_color(val)
+    cdef imgui.ImVec4 color_vec = imgui.ColorConvertU32ToFloat4(color)
+    return (color_vec.x, color_vec.y, color_vec.z, color_vec.w)

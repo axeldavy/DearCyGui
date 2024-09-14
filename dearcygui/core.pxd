@@ -631,11 +631,23 @@ cdef class dcgTexture_(baseItem):
     cdef void set_content(self, cnp.ndarray content)
 
 
+cdef class theme:
+    cdef void push(self) noexcept nogil
+    cdef void pop(self) noexcept nogil
+
 """
 Utils that the other pyx may use
 """
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4) noexcept nogil
 cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32) noexcept nogil
+cdef const char* imgui_GetStyleColorName(int) noexcept nogil
+cdef void imgui_PushStyleColor(int, imgui.ImU32) noexcept nogil
+cdef void imgui_PopStyleColor(int) noexcept nogil
+cdef void imnodes_PushStyleColor(int, imgui.ImU32) noexcept nogil
+cdef void imnodes_PopStyleColor(int) noexcept nogil
+cdef const char* implot_GetStyleColorName(int) noexcept nogil
+cdef void implot_PushStyleColor(int, imgui.ImU32) noexcept nogil
+cdef void implot_PopStyleColor(int) noexcept nogil
 
 ctypedef fused point_type:
     int
@@ -664,7 +676,7 @@ cdef inline void read_point(point_type* dst, src):
 cdef inline imgui.ImU32 parse_color(src):
     if isinstance(src, int):
         # RGBA, little endian
-        return <imgui.ImU32>(<int>src)
+        return <imgui.ImU32>(<long long>src)
     cdef int src_size = 5 # to trigger error by default
     if hasattr(src, '__len__'):
         src_size = len(src)
