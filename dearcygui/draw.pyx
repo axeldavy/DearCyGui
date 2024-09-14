@@ -1016,13 +1016,16 @@ cdef class dcgDrawRect(dcgDrawRect_):
             self.color_bottom_left = parse_color(kwargs.pop("color_bottom_left"))
         if "color_bottom_right" in kwargs:
             self.color_bottom_right = parse_color(kwargs.pop("color_bottom_right"))
-        if "corner_colors" in kwargs and kwargs["corner_colors"] is not None:
-            (color_upper_right, color_upper_left, color_bottom_right, color_bottom_left) = \
-                kwargs.pop("corner_colors")
-            self.color_upper_left = parse_color(color_upper_left)
-            self.color_upper_right = parse_color(color_upper_right)
-            self.color_bottom_left = parse_color(color_bottom_left)
-            self.color_bottom_right = parse_color(color_bottom_right)
+        if "corner_colors" in kwargs:
+            if kwargs["corner_colors"] is not None:
+                (color_upper_right, color_upper_left, color_bottom_right, color_bottom_left) = \
+                    kwargs.pop("corner_colors")
+                self.color_upper_left = parse_color(color_upper_left)
+                self.color_upper_right = parse_color(color_upper_right)
+                self.color_bottom_left = parse_color(color_bottom_left)
+                self.color_bottom_right = parse_color(color_bottom_right)
+            else:
+                del kwargs["corner_colors"]
         self.rounding = kwargs.pop("rounding", self.rounding)
         self.thickness = kwargs.pop("thickness", self.thickness)
         self.multicolor = kwargs.pop("multicolor", self.multicolor)

@@ -9,6 +9,9 @@ cdef class dcgWindow(dcgWindow_):
         for (key, value) in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
+            # convert old flags
+            elif key == "no_close":
+                self.has_close_button = value
             else:
                 remaining[key] = value
         super().configure(**remaining)

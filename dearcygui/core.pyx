@@ -1215,15 +1215,13 @@ cdef class dcgDrawList_(drawingItem):
 
         imgui.PopClipRect()
 
-        """
         if imgui.InvisibleButton(self.internalLabel.c_str(),
                                  imgui.ImVec2(self.clip_width,
                                               self.clip_height),
                                  imgui.ImGuiButtonFlags_MouseButtonLeft | \
                                  imgui.ImGuiButtonFlags_MouseButtonRight | \
                                  imgui.ImGuiButtonFlags_MouseButtonMiddle):
-            self.context.queue_callback_noarg(self.callback, self)
-        """
+            self.context.queue_callback_noarg(None, self)#self.callback
 
         # UpdateAppItemState(state); ?
 
@@ -2441,6 +2439,21 @@ cdef class uiItem(drawableItem):
         self.dragCallback = None
         self.dropCallback = None
 
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        remaining = {}
+        for (key, value) in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            # Convert old names to new attributes
+            elif key == "min_size":
+                self.rect_min = value
+            elif key == "max_size":
+                self.rect_max = value
+            else:
+                remaining[key] = value
+        super().configure(**remaining)
+
     cdef void update_current_state(self) noexcept nogil:
         """
         Updates the state of the last imgui object.
@@ -2567,12 +2580,6 @@ cdef class uiItem(drawableItem):
         handlers.check_bind(self)
         # yes: bind
         self.handlers = handlers
-
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        super().configure(**kwargs)
-        # TODO
-        return
 
     # TODO: Find a better way to share all this attributes while avoiding AttributeError
 
@@ -3015,16 +3022,6 @@ cdef class dcgWindow_(uiItem):
             if self.last_drawings_child is not None:
                 self.last_drawings_child.draw(this_drawlist, startx, starty)
 
-        if (self.modal or self.popup):
-            if visible:
-                # End() is called automatically for modal and popup windows if not visible
-                imgui.EndPopup()
-        else:
-            imgui.End()
-
-        if self.main_window:
-            imgui.PopStyleVar(1)
-
         cdef imgui.ImVec2 rect_size
         if visible:
             # Set current states
@@ -3078,6 +3075,16 @@ cdef class dcgWindow_(uiItem):
             #GContext->input.mousePos.y = (int)y;
             #GContext->activeWindow = item
         """
+
+        if (self.modal or self.popup):
+            if visible:
+                # End() is called automatically for modal and popup windows if not visible
+                imgui.EndPopup()
+        else:
+            imgui.End()
+
+        if self.main_window:
+            imgui.PopStyleVar(1)
 
         cdef bint closed = not(self.show) or (not(visible) and (self.modal or self.popup))
         if closed:
