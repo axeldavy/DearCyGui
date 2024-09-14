@@ -388,12 +388,12 @@ cdef class dcgWindow(dcgWindow_):
         Instead it is switched to a show=False state.
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self.on_close
+        return self.on_close_callback
 
     @on_close.setter
     def on_close(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.on_close = value
+        self.on_close_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
 
     @property
     def primary(self):

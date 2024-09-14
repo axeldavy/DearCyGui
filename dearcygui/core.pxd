@@ -1,5 +1,6 @@
 from dearcygui.wrapper cimport imgui, implot, imnodes, float4
 from dearcygui.backends.backend cimport mvViewport, mvGraphics
+from libc.time cimport tm
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
@@ -57,9 +58,6 @@ cdef class dcgViewport:
     cdef dcgViewportDrawList_ viewportDrawlistRoots
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
-    #mvMat4 transform         = mvIdentityMat4();
-    #mvMat4 appliedTransform  = mvIdentityMat4(); // only used by nodes
-    #cdef long cullMode -> unused
     cdef bint perspectiveDivide
     cdef bint depthClipping
     cdef float[6] clipViewport
@@ -115,6 +113,7 @@ cdef class dcgContext:
     cdef void queue_callback_arg1float(self, dcgCallback, object, float) noexcept nogil
     cdef void queue_callback_arg1int1float(self, dcgCallback, object, int, float) noexcept nogil
     cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
+    cdef void queue_callback_arg1int2float(self, dcgCallback, object, int, float, float) noexcept nogil
 
 # Each .so has its own current context. To be able to work
 # with various .so and contexts, we must ensure the correct
@@ -376,6 +375,121 @@ cdef class dcgGlobalHandlerRegistry(baseItem):
     cdef bint enabled
     cdef void run_handlers(self) noexcept nogil
 
+cdef class dcgKeyDownHandler_(globalHandler):
+    cdef int key
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgKeyPressHandler_(globalHandler):
+    cdef int key
+    cdef bint repeat
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgKeyReleaseHandler_(globalHandler):
+    cdef int key
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseClickHandler_(globalHandler):
+    cdef int button
+    cdef bint repeat
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseDoubleClickHandler_(globalHandler):
+    cdef int button
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseDownHandler_(globalHandler):
+    cdef int button
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseDragHandler_(globalHandler):
+    cdef int button
+    cdef float threshold
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseMoveHandler(globalHandler):
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseReleaseHandler_(globalHandler):
+    cdef int button
+    cdef void run_handler(self) noexcept nogil
+
+cdef class dcgMouseWheelHandler(globalHandler):
+    cdef void run_handler(self) noexcept nogil
+
+"""
+Shared values (sources)
+
+Should we use cdef recursive_mutex mutex ?
+"""
+cdef class shared_bool:
+    cdef bint _value
+    # Internal functions.
+    # python uses get_value and set_value
+    cdef bint get(self) noexcept nogil
+    cdef void set(self, bint) noexcept nogil
+
+cdef class shared_float:
+    cdef float _value
+    cdef float get(self) noexcept nogil
+    cdef void set(self, float) noexcept nogil
+
+cdef class shared_int:
+    cdef int _value
+    cdef int get(self) noexcept nogil
+    cdef void set(self, int) noexcept nogil
+
+cdef class shared_color:
+    cdef imgui.ImU32 _value
+    cdef imgui.ImVec4 _value_asfloat4
+    cdef imgui.ImU32 getU32(self) noexcept nogil
+    cdef imgui.ImVec4 getF4(self) noexcept nogil
+    cdef void setU32(self, imgui.ImU32) noexcept nogil
+    cdef void setF4(self, imgui.ImVec4) noexcept nogil
+
+cdef class shared_double:
+    cdef double _value
+    cdef double get(self) noexcept nogil
+    cdef void set(self, double) noexcept nogil
+
+cdef class shared_str:
+    cdef string _value
+    cdef string get(self) noexcept nogil
+    cdef void set(self, string) noexcept nogil
+
+cdef class shared_float4:
+    cdef float[4] _value
+    cdef void get(self, float *) noexcept nogil# cython does support float[4] as return value
+    cdef void set(self, float[4]) noexcept nogil
+
+cdef class shared_int4:
+    cdef int[4] _value
+    cdef void get(self, int *) noexcept nogil
+    cdef void set(self, int[4]) noexcept nogil
+
+cdef class shared_double4:
+    cdef double[4] _value
+    cdef void get(self, double *) noexcept nogil
+    cdef void set(self, double[4]) noexcept nogil
+
+"""
+cdef class shared_floatvect:
+    cdef float[:] _value
+    cdef float[:] get(self) noexcept nogil
+    cdef void set(self, float[:]) noexcept nogil
+
+cdef class shared_doublevect:
+    cdef double[:] _value
+    cdef double[:] get(self) noexcept nogil
+    cdef void set(self, double[:]) noexcept nogil
+
+cdef class shared_time:
+    cdef tm _value
+    cdef tm get(self) noexcept nogil
+    cdef void set(self, tm) noexcept nogil
+"""
+
+# TODO: uuid
+
 """
 UI item
 A drawable item with various UI states
@@ -522,3 +636,84 @@ Utils that the other pyx may use
 """
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4) noexcept nogil
 cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32) noexcept nogil
+
+ctypedef fused point_type:
+    int
+    float
+    double
+
+cdef inline void read_point(point_type* dst, src):
+    if not(hasattr(src, '__len__')):
+        raise TypeError("Point data must be an array of up to 4 coordinates")
+    cdef int src_size = len(src)
+    if src_size > 4:
+        raise TypeError("Point data must be an array of up to 4 coordinates")
+    dst[0] = <point_type>0.
+    dst[1] = <point_type>0.
+    dst[2] = <point_type>0.
+    dst[3] = <point_type>0.
+    if src_size > 0:
+        dst[0] = <point_type>src[0]
+    if src_size > 1:
+        dst[1] = <point_type>src[1]
+    if src_size > 2:
+        dst[2] = <point_type>src[2]
+    if src_size > 3:
+        dst[3] = <point_type>src[3]
+
+cdef inline imgui.ImU32 parse_color(src):
+    if isinstance(src, int):
+        # RGBA, little endian
+        return <imgui.ImU32>(<int>src)
+    cdef int src_size = 5 # to trigger error by default
+    if hasattr(src, '__len__'):
+        src_size = len(src)
+    if src_size == 0 or src_size > 4:
+        raise TypeError("Color data must either an int32 (rgba, little endian),\n" \
+                        "or an array of int (r, g, b, a) or float (r, g, b, a) normalized")
+    cdef imgui.ImVec4 color_float4
+    cdef imgui.ImU32 color_u32
+    cdef bint contains_nonints = False
+    cdef int i
+    cdef float[4] values
+    cdef int[4] values_int
+
+    for i in range(src_size):
+        element = src[i]
+        if not(isinstance(element, int)):
+            contains_nonints = True
+            values[i] = element
+            values_int[i] = <int>values[i]
+        else:
+            values_int[i] = element
+            values[i] = <float>values_int[i]
+    for i in range(src_size, 4):
+        values[i] = 1.
+        values_int[i] = 255
+
+    if not(contains_nonints):
+        for i in range(4):
+            if values_int[i] < 0 or values_int[i] > 255:
+                raise ValueError("Color value component outside bounds (0...255)")
+        color_u32 = <imgui.ImU32>values_int[0]
+        color_u32 |= (<imgui.ImU32>values_int[1]) << 8
+        color_u32 |= (<imgui.ImU32>values_int[2]) << 16
+        color_u32 |= (<imgui.ImU32>values_int[3]) << 24
+        return color_u32
+
+    for i in range(4):
+        if values[i] < 0. or values[i] > 1.:
+            raise ValueError("Color value component outside bounds (0...1)")
+
+    color_float4.x = values[0]
+    color_float4.y = values[1]
+    color_float4.z = values[2]
+    color_float4.w = values[3]
+    return imgui_ColorConvertFloat4ToU32(color_float4)
+
+cdef inline void unparse_color(float *dst, imgui.ImU32 color_uint) noexcept nogil:
+    cdef imgui.ImVec4 color_float4 = imgui_ColorConvertU32ToFloat4(color_uint)
+    dst[0] = color_float4.x
+    dst[1] = color_float4.y
+    dst[2] = color_float4.z
+    dst[3] = color_float4.w

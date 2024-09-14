@@ -758,6 +758,12 @@ cdef class dcgContext:
         with gil:
             self.queue.submit(callback, parent_item, (arg1, arg2), None)
 
+    cdef void queue_callback_arg1int2float(self, dcgCallback callback, object parent_item, int arg1, float arg2, float arg3) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            self.queue.submit(callback, parent_item, (arg1, arg2, arg3), None)
+
     def initialize_viewport(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.viewport.initialize(width=kwargs["width"],
@@ -2028,6 +2034,14 @@ cdef class globalHandler(baseItem):
     def enabled(self, bint value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.enabled = value
+    @property
+    def callback(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.callback
+    @callback.setter
+    def callback(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
     cdef void run_handler(self) noexcept nogil:
         return
     cdef void run_callback(self) noexcept nogil:
@@ -2038,6 +2052,319 @@ cdef class dcgGlobalHandlerRegistry(baseItem):
     cdef void run_handlers(self) noexcept nogil:
         return
 
+cdef class dcgKeyDownHandler_(globalHandler):
+    def __cinit__(self):
+        self.key = imgui.ImGuiKey_None
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef imgui.ImGuiKeyData *key_info
+        cdef int i
+        if self.key == 0:
+            for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
+                key_info = imgui.GetKeyData(<imgui.ImGuiKey>i)
+                if key_info.Down:
+                    self.context.queue_callback_arg1int1float(self.callback, self, i, key_info.DownDuration)
+        else:
+            key_info = imgui.GetKeyData(<imgui.ImGuiKey>self.key)
+            if key_info.Down:
+                self.context.queue_callback_arg1int1float(self.callback, self, self.key, key_info.DownDuration)
+
+cdef class dcgKeyPressHandler_(globalHandler):
+    def __cinit__(self):
+        self.key = imgui.ImGuiKey_None
+        self.repeat = True
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        if self.key == 0:
+            for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
+                if imgui.IsKeyPressed(<imgui.ImGuiKey>i, self.repeat):
+                    self.context.queue_callback_arg1int(self.callback, self, i)
+        else:
+            if imgui.IsKeyPressed(<imgui.ImGuiKey>self.key, self.repeat):
+                self.context.queue_callback_arg1int(self.callback, self, self.key)
+
+cdef class dcgKeyReleaseHandler_(globalHandler):
+    def __cinit__(self):
+        self.key = imgui.ImGuiKey_None
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        if self.key == 0:
+            for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
+                if imgui.IsKeyReleased(<imgui.ImGuiKey>i):
+                    self.context.queue_callback_arg1int(self.callback, self, i)
+        else:
+            if imgui.IsKeyReleased(<imgui.ImGuiKey>self.key):
+                self.context.queue_callback_arg1int(self.callback, self, self.key)
+
+
+cdef class dcgMouseClickHandler_(globalHandler):
+    def __cinit__(self):
+        self.button = -1
+        self.repeat = False
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseClicked(i, self.repeat):
+                self.context.queue_callback_arg1int(self.callback, self, i)
+
+cdef class dcgMouseDoubleClickHandler_(globalHandler):
+    def __cinit__(self):
+        self.button = -1
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseDoubleClicked(i):
+                self.context.queue_callback_arg1int(self.callback, self, i)
+
+
+cdef class dcgMouseDownHandler_(globalHandler):
+    def __cinit__(self):
+        self.button = -1
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseDown(i):
+                self.context.queue_callback_arg1int(self.callback, self, i)
+
+cdef class dcgMouseDragHandler_(globalHandler):
+    def __cinit__(self):
+        self.button = -1
+        self.threshold = -1 # < 0. means use default
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        cdef imgui.ImVec2 delta
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseDragging(i, self.threshold):
+                delta = imgui.GetMouseDragDelta(i, self.threshold)
+                self.context.queue_callback_arg1int2float(self.callback, self, i, delta.x, delta.y)
+
+
+cdef class dcgMouseMoveHandler(globalHandler):
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if io.MousePos.x != io.MousePosPrev.x or \
+           io.MousePos.y != io.MousePosPrev.y:
+            self.context.queue_callback_arg2float(self.callback, self, io.MousePos.x, io.MousePos.y)
+            
+
+cdef class dcgMouseReleaseHandler_(globalHandler):
+    def __cinit__(self):
+        self.button = -1
+
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseReleased(i):
+                self.context.queue_callback_arg1int(self.callback, self, i)
+
+cdef class dcgMouseWheelHandler(globalHandler):
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if abs(io.MouseWheel) > 0.:
+            self.context.queue_callback_arg1float(self.callback, self, io.MouseWheel)
+
+
+"""
+Sources
+"""
+
+cdef class shared_bool:
+    def __init__(self, bint value):
+        self._value = value
+    @property
+    def value(self):
+        return self._value
+    @value.setter
+    def value(self, bint value):
+        self._value = value
+    cdef bint get(self) noexcept nogil:
+        return self._value
+    cdef void set(self, bint value) noexcept nogil:
+        self._value = value
+
+cdef class shared_float:
+    def __init__(self, float value):
+        self._value = value
+    @property
+    def value(self):
+        return self._value
+    @value.setter
+    def value(self, float value):
+        self._value = value
+    cdef float get(self) noexcept nogil:
+        return self._value
+    cdef void set(self, float value) noexcept nogil:
+        self._value = value
+
+cdef class shared_int:
+    def __init__(self, int value):
+        self._value = value
+    @property
+    def value(self):
+        return self._value
+    @value.setter
+    def value(self, int value):
+        self._value = value
+    cdef int get(self) noexcept nogil:
+        return self._value
+    cdef void set(self, int value) noexcept nogil:
+        self._value = value
+
+cdef class shared_color:
+    def __init__(self, value):
+        self._value = parse_color(value)
+        self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+    @property
+    def value(self):
+        "Color data is an int32 (rgba, little endian),\n" \
+        "If you pass an array of int (r, g, b, a), or float\n" \
+        "(r, g, b, a) normalized it will get converted automatically"
+        return <int>self._value
+    @value.setter
+    def value(self, value):
+        self._value = parse_color(value)
+        self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+    cdef imgui.ImU32 getU32(self) noexcept nogil:
+        return self._value
+    cdef imgui.ImVec4 getF4(self) noexcept nogil:
+        return self._value_asfloat4
+    cdef void setU32(self, imgui.ImU32 value) noexcept nogil:
+        self._value = value
+        self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+    cdef void setF4(self, imgui.ImVec4 value) noexcept nogil:
+        self._value_asfloat4 = value
+        self._value = imgui.ColorConvertFloat4ToU32(self._value_asfloat4)
+
+cdef class shared_double:
+    def __init__(self, double value):
+        self._value = value
+    @property
+    def value(self):
+        return self._value
+    @value.setter
+    def value(self, double value):
+        self._value = value
+    cdef double get(self) noexcept nogil:
+        return self._value
+    cdef void set(self, double value) noexcept nogil:
+        self._value = value
+
+cdef class shared_str:
+    def __init__(self, str value):
+        self._value = bytes(str(value), 'utf-8')
+    @property
+    def value(self):
+        return str(self._value)
+    @value.setter
+    def value(self, str value):
+        self._value = bytes(str(value), 'utf-8')
+    cdef string get(self) noexcept nogil:
+        return self._value
+    cdef void set(self, string value) noexcept nogil:
+        self._value = value
+
+cdef class shared_float4:
+    def __init__(self, value):
+        read_point[float](self._value, value)
+    @property
+    def value(self):
+        return list(self._value)
+    @value.setter
+    def value(self, value):
+        read_point[float](self._value, value)
+    cdef void get(self, float *dst) noexcept nogil:
+        dst[0] = self._value[0]
+        dst[1] = self._value[1]
+        dst[2] = self._value[2]
+        dst[3] = self._value[3]
+    cdef void set(self, float[4] value) noexcept nogil:
+        self._value[0] = value[0]
+        self._value[1] = value[1]
+        self._value[2] = value[2]
+        self._value[3] = value[3]
+
+cdef class shared_int4:
+    def __init__(self, value):
+        read_point[int](self._value, value)
+    @property
+    def value(self):
+        return list(self._value)
+    @value.setter
+    def value(self, value):
+        read_point[int](self._value, value)
+    cdef void get(self, int *dst) noexcept nogil:
+        dst[0] = self._value[0]
+        dst[1] = self._value[1]
+        dst[2] = self._value[2]
+        dst[3] = self._value[3]
+    cdef void set(self, int[4] value) noexcept nogil:
+        self._value[0] = value[0]
+        self._value[1] = value[1]
+        self._value[2] = value[2]
+        self._value[3] = value[3]
+
+cdef class shared_double4:
+    def __init__(self, value):
+        read_point[double](self._value, value)
+    @property
+    def value(self):
+        return list(self._value)
+    @value.setter
+    def value(self, value):
+        read_point[double](self._value, value)
+    cdef void get(self, double *dst) noexcept nogil:
+        dst[0] = self._value[0]
+        dst[1] = self._value[1]
+        dst[2] = self._value[2]
+        dst[3] = self._value[3]
+    cdef void set(self, double[4] value) noexcept nogil:
+        self._value[0] = value[0]
+        self._value[1] = value[1]
+        self._value[2] = value[2]
+        self._value[3] = value[3]
+
+"""
+cdef class shared_floatvect:
+    def __init__(self, value):
+        read_point[double](self._value, value)
+    cdef float[:] get(self) noexcept nogil
+    cdef void set(self, float[:]) noexcept nogil
+
+cdef class shared_doublevect:
+    cdef double[:] value
+    cdef double[:] get(self) noexcept nogil
+    cdef void set(self, double[:]) noexcept nogil
+
+cdef class shared_time:
+    cdef tm value
+    cdef tm get(self) noexcept nogil
+    cdef void set(self, tm) noexcept nogil
+"""
 
 """
 UI elements
@@ -2543,7 +2870,7 @@ cdef class dcgWindow_(uiItem):
         self.collapsed = False
         self.collapse_update_requested = False
         self.no_open_over_existing_popup = True
-        self.on_close = None
+        self.on_close_callback = None
         self.state.rect_min = imgui.ImVec2(100., 100.) # tODO state ?
         self.state.rect_max = imgui.ImVec2(30000., 30000.)
         self.scroll_x = 0.

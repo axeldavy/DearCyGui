@@ -2,49 +2,6 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from .core cimport *
 import numpy as np
 
-cdef inline void read_point(float* dst, src):
-    if src is None:
-        raise TypeError("Point data must be tuple/list, not None")
-    cdef int src_size = len(src)
-    dst[0] = 0.
-    dst[1] = 0.
-    dst[2] = 0.
-    dst[3] = 0.
-    if src_size > 0:
-        dst[0] = src[0]
-    if src_size > 1:
-        dst[1] = src[1]
-    if src_size > 2:
-        dst[2] = src[2]
-    if src_size > 3:
-        dst[3] = src[3]
-
-cdef inline imgui.ImU32 parse_color(src):
-    if src is None:
-        raise TypeError("Color data must be tuple/list, not None")
-    cdef int src_size = len(src)
-    cdef imgui.ImVec4 color_float4
-    color_float4.x = 1.
-    color_float4.y = 1.
-    color_float4.z = 1.
-    color_float4.w = 1.
-    if src_size > 0:
-        color_float4.x = src[0]
-    if src_size > 1:
-        color_float4.y = src[1]
-    if src_size > 2:
-        color_float4.z = src[2]
-    if src_size > 3:
-        color_float4.w = src[3]
-    return imgui_ColorConvertFloat4ToU32(color_float4)
-
-cdef void unparse_color(float[::1] dst, imgui.ImU32 color_uint) noexcept nogil:
-    cdef imgui.ImVec4 color_float4 = imgui_ColorConvertU32ToFloat4(color_uint)
-    dst[0] = color_float4.x
-    dst[1] = color_float4.y
-    dst[2] = color_float4.z
-    dst[3] = color_float4.w
-
 cdef class dcgDrawList(dcgDrawList_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -173,8 +130,8 @@ cdef class dcgDrawArrow(dcgDrawArrow_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if len(args) == 2:
-            read_point(self.end, args[0])
-            read_point(self.start, args[1])
+            read_point[float](self.end, args[0])
+            read_point[float](self.start, args[1])
         elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawArrow. Expected p1 and p2")
         if "color" in kwargs:
@@ -191,7 +148,7 @@ cdef class dcgDrawArrow(dcgDrawArrow_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.end, value)
+        read_point[float](self.end, value)
         self.__compute_tip()
     @property
     def p2(self):
@@ -200,7 +157,7 @@ cdef class dcgDrawArrow(dcgDrawArrow_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.start, value)
+        read_point[float](self.start, value)
         self.__compute_tip()
     @property
     def color(self):
@@ -237,10 +194,10 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if len(args) == 4:
             (p1, p2, p3, p4) = args
-            read_point(self.p1, p1)
-            read_point(self.p2, p2)
-            read_point(self.p3, p3)
-            read_point(self.p4, p4)
+            read_point[float](self.p1, p1)
+            read_point[float](self.p2, p2)
+            read_point[float](self.p3, p3)
+            read_point[float](self.p4, p4)
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawBezierCubic. Expected p1, p2, p3 and p4")
         if "color" in kwargs:
@@ -255,7 +212,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p1, value)
+        read_point[float](self.p1, value)
     @property
     def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -263,7 +220,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p2, value)
+        read_point[float](self.p2, value)
     @property
     def p3(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -271,7 +228,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
     @p3.setter
     def p3(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p3, value)
+        read_point[float](self.p3, value)
     @property
     def p4(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -279,7 +236,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
     @p4.setter
     def p4(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p4, value)
+        read_point[float](self.p4, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -312,9 +269,9 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if len(args) == 3:
             (p1, p2, p3) = args
-            read_point(self.p1, p1)
-            read_point(self.p2, p2)
-            read_point(self.p3, p3)
+            read_point[float](self.p1, p1)
+            read_point[float](self.p2, p2)
+            read_point[float](self.p3, p3)
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawBezierQuadratic. Expected p1, p2 and p3")
         if "color" in kwargs:
@@ -329,7 +286,7 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p1, value)
+        read_point[float](self.p1, value)
     @property
     def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -337,7 +294,7 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p2, value)
+        read_point[float](self.p2, value)
     @property
     def p3(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -345,7 +302,7 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
     @p3.setter
     def p3(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p3, value)
+        read_point[float](self.p3, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -378,7 +335,7 @@ cdef class dcgDrawCircle(dcgDrawCircle_):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if len(args) == 2:
             (center, radius) = args
-            read_point(self.center, center)
+            read_point[float](self.center, center)
             self.radius = radius
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawCircle. Expected center and radius")
@@ -396,7 +353,7 @@ cdef class dcgDrawCircle(dcgDrawCircle_):
     @center.setter
     def center(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.center, value)
+        read_point[float](self.center, value)
     @property
     def radius(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -448,17 +405,17 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
         cdef bint recompute_points = False
         if len(args) == 2:
             (pmin, pmax) = args
-            read_point(self.pmin, pmin)
-            read_point(self.pmax, pmax)
+            read_point[float](self.pmin, pmin)
+            read_point[float](self.pmax, pmax)
             recompute_points = True
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawEllipse. Expected pmin and pmax")
         # pmin/pmax can also be passed as optional arguments
         if "pmin" in kwargs:
-            read_point(self.pmin, kwargs.pop("pmin"))
+            read_point[float](self.pmin, kwargs.pop("pmin"))
             recompute_points = True
         if "pmax" in kwargs:
-            read_point(self.pmax, kwargs.pop("pmax"))
+            read_point[float](self.pmax, kwargs.pop("pmax"))
             recompute_points = True
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
@@ -476,7 +433,7 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
     @pmin.setter
     def pmin(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pmin, value)
+        read_point[float](self.pmin, value)
         self.__fill_points()
     @property
     def pmax(self):
@@ -485,7 +442,7 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
     @pmax.setter
     def pmax(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pmax, value)
+        read_point[float](self.pmax, value)
         self.__fill_points()
     @property
     def radius(self):
@@ -544,14 +501,14 @@ cdef class dcgDrawImage(dcgDrawImage_):
                 if not(isinstance(texture, dcgTexture)):
                     raise TypeError("texture input must be a dcgTexture")
                 self.texture = <dcgTexture>texture
-            read_point(self.pmin, args[1])
-            read_point(self.pmax, args[2])
+            read_point[float](self.pmin, args[1])
+            read_point[float](self.pmax, args[2])
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, pmin, pmax")
         if "pmin" in kwargs:
-            read_point(self.pmin, kwargs.pop("pmin"))
+            read_point[float](self.pmin, kwargs.pop("pmin"))
         if "pmax" in kwargs:
-            read_point(self.pmax, kwargs.pop("pmax"))
+            read_point[float](self.pmax, kwargs.pop("pmax"))
         if "texture_tag" in kwargs:
             raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to dcgTexture reference")
         if "texture" in kwargs:
@@ -591,7 +548,7 @@ cdef class dcgDrawImage(dcgDrawImage_):
     @pmin.setter
     def pmin(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pmin, value)
+        read_point[float](self.pmin, value)
     @property
     def pmax(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -599,7 +556,7 @@ cdef class dcgDrawImage(dcgDrawImage_):
     @pmax.setter
     def pmax(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pmax, value)
+        read_point[float](self.pmax, value)
     @property
     def uv(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -607,7 +564,7 @@ cdef class dcgDrawImage(dcgDrawImage_):
     @uv.setter
     def uv(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.uv, value)
+        read_point[float](self.uv, value)
     @property
     def color_multiplier(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -629,20 +586,20 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
                 if not(isinstance(texture, dcgTexture)):
                     raise TypeError("texture input must be a dcgTexture")
                 self.texture = <dcgTexture>texture
-            read_point(self.p1, args[1])
-            read_point(self.p2, args[2])
-            read_point(self.p3, args[3])
-            read_point(self.p4, args[4])
+            read_point[float](self.p1, args[1])
+            read_point[float](self.p2, args[2])
+            read_point[float](self.p3, args[3])
+            read_point[float](self.p4, args[4])
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, p1, p2, p3, p4")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs.pop("p1"))
+            read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs.pop("p2"))
+            read_point[float](self.p2, kwargs.pop("p2"))
         if "p3" in kwargs:
-            read_point(self.p3, kwargs.pop("p3"))
+            read_point[float](self.p3, kwargs.pop("p3"))
         if "p4" in kwargs:
-            read_point(self.p4, kwargs.pop("p4"))
+            read_point[float](self.p4, kwargs.pop("p4"))
         if "texture_tag" in kwargs:
             raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to dcgTexture reference")
         if "texture" in kwargs:
@@ -651,13 +608,13 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
                 raise TypeError("texture input must be a dcgTexture")
             self.texture = <dcgTexture>texture
         if "uv1" in kwargs:
-            read_point(self.uv1, kwargs.pop("uv1"))
+            read_point[float](self.uv1, kwargs.pop("uv1"))
         if "uv2" in kwargs:
-            read_point(self.uv2, kwargs.pop("uv2"))
+            read_point[float](self.uv2, kwargs.pop("uv2"))
         if "uv3" in kwargs:
-            read_point(self.uv3, kwargs.pop("uv3"))
+            read_point[float](self.uv3, kwargs.pop("uv3"))
         if "uv4" in kwargs:
-            read_point(self.uv4, kwargs.pop("uv4"))
+            read_point[float](self.uv4, kwargs.pop("uv4"))
         if "color" in kwargs:
             #TODO warn_once()
             self.color_multiplier = parse_color(kwargs.pop("color"))
@@ -682,7 +639,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p1, value)
+        read_point[float](self.p1, value)
     @property
     def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -690,7 +647,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p2, value)
+        read_point[float](self.p2, value)
     @property
     def p3(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -698,7 +655,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @p3.setter
     def p3(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p3, value)
+        read_point[float](self.p3, value)
     @property
     def p4(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -706,7 +663,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @p4.setter
     def p4(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p4, value)
+        read_point[float](self.p4, value)
     @property
     def uv1(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -714,7 +671,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @uv1.setter
     def uv1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.uv1, value)
+        read_point[float](self.uv1, value)
     @property
     def uv2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -722,7 +679,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @uv2.setter
     def uv2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.uv2, value)
+        read_point[float](self.uv2, value)
     @property
     def uv3(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -730,7 +687,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @uv3.setter
     def uv3(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.uv3, value)
+        read_point[float](self.uv3, value)
     @property
     def uv4(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -738,7 +695,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     @uv4.setter
     def uv4(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.uv4, value)
+        read_point[float](self.uv4, value)
     @property
     def color_multiplier(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -753,14 +710,14 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
 cdef class dcgDrawLine(dcgDrawLine_):
     def configure(self, *args, **kwargs):
         if len(args) == 2:
-            read_point(self.p1, args[0])
-            read_point(self.p2, args[1])
+            read_point[float](self.p1, args[0])
+            read_point[float](self.p2, args[1])
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawLine. Expected p1, p2")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs.pop("p1"))
+            read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs.pop("p2"))
+            read_point[float](self.p2, kwargs.pop("p2"))
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         self.thickness = kwargs.pop("thickness", self.thickness)
@@ -773,7 +730,7 @@ cdef class dcgDrawLine(dcgDrawLine_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p1, value)
+        read_point[float](self.p1, value)
     @property
     def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -781,7 +738,7 @@ cdef class dcgDrawLine(dcgDrawLine_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p2, value)
+        read_point[float](self.p2, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -823,7 +780,7 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
         if not(points is None):
             self.points.clear()
             for i in range(len(points)):
-                read_point(p.p, points[i])
+                read_point[float](p.p, points[i])
                 self.points.push_back(p)
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
@@ -847,7 +804,7 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
         cdef int i
         self.points.clear()
         for i in range(len(value)):
-            read_point(p.p, value[i])
+            read_point[float](p.p, value[i])
             self.points.push_back(p)
     @property
     def color(self):
@@ -890,7 +847,7 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
         if not(points is None):
             self.points.clear()
             for i in range(len(points)):
-                read_point(p.p, points[i])
+                read_point[float](p.p, points[i])
                 self.points.push_back(p)
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
@@ -916,7 +873,7 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
         cdef int i
         self.points.clear()
         for i in range(len(value)):
-            read_point(p.p, value[i])
+            read_point[float](p.p, value[i])
             self.points.push_back(p)
         self.__triangulate()
     @property
@@ -953,20 +910,20 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
     def configure(self, *args, **kwargs):
         if len(args) == 4:
             (p1, p2, p3, p4) = args
-            read_point(self.p1, p1)
-            read_point(self.p2, p2)
-            read_point(self.p3, p3)
-            read_point(self.p4, p4)
+            read_point[float](self.p1, p1)
+            read_point[float](self.p2, p2)
+            read_point[float](self.p3, p3)
+            read_point[float](self.p4, p4)
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2, p3 and p4")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs.pop("p1"))
+            read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs.pop("p2"))
+            read_point[float](self.p2, kwargs.pop("p2"))
         if "p3" in kwargs:
-            read_point(self.p3, kwargs.pop("p3"))
+            read_point[float](self.p3, kwargs.pop("p3"))
         if "p4" in kwargs:
-            read_point(self.p4, kwargs.pop("p4"))
+            read_point[float](self.p4, kwargs.pop("p4"))
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
@@ -981,7 +938,7 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p1, value)
+        read_point[float](self.p1, value)
     @property
     def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -989,7 +946,7 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p2, value)
+        read_point[float](self.p2, value)
     @property
     def p3(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -997,7 +954,7 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
     @p3.setter
     def p3(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p3, value)
+        read_point[float](self.p3, value)
     @property
     def p4(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1005,7 +962,7 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
     @p4.setter
     def p4(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p4, value)
+        read_point[float](self.p4, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1039,14 +996,14 @@ cdef class dcgDrawRect(dcgDrawRect_):
     def configure(self, *args, **kwargs):
         if len(args) == 2:
             (pmin, pmax) = args
-            read_point(self.pmin, pmin)
-            read_point(self.pmax, pmax)
+            read_point[float](self.pmin, pmin)
+            read_point[float](self.pmax, pmax)
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawRect. Expected pmin and pmax")
         if "pmin" in kwargs:
-            read_point(self.pmin, kwargs.pop("pmin"))
+            read_point[float](self.pmin, kwargs.pop("pmin"))
         if "pmax" in kwargs:
-            read_point(self.pmax, kwargs.pop("pmax"))
+            read_point[float](self.pmax, kwargs.pop("pmax"))
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
@@ -1080,7 +1037,7 @@ cdef class dcgDrawRect(dcgDrawRect_):
     @pmin.setter
     def pmin(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pmin, value)
+        read_point[float](self.pmin, value)
     @property
     def pmax(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1088,7 +1045,7 @@ cdef class dcgDrawRect(dcgDrawRect_):
     @pmax.setter
     def pmax(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pmax, value)
+        read_point[float](self.pmax, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1169,11 +1126,11 @@ cdef class dcgDrawRect(dcgDrawRect_):
 cdef class dgcDrawText(dgcDrawText_):
     def configure(self, *args, **kwargs):
         if len(args) == 1:
-            read_point(self.pos, args[0])
+            read_point[float](self.pos, args[0])
         elif args != 0:
             raise ValueError("Invalid arguments passed to dgcDrawText. Expected pos")
         if "pos" in kwargs:
-            read_point(self.pos, kwargs.pop("pos"))
+            read_point[float](self.pos, kwargs.pop("pos"))
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         if "text" in kwargs:
@@ -1188,7 +1145,7 @@ cdef class dgcDrawText(dgcDrawText_):
     @pos.setter
     def pos(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.pos, value)
+        read_point[float](self.pos, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1221,17 +1178,17 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
     def configure(self, *args, **kwargs):
         if len(args) == 3:
             (p1, p2, p3) = args
-            read_point(self.p1, p1)
-            read_point(self.p2, p2)
-            read_point(self.p3, p3)
+            read_point[float](self.p1, p1)
+            read_point[float](self.p2, p2)
+            read_point[float](self.p3, p3)
         elif args != 0:
             raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2 and p3")
         if "p1" in kwargs:
-            read_point(self.p1, kwargs.pop("p1"))
+            read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
-            read_point(self.p2, kwargs.pop("p2"))
+            read_point[float](self.p2, kwargs.pop("p2"))
         if "p3" in kwargs:
-            read_point(self.p3, kwargs.pop("p3"))
+            read_point[float](self.p3, kwargs.pop("p3"))
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
@@ -1247,7 +1204,7 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
     @p1.setter
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p1, value)
+        read_point[float](self.p1, value)
     @property
     def p2(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1255,7 +1212,7 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p2, value)
+        read_point[float](self.p2, value)
     @property
     def p3(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1263,7 +1220,7 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
     @p3.setter
     def p3(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        read_point(self.p3, value)
+        read_point[float](self.p3, value)
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)

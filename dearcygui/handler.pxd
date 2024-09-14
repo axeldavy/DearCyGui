@@ -1,4 +1,4 @@
-from .core cimport itemHandler, globalHandler, uiItem
+from .core cimport *
 
 cdef class dcgActivatedHandler(itemHandler):
     cdef void check_bind(self, uiItem)
@@ -50,43 +50,26 @@ cdef class dcgVisibleHandler(itemHandler):
     cdef void check_bind(self, uiItem)
     cdef void run_handler(self, uiItem) noexcept nogil
 
-cdef class dcgKeyDownHandler(globalHandler):
-    cdef int key
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgKeyDownHandler(dcgKeyDownHandler_):
+    pass
 
-cdef class dcgKeyPressHandler(globalHandler):
-    cdef int key
-    cdef bint repeat
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgKeyPressHandler(dcgKeyPressHandler_):
+    pass
 
-cdef class dcgKeyReleaseHandler(globalHandler):
-    cdef int key
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgKeyReleaseHandler(dcgKeyReleaseHandler_):
+    pass
 
-cdef class dcgMouseClickHandler(globalHandler):
-    cdef int button
-    cdef bint repeat
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgMouseClickHandler(dcgMouseClickHandler_):
+    pass
 
-cdef class dcgMouseDoubleClickHandler(globalHandler):
-    cdef int button
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgMouseDoubleClickHandler(dcgMouseDoubleClickHandler_):
+    pass
 
-cdef class dcgMouseDownHandler(globalHandler):
-    cdef int button
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgMouseDownHandler(dcgMouseDownHandler_):
+    pass
 
-cdef class dcgMouseDragHandler(globalHandler):
-    cdef int button
-    cdef float threshold
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgMouseDragHandler(dcgMouseDragHandler_):
+    pass
 
-cdef class dcgMouseMoveHandler(globalHandler):
-    cdef void run_handler(self) noexcept nogil
-
-cdef class dcgMouseReleaseHandler(globalHandler):
-    cdef int button
-    cdef void run_handler(self) noexcept nogil
-
-cdef class dcgMouseWheelHandler(globalHandler):
-    cdef void run_handler(self) noexcept nogil
+cdef class dcgMouseReleaseHandler(dcgMouseReleaseHandler_):
+    pass
