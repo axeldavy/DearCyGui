@@ -45,17 +45,11 @@ cdef class dcgViewport:
     # The entry point corresponds to the last item of the list (draw last)
     cdef baseItem colormapRoots
     cdef baseItem filedialogRoots
-    cdef baseItem stagingRoots
     cdef baseItem viewportMenubarRoots
-    cdef dcgWindow_ windowRoots
-    cdef baseItem fontRegistryRoots
-    cdef baseItem handlerRegistryRoots
-    cdef baseItem itemHandlerRegistryRoots
-    cdef baseItem textureRegistryRoots
-    cdef baseItem valueRegistryRoots
-    cdef baseItem themeRegistryRoots
-    cdef baseItem itemTemplatesRoots
-    cdef dcgViewportDrawList_ viewportDrawlistRoots
+    cdef dcgWindow_ last_window_child
+    cdef baseTheme bound_theme
+    cdef globalHandler last_global_handler_child
+    cdef dcgViewportDrawList_ last_viewport_drawlist_child
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
     cdef bint perspectiveDivide
@@ -65,7 +59,12 @@ cdef class dcgViewport:
     cdef float[4][4] transform
     cdef bint in_plot
     cdef float thickness_multiplier # in plots
-
+    cdef int start_pending_theme_actions # managed outside viewport
+    cdef vector[theme_action] pending_theme_actions # managed outside viewport
+    cdef vector[theme_action] applied_theme_actions # managed by viewport
+    cdef vector[int] applied_theme_actions_count # managed by viewport
+    cdef int current_theme_activation_condition_enabled
+    cdef int current_theme_activation_condition_category
 
     cdef initialize(self, unsigned width, unsigned height)
     cdef void __check_initialized(self)
@@ -73,6 +72,9 @@ cdef class dcgViewport:
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
+    cdef void push_pending_theme_actions(self, int, int) noexcept nogil
+    cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
+    cdef void pop_applied_pending_theme_actions(self) noexcept nogil
 
 
 cdef class dcgCallback:
@@ -115,10 +117,16 @@ cdef class dcgContext:
     cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
     cdef void queue_callback_arg1int2float(self, dcgCallback, object, int, float, float) noexcept nogil
 
-# Each .so has its own current context. To be able to work
-# with various .so and contexts, we must ensure the correct
-# context is current. The call is almost free as it's just
-# a pointer that is set.
+"""
+Each .so has its own current context. To be able to work
+with various .so and contexts, we must ensure the correct
+context is current. The call is almost free as it's just
+a pointer that is set.
+If you create your own custom rendering objects, you must ensure
+that you link to the same version of ImGui (ImPlot/ImNodes if
+applicable) and you must call ensure_correct_* at the start
+of your draw() overrides
+"""
 cdef inline void ensure_correct_imgui_context(dcgContext context):
     imgui.SetCurrentContext(context.imgui_context)
 
@@ -155,15 +163,23 @@ cdef class baseItem:
     cdef string internalLabel
     # Attributes set by subclasses
     # to indicate what kind of parent
-    # and children they can have
+    # and children they can have.
+    # Allowed children:
     cdef bint can_have_0_child
     cdef bint can_have_widget_child
     cdef bint can_have_drawing_child
     cdef bint can_have_payload_child
+    # DOES NOT mean "bound" to an item
+    cdef bint can_have_global_handler_child
+    cdef bint can_have_item_handler_child
+    cdef bint can_have_theme_child
+    # Allowed siblings:
     cdef bint can_have_sibling
-    cdef bint can_have_nonviewport_parent
-    cdef int element_child_category
+    # Allowed parents
     cdef bint can_have_viewport_parent
+    cdef bint can_have_nonviewport_parent
+    # Type of child for the parent
+    cdef int element_child_category
     cdef int element_toplevel_category
 
     # Relationships
@@ -178,6 +194,9 @@ cdef class baseItem:
     cdef uiItem last_widgets_child
     cdef drawableItem last_drawings_child
     cdef baseItem last_payloads_child
+    cdef globalHandler last_global_handler_child
+    cdef itemHandler last_item_handler_child
+    cdef baseTheme last_theme_child
     cdef void lock_parent_and_item_mutex(self) noexcept nogil
     cdef void unlock_parent_mutex(self) noexcept nogil
     cpdef void attach_to_parent(self, baseItem target_parent)
@@ -369,11 +388,8 @@ cdef class globalHandler(baseItem):
     cdef void run_handler(self) noexcept nogil
     cdef void run_callback(self) noexcept nogil
 
-cdef class dcgGlobalHandlerRegistry(baseItem):
-    #cdef dcgContext context
-    cdef globalHandler last_handler
-    cdef bint enabled
-    cdef void run_handlers(self) noexcept nogil
+cdef class dcgGlobalHandlerList(globalHandler):
+    cdef void run_handler(self) noexcept nogil
 
 cdef class dcgKeyDownHandler_(globalHandler):
     cdef int key
@@ -537,12 +553,9 @@ cdef class itemHandler(baseItem):
     cdef void run_handler(self, uiItem) noexcept nogil
     cdef void run_callback(self, uiItem) noexcept nogil
 
-cdef class dcgItemHandlerRegistry(baseItem):
-    #cdef dcgContext context
-    cdef itemHandler last_item_handler
-    cdef bint enabled
+cdef class dcgItemHandlerList(itemHandler):
     cdef void check_bind(self, uiItem)
-    cdef void run_handlers(self, uiItem) noexcept nogil
+    cdef void run_handler(self, uiItem) noexcept nogil
 
 cdef class uiItem(drawableItem):
     # mvAppItemInfo
@@ -572,7 +585,7 @@ cdef class uiItem(drawableItem):
     #cdef object user_data
     cdef dcgCallback dragCallback
     cdef dcgCallback dropCallback
-    cdef dcgItemHandlerRegistry handlers
+    cdef itemHandler handlers
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate(self) noexcept nogil
@@ -630,9 +643,55 @@ cdef class dcgTexture_(baseItem):
     cdef int filtering_mode
     cdef void set_content(self, cnp.ndarray content)
 
+cdef int theme_type_color = 0
+cdef int theme_type_style = 1
+cdef int theme_category_imgui = 0
+cdef int theme_category_implot = 1
+cdef int theme_category_imnodes = 2
 
-cdef class theme:
+cdef int theme_activation_condition_enabled_any = 0
+cdef int theme_activation_condition_enabled_False = 1
+cdef int theme_activation_condition_enabled_True = 2
+cdef int theme_activation_condition_category_any = 0
+cdef int theme_activation_condition_category_window = 1
+
+cdef int theme_value_type_int = 0
+cdef int theme_value_type_float = 1
+cdef int theme_value_type_float2 = 2
+cdef int theme_value_type_u32 = 3
+
+ctypedef union theme_value:
+    int value_int
+    float value_float
+    float[2] value_float2
+    unsigned value_u32
+
+ctypedef struct theme_action:
+    int theme_activation_condition_enabled
+    int theme_activation_condition_category
+    int theme_type
+    int theme_category
+    int theme_index
+    int theme_value_type
+    theme_value value
+
+"""
+Theme base class:
+push: push the item components of the theme
+pop: pop the item components of the theme
+last_push_size is used internally during rendering
+to know the size of what we pushed.
+Indeed the user might add/remove elements while
+we render.
+push_to_list: Used to prepare in advance a push.
+In that case the caller handles the pops
+"""
+
+cdef class baseTheme(baseItem):
+    cdef bint enabled
+    cdef vector[int] last_push_size
     cdef void push(self) noexcept nogil
+    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
     cdef void pop(self) noexcept nogil
 
 """
@@ -648,6 +707,16 @@ cdef void imnodes_PopStyleColor(int) noexcept nogil
 cdef const char* implot_GetStyleColorName(int) noexcept nogil
 cdef void implot_PushStyleColor(int, imgui.ImU32) noexcept nogil
 cdef void implot_PopStyleColor(int) noexcept nogil
+cdef void imgui_PushStyleVar1(int i, float val) noexcept nogil
+cdef void imgui_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
+cdef void imgui_PopStyleVar(int count) noexcept nogil
+cdef void implot_PushStyleVar0(int i, int val) noexcept nogil
+cdef void implot_PushStyleVar1(int i, float val) noexcept nogil
+cdef void implot_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
+cdef void implot_PopStyleVar(int count) noexcept nogil
+cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil
+cdef void imnodes_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
+cdef void imnodes_PopStyleVar(int count) noexcept nogil
 
 ctypedef fused point_type:
     int

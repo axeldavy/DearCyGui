@@ -132,6 +132,17 @@ cdef void internal_render_callback(void *object) noexcept nogil:
 # The cycle is due to dcgContext referencing dcgViewport
 # and vice-versa
 
+cdef int toplevel_cat_window = 0
+cdef int toplevel_cat_global_handler = 1
+
+cdef int child_cat_ui = 1
+cdef int child_cat_drawing = 2
+cdef int child_cat_payload = 3
+cdef int child_cat_global_handler = 4
+cdef int child_cat_item_handler = 5
+cdef int child_cat_theme = 6
+
+
 @cython.final
 @cython.no_gc_clear
 cdef class dcgViewport:
@@ -454,27 +465,28 @@ cdef class dcgViewport:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         # Initialize drawing state
+        if self.bound_theme is not None: # maybe apply in render_frame instead ?
+            self.bound_theme.push()
         #self.cullMode = 0
         self.perspectiveDivide = False
         self.depthClipping = False
         self.has_matrix_transform = False
         self.in_plot = False
-        #if self.fontRegistryRoots is not None:
-        #    self.fontRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        #if self.handlerRegistryRoots is not None:
-        #    self.handlerRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        #if self.textureRegistryRoots is not None:
-        #    self.textureRegistryRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        self.start_pending_theme_actions = 0
         #if self.filedialogRoots is not None:
         #    self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         #if self.colormapRoots is not None:
         #    self.colormapRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.windowRoots is not None:
-            self.windowRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.last_window_child is not None:
+            self.last_window_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         #if self.viewportMenubarRoots is not None:
         #    self.viewportMenubarRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.viewportDrawlistRoots is not None:
-            self.viewportDrawlistRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.last_viewport_drawlist_child is not None:
+            self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        if self.last_global_handler_child is not None:
+            self.last_global_handler_child.run_handler()
+        if self.bound_theme is not None:
+            self.bound_theme.pop()
         return
 
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil:
@@ -530,6 +542,115 @@ cdef class dcgViewport:
         dst_p[2] = transformed_p[2]
         dst_p[3] = transformed_p[3]
 
+    cdef void push_pending_theme_actions(self,
+                                         int theme_activation_condition_enabled,
+                                         int theme_activation_condition_category) noexcept nogil:
+        """
+        Used during rendering to apply themes defined by items
+        parents and that should activate based on specific conditions
+        Returns the number of theme actions applied. This number
+        should be returned to pop_applied_pending_theme_actions
+        """
+        self.current_theme_activation_condition_enabled = theme_activation_condition_enabled
+        self.current_theme_activation_condition_category = theme_activation_condition_category
+        self.push_pending_theme_actions_on_subset(self.start_pending_theme_actions,
+                                                  <int>self.pending_theme_actions.size())
+
+    cdef void push_pending_theme_actions_on_subset(self,
+                                                   int start,
+                                                   int end) noexcept nogil:
+        cdef int i
+        cdef int size_init = self.applied_theme_actions.size()
+        cdef theme_action action
+        cdef imgui.ImVec2 value_float2
+        cdef int theme_activation_condition_enabled = self.current_theme_activation_condition_enabled
+        cdef int theme_activation_condition_category = self.current_theme_activation_condition_category
+        
+        for i in range(start, end):
+            if self.pending_theme_actions[i].theme_activation_condition_enabled == \
+                 theme_activation_condition_enabled and \
+               self.pending_theme_actions[i].theme_activation_condition_category == \
+                 theme_activation_condition_category:
+                action = self.pending_theme_actions[i]
+                self.applied_theme_actions.push_back(action)
+                if action.theme_category == theme_category_imgui:
+                    if action.theme_type == theme_type_color:
+                        # can only be theme_value_type_u32
+                        imgui.PushStyleColor(<imgui.ImGuiCol>action.theme_index,
+                                             action.value.value_u32)
+                    elif action.theme_type == theme_type_style:
+                        if action.theme_value_type == theme_value_type_float:
+                            imgui.PushStyleVar(<imgui.ImGuiStyleVar>action.theme_index,
+                                               action.value.value_float)
+                        elif action.theme_value_type == theme_value_type_float2:
+                            value_float2 = imgui.ImVec2(action.value.value_float2[0],
+                                                        action.value.value_float2[1])
+                            imgui.PushStyleVar(<imgui.ImGuiStyleVar>action.theme_index,
+                                               value_float2)
+                elif action.theme_category == theme_category_implot:
+                    if action.theme_type == theme_type_color:
+                        # can only be theme_value_type_u32
+                        implot.PushStyleColor(<implot.ImPlotCol>action.theme_index,
+                                             action.value.value_u32)
+                    elif action.theme_type == theme_type_style:
+                        if action.theme_value_type == theme_value_type_float:
+                            implot.PushStyleVar(<implot.ImPlotStyleVar>action.theme_index,
+                                               action.value.value_float)
+                        elif action.theme_value_type == theme_value_type_int:
+                            implot.PushStyleVar(<implot.ImPlotStyleVar>action.theme_index,
+                                               action.value.value_int)
+                        elif action.theme_value_type == theme_value_type_float2:
+                            value_float2 = imgui.ImVec2(action.value.value_float2[0],
+                                                        action.value.value_float2[1])
+                            implot.PushStyleVar(<implot.ImPlotStyleVar>action.theme_index,
+                                               value_float2)
+                elif action.theme_category == theme_category_imnodes:
+                    if action.theme_type == theme_type_color:
+                        # can only be theme_value_type_u32
+                        imnodes.PushColorStyle(<imnodes.ImNodesCol>action.theme_index,
+                                             action.value.value_u32)
+                    elif action.theme_type == theme_type_style:
+                        if action.theme_value_type == theme_value_type_float:
+                            imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>action.theme_index,
+                                               action.value.value_float)
+                        elif action.theme_value_type == theme_value_type_float2:
+                            value_float2 = imnodes.ImVec2(action.value.value_float2[0],
+                                                        action.value.value_float2[1])
+                            imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>action.theme_index,
+                                               value_float2)
+        self.applied_theme_actions_count.push_back(self.applied_theme_actions.size() - size_init)
+
+    cdef void pop_applied_pending_theme_actions(self) noexcept nogil:
+        """
+        Used during rendering to pop what push_pending_theme_actions did
+        """
+        cdef int count = self.applied_theme_actions_count.back()
+        self.applied_theme_actions_count.pop_back()
+        if count == 0:
+            return
+        cdef int i
+        cdef int size = self.applied_theme_actions.size()
+        cdef theme_action action
+        for i in range(count):
+            action = self.applied_theme_actions[size-i-1]
+            if action.theme_category == theme_category_imgui:
+                if action.theme_type == theme_type_color:
+                    imgui.PopStyleColor(1)
+                elif action.theme_type == theme_type_style:
+                    imgui.PopStyleVar(1)
+            elif action.theme_category == theme_category_implot:
+                if action.theme_type == theme_type_color:
+                    implot.PopStyleColor(1)
+                elif action.theme_type == theme_type_style:
+                    implot.PopStyleVar(1)
+            elif action.theme_category == theme_category_imnodes:
+                if action.theme_type == theme_type_color:
+                    imnodes.PopColorStyle()
+                elif action.theme_type == theme_type_style:
+                    imnodes.PopStyleVar(1)
+        for i in range(count):
+            self.applied_theme_actions.pop_back()
+
 
     def render_frame(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
@@ -551,6 +672,9 @@ cdef class dcgViewport:
                               self.viewport.clientHeight)
                 self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
             self.viewport.resized = False
+        assert(self.pending_theme_actions.empty())
+        assert(self.applied_theme_actions.empty())
+        assert(self.start_pending_theme_actions == 0)
 
     def show(self, minimized=False, maximized=False):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
@@ -667,6 +791,10 @@ cdef class dcgViewport:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
         mvWakeRendering(dereference(self.viewport))
+
+    def bind_theme(self, baseTheme theme):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.bound_theme = theme
 
 
 cdef class dcgCallback:
@@ -793,8 +921,8 @@ cdef class baseItem:
         self.can_have_payload_child = False
         self.can_have_sibling = False
         self.can_have_nonviewport_parent = False
+        self.can_have_viewport_parent = False
         self.element_child_category = -1
-        self.can_have_nonviewport_parent = False
         self.element_toplevel_category = -1
 
     def configure(self, **kwargs):
@@ -834,6 +962,14 @@ cdef class baseItem:
         # We must ensure a single thread attaches at a given time.
         # __detach_item_and_lock will lock both the item lock
         # and the parent lock.
+        cdef unique_lock[recursive_mutex] m0
+        # In the case of manipulating the theme tree,
+        # block all rendering. This is because with the
+        # push/pop system, removing/adding items during
+        # rendering cannot work
+        if self.element_child_category == child_cat_theme:
+            m0 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
         cdef unique_lock[recursive_mutex] m3
@@ -852,28 +988,76 @@ cdef class baseItem:
         else:
             m2 = unique_lock[recursive_mutex](target_parent.mutex)
 
+        cdef bint attached = False
+
         # Attach to parent
         if target_parent is None:
-            if self.element_toplevel_category == 4:
+            if self.element_toplevel_category == toplevel_cat_window:
                 assert(isinstance(self, dcgWindow_))
-                if self.context.viewport.windowRoots is not None:
-                    m3 = unique_lock[recursive_mutex](self.context.viewport.windowRoots.mutex)
-                    self.context.viewport.windowRoots.next_sibling = self
-                    self.prev_sibling = self.context.viewport.windowRoots
-                self.context.viewport.windowRoots = <dcgWindow_>self
-            else:
+                if self.context.viewport.last_window_child is not None:
+                    m3 = unique_lock[recursive_mutex](self.context.viewport.last_window_child.mutex)
+                    self.context.viewport.last_window_child.next_sibling = self
+                    self.prev_sibling = self.context.viewport.last_window_child
+                self.context.viewport.last_window_child = <dcgWindow_>self
+                attached = True
+            elif self.element_toplevel_category == toplevel_cat_global_handler:
+                if self.context.viewport.last_global_handler_child is not None:
+                    m3 = unique_lock[recursive_mutex](self.context.viewport.last_global_handler_child.mutex)
+                    self.context.viewport.last_global_handler_child.next_sibling = self
+                    self.prev_sibling = self.context.viewport.last_global_handler_child
+                self.context.viewport.last_global_handler_child = <globalHandler>self
+                attached = True
+            if not(attached):
+                assert(not(self.can_have_viewport_parent))
                 raise ValueError("Instance of type {} cannot be attached to viewport".format(type(self)))
         else:
-            if self.can_have_nonviewport_parent and \
-               self.element_child_category == 2 and \
-               target_parent.can_have_drawing_child:
-                if target_parent.last_drawings_child is not None:
-                    m3 = unique_lock[recursive_mutex](target_parent.last_drawings_child.mutex)
-                    target_parent.last_drawings_child.next_sibling = self
-                self.prev_sibling = target_parent.last_drawings_child
-                self.parent = target_parent
-                target_parent.last_drawings_child = <drawableItem>self
-            else:
+            if self.can_have_nonviewport_parent:
+                if self.element_child_category == child_cat_ui and \
+                    target_parent.can_have_widget_child:
+                    if target_parent.last_widgets_child is not None:
+                        m3 = unique_lock[recursive_mutex](target_parent.last_widgets_child.mutex)
+                        target_parent.last_widgets_child.next_sibling = self
+                    self.prev_sibling = target_parent.last_widgets_child
+                    self.parent = target_parent
+                    target_parent.last_widgets_child = <uiItem>self
+                    attached = True
+                elif self.element_child_category == child_cat_drawing and \
+                    target_parent.can_have_drawing_child:
+                    if target_parent.last_drawings_child is not None:
+                        m3 = unique_lock[recursive_mutex](target_parent.last_drawings_child.mutex)
+                        target_parent.last_drawings_child.next_sibling = self
+                    self.prev_sibling = target_parent.last_drawings_child
+                    self.parent = target_parent
+                    target_parent.last_drawings_child = <drawableItem>self
+                    attached = True
+                elif self.element_child_category == child_cat_global_handler and \
+                    target_parent.can_have_global_handler_child:
+                    if target_parent.last_global_handler_child is not None:
+                        m3 = unique_lock[recursive_mutex](target_parent.last_global_handler_child.mutex)
+                        target_parent.last_global_handler_child.next_sibling = self
+                    self.prev_sibling = target_parent.last_global_handler_child
+                    self.parent = target_parent
+                    target_parent.last_global_handler_child = <globalHandler>self
+                    attached = True
+                elif self.element_child_category == child_cat_item_handler and \
+                    target_parent.can_have_item_handler_child:
+                    if target_parent.last_item_handler_child is not None:
+                        m3 = unique_lock[recursive_mutex](target_parent.last_item_handler_child.mutex)
+                        target_parent.last_item_handler_child.next_sibling = self
+                    self.prev_sibling = target_parent.last_item_handler_child
+                    self.parent = target_parent
+                    target_parent.last_item_handler_child = <itemHandler>self
+                    attached = True
+                elif self.element_child_category == child_cat_theme and \
+                    target_parent.can_have_theme_child:
+                    if target_parent.last_theme_child is not None:
+                        m3 = unique_lock[recursive_mutex](target_parent.last_theme_child.mutex)
+                        target_parent.last_theme_child.next_sibling = self
+                    self.prev_sibling = target_parent.last_theme_child
+                    self.parent = target_parent
+                    target_parent.last_theme_child = <baseTheme>self
+                    attached = True
+            if not(attached):
                 raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
         self.attached = True
 
@@ -881,6 +1065,14 @@ cdef class baseItem:
         # We must ensure a single thread attaches at a given time.
         # __detach_item_and_lock will lock both the item lock
         # and the parent lock.
+        cdef unique_lock[recursive_mutex] m0
+        # In the case of manipulating the theme tree,
+        # block all rendering. This is because with the
+        # push/pop system, removing/adding items during
+        # rendering cannot work
+        if self.element_child_category == child_cat_theme:
+            m0 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
         cdef unique_lock[recursive_mutex] m3
@@ -976,28 +1168,14 @@ cdef class baseItem:
                     self.context.viewport.colormapRoots = self.prev_sibling
                 elif self.context.viewport.filedialogRoots is self:
                     self.context.viewport.filedialogRoots = self.prev_sibling
-                elif self.context.viewport.stagingRoots is self:
-                    self.context.viewport.stagingRoots = self.prev_sibling
                 elif self.context.viewport.viewportMenubarRoots is self:
                     self.context.viewport.viewportMenubarRoots = self.prev_sibling
-                elif self.context.viewport.windowRoots is self:
-                    self.context.viewport.windowRoots = self.prev_sibling
-                elif self.context.viewport.fontRegistryRoots is self:
-                    self.context.viewport.fontRegistryRoots = self.prev_sibling
-                elif self.context.viewport.handlerRegistryRoots is self:
-                    self.context.viewport.handlerRegistryRoots = self.prev_sibling
-                elif self.context.viewport.itemHandlerRegistryRoots is self:
-                    self.context.viewport.itemHandlerRegistryRoots = self.prev_sibling
-                elif self.context.viewport.textureRegistryRoots is self:
-                    self.context.viewport.textureRegistryRoots = self.prev_sibling
-                elif self.context.viewport.valueRegistryRoots is self:
-                    self.context.viewport.valueRegistryRoots = self.prev_sibling
-                elif self.context.viewport.themeRegistryRoots is self:
-                    self.context.viewport.themeRegistryRoots = self.prev_sibling
-                elif self.context.viewport.itemTemplatesRoots is self:
-                    self.context.viewport.itemTemplatesRoots = self.prev_sibling
-                elif self.context.viewport.viewportDrawlistRoots is self:
-                    self.context.viewport.viewportDrawlistRoots = self.prev_sibling
+                elif self.context.viewport.last_window_child is self:
+                    self.context.viewport.last_window_child = self.prev_sibling
+                elif self.context.viewport.last_viewport_drawlist_child is self:
+                    self.context.viewport.last_viewport_drawlist_child = self.prev_sibling
+                elif self.context.viewport.last_global_handler_child is self:
+                    self.context.viewport.last_global_handler_child = self.prev_sibling
             else:
                 if self.parent.last_0_child is self:
                     self.parent.last_0_child = self.prev_sibling
@@ -1007,6 +1185,12 @@ cdef class baseItem:
                     self.parent.last_drawings_child = self.prev_sibling
                 elif self.parent.last_payloads_child is self:
                     self.parent.last_payloads_child = self.prev_sibling
+                elif self.parent.last_global_handler_child is self:
+                    self.parent.last_global_handler_child = self.prev_sibling
+                elif self.parent.last_item_handler_child is self:
+                    self.parent.last_item_handler_child = self.prev_sibling
+                elif self.parent.last_theme_child is self:
+                    self.parent.last_theme_child = self.prev_sibling
         # Free references
         self.parent = None
         self.prev_sibling = None
@@ -1016,10 +1200,25 @@ cdef class baseItem:
         self.mutex.lock()
 
     cpdef void detach_item(self):
+        cdef unique_lock[recursive_mutex] m0
+        # In the case of manipulating the theme tree,
+        # block all rendering. This is because with the
+        # push/pop system, removing/adding items during
+        # rendering cannot work
+        if self.element_child_category == child_cat_theme:
+            m0 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         self.__detach_item_and_lock()
         self.mutex.unlock()
 
     cpdef void delete_item(self):
+        cdef unique_lock[recursive_mutex] m0
+        # In the case of manipulating the theme tree,
+        # block all rendering. This is because with the
+        # push/pop system, removing/adding items during
+        # rendering cannot work
+        if self.element_child_category == child_cat_theme:
+            m0 = unique_lock[recursive_mutex](self.context.viewport.mutex)
+
         cdef unique_lock[recursive_mutex] m
         self.__detach_item_and_lock()
         # retaining the lock enables to ensure the item is
@@ -1048,28 +1247,12 @@ cdef class baseItem:
                     self.context.viewport.colormapRoots = self.prev_sibling
                 elif self.context.viewport.filedialogRoots is self:
                     self.context.viewport.filedialogRoots = self.prev_sibling
-                elif self.context.viewport.stagingRoots is self:
-                    self.context.viewport.stagingRoots = self.prev_sibling
                 elif self.context.viewport.viewportMenubarRoots is self:
                     self.context.viewport.viewportMenubarRoots = self.prev_sibling
-                elif self.context.viewport.windowRoots is self:
-                    self.context.viewport.windowRoots = self.prev_sibling
-                elif self.context.viewport.fontRegistryRoots is self:
-                    self.context.viewport.fontRegistryRoots = self.prev_sibling
-                elif self.context.viewport.handlerRegistryRoots is self:
-                    self.context.viewport.handlerRegistryRoots = self.prev_sibling
-                elif self.context.viewport.itemHandlerRegistryRoots is self:
-                    self.context.viewport.itemHandlerRegistryRoots = self.prev_sibling
-                elif self.context.viewport.textureRegistryRoots is self:
-                    self.context.viewport.textureRegistryRoots = self.prev_sibling
-                elif self.context.viewport.valueRegistryRoots is self:
-                    self.context.viewport.valueRegistryRoots = self.prev_sibling
-                elif self.context.viewport.themeRegistryRoots is self:
-                    self.context.viewport.themeRegistryRoots = self.prev_sibling
-                elif self.context.viewport.itemTemplatesRoots is self:
-                    self.context.viewport.itemTemplatesRoots = self.prev_sibling
-                elif self.context.viewport.viewportDrawlistRoots is self:
-                    self.context.viewport.viewportDrawlistRoots = self.prev_sibling
+                elif self.context.viewport.last_window_child is self:
+                    self.context.viewport.last_window_child = self.prev_sibling
+                elif self.context.viewport.last_viewport_drawlist_child is self:
+                    self.context.viewport.last_viewport_drawlist_child = self.prev_sibling
             else:
                 if self.parent.last_0_child is self:
                     self.parent.last_0_child = self.prev_sibling
@@ -1079,6 +1262,12 @@ cdef class baseItem:
                     self.parent.last_drawings_child = self.prev_sibling
                 elif self.parent.last_payloads_child is self:
                     self.parent.last_payloads_child = self.prev_sibling
+                elif self.parent.last_global_handler_child is self:
+                    self.parent.last_global_handler_child = self.prev_sibling
+                elif self.parent.last_item_handler_child is self:
+                    self.parent.last_item_handler_child = self.prev_sibling
+                elif self.parent.last_theme_child is self:
+                    self.parent.last_theme_child = self.prev_sibling
 
         # delete all children recursively
         if self.last_0_child is not None:
@@ -1089,12 +1278,21 @@ cdef class baseItem:
             self.last_drawings_child.__delete_and_siblings()
         if self.last_payloads_child is not None:
             self.last_payloads_child.__delete_and_siblings()
+        if self.last_global_handler_child is not None:
+            self.last_global_handler_child.__delete_and_siblings()
+        if self.last_item_handler_child is not None:
+            self.last_item_handler_child.__delete_and_siblings()
+        if self.last_theme_child is not None:
+            self.last_theme_child.__delete_and_siblings()
         # Free references
         self.context = None
         self.last_0_child = None
         self.last_widgets_child = None
         self.last_drawings_child = None
         self.last_payloads_child = None
+        self.last_global_handler_child = None
+        self.last_item_handler_child = None
+        self.last_theme_child = None
 
     cdef void __delete_and_siblings(self):
         # Must only be called from delete_item or itself.
@@ -1122,6 +1320,9 @@ cdef class baseItem:
         self.last_widgets_child = None
         self.last_drawings_child = None
         self.last_payloads_child = None
+        self.last_global_handler_child = None
+        self.last_item_handler_child = None
+        self.last_theme_child = None
 
 
 cdef class drawableItem(baseItem):
@@ -1171,7 +1372,7 @@ Drawing items
 cdef class drawingItem(drawableItem):
     def __cinit__(self):
         self.can_have_nonviewport_parent = True
-        self.element_child_category = 2
+        self.element_child_category = child_cat_drawing
 
 cdef class dcgDrawList_(drawingItem):
     def __cinit__(self):
@@ -2017,6 +2218,11 @@ Global handlers
 cdef class globalHandler(baseItem):
     def __cinit__(self):
         self.enabled = True
+        self.can_have_sibling = True
+        self.can_have_nonviewport_parent = True
+        self.can_have_viewport_parent = True
+        self.element_toplevel_category = toplevel_cat_global_handler
+        self.element_child_category = child_cat_global_handler
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.enabled = kwargs.pop("enabled", self.enabled)
@@ -2041,13 +2247,25 @@ cdef class globalHandler(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
     cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
         return
     cdef void run_callback(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.queue_callback_noarg(self.callback, self)
 
-cdef class dcgGlobalHandlerRegistry(baseItem):
-    cdef void run_handlers(self) noexcept nogil:
+cdef class dcgGlobalHandlerList(globalHandler):
+    def __cinit__(self):
+        self.can_have_children = True
+    cdef void run_handler(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
+        if self.last_global_handler_child is not None:
+            (<globalHandler>self.last_global_handler_child).run_handler()
         return
 
 cdef class dcgKeyDownHandler_(globalHandler):
@@ -2058,6 +2276,10 @@ cdef class dcgKeyDownHandler_(globalHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef imgui.ImGuiKeyData *key_info
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         if self.key == 0:
             for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
                 key_info = imgui.GetKeyData(<imgui.ImGuiKey>i)
@@ -2076,6 +2298,10 @@ cdef class dcgKeyPressHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         if self.key == 0:
             for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
                 if imgui.IsKeyPressed(<imgui.ImGuiKey>i, self.repeat):
@@ -2091,6 +2317,10 @@ cdef class dcgKeyReleaseHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         if self.key == 0:
             for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
                 if imgui.IsKeyReleased(<imgui.ImGuiKey>i):
@@ -2108,6 +2338,10 @@ cdef class dcgMouseClickHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
@@ -2121,6 +2355,10 @@ cdef class dcgMouseDoubleClickHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
@@ -2135,6 +2373,10 @@ cdef class dcgMouseDownHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
@@ -2149,6 +2391,10 @@ cdef class dcgMouseDragHandler_(globalHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         cdef imgui.ImVec2 delta
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
@@ -2160,6 +2406,10 @@ cdef class dcgMouseDragHandler_(globalHandler):
 cdef class dcgMouseMoveHandler(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         cdef imgui.ImGuiIO io = imgui.GetIO()
         if io.MousePos.x != io.MousePosPrev.x or \
            io.MousePos.y != io.MousePosPrev.y:
@@ -2173,6 +2423,10 @@ cdef class dcgMouseReleaseHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
@@ -2182,10 +2436,13 @@ cdef class dcgMouseReleaseHandler_(globalHandler):
 cdef class dcgMouseWheelHandler(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<globalHandler>self.prev_sibling).run_handler()
+        if not(self.enabled):
+            return
         cdef imgui.ImGuiIO io = imgui.GetIO()
         if abs(io.MouseWheel) > 0.:
             self.context.queue_callback_arg1float(self.callback, self, io.MouseWheel)
-
 
 """
 Sources
@@ -2380,6 +2637,9 @@ UI input event handlers
 cdef class itemHandler(baseItem):
     def __cinit__(self):
         self.enabled = True
+        self.can_have_sibling = True
+        self.can_have_nonviewport_parent = True
+        self.element_child_category = child_cat_item_handler
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.enabled = kwargs.pop("enabled", self.enabled)
@@ -2393,19 +2653,38 @@ cdef class itemHandler(baseItem):
     def enabled(self, bint value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.enabled = value
+
     cdef void check_bind(self, uiItem item):
-        return
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<itemHandler>self.prev_sibling).check_bind(item)
+
     cdef void run_handler(self, uiItem item) noexcept nogil:
-        return
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<itemHandler>self.prev_sibling).run_handler(item)
+
     cdef void run_callback(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.queue_callback_noarg(self.callback, self)
 
-cdef class dcgItemHandlerRegistry(baseItem):
+cdef class dcgItemHandlerList(itemHandler):
+    def __cinit__(self):
+        self.can_have_children = True
+
     cdef void check_bind(self, uiItem item):
-        pass
-    cdef void run_handlers(self, uiItem item) noexcept nogil:
-        pass
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<itemHandler>self.prev_sibling).check_bind(item)
+        if self.last_item_handler_child is not None:
+            (<itemHandler>self.last_item_handler_child).check_bind(item)
+
+    cdef void run_handler(self, uiItem item) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<itemHandler>self.prev_sibling).run_handler(item)
+        if self.last_item_handler_child is not None:
+            (<itemHandler>self.last_item_handler_child).run_handler(item)
 
 cdef inline object IntPairFromVec2(imgui.ImVec2 v):
     return (<int>v.x, <int>v.y)
@@ -2574,14 +2853,14 @@ cdef class uiItem(drawableItem):
             (<uiItem>self.prev_sibling).set_hidden_and_propagate()
         self.update_current_state_as_hidden()
 
-    def bind_handlers(self, dcgItemHandlerRegistry handlers):
+    def bind_handlers(self, itemHandler handlers):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         # Check the list of handlers can use our states. Else raise error
         handlers.check_bind(self)
         # yes: bind
         self.handlers = handlers
 
-    # TODO: Find a better way to share all this attributes while avoiding AttributeError
+    # TODO: Find a better way to share all these attributes while avoiding AttributeError
 
     @property
     def active(self):
@@ -2897,8 +3176,8 @@ cdef class dcgWindow_(uiItem):
         self.can_have_widget_child = True
         self.can_have_drawing_child = True
         self.can_have_payload_child = True
-        self.can_have_nonviewport_parent = True
-        self.element_toplevel_category = 4
+        self.can_have_viewport_parent = True
+        self.element_toplevel_category = toplevel_cat_window
         self.state.can_be_hovered = True
         self.state.can_be_focused = True
         self.state.has_rect_size = True
@@ -3093,8 +3372,8 @@ cdef class dcgWindow_(uiItem):
                                               self)
         self.show_update_requested = False
 
-        #if (self..handlerRegistry)
-        #    item.handlerRegistry->checkEvents(&item.state);
+        if self.handlers is not None:
+            self.handlers.run_handler(self)
         imgui.PopID()
 
 
@@ -3195,11 +3474,37 @@ cdef class dcgTexture_(baseItem):
             mvReleaseRenderingContext(dereference(self.context.viewport.viewport))
 
 
-cdef class theme:
+cdef class baseTheme(baseItem):
+    """
+    Base theme element. Contains a set of theme elements
+    to apply for a given category (color, style)/(imgui/implot/imnode)
+    """
+    def __cinit__(self):
+        self.can_have_nonviewport_parent = True
+        self.element_child_category = child_cat_theme
+        self.can_have_sibling = True
+        self.enabled = True
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.enabled = kwargs.pop("enabled", self.enabled)
+        self.enabled = kwargs.pop("show", self.enabled)
+        return super().configure(**kwargs)
+    @property
+    def enabled(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.enabled
+    @enabled.setter
+    def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.enabled = value
+    # should be always defined by subclass
     cdef void push(self) noexcept nogil:
         return
     cdef void pop(self) noexcept nogil:
         return
+    cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
+        return
+
 
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4 color_float4) noexcept nogil:
     return imgui.ColorConvertFloat4ToU32(color_float4)
@@ -3232,6 +3537,36 @@ cdef void implot_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
 
 cdef void implot_PopStyleColor(int count) noexcept nogil:
     implot.PopStyleColor(count)
+
+cdef void imgui_PushStyleVar1(int i, float val) noexcept nogil:
+    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, val)
+
+cdef void imgui_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
+    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, val)
+
+cdef void imgui_PopStyleVar(int count) noexcept nogil:
+    imgui.PopStyleVar(count)
+
+cdef void implot_PushStyleVar0(int i, int val) noexcept nogil:
+    implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
+
+cdef void implot_PushStyleVar1(int i, float val) noexcept nogil:
+    implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
+
+cdef void implot_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
+    implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
+
+cdef void implot_PopStyleVar(int count) noexcept nogil:
+    implot.PopStyleVar(count)
+
+cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil:
+    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, val)
+
+cdef void imnodes_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
+    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, val)
+
+cdef void imnodes_PopStyleVar(int count) noexcept nogil:
+    imnodes.PopStyleVar(count)
 
 def color_as_int(val):
     cdef imgui.ImU32 color = parse_color(val)
