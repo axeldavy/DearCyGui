@@ -95,6 +95,13 @@ class dcgItemManager:
         before = kwargs.pop("before", None)
         parent = kwargs.pop("parent", None)
         tag = kwargs.pop("tag")
+        if "label" in kwargs:
+            if kwargs["label"] is None:
+                # To prevent warning when it is set for nothing
+                kwargs.pop("label")
+        if "use_internal_label" in kwargs:
+            # DCG behaves as if True
+            kwargs.pop("use_internal_label")
         item.configure(*args, **kwargs)
         self.attach(item, parent=parent, before=before)
         return self.set(item, tag)
@@ -106,7 +113,7 @@ class dcgItemManager:
             parent = self.uuid_to_item[self.tag_to_uuid[object_tag_or_uuid]]
         else:
             parent = object_tag_or_uuid
-        print("push", parent, object_tag_or_uuid)
+        #print("push", parent, object_tag_or_uuid)
         self.parent_queue.append(parent)
 
     def pop_parent(self):
@@ -7772,7 +7779,7 @@ def add_viewport_menu_bar(*, label: str =None, user_data: Any =None, use_interna
 
     return add_viewport_menu_bar(label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, indent=indent, parent=parent, show=show, **kwargs)
 
-def add_window(*, label: str =None, user_data: Any =None, use_internal_label: bool =True, tag: Union[int, str] =0, width: int =0, height: int =0, indent: int =-1, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], min_size: Union[List[int], Tuple[int, ...]] =[100, 100], max_size: Union[List[int], Tuple[int, ...]] =[30000, 30000], menubar: bool =False, collapsed: bool =False, autosize: bool =False, no_resize: bool =False, unsaved_document: bool =False, no_title_bar: bool =False, no_move: bool =False, no_scrollbar: bool =False, no_collapse: bool =False, horizontal_scrollbar: bool =False, no_focus_on_appearing: bool =False, no_bring_to_front_on_focus: bool =False, no_close: bool =False, no_background: bool =False, modal: bool =False, popup: bool =False, no_saved_settings: bool =False, no_open_over_existing_popup: bool =True, no_scroll_with_mouse: bool =False, on_close: Callable =None, **kwargs) -> Union[int, str]:
+def add_window(*, label: str =None, user_data: Any =None, use_internal_label: bool =True, tag: Union[int, str] =0, width: int =0, height: int =0, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], min_size: Union[List[int], Tuple[int, ...]] =[100, 100], max_size: Union[List[int], Tuple[int, ...]] =[30000, 30000], menubar: bool =False, collapsed: bool =False, autosize: bool =False, no_resize: bool =False, unsaved_document: bool =False, no_title_bar: bool =False, no_move: bool =False, no_scrollbar: bool =False, no_collapse: bool =False, horizontal_scrollbar: bool =False, no_focus_on_appearing: bool =False, no_bring_to_front_on_focus: bool =False, no_close: bool =False, no_background: bool =False, modal: bool =False, popup: bool =False, no_saved_settings: bool =False, no_open_over_existing_popup: bool =True, no_scroll_with_mouse: bool =False, on_close: Callable =None, **kwargs) -> Union[int, str]:
     """     Creates a new window for following items to be added to.
 
     Args:
@@ -7782,7 +7789,6 @@ def add_window(*, label: str =None, user_data: Any =None, use_internal_label: bo
         tag (Union[int, str], optional): Unique id used to programmatically refer to the item.If label is unused this will be the label.
         width (int, optional): Width of the item.
         height (int, optional): Height of the item.
-        indent (int, optional): Offsets the widget to the right the specified number multiplied by the indent style.
         show (bool, optional): Attempt to render widget.
         pos (Union[List[int], Tuple[int, ...]], optional): Places the item relative to window coordinates, [0,0] is top left.
         min_size (Union[List[int], Tuple[int, ...]], optional): Minimum window size.
@@ -7816,10 +7822,8 @@ def add_window(*, label: str =None, user_data: Any =None, use_internal_label: bo
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    item = dcgWindow(dcg_context)
-    item.configure(label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
-    item.attach_to_parent(None)
-    return dcg_item_manager.set(item, tag)
+    return dcg_item_manager.create_configure_attach(dcgWindow, label=label, user_data=user_data, use_internal_label=use_internal_label, tag=tag, width=width, height=height, indent=indent, show=show, pos=pos, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
+
 def apply_transform(item : Union[int, str], transform : Any, **kwargs) -> None:
     """     New in 1.1. Applies a transformation matrix to a layer.
 

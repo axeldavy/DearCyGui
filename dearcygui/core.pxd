@@ -160,7 +160,7 @@ cdef class baseItem:
     cdef recursive_mutex mutex
     cdef dcgContext context
     cdef long long uuid
-    cdef string internalLabel
+    cdef object _user_data
     # Attributes set by subclasses
     # to indicate what kind of parent
     # and children they can have.
@@ -224,6 +224,7 @@ cdef class drawingItem(drawableItem):
     pass
 
 cdef class dcgDrawList_(drawingItem):
+    cdef string imgui_label
     cdef float clip_width
     cdef float clip_height
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
@@ -558,6 +559,8 @@ cdef class dcgItemHandlerList(itemHandler):
     cdef void run_handler(self, uiItem) noexcept nogil
 
 cdef class uiItem(drawableItem):
+    cdef string imgui_label
+    cdef str user_label
     # mvAppItemInfo
     #cdef int location -> for table
     #cdef bint enabled -> 
@@ -579,13 +582,13 @@ cdef class uiItem(drawableItem):
     cdef int height
     cdef float indent
     #cdef float trackOffset
-    cdef bint useInternalLabel
     #cdef bint tracked
     #cdef object callback
     #cdef object user_data
     cdef dcgCallback dragCallback
     cdef dcgCallback dropCallback
     cdef itemHandler handlers
+    cdef baseTheme _theme
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate(self) noexcept nogil

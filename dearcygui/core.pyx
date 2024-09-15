@@ -565,12 +565,19 @@ cdef class dcgViewport:
         cdef imgui.ImVec2 value_float2
         cdef int theme_activation_condition_enabled = self.current_theme_activation_condition_enabled
         cdef int theme_activation_condition_category = self.current_theme_activation_condition_category
-        
+
+        cdef bool apply
         for i in range(start, end):
-            if self.pending_theme_actions[i].theme_activation_condition_enabled == \
-                 theme_activation_condition_enabled and \
-               self.pending_theme_actions[i].theme_activation_condition_category == \
-                 theme_activation_condition_category:
+            apply = True
+            if self.pending_theme_actions[i].theme_activation_condition_enabled != theme_activation_condition_enabled_any and \
+               theme_activation_condition_enabled != theme_activation_condition_enabled_any and \
+               self.pending_theme_actions[i].theme_activation_condition_enabled != theme_activation_condition_enabled:
+                apply = False
+            if self.pending_theme_actions[i].theme_activation_condition_category != theme_activation_condition_enabled_any and \
+               theme_activation_condition_category != theme_activation_condition_category_any and \
+               self.pending_theme_actions[i].theme_activation_condition_category != theme_activation_condition_category:
+                apply = False
+            if apply:
                 action = self.pending_theme_actions[i]
                 self.applied_theme_actions.push_back(action)
                 if action.theme_category == theme_category_imgui:
@@ -927,10 +934,19 @@ cdef class baseItem:
 
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        # TODO
+        self._user_data = kwargs.pop("user_data", self._user_data)
         if len(kwargs) > 0:
             print("Unused configure parameters: ", kwargs)
         return
+
+    @property
+    def user_data(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._user_data
+    @user_data.setter
+    def user_data(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._user_data = value
 
     cdef void lock_parent_and_item_mutex(self) noexcept nogil:
         # We must make sure we lock the correct parent mutex, and for that
@@ -1376,6 +1392,7 @@ cdef class drawingItem(drawableItem):
 
 cdef class dcgDrawList_(drawingItem):
     def __cinit__(self):
+        self.imgui_label = b'###%ld'% self.uuid
         self.clip_width = 0
         self.clip_height = 0
         self.can_have_drawing_child = True
@@ -1416,7 +1433,7 @@ cdef class dcgDrawList_(drawingItem):
 
         imgui.PopClipRect()
 
-        if imgui.InvisibleButton(self.internalLabel.c_str(),
+        if imgui.InvisibleButton(self.imgui_label.c_str(),
                                  imgui.ImVec2(self.clip_width,
                                               self.clip_height),
                                  imgui.ImGuiButtonFlags_MouseButtonLeft | \
@@ -2692,7 +2709,8 @@ cdef inline object IntPairFromVec2(imgui.ImVec2 v):
 cdef class uiItem(drawableItem):
     def __cinit__(self):
         # mvAppItemInfo
-        self.internalLabel = bytes(str(self.uuid), 'utf-8') # TODO
+        self.imgui_label = b'###%ld'% self.uuid
+        self.user_label = ""
         #self.location = -1
         # next frame triggers
         self.focus_update_requested = False
@@ -2711,7 +2729,6 @@ cdef class uiItem(drawableItem):
         self.indent = -1.
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.enabled = True
-        self.useInternalLabel = True #when false, will use specificed label
         #self.tracked = False
         #self.callback = None
         #self.user_data = None
@@ -2859,6 +2876,24 @@ cdef class uiItem(drawableItem):
         handlers.check_bind(self)
         # yes: bind
         self.handlers = handlers
+
+    @property
+    def label(self):
+        """
+        Label assigned to the item.
+        Used for text fields, window titles, etc
+        """
+        return self.user_label
+    @label.setter
+    def label(self, str value):
+        if value is None:
+            self.user_label = ""
+        else:
+            self.user_label = value
+        # Using ### means that imgui will ignore the user_label for
+        # its internal ID of the object. Indeed else the ID would change
+        # when the user label would change
+        self.imgui_label = bytes(self.user_label, 'utf-8') + b'###%ld'% self.uuid
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
 
@@ -3144,6 +3179,19 @@ cdef class uiItem(drawableItem):
         self.state.relative_position.y = value[1]
         self.pos_update_requested = True
 
+    @property
+    def theme(self):
+        """
+        Writable attribute: bound theme for the item
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._theme
+
+    @theme.setter
+    def theme(self, baseTheme value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._theme = value
+
 
 
 cdef class dcgWindow_(uiItem):
@@ -3251,7 +3299,12 @@ cdef class dcgWindow_(uiItem):
         """
 
         # themes
-        #apply_local_theming(&item);
+        self.context.viewport.push_pending_theme_actions(
+            theme_activation_condition_enabled_any,
+            theme_activation_condition_category_window
+        )
+        if self._theme is not None:
+            self._theme.push()
 
         # Draw the window
         imgui.PushID(self.uuid)
@@ -3261,16 +3314,16 @@ cdef class dcgWindow_(uiItem):
         if self.modal or self.popup:
             if self.show_update_requested and self.show:
                 self.show_update_requested = False
-                imgui.OpenPopup(self.internalLabel.c_str(),
+                imgui.OpenPopup(self.imgui_label.c_str(),
                                 imgui.ImGuiPopupFlags_NoOpenOverExistingPopup if self.no_open_over_existing_popup else imgui.ImGuiPopupFlags_None)
 
         # Begin drawing the window
         if self.modal:
-            visible = imgui.BeginPopupModal(self.internalLabel.c_str(), &self.show if self.has_close_button else <bool*>NULL, self.window_flags)
+            visible = imgui.BeginPopupModal(self.imgui_label.c_str(), &self.show if self.has_close_button else <bool*>NULL, self.window_flags)
         elif self.popup:
-            visible = imgui.BeginPopup(self.internalLabel.c_str(), self.window_flags)
+            visible = imgui.BeginPopup(self.imgui_label.c_str(), self.window_flags)
         else:
-            visible = imgui.Begin(self.internalLabel.c_str(),
+            visible = imgui.Begin(self.imgui_label.c_str(),
                                   &self.show if self.has_close_button else <bool*>NULL,
                                   self.window_flags)
 
@@ -3337,8 +3390,6 @@ cdef class dcgWindow_(uiItem):
             ImGui::PopFont();
         """
 
-        #// handle popping themes
-        #cleanup_local_theming(&item);
         """
         cdef float titleBarHeight
         cdef float x, y
@@ -3364,6 +3415,10 @@ cdef class dcgWindow_(uiItem):
 
         if self.main_window:
             imgui.PopStyleVar(1)
+
+        if self._theme is not None:
+            self._theme.pop()
+        self.context.viewport.pop_applied_pending_theme_actions()
 
         cdef bint closed = not(self.show) or (not(visible) and (self.modal or self.popup))
         if closed:
