@@ -478,7 +478,7 @@ cdef class dcgViewport:
         #if self.colormapRoots is not None:
         #    self.colormapRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.last_window_child is not None:
-            self.last_window_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+            self.last_window_child.draw()
         #if self.viewportMenubarRoots is not None:
         #    self.viewportMenubarRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.last_viewport_drawlist_child is not None:
@@ -573,9 +573,8 @@ cdef class dcgViewport:
                theme_activation_condition_enabled != theme_activation_condition_enabled_any and \
                self.pending_theme_actions[i].theme_activation_condition_enabled != theme_activation_condition_enabled:
                 apply = False
-            if self.pending_theme_actions[i].theme_activation_condition_category != theme_activation_condition_enabled_any and \
-               theme_activation_condition_category != theme_activation_condition_category_any and \
-               self.pending_theme_actions[i].theme_activation_condition_category != theme_activation_condition_category:
+            if self.pending_theme_actions[i].theme_activation_condition_category != theme_activation_condition_category and \
+               self.pending_theme_actions[i].theme_activation_condition_category != theme_activation_condition_category_any:
                 apply = False
             if apply:
                 action = self.pending_theme_actions[i]
@@ -973,6 +972,24 @@ cdef class baseItem:
         elif self.attached:
             self.context.viewport.mutex.unlock()
 
+    cdef void lock_and_previous_siblings(self) noexcept nogil:
+        """
+        Used when the parent needs to prevent any change to its
+        children.
+        Note when the parent mutex is held, it can rely that
+        its list of children is fixed. However this is used
+        when the parent needs to read the individual state
+        of its children and needs these state to not change
+        for some operations.
+        """
+        self.mutex.lock()
+        if self.prev_sibling is not None:
+            self.prev_sibling.lock_and_previous_siblings()
+
+    cdef void unlock_and_previous_siblings(self) noexcept nogil:
+        if self.prev_sibling is not None:
+            self.prev_sibling.unlock_and_previous_siblings()
+        self.mutex.unlock()
 
     cpdef void attach_to_parent(self, baseItem target_parent):
         # We must ensure a single thread attaches at a given time.
@@ -1366,9 +1383,6 @@ cdef class drawableItem(baseItem):
     @show.setter
     def show(self, bint value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if isinstance(self, uiItem):
-            # TODO: try to overwrite the method instead
-            (<uiItem>self).show_update_requested = True
         self.show = value
 
     cdef void draw_prev_siblings(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
@@ -1401,9 +1415,7 @@ cdef class dcgDrawList_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1469,9 +1481,7 @@ cdef class dcgViewportDrawList_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1503,9 +1513,7 @@ cdef class dcgDrawLayer_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1576,9 +1584,7 @@ cdef class dcgDrawArrow_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1615,9 +1621,7 @@ cdef class dcgDrawBezierCubic_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1651,9 +1655,7 @@ cdef class dcgDrawBezierQuadratic_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1687,9 +1689,7 @@ cdef class dcgDrawCircle_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1745,9 +1745,7 @@ cdef class dcgDrawEllipse_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.points.size() < 3:
             return
@@ -1785,9 +1783,7 @@ cdef class dcgDrawImage_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.texture is None:
             return
@@ -1818,9 +1814,7 @@ cdef class dcgDrawImageQuad_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.texture is None:
             return
@@ -1863,9 +1857,7 @@ cdef class dcgDrawLine_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -1893,9 +1885,7 @@ cdef class dcgDrawPolyline_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.points.size() < 2:
             return
@@ -1952,9 +1942,7 @@ cdef class dcgDrawPolygon_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show) or self.points.size() < 2:
             return
@@ -2016,9 +2004,7 @@ cdef class dcgDrawQuad_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -2087,9 +2073,7 @@ cdef class dcgDrawRect_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -2155,9 +2139,7 @@ cdef class dgcDrawText_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -2185,9 +2167,7 @@ cdef class dcgDrawTriangle_(drawingItem):
                    imgui.ImDrawList* parent_drawlist,
                    float parent_x,
                    float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m3 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
         if not(self.show):
             return
@@ -2706,11 +2686,12 @@ cdef class dcgItemHandlerList(itemHandler):
 cdef inline object IntPairFromVec2(imgui.ImVec2 v):
     return (<int>v.x, <int>v.y)
 
-cdef class uiItem(drawableItem):
+cdef class uiItem(baseItem):
     def __cinit__(self):
         # mvAppItemInfo
         self.imgui_label = b'###%ld'% self.uuid
         self.user_label = ""
+        self.show = True
         #self.location = -1
         # next frame triggers
         self.focus_update_requested = False
@@ -2724,9 +2705,12 @@ cdef class uiItem(drawableItem):
         #self.filter = b""
         self.alias = b""
         self.payloadType = b"$$DPG_PAYLOAD"
-        self.width = 0
-        self.height = 0
-        self.indent = -1.
+        self._width = 0
+        self._height = 0
+        self._indent = 0.
+        self.theme_condition_enabled = theme_activation_condition_enabled_any
+        self.theme_condition_category = theme_activation_condition_category_any
+        self.can_have_sibling = True
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.enabled = True
         #self.tracked = False
@@ -2876,24 +2860,6 @@ cdef class uiItem(drawableItem):
         handlers.check_bind(self)
         # yes: bind
         self.handlers = handlers
-
-    @property
-    def label(self):
-        """
-        Label assigned to the item.
-        Used for text fields, window titles, etc
-        """
-        return self.user_label
-    @label.setter
-    def label(self, str value):
-        if value is None:
-            self.user_label = ""
-        else:
-            self.user_label = value
-        # Using ### means that imgui will ignore the user_label for
-        # its internal ID of the object. Indeed else the ID would change
-        # when the user label would change
-        self.imgui_label = bytes(self.user_label, 'utf-8') + b'###%ld'% self.uuid
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
 
@@ -3107,25 +3073,14 @@ cdef class uiItem(drawableItem):
         self.state.rect_max.y = value[1]
 
     @property
-    def width(self):
+    def rect_size(self):
         """
-        Writable attribute: requested width of the item.
-        When it is written, it is set to a 'requested value' that is not
-        entirely guaranteed to be enforced
-        Specific values:
-            . Windows: 0 means fit to take the maximum size available
-            . Some Items: <0. means align of ... pixels to the right of the window
-            . Some Items: 0 can mean use remaining space or fit to content 
+        Readonly attribute: actual (width, height) of the element
         """
+        if not(self.state.has_rect_size):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self.width
-
-    @width.setter
-    def width(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.width = value
-        self.state.rect_size.x = value
-        self.size_update_requested = True
+        return IntPairFromVec2(self.state.rect_size)
 
     @property
     def height(self):
@@ -3139,45 +3094,93 @@ cdef class uiItem(drawableItem):
             . Some Items: 0 can mean use remaining space or fit to content 
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self.height
+        return self._height
 
     @height.setter
     def height(self, int value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.height = value
+        self._height = value
         self.state.rect_size.y = value
         self.size_update_requested = True
 
     @property
-    def rect_size(self):
+    def indent(self):
         """
-        Readonly attribute: actual (width, height) of the element
+        Writable attribute: requested indentation relative to the parent of the item.
+        (No effect on top-level windows)
+        0 means no indentation.
+        Negative value means use an indentation of the default width.
         """
-        if not(self.state.has_rect_size):
-            raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return IntPairFromVec2(self.state.rect_size)
+        return self._indent
+
+    @indent.setter
+    def indent(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._indent = value
+
+    @property
+    def label(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        """
+        Writable attribute: label assigned to the item.
+        Used for text fields, window titles, etc
+        """
+        return self.user_label
+    @label.setter
+    def label(self, str value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if value is None:
+            self.user_label = ""
+        else:
+            self.user_label = value
+        # Using ### means that imgui will ignore the user_label for
+        # its internal ID of the object. Indeed else the ID would change
+        # when the user label would change
+        self.imgui_label = bytes(self.user_label, 'utf-8') + b'###%ld'% self.uuid
 
     @property
     def pos(self):
         """
         Writable attribute: Relative position (x, y) of the element inside
-        the drawable region of the parent
+        the drawable region of the parent.
+        Setting a value will override the default position, while
+        setting an empty value will reset to the default position next
+        time the object is drawn.
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return IntPairFromVec2(self.state.relative_position)
 
     @pos.setter
     def pos(self, value):
-        if len(value) == 0:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if value is None or len(value) == 0:
             # Used to indicate "keep default value" during init
+            self.pos_update_requested = False # Reset to default position for items
             return
         if len(value) != 2:
             raise ValueError("Expected tuple for pos: (x, y)")
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.state.relative_position.x = value[0]
         self.state.relative_position.y = value[1]
         self.pos_update_requested = True
+
+    @property
+    def show(self):
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return <bint>self._show
+    @show.setter
+    def show(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.show_update_requested = True
+        self._show = value
 
     @property
     def theme(self):
@@ -3192,7 +3195,112 @@ cdef class uiItem(drawableItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._theme = value
 
+    @property
+    def width(self):
+        """
+        Writable attribute: requested width of the item.
+        When it is written, it is set to a 'requested value' that is not
+        entirely guaranteed to be enforced
+        Specific values:
+            . Windows: 0 means fit to take the maximum size available
+            . Some Items: <0. means align of ... pixels to the right of the window
+            . Some Items: 0 can mean use remaining space or fit to content 
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._width
 
+    @width.setter
+    def width(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._width = value
+        self.state.rect_size.x = value
+        self.size_update_requested = True
+
+    cdef void draw(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<uiItem>self.prev_sibling).draw()
+
+        if not(self._show):
+            if self.show_update_requested:
+                self.set_hidden_and_propagate()
+                self.show_update_requested = True
+            return
+
+        if self.focus_update_requested:
+            if self.state.focused:
+                imgui.SetKeyboardFocusHere(0)
+            self.focus_update_requested = False
+
+        # If the position is user set, it would probably
+        # make more sense to apply indent after (else it will
+        # have not effect, and thus is likely not the expected behaviour).
+        # However this will shift relative_position, updated by
+        # update_current_state. If needed we could restore relative_position ?
+        # For now make the indent have no effect when the position is set
+        if self._indent != 0.:
+            imgui.Indent(self._indent)
+
+        cdef ImVec2 cursor_pos_backup
+        if self.pos_update_requested:
+            cursor_pos_backup = imgui.GetCursorPos()
+            imgui.SetCursorPos(self.state.relative_position)
+            # Never reset self.pos_update_requested as we always
+            # need to set at the requested position 
+
+        # handle fonts
+        """
+        if self.font:
+            ImFont* fontptr = static_cast<mvFont*>(item.font.get())->getFontPtr();
+            ImGui::PushFont(fontptr);
+        """
+
+        # themes
+        self.context.viewport.push_pending_theme_actions(
+            self.theme_condition_enabled,
+            self.theme_condition_category
+        )
+        if self._theme is not None:
+            self._theme.push()
+
+        cdef bint action = self.draw_item()
+        # TODO: use action
+
+        if self._theme is not None:
+            self._theme.pop()
+        self.context.viewport.pop_applied_pending_theme_actions()
+
+        if self.handlers is not None:
+            self.handlers.run_handler(self)
+
+        if self.pos_update_requested:
+            imgui.SetCursorPos(cursor_pos_backup)
+
+        if self._indent != 0.:
+            imgui.Unindent(self._indent)
+
+
+    cdef bint draw_item(self) noexcept nogil:
+        """
+        Function to override for the core rendering of the item.
+        What is already handled outside draw_item (see draw()):
+        . The mutex is held (as is the mutex of the following siblings,
+          and the mutex of the parents, including the viewport and imgui
+          mutexes)
+        . The previous siblings are already rendered
+        . Current themes, fonts
+        . Widget starting position (GetCursorPos to get it)
+        . Focus
+
+        What remains to be done by draw_item:
+        . Rendering the item. Set its width, its height, etc
+        . Calling update_current_state or manage itself the state
+        . Render children if any
+
+        The return value indicates if the main callback should be triggered.
+        """
+        return False
+        
 
 cdef class dcgWindow_(uiItem):
     def __cinit__(self):
@@ -3207,6 +3315,8 @@ cdef class dcgWindow_(uiItem):
         self.on_close_callback = None
         self.state.rect_min = imgui.ImVec2(100., 100.) # tODO state ?
         self.state.rect_max = imgui.ImVec2(30000., 30000.)
+        self.theme_condition_enabled = theme_activation_condition_enabled_any
+        self.theme_condition_category = theme_activation_condition_category_window
         self.scroll_x = 0.
         self.scroll_y = 0.
         self.scroll_x_update_requested = False
@@ -3233,12 +3343,12 @@ cdef class dcgWindow_(uiItem):
         self.state.has_rect_max = True
         self.state.has_content_region = True
 
-    cdef void draw(self, imgui.ImDrawList* parent_drawlist, float parent_x, float parent_y) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(parent_drawlist, parent_x, parent_y)
+    cdef void draw(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.prev_sibling is not None:
+            (<uiItem>self.prev_sibling).draw()
 
-        if not(self.show):
+        if not(self._show):
             if self.show_update_requested:
                 self.set_hidden_and_propagate()
                 self.show_update_requested = True
@@ -3254,8 +3364,8 @@ cdef class dcgWindow_(uiItem):
             self.pos_update_requested = False
 
         if self.size_update_requested:
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.width,
-                                                 <float>self.height),
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self._width,
+                                                 <float>self._height),
                                     <imgui.ImGuiCond>0)
             self.size_update_requested = False
 
@@ -3306,25 +3416,22 @@ cdef class dcgWindow_(uiItem):
         if self._theme is not None:
             self._theme.push()
 
-        # Draw the window
-        imgui.PushID(self.uuid)
-
         cdef bint visible = True
         # Modal/Popup windows must be manually opened
         if self.modal or self.popup:
-            if self.show_update_requested and self.show:
+            if self.show_update_requested and self._show:
                 self.show_update_requested = False
                 imgui.OpenPopup(self.imgui_label.c_str(),
                                 imgui.ImGuiPopupFlags_NoOpenOverExistingPopup if self.no_open_over_existing_popup else imgui.ImGuiPopupFlags_None)
 
         # Begin drawing the window
         if self.modal:
-            visible = imgui.BeginPopupModal(self.imgui_label.c_str(), &self.show if self.has_close_button else <bool*>NULL, self.window_flags)
+            visible = imgui.BeginPopupModal(self.imgui_label.c_str(), &self._show if self.has_close_button else <bool*>NULL, self.window_flags)
         elif self.popup:
             visible = imgui.BeginPopup(self.imgui_label.c_str(), self.window_flags)
         else:
             visible = imgui.Begin(self.imgui_label.c_str(),
-                                  &self.show if self.has_close_button else <bool*>NULL,
+                                  &self._show if self.has_close_button else <bool*>NULL,
                                   self.window_flags)
 
         # not(visible) means either closed or clipped
@@ -3342,10 +3449,8 @@ cdef class dcgWindow_(uiItem):
             if self.last_0_child is not None:
                 self.last_0_child.draw(this_drawlist, startx, starty)
 
-            startx = <float>imgui.GetCursorPosX()
-            starty = <float>imgui.GetCursorPosY()
             if self.last_widgets_child is not None:
-                self.last_widgets_child.draw(this_drawlist, startx, starty)
+                self.last_widgets_child.draw()
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
@@ -3364,9 +3469,9 @@ cdef class dcgWindow_(uiItem):
             self.state.resized = rect_size.x != self.state.rect_size.x or \
                                  rect_size.y != self.state.rect_size.y
             # TODO: investigate why width and height could be != state.rect_size
-            if (rect_size.x != <float>self.width or rect_size.y != <float>self.height):
-                self.width = <int>rect_size.x
-                self.height = <int>rect_size.y
+            if (rect_size.x != <float>self._width or rect_size.y != <float>self._height):
+                self._width = <int>rect_size.x
+                self._height = <int>rect_size.y
                 self.resized = True
             self.state.rect_size = rect_size
             self.last_frame_update = self.context.frame
@@ -3420,16 +3525,15 @@ cdef class dcgWindow_(uiItem):
             self._theme.pop()
         self.context.viewport.pop_applied_pending_theme_actions()
 
-        cdef bint closed = not(self.show) or (not(visible) and (self.modal or self.popup))
+        cdef bint closed = not(self._show) or (not(visible) and (self.modal or self.popup))
         if closed:
-            self.show = False
+            self._show = False
             self.context.queue_callback_noarg(self.on_close_callback,
                                               self)
         self.show_update_requested = False
 
         if self.handlers is not None:
             self.handlers.run_handler(self)
-        imgui.PopID()
 
 
 """

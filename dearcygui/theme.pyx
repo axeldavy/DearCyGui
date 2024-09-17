@@ -1218,8 +1218,7 @@ cdef class dcgThemeListWithCondition(baseTheme):
         self.theme_activation_condition_category = theme_activation_condition_category_any
 
     cdef void push(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.prev_sibling is not None:
             (<baseTheme>self.prev_sibling).push()
         if not(self.enabled):
@@ -1263,8 +1262,7 @@ cdef class dcgThemeListWithCondition(baseTheme):
         self.last_push_size.push_back(count)
 
     cdef void pop(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int count = self.last_push_size.back()
         self.last_push_size.pop_back()
         cdef int i
@@ -1308,16 +1306,14 @@ cdef class dcgThemeListWithCondition(baseTheme):
 
 cdef class dcgThemeStopCondition(baseTheme):
     cdef void push(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.prev_sibling is not None:
             (<baseTheme>self.prev_sibling).push()
         self.start_pending_theme_actions_backup.push_back(self.context.viewport.start_pending_theme_actions)
         if self.enabled:
             self.context.viewport.start_pending_theme_actions = <int>self.context.viewport.pending_theme_actions.size()
     cdef void pop(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.viewport.mutex)
-        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.viewport.start_pending_theme_actions = self.start_pending_theme_actions_backup.back()
         self.start_pending_theme_actions_backup.pop_back()
         if self.prev_sibling is not None:

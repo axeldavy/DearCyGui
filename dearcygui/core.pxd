@@ -15,21 +15,24 @@ Thread safety:
   ensure this. Note that Python might free the gil while we are
   executing to let other threads use it.
 . All items are organized in a tree structure. All items are assigned
-  a mutex. Whenever the tree structure is going to be edited,
+  a mutex.
+. Whenever access to item fields need to be done atomically, the item
+  mutex must be held. Item edition must always hold the mutex.
+. Whenever the tree structure is going to be edited,
   the parent node must have the mutex lock first and foremost.
   Then the item mutex (unless the item is being inserted, in which
-  case the item mutex is held first)
-. Whenever access to item fields need to be done atomically, the item
-  mutex must be held. Similarly field edition must hold the mutex.
-
-During rendering of an item, the mutex of all its parent is held.
-Thus we can safely edit the tree structure in another thread (if we have
-managed to lock the relevant mutexes) while rendering is performed.
-
+  case the item mutex is held first). As a result when a parent
+  mutex is held, the children are fixed (but not their individual
+  states).
+. During rendering of an item, the mutex of all its parent is held.
+  Thus we can safely edit the tree structure in another thread (if we have
+  managed to lock the relevant mutexes) while rendering is performed.
+. An item cannot hold the lock of its neighboring children unless
+  the parent mutex is already held. If there is no parent, the viewport
+  mutex is held.
 . As imgui is not thread-safe, all imgui calls are protected by a mutex.
   To prevent dead-locks, the imgui mutex must be locked first before any
-  item/parent mutex. Alternatively, one can release its mutexes before
-  locking the imgui mutex, to then lock again its previous mutexes.
+  item/parent mutex. During rendering, the mutex is held.
 """
 
 cdef class dcgViewport:
@@ -199,6 +202,8 @@ cdef class baseItem:
     cdef baseTheme last_theme_child
     cdef void lock_parent_and_item_mutex(self) noexcept nogil
     cdef void unlock_parent_mutex(self) noexcept nogil
+    cdef void lock_and_previous_siblings(self) noexcept nogil
+    cdef void unlock_and_previous_siblings(self) noexcept nogil
     cpdef void attach_to_parent(self, baseItem target_parent)
     cpdef void attach_before(self, baseItem target_before)
     cdef void __detach_item_and_lock(self)
@@ -558,9 +563,10 @@ cdef class dcgItemHandlerList(itemHandler):
     cdef void check_bind(self, uiItem)
     cdef void run_handler(self, uiItem) noexcept nogil
 
-cdef class uiItem(drawableItem):
+cdef class uiItem(baseItem):
     cdef string imgui_label
     cdef str user_label
+    cdef bool _show
     # mvAppItemInfo
     #cdef int location -> for table
     #cdef bint enabled -> 
@@ -578,9 +584,11 @@ cdef class uiItem(drawableItem):
     #cdef string filter -> to move
     cdef string alias
     cdef string payloadType
-    cdef int width
-    cdef int height
-    cdef float indent
+    cdef int _width
+    cdef int _height
+    cdef float _indent
+    cdef int theme_condition_enabled
+    cdef int theme_condition_category
     #cdef float trackOffset
     #cdef bint tracked
     #cdef object callback
@@ -595,6 +603,8 @@ cdef class uiItem(drawableItem):
     cdef object output_current_item_state(self)
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_as_hidden(self) noexcept nogil
+    cdef void draw(self) noexcept nogil
+    cdef bint draw_item(self) noexcept nogil
 
 cdef class dcgWindow_(uiItem):
     cdef imgui.ImGuiWindowFlags window_flags
@@ -629,7 +639,7 @@ cdef class dcgWindow_(uiItem):
     cdef imgui.ImGuiWindowFlags backup_window_flags
     cdef imgui.ImVec2 backup_pos
     cdef imgui.ImVec2 backup_rect_size
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self) noexcept nogil
 
 """
 Bindable elements
