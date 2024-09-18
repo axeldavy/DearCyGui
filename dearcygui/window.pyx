@@ -451,8 +451,7 @@ cdef class dcgWindow(dcgWindow_):
             # Restore previous state
             self.window_flags = self.backup_window_flags
             self.state.relative_position = self.backup_pos
-            self._width = <int>self.backup_rect_size.x
-            self._height = <int>self.backup_rect_size.y
+            self.requested_size = self.backup_rect_size
             # Tell imgui to update the window shape
             self.pos_update_requested = True
             self.size_update_requested = True

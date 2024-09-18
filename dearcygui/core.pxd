@@ -116,6 +116,7 @@ cdef class dcgContext:
     cdef void queue_callback_noarg(self, dcgCallback, object) noexcept nogil
     cdef void queue_callback_arg1int(self, dcgCallback, object, int) noexcept nogil
     cdef void queue_callback_arg1float(self, dcgCallback, object, float) noexcept nogil
+    cdef void queue_callback_arg1value(self, dcgCallback, object, shared_value) noexcept nogil
     cdef void queue_callback_arg1int1float(self, dcgCallback, object, int, float) noexcept nogil
     cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
     cdef void queue_callback_arg1int2float(self, dcgCallback, object, int, float, float) noexcept nogil
@@ -443,24 +444,34 @@ Shared values (sources)
 
 Should we use cdef recursive_mutex mutex ?
 """
-cdef class shared_bool:
+cdef class shared_value:
+    cdef recursive_mutex mutex
+    cdef dcgContext context
+    cdef int _num_attached # number of items the value is attached to
+    cdef int _last_frame_update
+    cdef int _last_frame_change
+    cdef void on_update(self, bint) noexcept nogil
+    cdef void inc_num_attached(self) noexcept nogil
+    cdef void dec_num_attached(self) noexcept nogil
+
+cdef class shared_bool(shared_value):
     cdef bint _value
     # Internal functions.
     # python uses get_value and set_value
     cdef bint get(self) noexcept nogil
     cdef void set(self, bint) noexcept nogil
 
-cdef class shared_float:
+cdef class shared_float(shared_value):
     cdef float _value
     cdef float get(self) noexcept nogil
     cdef void set(self, float) noexcept nogil
 
-cdef class shared_int:
+cdef class shared_int(shared_value):
     cdef int _value
     cdef int get(self) noexcept nogil
     cdef void set(self, int) noexcept nogil
 
-cdef class shared_color:
+cdef class shared_color(shared_value):
     cdef imgui.ImU32 _value
     cdef imgui.ImVec4 _value_asfloat4
     cdef imgui.ImU32 getU32(self) noexcept nogil
@@ -468,41 +479,41 @@ cdef class shared_color:
     cdef void setU32(self, imgui.ImU32) noexcept nogil
     cdef void setF4(self, imgui.ImVec4) noexcept nogil
 
-cdef class shared_double:
+cdef class shared_double(shared_value):
     cdef double _value
     cdef double get(self) noexcept nogil
     cdef void set(self, double) noexcept nogil
 
-cdef class shared_str:
+cdef class shared_str(shared_value):
     cdef string _value
     cdef string get(self) noexcept nogil
     cdef void set(self, string) noexcept nogil
 
-cdef class shared_float4:
+cdef class shared_float4(shared_value):
     cdef float[4] _value
     cdef void get(self, float *) noexcept nogil# cython does support float[4] as return value
     cdef void set(self, float[4]) noexcept nogil
 
-cdef class shared_int4:
+cdef class shared_int4(shared_value):
     cdef int[4] _value
     cdef void get(self, int *) noexcept nogil
     cdef void set(self, int[4]) noexcept nogil
 
-cdef class shared_double4:
+cdef class shared_double4(shared_value):
     cdef double[4] _value
     cdef void get(self, double *) noexcept nogil
     cdef void set(self, double[4]) noexcept nogil
 
-"""
-cdef class shared_floatvect:
+cdef class shared_floatvect(shared_value):
     cdef float[:] _value
     cdef float[:] get(self) noexcept nogil
     cdef void set(self, float[:]) noexcept nogil
-
+"""
 cdef class shared_doublevect:
     cdef double[:] _value
     cdef double[:] get(self) noexcept nogil
     cdef void set(self, double[:]) noexcept nogil
+
 
 cdef class shared_time:
     cdef tm _value
@@ -569,34 +580,32 @@ cdef class uiItem(baseItem):
     cdef bool _show
     # mvAppItemInfo
     #cdef int location -> for table
-    #cdef bint enabled -> 
-    #cdef bint enabled_update_requested -> for editable fields
     # mvAppItemState
     cdef itemState state
+    cdef bint can_be_disabled
+    cdef bint _enabled
     cdef bint focus_update_requested
     cdef bint show_update_requested
     cdef bint size_update_requested
     cdef bint pos_update_requested
+    cdef bint enabled_update_requested
     cdef int last_frame_update
     # mvAppItemConfig
-    #cdef long long source -> data source. To move
-    #cdef string specifiedLabel
     #cdef string filter -> to move
-    cdef string alias
+    #cdef string alias
     cdef string payloadType
-    cdef int _width
-    cdef int _height
+    cdef imgui.ImVec2 requested_size
     cdef float _indent
     cdef int theme_condition_enabled
     cdef int theme_condition_category
     #cdef float trackOffset
     #cdef bint tracked
-    #cdef object callback
-    #cdef object user_data
     cdef dcgCallback dragCallback
     cdef dcgCallback dropCallback
     cdef itemHandler handlers
     cdef baseTheme _theme
+    cdef dcgCallback _callback
+    cdef shared_value _value
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate(self) noexcept nogil
@@ -605,6 +614,39 @@ cdef class uiItem(baseItem):
     cdef void update_current_state_as_hidden(self) noexcept nogil
     cdef void draw(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
+
+
+"""
+Simple UI elements
+"""
+cdef class dcgSimplePlot(uiItem):
+    cdef string _overlay
+    cdef float _scale_min
+    cdef float _scale_max
+    cdef bint _histogram
+    cdef bint _autoscale
+    cdef int last_frame_autoscale_update
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgButton(uiItem):
+    cdef imgui.ImGuiDir _direction
+    cdef bint _small
+    cdef bint _arrow
+    cdef bint _repeat
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgCombo(uiItem):
+    cdef imgui.ImGuiComboFlags flags
+    cdef vector[string] _items
+    cdef string disabled_value
+    cdef bint draw_item(self) noexcept nogil
+
+
+"""
+Complex UI elements
+"""
 
 cdef class dcgWindow_(uiItem):
     cdef imgui.ImGuiWindowFlags window_flags
@@ -666,7 +708,10 @@ cdef int theme_activation_condition_enabled_any = 0
 cdef int theme_activation_condition_enabled_False = 1
 cdef int theme_activation_condition_enabled_True = 2
 cdef int theme_activation_condition_category_any = 0
-cdef int theme_activation_condition_category_window = 1
+cdef int theme_activation_condition_category_simple_plot = 1
+cdef int theme_activation_condition_category_button = 2
+cdef int theme_activation_condition_category_combo = 3
+cdef int theme_activation_condition_category_window = 4
 
 cdef int theme_value_type_int = 0
 cdef int theme_value_type_float = 1

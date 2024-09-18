@@ -866,37 +866,65 @@ cdef class dcgContext:
         if callback is None:
             return
         with gil:
-            self.queue.submit(callback, parent_item, None, None)
+            try:
+                self.queue.submit(callback, parent_item, None, None)
+            except Exception as e:
+                print(traceback.format_exc())
 
     cdef void queue_callback_arg1int(self, dcgCallback callback, object parent_item, int arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
-            self.queue.submit(callback, parent_item, arg1, None)
+            try:
+                self.queue.submit(callback, parent_item, arg1, None)
+            except Exception as e:
+                print(traceback.format_exc())
 
     cdef void queue_callback_arg1float(self, dcgCallback callback, object parent_item, float arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
-            self.queue.submit(callback, parent_item, arg1, None)
+            try:
+                self.queue.submit(callback, parent_item, arg1, None)
+            except Exception as e:
+                print(traceback.format_exc())
+
+    cdef void queue_callback_arg1value(self, dcgCallback callback, object parent_item, shared_value arg1) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, arg1.value, None)
+            except Exception as e:
+                print(traceback.format_exc())
+
 
     cdef void queue_callback_arg1int1float(self, dcgCallback callback, object parent_item, int arg1, float arg2) noexcept nogil:
         if callback is None:
             return
         with gil:
-            self.queue.submit(callback, parent_item, (arg1, arg2), None)
+            try:
+                self.queue.submit(callback, parent_item, (arg1, arg2), None)
+            except Exception as e:
+                print(traceback.format_exc())
 
     cdef void queue_callback_arg2float(self, dcgCallback callback, object parent_item, float arg1, float arg2) noexcept nogil:
         if callback is None:
             return
         with gil:
-            self.queue.submit(callback, parent_item, (arg1, arg2), None)
+            try:
+                self.queue.submit(callback, parent_item, (arg1, arg2), None)
+            except Exception as e:
+                print(traceback.format_exc())
 
     cdef void queue_callback_arg1int2float(self, dcgCallback callback, object parent_item, int arg1, float arg2, float arg3) noexcept nogil:
         if callback is None:
             return
         with gil:
-            self.queue.submit(callback, parent_item, (arg1, arg2, arg3), None)
+            try:
+                self.queue.submit(callback, parent_item, (arg1, arg2, arg3), None)
+            except Exception as e:
+                print(traceback.format_exc())
 
     def initialize_viewport(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1146,9 +1174,12 @@ cdef class baseItem:
             raise ValueError("Instance of type {} cannot have a sibling".format(type(target_before)))
         if self.element_child_category != target_before.element_child_category:
             raise ValueError("Instance of type {} cannot be sibling to {}".format(type(self), type(target_before)))
+        if not(self.can_have_viewport_parent) and (target_before.parent is None) and (target_before.attached):
+            raise ValueError("Instance of type {} cannot be attached to viewport".format(type(self)))
 
         # Attach to sibling
         cdef baseItem prev_sibling = target_before.prev_sibling
+        self.parent = target_before.parent
         # Potential deadlocks are avoided by the fact that we hold the parent
         # mutex and any lock of a next sibling must hold the parent
         # mutex.
@@ -2445,168 +2476,311 @@ cdef class dcgMouseWheelHandler(globalHandler):
 Sources
 """
 
-cdef class shared_bool:
-    def __init__(self, bint value):
+cdef class shared_value:
+    def __init__(self, *args, **kwargs):
+        # We create all shared objects using __new__, thus
+        # bypassing __init__. If __init__ is called, it's
+        # from the user.
+        # __init__ is called after __cinit__
+        self._num_attached = 0
+    def __cinit__(self, dcgContext context, *args, **kwargs):
+        self.context = context
+        self._last_frame_change = context.frame
+        self._last_frame_update = context.frame
+        self._num_attached = 1
+    @property
+    def value(self):
+        return None
+    @value.setter
+    def value(self, value):
+        if value is None:
+            # In case of automated backup of
+            # the value of all items
+            return
+        raise ValueError("Shared value is empty. Cannot set.")
+
+    @property
+    def last_frame_update(self):
+        """
+        Readable attribute: last frame index when the value
+        was updated (can be identical value).
+        """
+        return self._last_frame_update
+
+    @property
+    def last_frame_change(self):
+        """
+        Readable attribute: last frame index when the value
+        was changed (different value).
+        For non-scalar data (color, point, vector), equals to
+        last_frame_update to avoid heavy comparisons.
+        """
+        return self._last_frame_change
+
+    @property
+    def num_attached(self):
+        """
+        Readable attribute: Number of items sharing this value
+        """
+        return self._num_attached
+
+    cdef void on_update(self, bint changed) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        # TODO: figure out if not using mutex is ok
+        self._last_frame_update = self.context.frame
+        if changed:
+            self._last_frame_change = self.context.frame
+
+    cdef void inc_num_attached(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._num_attached += 1
+
+    cdef void dec_num_attached(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._num_attached -= 1
+
+
+cdef class shared_bool(shared_value):
+    def __init__(self, dcgContext context, bint value):
         self._value = value
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     @value.setter
     def value(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
     cdef bint get(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     cdef void set(self, bint value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
 
-cdef class shared_float:
-    def __init__(self, float value):
+cdef class shared_float(shared_value):
+    def __init__(self, dcgContext context, float value):
         self._value = value
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     @value.setter
     def value(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
     cdef float get(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     cdef void set(self, float value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
 
-cdef class shared_int:
-    def __init__(self, int value):
+cdef class shared_int(shared_value):
+    def __init__(self, dcgContext context, int value):
         self._value = value
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     @value.setter
     def value(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
     cdef int get(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     cdef void set(self, int value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
 
-cdef class shared_color:
-    def __init__(self, value):
+cdef class shared_color(shared_value):
+    def __init__(self, dcgContext context, value):
         self._value = parse_color(value)
         self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         "Color data is an int32 (rgba, little endian),\n" \
         "If you pass an array of int (r, g, b, a), or float\n" \
         "(r, g, b, a) normalized it will get converted automatically"
         return <int>self._value
     @value.setter
     def value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value = parse_color(value)
         self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+        self.on_update(True)
     cdef imgui.ImU32 getU32(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     cdef imgui.ImVec4 getF4(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value_asfloat4
     cdef void setU32(self, imgui.ImU32 value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value = value
         self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+        self.on_update(True)
     cdef void setF4(self, imgui.ImVec4 value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value_asfloat4 = value
         self._value = imgui.ColorConvertFloat4ToU32(self._value_asfloat4)
+        self.on_update(True)
 
-cdef class shared_double:
-    def __init__(self, double value):
+cdef class shared_double(shared_value):
+    def __init__(self, dcgContext context, double value):
         self._value = value
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     @value.setter
     def value(self, double value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
     cdef double get(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     cdef void set(self, double value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint changed = value != self._value
         self._value = value
+        self.on_update(changed)
 
-cdef class shared_str:
-    def __init__(self, str value):
+cdef class shared_str(shared_value):
+    def __init__(self, dcgContext context, str value):
         self._value = bytes(str(value), 'utf-8')
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return str(self._value)
     @value.setter
     def value(self, str value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value = bytes(str(value), 'utf-8')
+        self.on_update(True)
     cdef string get(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
     cdef void set(self, string value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value = value
+        self.on_update(True)
 
-cdef class shared_float4:
-    def __init__(self, value):
+cdef class shared_float4(shared_value):
+    def __init__(self, dcgContext context, value):
         read_point[float](self._value, value)
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return list(self._value)
     @value.setter
     def value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         read_point[float](self._value, value)
+        self.on_update(True)
     cdef void get(self, float *dst) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         dst[0] = self._value[0]
         dst[1] = self._value[1]
         dst[2] = self._value[2]
         dst[3] = self._value[3]
     cdef void set(self, float[4] value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value[0] = value[0]
         self._value[1] = value[1]
         self._value[2] = value[2]
         self._value[3] = value[3]
+        self.on_update(True)
 
-cdef class shared_int4:
-    def __init__(self, value):
+cdef class shared_int4(shared_value):
+    def __init__(self, dcgContext context, value):
         read_point[int](self._value, value)
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return list(self._value)
     @value.setter
     def value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         read_point[int](self._value, value)
+        self.on_update(True)
     cdef void get(self, int *dst) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         dst[0] = self._value[0]
         dst[1] = self._value[1]
         dst[2] = self._value[2]
         dst[3] = self._value[3]
     cdef void set(self, int[4] value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value[0] = value[0]
         self._value[1] = value[1]
         self._value[2] = value[2]
         self._value[3] = value[3]
+        self.on_update(True)
 
-cdef class shared_double4:
-    def __init__(self, value):
+cdef class shared_double4(shared_value):
+    def __init__(self, dcgContext context, value):
         read_point[double](self._value, value)
     @property
     def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return list(self._value)
     @value.setter
     def value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         read_point[double](self._value, value)
+        self.on_update(True)
     cdef void get(self, double *dst) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         dst[0] = self._value[0]
         dst[1] = self._value[1]
         dst[2] = self._value[2]
         dst[3] = self._value[3]
     cdef void set(self, double[4] value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value[0] = value[0]
         self._value[1] = value[1]
         self._value[2] = value[2]
         self._value[3] = value[3]
+        self.on_update(True)
+
+cdef class shared_floatvect(shared_value):
+    def __init__(self, dcgContext context, value):
+        self._value = value
+    @property
+    def value(self):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return np.copy(self._value)
+    @value.setter
+    def value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._value = np.copy(value)
+        self.on_update(True)
+    cdef float[:] get(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._value
+    cdef void set(self, float[:] value) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._value = value
+        self.on_update(True)
 
 """
-cdef class shared_floatvect:
-    def __init__(self, value):
-        read_point[double](self._value, value)
-    cdef float[:] get(self) noexcept nogil
-    cdef void set(self, float[:]) noexcept nogil
-
 cdef class shared_doublevect:
     cdef double[:] value
     cdef double[:] get(self) noexcept nogil
@@ -2692,32 +2866,33 @@ cdef class uiItem(baseItem):
         self.imgui_label = b'###%ld'% self.uuid
         self.user_label = ""
         self.show = True
+        self._enabled = True
+        self.can_be_disabled = False
         #self.location = -1
         # next frame triggers
         self.focus_update_requested = False
         self.show_update_requested = False
         self.size_update_requested = True
         self.pos_update_requested = False
+        self.enabled_update_requested = False
         self.last_frame_update = 0 # last frame update occured
         # mvAppItemConfig
-        #self.source = 0
-        #self.specifiedLabel = b""
         #self.filter = b""
-        self.alias = b""
+        #self.alias = b""
         self.payloadType = b"$$DPG_PAYLOAD"
-        self._width = 0
-        self._height = 0
+        self.requested_size = imgui.ImVec2(0., 0.)
         self._indent = 0.
         self.theme_condition_enabled = theme_activation_condition_enabled_any
         self.theme_condition_category = theme_activation_condition_category_any
         self.can_have_sibling = True
+        self.element_child_category = child_cat_ui
+        self.can_have_nonviewport_parent = True
+        self.can_have_viewport_parent = False
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
-        #self.enabled = True
         #self.tracked = False
-        #self.callback = None
-        #self.user_data = None
         self.dragCallback = None
         self.dropCallback = None
+        self._value = shared_value(self.context) # To be changed by class
 
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -3083,6 +3258,39 @@ cdef class uiItem(baseItem):
         return IntPairFromVec2(self.state.rect_size)
 
     @property
+    def callback(self):
+        """
+        Writable attribute: callback object which is called when the value
+        of the item is changed
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._callback
+
+    @callback.setter
+    def callback(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+
+    @property
+    def enabled(self):
+        """
+        Writable attribute: Should the object be displayed as enabled ?
+        the enabled state can be used to prevent edition of editable fields,
+        or to use a specific disabled element theme.
+        Note a disabled item is still rendered. Use show=False to hide
+        an object.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._enabled
+    @enabled.setter
+    def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(self.can_be_disabled) and value != True:
+            raise ValueError(f"Objects of type {type(self)} cannot be disabled")
+        self.enabled_update_requested = True
+        self._enabled = value
+
+    @property
     def height(self):
         """
         Writable attribute: requested height of the item.
@@ -3094,13 +3302,13 @@ cdef class uiItem(baseItem):
             . Some Items: 0 can mean use remaining space or fit to content 
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self._height
+        return <int>self.requested_size.y
 
     @height.setter
     def height(self, int value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self._height = value
-        self.state.rect_size.y = value
+        self.requested_size.y = <float>value
+        self.state.rect_size.y = <float>value
         self.size_update_requested = True
 
     @property
@@ -3165,6 +3373,50 @@ cdef class uiItem(baseItem):
         self.pos_update_requested = True
 
     @property
+    def value(self):
+        """
+        Writable attribute: main internal value for the object.
+        For buttons, it is set when pressed; For text it is the
+        text itself; For selectable whether it is selected, etc.
+        Reading the value attribute returns a copy, while writing
+        to the value attribute will edit the field of the value.
+        In case the value is shared among items, setting the value
+        attribute will change it for all the sharing items.
+        To share a value attribute among objects, one should use
+        the shareable_value attribute
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._value.value
+
+    @value.setter
+    def value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._value.value = value
+
+    @property
+    def shareable_value(self):
+        """
+        Same as the value field, but rather than a copy of the internal value
+        of the object, return a python object that holds a value field that
+        is in sync with the internal value of the object. This python object
+        can be passed to other items using an internal value of the same
+        type to share it.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._value
+
+    @shareable_value.setter
+    def shareable_value(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self._value is value:
+            return
+        if type(self._value) is not type(value):
+            raise ValueError(f"Expected a shareable value of type {type(self._value)}. Received {type(value)}")
+        self._value.dec_num_attached()
+        self._value = value
+        self._value.inc_num_attached()
+
+    @property
     def show(self):
         """
         Writable attribute: Should the object be drawn/shown ?
@@ -3207,13 +3459,13 @@ cdef class uiItem(baseItem):
             . Some Items: 0 can mean use remaining space or fit to content 
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self._width
+        return <int>self.requested_size.x
 
     @width.setter
     def width(self, int value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self._width = value
-        self.state.rect_size.x = value
+        self.requested_size.x = <float>value
+        self.state.rect_size.x = <float>value
         self.size_update_requested = True
 
     cdef void draw(self) noexcept nogil:
@@ -3224,7 +3476,7 @@ cdef class uiItem(baseItem):
         if not(self._show):
             if self.show_update_requested:
                 self.set_hidden_and_propagate()
-                self.show_update_requested = True
+                self.show_update_requested = False
             return
 
         if self.focus_update_requested:
@@ -3264,7 +3516,8 @@ cdef class uiItem(baseItem):
             self._theme.push()
 
         cdef bint action = self.draw_item()
-        # TODO: use action
+        if action:
+            self.context.queue_callback_arg1value(self._callback, self, self._value)
 
         if self._theme is not None:
             self._theme.pop()
@@ -3300,7 +3553,441 @@ cdef class uiItem(baseItem):
         The return value indicates if the main callback should be triggered.
         """
         return False
+
+"""
+Simple ui items
+"""
+
+cdef class dcgSimplePlot(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_simple_plot
+        self._value = <shared_value>(shared_floatvect.__new__(shared_floatvect, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        self.state.has_rect_min = True
+        self.state.has_rect_max = True
+        self.state.has_rect_size = True
+        self.state.has_content_region = True
+        self._scale_min = 0.
+        self._scale_max = 0.
+        self.histogram = False
+        self._autoscale = True
+        self.last_frame_autoscale_update = -1
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        # Map old attribute names (the new names are handled in uiItem)
+        self._scale_min = kwargs.pop("scaleMin", self._scale_min)
+        self._scale_max = kwargs.pop("scaleMax", self._scale_max)
+        self._autoscale = kwargs.pop("autosize", self._autoscale)
+        return super().configure(**kwargs)
+
+    @property
+    def scale_min(self):
+        """
+        Writable attribute: value corresponding to the minimum value of plot scale
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._scale_min
+
+    @scale_min.setter
+    def scale_min(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._scale_min = value
+
+    @property
+    def scale_max(self):
+        """
+        Writable attribute: value corresponding to the maximum value of plot scale
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._scale_max
+
+    @scale_max.setter
+    def scale_max(self, float value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._scale_max = value
+
+    @property
+    def histogram(self):
+        """
+        Writable attribute: Whether the data should be plotted as an histogram
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._histogram
+
+    @histogram.setter
+    def histogram(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._histogram = value
+
+    @property
+    def autoscale(self):
+        """
+        Writable attribute: Whether scale_min and scale_max should be deduced
+        from the data
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._autoscale
+
+    @autoscale.setter
+    def autoscale(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._autoscale = value
+
+    @property
+    def overlay(self):
+        """
+        Writable attribute: Overlay text
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._overlay
+
+    @overlay.setter
+    def overlay(self, str value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._overlay = bytes(str(value), 'utf-8')
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef float[:] data = shared_floatvect.get(<shared_floatvect>self._value)
+        cdef int i
+        if self._autoscale and data.shape[0] > 0:
+            if self._value._last_frame_change != self.last_frame_autoscale_update:
+                self.last_frame_autoscale_update = self._value._last_frame_change
+                self._scale_min = data[0]
+                self._scale_max = data[0]
+                for i in range(1, data.shape[0]):
+                    if self._scale_min > data[i]:
+                        self._scale_min = data[i]
+                    if self._scale_max < data[i]:
+                        self._scale_max = data[i]
+
+        if self._histogram:
+            imgui.PlotHistogram(self.imgui_label.c_str(),
+                                &data[0],
+                                <int>data.shape[0],
+                                0,
+                                self._overlay.c_str(),
+                                self._scale_min,
+                                self._scale_max,
+                                self.requested_size,
+                                sizeof(float))
+        else:
+            imgui.PlotLines(self.imgui_label.c_str(),
+                            &data[0],
+                            <int>data.shape[0],
+                            0,
+                            self._overlay.c_str(),
+                            self._scale_min,
+                            self._scale_max,
+                            self.requested_size,
+                            sizeof(float))
+        self.update_current_state()
+        return False
+
+cdef class dcgButton(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_button
+        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        #self.state.has_rect_min = True
+        #self.state.has_rect_max = True
+        #self.state.has_rect_size = True
+        #self.state.has_content_region = True
+        self._direction = imgui.ImGuiDir_Up
+        self._small = False
+        self._arrow = False
+        self._repeat = False
+
+    @property
+    def direction(self):
+        """
+        Writable attribute: Direction of the arrow if any
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return <int>self._direction
+
+    @direction.setter
+    def direction(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if value < imgui.ImGuiDir_None or value >= imgui.ImGuiDir_COUNT:
+            raise ValueError("Invalid direction {value}")
+        self._direction = <imgui.ImGuiDir>value
+
+    @property
+    def small(self):
+        """
+        Writable attribute: Whether to display a small button
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._small
+
+    @small.setter
+    def small(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._small = value
+
+    @property
+    def arrow(self):
+        """
+        Writable attribute: Whether to display an arrow.
+        Not compatible with small
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._arrow
+
+    @arrow.setter
+    def arrow(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._arrow = value
+
+    @property
+    def repeat(self):
+        """
+        Writable attribute: Whether to generate many clicked events
+        when the button is held repeatedly, instead of a single.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._repeat
+
+    @repeat.setter
+    def repeat(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._repeat = value
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bint activated
+        imgui.PushItemFlag(imgui.ImGuiItemFlags_ButtonRepeat, self._repeat)
+        if self._small:
+            activated = imgui.SmallButton(self.imgui_label.c_str())
+        elif self._arrow:
+            activated = imgui.ArrowButton(self.imgui_label.c_str(), self._direction)
+        else:
+            activated = imgui.Button(self.imgui_label.c_str(),
+                                     self.requested_size)
+        imgui.PopItemFlag()
+        self.update_current_state()
+        shared_bool.set(<shared_bool>self._value, self.state.active) # Unsure. Not in original
+        return activated
+
+
+cdef class dcgCombo(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_combo
+        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_deactivated_after_edited = True
+        self.state.can_be_edited = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        # Frankly unsure why these. Should it include popup ?:
+        #self.state.has_rect_min = True
+        #self.state.has_rect_max = True
+        #self.state.has_rect_size = True
+        #self.state.has_content_region = True
+        self.flags = imgui.ImGuiComboFlags_HeightRegular
+
+    @property
+    def items(self):
+        """
+        Writable attribute: List of text values to select
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return [str(v) for v in self._items]
+
+    @items.setter
+    def items(self, value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self._items.clear()
+        if value is None:
+            return
+        if value is str:
+            self._items.push_back(bytes(value, 'utf-8'))
+        elif hasattr(value, '__len__'):
+            for v in value:
+                self._items.push_back(bytes(v, 'utf-8'))
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as items. Expected array of strings")
+        self._value.mutex.lock()
+        if self._value.num_attached == 1 and \
+           self._value._last_frame_update == -1 and \
+           self._items.size() > 0:
+            # initialize the value with the first element
+            shared_str.set(<shared_str>self._value, self._items[0])
+        self._value.mutex.unlock()
+
+    @property
+    def height_mode(self):
+        """
+        Writable attribute: height mode of the combo.
+        0: small
+        1: regular
+        2: large
+        3: largest
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if (self.flags & imgui.ImGuiComboFlags_HeightSmall) != 0:
+            return 0
+        elif (self.flags & imgui.ImGuiComboFlags_HeightLargest) != 0:
+            return 3
+        elif (self.flags & imgui.ImGuiComboFlags_HeightLarge) != 0:
+            return 2
+        return 1
+
+    @height_mode.setter
+    def height_mode(self, int value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if value < 0 or value >= 4:
+            raise ValueError("Invalid height mode {value}")
+        self.flags &= ~(imgui.ImGuiComboFlags_HeightSmall |
+                        imgui.ImGuiComboFlags_HeightRegular |
+                        imgui.ImGuiComboFlags_HeightLarge |
+                        imgui.ImGuiComboFlags_HeightLargest)
+        if value == 0:
+            self.flags |= imgui.ImGuiComboFlags_HeightSmall
+        elif value == 1:
+            self.flags |= imgui.ImGuiComboFlags_HeightRegular
+        elif value == 2:
+            self.flags |= imgui.ImGuiComboFlags_HeightLarge
+        else:
+            self.flags |= imgui.ImGuiComboFlags_HeightLargest
+
+    @property
+    def popup_align_left(self):
+        """
+        Writable attribute: Whether to align left
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return (self.flags & imgui.ImGuiComboFlags_PopupAlignLeft) != 0
+
+    @popup_align_left.setter
+    def popup_align_left(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.flags &= ~imgui.ImGuiComboFlags_PopupAlignLeft
+        if value:
+            self.flags |= imgui.ImGuiComboFlags_PopupAlignLeft
+
+    @property
+    def no_arrow_button(self):
+        """
+        Writable attribute: Whether the combo should not display an arrow on top
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return (self.flags & imgui.ImGuiComboFlags_NoArrowButton) != 0
+
+    @no_arrow_button.setter
+    def no_arrow_button(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.flags &= ~imgui.ImGuiComboFlags_NoArrowButton
+        if value:
+            self.flags |= imgui.ImGuiComboFlags_NoArrowButton
+
+    @property
+    def no_preview(self):
+        """
+        Writable attribute: Whether the preview should be disabled
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return (self.flags & imgui.ImGuiComboFlags_NoPreview) != 0
+
+    @no_preview.setter
+    def no_preview(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.flags &= ~imgui.ImGuiComboFlags_NoPreview
+        if value:
+            self.flags |= imgui.ImGuiComboFlags_NoPreview
+
+    @property
+    def fit_width(self):
+        """
+        Writable attribute: Whether the combo should fit available width
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return (self.flags & imgui.ImGuiComboFlags_WidthFitPreview) != 0
+
+    @fit_width.setter
+    def fit_width(self, bint value):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.flags &= ~imgui.ImGuiComboFlags_WidthFitPreview
+        if value:
+            self.flags |= imgui.ImGuiComboFlags_WidthFitPreview
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bint open
+        cdef int i
+        # TODO: avoid string copy
+        cdef string current_value = shared_str.get(<shared_str>self._value)
+        open = imgui.BeginCombo(self.imgui_label.c_str(),
+                                current_value.c_str(),
+                                self.flags)
+        # Old code called update_current_state now, and updated edited state
+        # later. Looking at ImGui code there seems to be two items. One
+        # for the combo, and one for the popup that opens. The edited flag
+        # is not set, looking at imgui demo so we have to handle it manually.
+        self.state.activated = not(self.state.active) and open
+        self.state.deactivated = self.state.active and not(open)
+        self.state.active = open
+        self.state.can_be_deactivated = True
+        self.state.can_be_deactivated_after_edited = True
+        self.state.can_be_edited = True
+        self.state.focused = imgui.IsItemFocused()
+        self.state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            self.state.clicked[i] = self.state.hovered and imgui.IsItemClicked(i)
+            self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
+
+
+        cdef bool pressed = False
+        cdef bint changed = False
+        cdef bool selected
+        cdef bool selected_backup
+        # we push an ID because we didn't append ###uuid to the items
         
+        # TODO: there are nice ImGuiSelectableFlags to add in the future
+        if open:
+            imgui.PushID(self.uuid)
+            if self._enabled:
+                for i in range(<int>self._items.size()):
+                    selected = self._items[i] == current_value
+                    selected_backup = selected
+                    pressed |= imgui.Selectable(self._items[i].c_str(),
+                                                &selected,
+                                                imgui.ImGuiSelectableFlags_None,
+                                                self.requested_size)
+                    if selected:
+                        imgui.SetItemDefaultFocus()
+                    if selected != selected_backup:
+                        changed = True
+                        shared_str.set(<shared_str>self._value, self._items[i])
+            else:
+                # TODO: test
+                selected = True
+                imgui.Selectable(current_value.c_str(),
+                                 &selected,
+                                 imgui.ImGuiSelectableFlags_None,
+                                 self.requested_size)
+            imgui.PopID()
+            imgui.EndCombo()
+        # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
+        self.state.edited = changed
+        self.state.deactivated_after_edited = self.state.deactivated and changed
+        return pressed
+
+"""
+Complex ui items
+"""
 
 cdef class dcgWindow_(uiItem):
     def __cinit__(self):
@@ -3335,6 +4022,7 @@ cdef class dcgWindow_(uiItem):
         self.can_have_drawing_child = True
         self.can_have_payload_child = True
         self.can_have_viewport_parent = True
+        self.can_have_nonviewport_parent = False
         self.element_toplevel_category = toplevel_cat_window
         self.state.can_be_hovered = True
         self.state.can_be_focused = True
@@ -3351,7 +4039,7 @@ cdef class dcgWindow_(uiItem):
         if not(self._show):
             if self.show_update_requested:
                 self.set_hidden_and_propagate()
-                self.show_update_requested = True
+                self.show_update_requested = False
             return
 
         if self.focus_update_requested:
@@ -3364,8 +4052,7 @@ cdef class dcgWindow_(uiItem):
             self.pos_update_requested = False
 
         if self.size_update_requested:
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self._width,
-                                                 <float>self._height),
+            imgui.SetNextWindowSize(self.requested_size,
                                     <imgui.ImGuiCond>0)
             self.size_update_requested = False
 
@@ -3469,9 +4156,8 @@ cdef class dcgWindow_(uiItem):
             self.state.resized = rect_size.x != self.state.rect_size.x or \
                                  rect_size.y != self.state.rect_size.y
             # TODO: investigate why width and height could be != state.rect_size
-            if (rect_size.x != <float>self._width or rect_size.y != <float>self._height):
-                self._width = <int>rect_size.x
-                self._height = <int>rect_size.y
+            if (rect_size.x != self.requested_size.x or rect_size.y != self.requested_size.y):
+                self.requested_size = rect_size
                 self.resized = True
             self.state.rect_size = rect_size
             self.last_frame_update = self.context.frame
