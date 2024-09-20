@@ -198,7 +198,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
             read_point[float](self.p2, p2)
             read_point[float](self.p3, p3)
             read_point[float](self.p4, p4)
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawBezierCubic. Expected p1, p2, p3 and p4")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
@@ -272,7 +272,7 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
             read_point[float](self.p1, p1)
             read_point[float](self.p2, p2)
             read_point[float](self.p3, p3)
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawBezierQuadratic. Expected p1, p2 and p3")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
@@ -337,7 +337,7 @@ cdef class dcgDrawCircle(dcgDrawCircle_):
             (center, radius) = args
             read_point[float](self.center, center)
             self.radius = radius
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawCircle. Expected center and radius")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
@@ -408,7 +408,7 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
             read_point[float](self.pmin, pmin)
             read_point[float](self.pmax, pmax)
             recompute_points = True
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawEllipse. Expected pmin and pmax")
         # pmin/pmax can also be passed as optional arguments
         if "pmin" in kwargs:
@@ -503,7 +503,7 @@ cdef class dcgDrawImage(dcgDrawImage_):
                 self.texture = <dcgTexture>texture
             read_point[float](self.pmin, args[1])
             read_point[float](self.pmax, args[2])
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, pmin, pmax")
         if "pmin" in kwargs:
             read_point[float](self.pmin, kwargs.pop("pmin"))
@@ -590,7 +590,7 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
             read_point[float](self.p2, args[2])
             read_point[float](self.p3, args[3])
             read_point[float](self.p4, args[4])
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, p1, p2, p3, p4")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
@@ -712,7 +712,7 @@ cdef class dcgDrawLine(dcgDrawLine_):
         if len(args) == 2:
             read_point[float](self.p1, args[0])
             read_point[float](self.p2, args[1])
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawLine. Expected p1, p2")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
@@ -771,7 +771,7 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
         points = None
         if len(args) == 1:
             points = args[0]
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawPolyline. Expected list of points")
         if "points" in kwargs:
             points = kwargs.pop("points")
@@ -838,7 +838,7 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
         points = None
         if len(args) == 1:
             points = args[0]
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawPolygon. Expected list of points")
         if "points" in kwargs:
             points = kwargs.pop("points")
@@ -914,7 +914,7 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
             read_point[float](self.p2, p2)
             read_point[float](self.p3, p3)
             read_point[float](self.p4, p4)
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2, p3 and p4")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
@@ -998,7 +998,7 @@ cdef class dcgDrawRect(dcgDrawRect_):
             (pmin, pmax) = args
             read_point[float](self.pmin, pmin)
             read_point[float](self.pmax, pmax)
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawRect. Expected pmin and pmax")
         if "pmin" in kwargs:
             read_point[float](self.pmin, kwargs.pop("pmin"))
@@ -1130,7 +1130,7 @@ cdef class dgcDrawText(dgcDrawText_):
     def configure(self, *args, **kwargs):
         if len(args) == 1:
             read_point[float](self.pos, args[0])
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dgcDrawText. Expected pos")
         if "pos" in kwargs:
             read_point[float](self.pos, kwargs.pop("pos"))
@@ -1184,7 +1184,7 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
             read_point[float](self.p1, p1)
             read_point[float](self.p2, p2)
             read_point[float](self.p3, p3)
-        elif args != 0:
+        elif len(args) != 0:
             raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2 and p3")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))

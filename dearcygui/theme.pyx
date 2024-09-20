@@ -111,8 +111,8 @@ cdef class dcgThemeColorImGui(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -126,8 +126,8 @@ cdef class dcgThemeColorImGui(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef pair[int, imgui.ImU32] element_content
         cdef theme_action action
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
@@ -146,10 +146,10 @@ cdef class dcgThemeColorImGui(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
             imgui_PopStyleColor(count)
-        if self.prev_sibling is not None:
+        if self._prev_sibling is not None:
             # Note: we are guaranteed to have the same
             # siblings than during push()
-            (<baseTheme>self.prev_sibling).pop()
+            (<baseTheme>self._prev_sibling).pop()
 
 cdef class dcgThemeColorImPlot(baseTheme):
     def __cinit__(self):
@@ -255,8 +255,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -270,8 +270,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef pair[int, imgui.ImU32] element_content
         cdef theme_action action
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
@@ -290,8 +290,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
             implot_PopStyleColor(count)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
 
 
 cdef class dcgThemeColorImNodes(baseTheme):
@@ -422,8 +422,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -437,8 +437,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef pair[int, imgui.ImU32] element_content
         cdef theme_action action
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
@@ -457,8 +457,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
            imnodes_PopStyleColor(count)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
 
 cdef extern from * nogil:
     """
@@ -668,8 +668,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -685,8 +685,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef pair[int, imgui.ImVec2] element_content
         cdef theme_action action
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
@@ -710,8 +710,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
             imgui_PopStyleVar(count)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
 
 # 0 used to mean int
 cdef extern from * nogil:
@@ -916,8 +916,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -935,8 +935,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef pair[int, imgui.ImVec2] element_content
         cdef theme_action action
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
@@ -963,8 +963,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
             implot_PopStyleVar(count)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
 
 
 cdef extern from * nogil:
@@ -1139,8 +1139,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -1156,8 +1156,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef pair[int, imgui.ImVec2] element_content
         cdef theme_action action
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
@@ -1181,8 +1181,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
             imnodes_PopStyleVar(count)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
 
 
 cdef class dcgThemeList(baseTheme):
@@ -1191,8 +1191,8 @@ cdef class dcgThemeList(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if self.last_theme_child is not None:
             self.last_theme_child.push()
 
@@ -1200,13 +1200,13 @@ cdef class dcgThemeList(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.last_theme_child is not None:
             self.last_theme_child.pop()
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
     
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
         if self.last_theme_child is not None:
             self.last_theme_child.push_to_list(v)
 
@@ -1219,8 +1219,8 @@ cdef class dcgThemeListWithCondition(baseTheme):
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
@@ -1270,15 +1270,15 @@ cdef class dcgThemeListWithCondition(baseTheme):
             self.context.viewport.pending_theme_actions.pop_back()
         if count > 0:
             self.context.viewport.pop_applied_pending_theme_actions()
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
     
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int prev_size, i, new_size
-        if self.prev_sibling is not None:
+        if self._prev_sibling is not None:
             prev_size = <int>v.size()
-            (<baseTheme>self.prev_sibling).push_to_list(v)
+            (<baseTheme>self._prev_sibling).push_to_list(v)
             new_size = <int>v.size()
             # Set the conditions
             for i in range(prev_size, new_size):
@@ -1307,8 +1307,8 @@ cdef class dcgThemeListWithCondition(baseTheme):
 cdef class dcgThemeStopCondition(baseTheme):
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).push()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push()
         self.start_pending_theme_actions_backup.push_back(self.context.viewport.start_pending_theme_actions)
         if self.enabled:
             self.context.viewport.start_pending_theme_actions = <int>self.context.viewport.pending_theme_actions.size()
@@ -1316,7 +1316,7 @@ cdef class dcgThemeStopCondition(baseTheme):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.viewport.start_pending_theme_actions = self.start_pending_theme_actions_backup.back()
         self.start_pending_theme_actions_backup.pop_back()
-        if self.prev_sibling is not None:
-            (<baseTheme>self.prev_sibling).pop()
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).pop()
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         return

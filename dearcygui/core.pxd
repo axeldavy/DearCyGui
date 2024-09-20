@@ -5,7 +5,9 @@ from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex
 from libcpp.atomic cimport atomic
+from libcpp.map cimport map
 from libcpp.vector cimport vector
+from cpython.ref cimport PyObject
 cimport numpy as cnp
 
 """
@@ -88,6 +90,10 @@ cdef class dcgCallback:
 cdef class dcgContext:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
+    cdef map[long long, PyObject*] items
+    cdef dict[str, long long] tag_to_uuid
+    cdef dict[long long, str] uuid_to_tag
+    cdef object _parent_context_queue
     cdef bint waitOneFrame
     cdef bint started
     # Mutex that must be held for any
@@ -97,7 +103,7 @@ cdef class dcgContext:
     cdef double time # total time since starting
     cdef int frame # frame count
     cdef int framerate # frame rate
-    cdef public dcgViewport viewport
+    cdef readonly dcgViewport viewport
     cdef imgui.ImGuiContext* imgui_context
     cdef implot.ImPlotContext* implot_context
     cdef imnodes.ImNodesContext* imnodes_context
@@ -120,6 +126,15 @@ cdef class dcgContext:
     cdef void queue_callback_arg1int1float(self, dcgCallback, object, int, float) noexcept nogil
     cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
     cdef void queue_callback_arg1int2float(self, dcgCallback, object, int, float, float) noexcept nogil
+    cdef void register_item(self, baseItem o, long long uuid)
+    cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag)
+    cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
+    cdef void unregister_item(self, long long uuid)
+    cdef baseItem get_registered_item_from_uuid(self, long long uuid)
+    cdef baseItem get_registered_item_from_tag(self, str tag)
+    cpdef void push_next_parent(self, baseItem next_parent)
+    cpdef void pop_next_parent(self)
+    cpdef object fetch_next_parent(self)
 
 """
 Each .so has its own current context. To be able to work
@@ -188,12 +203,12 @@ cdef class baseItem:
 
     # Relationships
     cdef bint attached
-    cdef baseItem parent
+    cdef baseItem _parent
     # It is not possible to access an array of children without the gil
     # Thus instead use a list
     # Each element is responsible for calling draw on its sibling
-    cdef baseItem prev_sibling
-    cdef baseItem next_sibling
+    cdef baseItem _prev_sibling
+    cdef baseItem _next_sibling
     cdef drawableItem last_0_child #  mvFileExtension, mvFontRangeHint, mvNodeLink, mvAnnotation, mvAxisTag, mvDragLine, mvDragPoint, mvDragRect, mvLegend, mvTableColumn
     cdef uiItem last_widgets_child
     cdef drawableItem last_drawings_child
@@ -205,8 +220,8 @@ cdef class baseItem:
     cdef void unlock_parent_mutex(self) noexcept nogil
     cdef void lock_and_previous_siblings(self) noexcept nogil
     cdef void unlock_and_previous_siblings(self) noexcept nogil
-    cpdef void attach_to_parent(self, baseItem target_parent)
-    cpdef void attach_before(self, baseItem target_before)
+    cpdef void attach_to_parent(self, target_parent)
+    cpdef void attach_before(self, target_before)
     cdef void __detach_item_and_lock(self)
     cpdef void detach_item(self)
     cpdef void delete_item(self)
@@ -644,6 +659,10 @@ cdef class dcgCombo(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
+cdef class dcgCheckbox(uiItem):
+    cdef bint draw_item(self) noexcept nogil
+
+
 """
 Complex UI elements
 """
@@ -711,7 +730,8 @@ cdef int theme_activation_condition_category_any = 0
 cdef int theme_activation_condition_category_simple_plot = 1
 cdef int theme_activation_condition_category_button = 2
 cdef int theme_activation_condition_category_combo = 3
-cdef int theme_activation_condition_category_window = 4
+cdef int theme_activation_condition_category_checkbox = 4
+cdef int theme_activation_condition_category_window = 5
 
 cdef int theme_value_type_int = 0
 cdef int theme_value_type_float = 1

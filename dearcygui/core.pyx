@@ -18,6 +18,7 @@ import traceback
 
 cimport cython
 from cython.operator cimport dereference
+from cpython.ref cimport PyObject
 
 # This file is the only one that is linked to the C++ code
 # Thus it is the only one allowed to make calls to it
@@ -41,6 +42,7 @@ cimport numpy as cnp
 
 import scipy
 import scipy.spatial
+import threading
 from .constants import constants
 
 cdef mvColor MV_BASE_COL_bgColor = mvColor(37, 37, 38, 255)
@@ -836,6 +838,9 @@ cdef class dcgContext:
         self.time = 0.
         self.frame = 0
         self.framerate = 0
+        self.uuid_to_tag = dict()
+        self.tag_to_uuid = dict()
+        self._parent_context_queue = threading.local()
         self.viewport = dcgViewport(self)
         self.resetTheme = False
         imgui.IMGUI_CHECKVERSION()
@@ -846,9 +851,12 @@ cdef class dcgContext:
 
     def __dealloc__(self):
         self.started = True
-        imnodes.DestroyContext(self.imnodes_context)
-        implot.DestroyContext(self.implot_context)
-        imgui.DestroyContext(self.imgui_context)
+        if self.imnodes_context != NULL:
+            imnodes.DestroyContext(self.imnodes_context)
+        if self.implot_context != NULL:
+            implot.DestroyContext(self.implot_context)
+        if self.imgui_context != NULL:
+            imgui.DestroyContext(self.imgui_context)
 
     def __del__(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -859,8 +867,8 @@ cdef class dcgContext:
 
         #mvToolManager::Reset()
         #ClearItemRegistry(*GContext->itemRegistry)
-
-        self.queue.shutdown(wait=True)
+        if self.queue is not None:
+            self.queue.shutdown(wait=True)
 
     cdef void queue_callback_noarg(self, dcgCallback callback, object parent_item) noexcept nogil:
         if callback is None:
@@ -926,6 +934,121 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
+    cdef void register_item(self, baseItem o, long long uuid):
+        """ Stores weak references to objects.
+        
+        Each object holds a reference on the context, and thus will be
+        freed after calling unregister_item. If gc makes it so the context
+        is collected first, that's ok as we don't use the content of the
+        map anymore.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.items[uuid] = <PyObject*>o
+
+    cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag):
+        """ Stores weak references to objects.
+        
+        Each object holds a reference on the context, and thus will be
+        freed after calling unregister_item. If gc makes it so the context
+        is collected first, that's ok as we don't use the content of the
+        map anymore.
+
+        Using a tag enables the user to name his objects and reference them by
+        names.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if tag in self.tag_to_uuid:
+            raise KeyError(f"Tag {tag} already in use")
+        self.items[uuid] = <PyObject*>o
+        self.uuid_to_tag[uuid] = tag
+        self.tag_to_uuid[tag] = uuid
+
+    cdef void unregister_item(self, long long uuid):
+        """ Free weak reference """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.items.erase(uuid)
+        if self.uuid_to_tag is None:
+            # Can occur during gc collect at
+            # the end of the program
+            return
+        if uuid in self.uuid_to_tag:
+            tag = self.uuid_to_tag[uuid]
+            del self.uuid_to_tag[uuid]
+            del self.tag_to_uuid[tag]
+
+    cdef baseItem get_registered_item_from_uuid(self, long long uuid):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef map[long long, PyObject *].iterator item = self.items.find(uuid)
+        if item == self.items.end():
+            return None
+        cdef PyObject *o = dereference(item).second
+        # Cython inserts a strong object reference when we convert
+        # the pointer to an object
+        return <baseItem>o
+
+    cdef baseItem get_registered_item_from_tag(self, str tag):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef long long uuid = self.tag_to_uuid.get(tag, -1)
+        if uuid == -1:
+            # not found
+            return None
+        return self.get_registered_item_from_uuid(uuid)
+
+    cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag):
+        old_tag = self.uuid_to_tag.get(uuid, None)
+        if old_tag == tag:
+            return
+        if tag in self.tag_to_uuid:
+            raise KeyError(f"Tag {tag} already in use")
+        if old_tag is not None:
+            del self.tag_to_uuid[old_tag]
+            del self.uuid_to_tag[uuid]
+        if tag is not None:
+            self.uuid_to_tag[uuid] = tag
+            self.tag_to_uuid[tag] = uuid
+
+    def __getitem__(self, key):
+        """
+        Retrieves the object associated to
+        a tag or an uuid
+        """
+        if isinstance(key, baseItem):
+            # Useful for legacy call wrappers
+            return key
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef long long uuid
+        if isinstance(key, str):
+            if key not in self.tag_to_uuid:
+                raise KeyError(f"Item not found with index {key}.")
+            uuid = self.tag_to_uuid[key]
+        elif isinstance(key, int):
+            uuid = key
+        else:
+            raise TypeError(f"{type(key)} is an invalid index type")
+        item = self.get_registered_item_from_uuid(uuid)
+        if item is None:
+            raise KeyError(f"Item not found with index {key}.")
+        return item
+
+    cpdef void push_next_parent(self, baseItem next_parent):
+        # Use thread local storage such that multiple threads
+        # can build items trees without conflicts.
+        # Mutexes are not needed due to the thread locality
+        cdef list parent_queue = getattr(self._parent_context_queue, 'parent_queue', [])
+        parent_queue.append(next_parent)
+        self._parent_context_queue.parent_queue = parent_queue
+
+    cpdef void pop_next_parent(self):
+        cdef list parent_queue = getattr(self._parent_context_queue, 'parent_queue', [])
+        if len(parent_queue) > 0:
+            parent_queue.pop()
+
+    cpdef object fetch_next_parent(self):
+        cdef list parent_queue = getattr(self._parent_context_queue, 'parent_queue', [])
+        if len(parent_queue) == 0:
+            return None
+        return parent_queue[len(parent_queue)-1]
+
     def initialize_viewport(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.viewport.initialize(width=kwargs["width"],
@@ -943,12 +1066,19 @@ cdef class dcgContext:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self.started
 
+
+
 cdef class baseItem:
-    def __cinit__(self, context):
+    def __init__(self, context, *args, **kwargs):
+        if len(kwargs) > 0 or len(args) > 0:
+            self.configure(*args, **kwargs)
+
+    def __cinit__(self, context, *args, **kwargs):
         if not(isinstance(context, dcgContext)):
             raise ValueError("Provided context is not a valid dcgContext instance")
         self.context = context
         self.uuid = self.context.next_uuid.fetch_add(1)
+        self.context.register_item(self, self.uuid)
         self.can_have_0_child = False
         self.can_have_widget_child = False
         self.can_have_drawing_child = False
@@ -959,32 +1089,223 @@ cdef class baseItem:
         self.element_child_category = -1
         self.element_toplevel_category = -1
 
+    def __dealloc__(self):
+        if self.context is not None:
+            self.context.unregister_item(self.uuid)
+
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._user_data = kwargs.pop("user_data", self._user_data)
-        if len(kwargs) > 0:
-            print("Unused configure parameters: ", kwargs)
+        before = kwargs.pop("before", None)
+        parent = kwargs.pop("parent", None)
+        if before is not None:
+            self.attach_before(before)
+        else:
+            if parent is None:
+                parent = self.context.fetch_next_parent()
+            if parent is not None:
+                self.attach_to_parent(parent)
+        if "tag" in kwargs:
+            tag = kwargs.pop("tag")
+            self.context.update_registered_item_tag(self, self.uuid, tag)
+        #if len(kwargs) > 0:
+        #    print("Unused configure parameters: ", kwargs)
         return
 
     @property
     def user_data(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._user_data
+
     @user_data.setter
     def user_data(self, value):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._user_data = value
 
+    @property
+    def uuid(self):
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        before=, after= arguments, but it is preferred to pass
+        the objects directly. 
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return int(self.uuid)
+
+    @property
+    def tag(self):
+        """
+        Writable attribute: tag is an optional string that uniquely
+        defines the object.
+
+        If set (else it is set to None), tag can be used to access
+        the object by name for parent=, before=, after= arguments 
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self.context.get_registered_item_from_uuid(self.uuid)
+
+    @tag.setter
+    def tag(self, str tag):
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.context.update_registered_item_tag(self, self.uuid, tag)
+
+    @property
+    def parent(self):
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._parent
+
+    @parent.setter
+    def parent(self, value):
+        # It is important to not lock the mutex before the call
+        if value is None:
+            self.detach_item()
+            return
+        self.attach_to_parent(value)
+
+    @property
+    def previous_sibling(self):
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._prev_sibling
+
+    @previous_sibling.setter
+    def previous_sibling(self, baseItem target not None):
+        # Convert into an attach_before or attach_to_parent
+        target.mutex.lock()
+        next_sibling = target._next_sibling
+        target_parent = target._parent
+        target.mutex.unlock()
+        # It is important to not lock the mutex before the call
+        if next_sibling is None:
+            self.attach_to_parent(target_parent)
+            return
+        self.attach_before(next_sibling)
+
+    @property
+    def next_sibling(self):
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        return self._next_sibling
+
+    @next_sibling.setter
+    def next_sibling(self, baseItem target not None):
+        # It is important to not lock the mutex before the call
+        self.attach_before(target)
+
+    @property
+    def children(self):
+        """
+        Readable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        result = []
+        # Note: the children structure is not allowed
+        # to change when the parent mutex is held
+        cdef baseItem item = self.last_theme_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        item = self.last_item_handler_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        item = self.last_global_handler_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        item = self.last_payloads_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        item = self.last_drawings_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        item = self.last_widgets_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        item = self.last_0_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
+        result.reverse()
+        return result
+
+    def __enter__(self):
+        # Mutexes not needed
+        self.context.push_next_parent(self)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.context.pop_next_parent()
+        return False # Do not catch exceptions
+
     cdef void lock_parent_and_item_mutex(self) noexcept nogil:
         # We must make sure we lock the correct parent mutex, and for that
-        # we must access self.parent and thus hold the item mutex
+        # we must access self._parent and thus hold the item mutex
         cdef bint locked = False
         while not(locked):
             self.mutex.lock()
             # If we have no baseItem parent, either we
             # are root (viewport is parent) or have no parent
-            if self.parent is not None:
-                locked = self.parent.mutex.try_lock()
+            if self._parent is not None:
+                locked = self._parent.mutex.try_lock()
             elif self.attached:
                 locked = self.context.viewport.mutex.try_lock()
             else:
@@ -995,8 +1316,8 @@ cdef class baseItem:
 
     cdef void unlock_parent_mutex(self) noexcept nogil:
         # Assumes the item mutex is held
-        if self.parent is not None:
-            self.parent.mutex.unlock()
+        if self._parent is not None:
+            self._parent.mutex.unlock()
         elif self.attached:
             self.context.viewport.mutex.unlock()
 
@@ -1011,15 +1332,22 @@ cdef class baseItem:
         for some operations.
         """
         self.mutex.lock()
-        if self.prev_sibling is not None:
-            self.prev_sibling.lock_and_previous_siblings()
+        if self._prev_sibling is not None:
+            self._prev_sibling.lock_and_previous_siblings()
 
     cdef void unlock_and_previous_siblings(self) noexcept nogil:
-        if self.prev_sibling is not None:
-            self.prev_sibling.unlock_and_previous_siblings()
+        if self._prev_sibling is not None:
+            self._prev_sibling.unlock_and_previous_siblings()
         self.mutex.unlock()
 
-    cpdef void attach_to_parent(self, baseItem target_parent):
+    cpdef void attach_to_parent(self, target):
+        cdef baseItem target_parent
+        if isinstance(target, dcgViewport) or target is None:
+            target_parent = None
+        elif not(isinstance(target, baseItem)):
+            target_parent = self.context[target]
+        else:
+            target_parent = <baseItem>target
         # We must ensure a single thread attaches at a given time.
         # __detach_item_and_lock will lock both the item lock
         # and the parent lock.
@@ -1057,15 +1385,15 @@ cdef class baseItem:
                 assert(isinstance(self, dcgWindow_))
                 if self.context.viewport.last_window_child is not None:
                     m3 = unique_lock[recursive_mutex](self.context.viewport.last_window_child.mutex)
-                    self.context.viewport.last_window_child.next_sibling = self
-                    self.prev_sibling = self.context.viewport.last_window_child
+                    self.context.viewport.last_window_child._next_sibling = self
+                    self._prev_sibling = self.context.viewport.last_window_child
                 self.context.viewport.last_window_child = <dcgWindow_>self
                 attached = True
             elif self.element_toplevel_category == toplevel_cat_global_handler:
                 if self.context.viewport.last_global_handler_child is not None:
                     m3 = unique_lock[recursive_mutex](self.context.viewport.last_global_handler_child.mutex)
-                    self.context.viewport.last_global_handler_child.next_sibling = self
-                    self.prev_sibling = self.context.viewport.last_global_handler_child
+                    self.context.viewport.last_global_handler_child._next_sibling = self
+                    self._prev_sibling = self.context.viewport.last_global_handler_child
                 self.context.viewport.last_global_handler_child = <globalHandler>self
                 attached = True
             if not(attached):
@@ -1077,52 +1405,57 @@ cdef class baseItem:
                     target_parent.can_have_widget_child:
                     if target_parent.last_widgets_child is not None:
                         m3 = unique_lock[recursive_mutex](target_parent.last_widgets_child.mutex)
-                        target_parent.last_widgets_child.next_sibling = self
-                    self.prev_sibling = target_parent.last_widgets_child
-                    self.parent = target_parent
+                        target_parent.last_widgets_child._next_sibling = self
+                    self._prev_sibling = target_parent.last_widgets_child
+                    self._parent = target_parent
                     target_parent.last_widgets_child = <uiItem>self
                     attached = True
                 elif self.element_child_category == child_cat_drawing and \
                     target_parent.can_have_drawing_child:
                     if target_parent.last_drawings_child is not None:
                         m3 = unique_lock[recursive_mutex](target_parent.last_drawings_child.mutex)
-                        target_parent.last_drawings_child.next_sibling = self
-                    self.prev_sibling = target_parent.last_drawings_child
-                    self.parent = target_parent
+                        target_parent.last_drawings_child._next_sibling = self
+                    self._prev_sibling = target_parent.last_drawings_child
+                    self._parent = target_parent
                     target_parent.last_drawings_child = <drawableItem>self
                     attached = True
                 elif self.element_child_category == child_cat_global_handler and \
                     target_parent.can_have_global_handler_child:
                     if target_parent.last_global_handler_child is not None:
                         m3 = unique_lock[recursive_mutex](target_parent.last_global_handler_child.mutex)
-                        target_parent.last_global_handler_child.next_sibling = self
-                    self.prev_sibling = target_parent.last_global_handler_child
-                    self.parent = target_parent
+                        target_parent.last_global_handler_child._next_sibling = self
+                    self._prev_sibling = target_parent.last_global_handler_child
+                    self._parent = target_parent
                     target_parent.last_global_handler_child = <globalHandler>self
                     attached = True
                 elif self.element_child_category == child_cat_item_handler and \
                     target_parent.can_have_item_handler_child:
                     if target_parent.last_item_handler_child is not None:
                         m3 = unique_lock[recursive_mutex](target_parent.last_item_handler_child.mutex)
-                        target_parent.last_item_handler_child.next_sibling = self
-                    self.prev_sibling = target_parent.last_item_handler_child
-                    self.parent = target_parent
+                        target_parent.last_item_handler_child._next_sibling = self
+                    self._prev_sibling = target_parent.last_item_handler_child
+                    self._parent = target_parent
                     target_parent.last_item_handler_child = <itemHandler>self
                     attached = True
                 elif self.element_child_category == child_cat_theme and \
                     target_parent.can_have_theme_child:
                     if target_parent.last_theme_child is not None:
                         m3 = unique_lock[recursive_mutex](target_parent.last_theme_child.mutex)
-                        target_parent.last_theme_child.next_sibling = self
-                    self.prev_sibling = target_parent.last_theme_child
-                    self.parent = target_parent
+                        target_parent.last_theme_child._next_sibling = self
+                    self._prev_sibling = target_parent.last_theme_child
+                    self._parent = target_parent
                     target_parent.last_theme_child = <baseTheme>self
                     attached = True
             if not(attached):
                 raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
         self.attached = True
 
-    cpdef void attach_before(self, baseItem target_before):
+    cpdef void attach_before(self, target):
+        cdef baseItem target_before
+        if not(isinstance(target, baseItem)):
+            target_before = self.context[target]
+        else:
+            target_before = <baseItem>target
         # We must ensure a single thread attaches at a given time.
         # __detach_item_and_lock will lock both the item lock
         # and the parent lock.
@@ -1159,10 +1492,10 @@ cdef class baseItem:
             # to unattached siblings. Could be implemented, but not trivial
             raise ValueError("Trying to attach to an un-attached sibling. Not yet supported")
 
-        if (target_before.parent is None) and (target_before.attached):
+        if (target_before._parent is None) and (target_before.attached):
             m2 = unique_lock[recursive_mutex](self.context.viewport.mutex)
         else:
-            m2 = unique_lock[recursive_mutex](target_before.parent.mutex)
+            m2 = unique_lock[recursive_mutex](target_before._parent.mutex)
         m3 = unique_lock[recursive_mutex](target_before.mutex)
         target_before.unlock_parent_mutex()
         target_before.mutex.unlock()
@@ -1174,23 +1507,23 @@ cdef class baseItem:
             raise ValueError("Instance of type {} cannot have a sibling".format(type(target_before)))
         if self.element_child_category != target_before.element_child_category:
             raise ValueError("Instance of type {} cannot be sibling to {}".format(type(self), type(target_before)))
-        if not(self.can_have_viewport_parent) and (target_before.parent is None) and (target_before.attached):
+        if not(self.can_have_viewport_parent) and (target_before._parent is None) and (target_before.attached):
             raise ValueError("Instance of type {} cannot be attached to viewport".format(type(self)))
 
         # Attach to sibling
-        cdef baseItem prev_sibling = target_before.prev_sibling
-        self.parent = target_before.parent
+        cdef baseItem _prev_sibling = target_before._prev_sibling
+        self._parent = target_before._parent
         # Potential deadlocks are avoided by the fact that we hold the parent
         # mutex and any lock of a next sibling must hold the parent
         # mutex.
-        if prev_sibling is not None:
-            prev_sibling.mutex.lock()
-            prev_sibling.next_sibling = self
-        self.prev_sibling = prev_sibling
-        self.next_sibling = target_before
-        target_before.prev_sibling = self
-        if prev_sibling is not None:
-            prev_sibling.mutex.unlock()
+        if _prev_sibling is not None:
+            _prev_sibling.mutex.lock()
+            _prev_sibling._next_sibling = self
+        self._prev_sibling = _prev_sibling
+        self._next_sibling = target_before
+        target_before._prev_sibling = self
+        if _prev_sibling is not None:
+            _prev_sibling.mutex.unlock()
         self.attached = True
 
     cdef void __detach_item_and_lock(self):
@@ -1202,8 +1535,8 @@ cdef class baseItem:
         self.lock_parent_and_item_mutex()
         # Use unique lock for the mutexes to
         # simplify handling (parent will change)
-        if self.parent is not(None):
-            m = unique_lock[recursive_mutex](self.parent.mutex)
+        if self._parent is not(None):
+            m = unique_lock[recursive_mutex](self._parent.mutex)
         elif self.attached:
             m = unique_lock[recursive_mutex](self.context.viewport.mutex)
         self.unlock_parent_mutex()
@@ -1215,50 +1548,50 @@ cdef class baseItem:
         self.mutex.unlock()
 
         # Remove this item from the list of siblings
-        if self.prev_sibling is not None:
-            self.prev_sibling.mutex.lock()
-            self.prev_sibling.next_sibling = self.next_sibling
-            self.prev_sibling.mutex.unlock()
-        if self.next_sibling is not None:
-            self.next_sibling.mutex.lock()
-            self.next_sibling.prev_sibling = self.prev_sibling
-            self.next_sibling.mutex.unlock()
+        if self._prev_sibling is not None:
+            self._prev_sibling.mutex.lock()
+            self._prev_sibling._next_sibling = self._next_sibling
+            self._prev_sibling.mutex.unlock()
+        if self._next_sibling is not None:
+            self._next_sibling.mutex.lock()
+            self._next_sibling._prev_sibling = self._prev_sibling
+            self._next_sibling.mutex.unlock()
         else:
             # No next sibling. We might be referenced in the
             # parent
-            if self.parent is None:
+            if self._parent is None:
                 # viewport is the parent, or no parent
                 if self.context.viewport.colormapRoots is self:
-                    self.context.viewport.colormapRoots = self.prev_sibling
+                    self.context.viewport.colormapRoots = self._prev_sibling
                 elif self.context.viewport.filedialogRoots is self:
-                    self.context.viewport.filedialogRoots = self.prev_sibling
+                    self.context.viewport.filedialogRoots = self._prev_sibling
                 elif self.context.viewport.viewportMenubarRoots is self:
-                    self.context.viewport.viewportMenubarRoots = self.prev_sibling
+                    self.context.viewport.viewportMenubarRoots = self._prev_sibling
                 elif self.context.viewport.last_window_child is self:
-                    self.context.viewport.last_window_child = self.prev_sibling
+                    self.context.viewport.last_window_child = self._prev_sibling
                 elif self.context.viewport.last_viewport_drawlist_child is self:
-                    self.context.viewport.last_viewport_drawlist_child = self.prev_sibling
+                    self.context.viewport.last_viewport_drawlist_child = self._prev_sibling
                 elif self.context.viewport.last_global_handler_child is self:
-                    self.context.viewport.last_global_handler_child = self.prev_sibling
+                    self.context.viewport.last_global_handler_child = self._prev_sibling
             else:
-                if self.parent.last_0_child is self:
-                    self.parent.last_0_child = self.prev_sibling
-                elif self.parent.last_widgets_child is self:
-                    self.parent.last_widgets_child = self.prev_sibling
-                elif self.parent.last_drawings_child is self:
-                    self.parent.last_drawings_child = self.prev_sibling
-                elif self.parent.last_payloads_child is self:
-                    self.parent.last_payloads_child = self.prev_sibling
-                elif self.parent.last_global_handler_child is self:
-                    self.parent.last_global_handler_child = self.prev_sibling
-                elif self.parent.last_item_handler_child is self:
-                    self.parent.last_item_handler_child = self.prev_sibling
-                elif self.parent.last_theme_child is self:
-                    self.parent.last_theme_child = self.prev_sibling
+                if self._parent.last_0_child is self:
+                    self._parent.last_0_child = self._prev_sibling
+                elif self._parent.last_widgets_child is self:
+                    self._parent.last_widgets_child = self._prev_sibling
+                elif self._parent.last_drawings_child is self:
+                    self._parent.last_drawings_child = self._prev_sibling
+                elif self._parent.last_payloads_child is self:
+                    self._parent.last_payloads_child = self._prev_sibling
+                elif self._parent.last_global_handler_child is self:
+                    self._parent.last_global_handler_child = self._prev_sibling
+                elif self._parent.last_item_handler_child is self:
+                    self._parent.last_item_handler_child = self._prev_sibling
+                elif self._parent.last_theme_child is self:
+                    self._parent.last_theme_child = self._prev_sibling
         # Free references
-        self.parent = None
-        self.prev_sibling = None
-        self.next_sibling = None
+        self._parent = None
+        self._prev_sibling = None
+        self._next_sibling = None
         self.attached = False
         # Lock again before we release the lock from unique_lock
         self.mutex.lock()
@@ -1294,44 +1627,44 @@ cdef class baseItem:
             raise ValueError("Trying to delete a deleted item")
 
         # Remove this item from the list of elements
-        if self.prev_sibling is not None:
-            self.prev_sibling.mutex.lock()
-            self.prev_sibling.next_sibling = self.next_sibling
-            self.prev_sibling.mutex.unlock()
-        if self.next_sibling is not None:
-            self.next_sibling.mutex.lock()
-            self.next_sibling.prev_sibling = self.prev_sibling
-            self.next_sibling.mutex.unlock()
+        if self._prev_sibling is not None:
+            self._prev_sibling.mutex.lock()
+            self._prev_sibling._next_sibling = self._next_sibling
+            self._prev_sibling.mutex.unlock()
+        if self._next_sibling is not None:
+            self._next_sibling.mutex.lock()
+            self._next_sibling._prev_sibling = self._prev_sibling
+            self._next_sibling.mutex.unlock()
         else:
             # No next sibling. We might be referenced in the
             # parent
-            if self.parent is None:
+            if self._parent is None:
                 # viewport is the parent, or no parent
                 if self.context.viewport.colormapRoots is self:
-                    self.context.viewport.colormapRoots = self.prev_sibling
+                    self.context.viewport.colormapRoots = self._prev_sibling
                 elif self.context.viewport.filedialogRoots is self:
-                    self.context.viewport.filedialogRoots = self.prev_sibling
+                    self.context.viewport.filedialogRoots = self._prev_sibling
                 elif self.context.viewport.viewportMenubarRoots is self:
-                    self.context.viewport.viewportMenubarRoots = self.prev_sibling
+                    self.context.viewport.viewportMenubarRoots = self._prev_sibling
                 elif self.context.viewport.last_window_child is self:
-                    self.context.viewport.last_window_child = self.prev_sibling
+                    self.context.viewport.last_window_child = self._prev_sibling
                 elif self.context.viewport.last_viewport_drawlist_child is self:
-                    self.context.viewport.last_viewport_drawlist_child = self.prev_sibling
+                    self.context.viewport.last_viewport_drawlist_child = self._prev_sibling
             else:
-                if self.parent.last_0_child is self:
-                    self.parent.last_0_child = self.prev_sibling
-                elif self.parent.last_widgets_child is self:
-                    self.parent.last_widgets_child = self.prev_sibling
-                elif self.parent.last_drawings_child is self:
-                    self.parent.last_drawings_child = self.prev_sibling
-                elif self.parent.last_payloads_child is self:
-                    self.parent.last_payloads_child = self.prev_sibling
-                elif self.parent.last_global_handler_child is self:
-                    self.parent.last_global_handler_child = self.prev_sibling
-                elif self.parent.last_item_handler_child is self:
-                    self.parent.last_item_handler_child = self.prev_sibling
-                elif self.parent.last_theme_child is self:
-                    self.parent.last_theme_child = self.prev_sibling
+                if self._parent.last_0_child is self:
+                    self._parent.last_0_child = self._prev_sibling
+                elif self._parent.last_widgets_child is self:
+                    self._parent.last_widgets_child = self._prev_sibling
+                elif self._parent.last_drawings_child is self:
+                    self._parent.last_drawings_child = self._prev_sibling
+                elif self._parent.last_payloads_child is self:
+                    self._parent.last_payloads_child = self._prev_sibling
+                elif self._parent.last_global_handler_child is self:
+                    self._parent.last_global_handler_child = self._prev_sibling
+                elif self._parent.last_item_handler_child is self:
+                    self._parent.last_item_handler_child = self._prev_sibling
+                elif self._parent.last_theme_child is self:
+                    self._parent.last_theme_child = self._prev_sibling
 
         # delete all children recursively
         if self.last_0_child is not None:
@@ -1373,13 +1706,13 @@ cdef class baseItem:
         if self.last_payloads_child is not None:
             self.last_payloads_child.__delete_and_siblings()
         # delete previous sibling
-        if self.prev_sibling is not None:
-            self.prev_sibling.__delete_and_siblings()
+        if self._prev_sibling is not None:
+            self._prev_sibling.__delete_and_siblings()
         # Free references
         self.context = None
-        self.parent = None
-        self.prev_sibling = None
-        self.next_sibling = None
+        self._parent = None
+        self._prev_sibling = None
+        self._next_sibling = None
         self.last_0_child = None
         self.last_widgets_child = None
         self.last_drawings_child = None
@@ -1418,8 +1751,8 @@ cdef class drawableItem(baseItem):
 
     cdef void draw_prev_siblings(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<drawableItem>self.prev_sibling).draw(l, x, y)
+        if self._prev_sibling is not None:
+            (<drawableItem>self._prev_sibling).draw(l, x, y)
 
     cdef void draw(self, imgui.ImDrawList* l, float x, float y) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2276,8 +2609,8 @@ cdef class globalHandler(baseItem):
         self.callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         return
     cdef void run_callback(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2288,8 +2621,8 @@ cdef class dcgGlobalHandlerList(globalHandler):
         self.can_have_children = True
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         if self.last_global_handler_child is not None:
@@ -2304,8 +2637,8 @@ cdef class dcgKeyDownHandler_(globalHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef imgui.ImGuiKeyData *key_info
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         if self.key == 0:
@@ -2326,8 +2659,8 @@ cdef class dcgKeyPressHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         if self.key == 0:
@@ -2345,8 +2678,8 @@ cdef class dcgKeyReleaseHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         if self.key == 0:
@@ -2366,8 +2699,8 @@ cdef class dcgMouseClickHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -2383,8 +2716,8 @@ cdef class dcgMouseDoubleClickHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -2401,8 +2734,8 @@ cdef class dcgMouseDownHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -2419,8 +2752,8 @@ cdef class dcgMouseDragHandler_(globalHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         cdef imgui.ImVec2 delta
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -2434,8 +2767,8 @@ cdef class dcgMouseDragHandler_(globalHandler):
 cdef class dcgMouseMoveHandler(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -2451,8 +2784,8 @@ cdef class dcgMouseReleaseHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -2464,8 +2797,8 @@ cdef class dcgMouseReleaseHandler_(globalHandler):
 cdef class dcgMouseWheelHandler(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<globalHandler>self.prev_sibling).run_handler()
+        if self._prev_sibling is not None:
+            (<globalHandler>self._prev_sibling).run_handler()
         if not(self.enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -2543,6 +2876,7 @@ cdef class shared_value:
 cdef class shared_bool(shared_value):
     def __init__(self, dcgContext context, bint value):
         self._value = value
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2565,6 +2899,7 @@ cdef class shared_bool(shared_value):
 cdef class shared_float(shared_value):
     def __init__(self, dcgContext context, float value):
         self._value = value
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2587,6 +2922,7 @@ cdef class shared_float(shared_value):
 cdef class shared_int(shared_value):
     def __init__(self, dcgContext context, int value):
         self._value = value
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2610,6 +2946,7 @@ cdef class shared_color(shared_value):
     def __init__(self, dcgContext context, value):
         self._value = parse_color(value)
         self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2643,6 +2980,7 @@ cdef class shared_color(shared_value):
 cdef class shared_double(shared_value):
     def __init__(self, dcgContext context, double value):
         self._value = value
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2665,6 +3003,7 @@ cdef class shared_double(shared_value):
 cdef class shared_str(shared_value):
     def __init__(self, dcgContext context, str value):
         self._value = bytes(str(value), 'utf-8')
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2685,6 +3024,7 @@ cdef class shared_str(shared_value):
 cdef class shared_float4(shared_value):
     def __init__(self, dcgContext context, value):
         read_point[float](self._value, value)
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2711,6 +3051,7 @@ cdef class shared_float4(shared_value):
 cdef class shared_int4(shared_value):
     def __init__(self, dcgContext context, value):
         read_point[int](self._value, value)
+        self._num_attached = 0
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2827,13 +3168,13 @@ cdef class itemHandler(baseItem):
 
     cdef void check_bind(self, uiItem item):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<itemHandler>self.prev_sibling).check_bind(item)
+        if self._prev_sibling is not None:
+            (<itemHandler>self._prev_sibling).check_bind(item)
 
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<itemHandler>self.prev_sibling).run_handler(item)
+        if self._prev_sibling is not None:
+            (<itemHandler>self._prev_sibling).run_handler(item)
 
     cdef void run_callback(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -2845,15 +3186,15 @@ cdef class dcgItemHandlerList(itemHandler):
 
     cdef void check_bind(self, uiItem item):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<itemHandler>self.prev_sibling).check_bind(item)
+        if self._prev_sibling is not None:
+            (<itemHandler>self._prev_sibling).check_bind(item)
         if self.last_item_handler_child is not None:
             (<itemHandler>self.last_item_handler_child).check_bind(item)
 
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<itemHandler>self.prev_sibling).run_handler(item)
+        if self._prev_sibling is not None:
+            (<itemHandler>self._prev_sibling).run_handler(item)
         if self.last_item_handler_child is not None:
             (<itemHandler>self.last_item_handler_child).run_handler(item)
 
@@ -3025,8 +3366,8 @@ cdef class uiItem(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.last_widgets_child is not None:
             self.last_widgets_child.set_hidden_and_propagate()
-        if self.prev_sibling is not None:
-            (<uiItem>self.prev_sibling).set_hidden_and_propagate()
+        if self._prev_sibling is not None:
+            (<uiItem>self._prev_sibling).set_hidden_and_propagate()
         self.update_current_state_as_hidden()
 
     def bind_handlers(self, itemHandler handlers):
@@ -3287,6 +3628,7 @@ cdef class uiItem(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self.can_be_disabled) and value != True:
             raise ValueError(f"Objects of type {type(self)} cannot be disabled")
+        self.theme_condition_enabled = theme_activation_condition_enabled_True if value else theme_activation_condition_enabled_False
         self.enabled_update_requested = True
         self._enabled = value
 
@@ -3470,8 +3812,8 @@ cdef class uiItem(baseItem):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<uiItem>self.prev_sibling).draw()
+        if self._prev_sibling is not None:
+            (<uiItem>self._prev_sibling).draw()
 
         if not(self._show):
             if self.show_update_requested:
@@ -3985,6 +4327,27 @@ cdef class dcgCombo(uiItem):
         self.state.deactivated_after_edited = self.state.deactivated and changed
         return pressed
 
+
+cdef class dcgCheckbox(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_checkbox
+        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        self.can_be_disabled = True
+        self.theme_condition_enabled = theme_activation_condition_enabled_True
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bool checked = shared_bool.get(<shared_bool>self._value)
+        cdef bint pressed = imgui.Checkbox(self.imgui_label.c_str(),
+                                             &checked)
+        if self._enabled:
+            shared_bool.set(<shared_bool>self._value, checked)
+        self.update_current_state()
+        return pressed
+
 """
 Complex ui items
 """
@@ -4033,8 +4396,8 @@ cdef class dcgWindow_(uiItem):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.prev_sibling is not None:
-            (<uiItem>self.prev_sibling).draw()
+        if self._prev_sibling is not None:
+            (<uiItem>self._prev_sibling).draw()
 
         if not(self._show):
             if self.show_update_requested:
