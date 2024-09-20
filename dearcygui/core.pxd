@@ -37,56 +37,6 @@ Thread safety:
   item/parent mutex. During rendering, the mutex is held.
 """
 
-cdef class dcgViewport:
-    cdef recursive_mutex mutex
-    cdef mvViewport *viewport
-    cdef dcgContext context
-    cdef public dcgCallback resize_callback
-    cdef public dcgCallback close_callback
-    cdef bint initialized
-    cdef mvGraphics graphics
-    cdef bint graphics_initialized
-    # linked list to objects without parents to draw with their children
-    # The entry point corresponds to the last item of the list (draw last)
-    cdef baseItem colormapRoots
-    cdef baseItem filedialogRoots
-    cdef baseItem viewportMenubarRoots
-    cdef dcgWindow_ last_window_child
-    cdef baseTheme bound_theme
-    cdef globalHandler last_global_handler_child
-    cdef dcgViewportDrawList_ last_viewport_drawlist_child
-    # Temporary info to be accessed during rendering
-    # Shouldn't be accessed outside draw()
-    cdef bint perspectiveDivide
-    cdef bint depthClipping
-    cdef float[6] clipViewport
-    cdef bint has_matrix_transform
-    cdef float[4][4] transform
-    cdef bint in_plot
-    cdef float thickness_multiplier # in plots
-    cdef int start_pending_theme_actions # managed outside viewport
-    cdef vector[theme_action] pending_theme_actions # managed outside viewport
-    cdef vector[theme_action] applied_theme_actions # managed by viewport
-    cdef vector[int] applied_theme_actions_count # managed by viewport
-    cdef int current_theme_activation_condition_enabled
-    cdef int current_theme_activation_condition_category
-
-    cdef initialize(self, unsigned width, unsigned height)
-    cdef void __check_initialized(self)
-    cdef void __on_resize(self, int width, int height)
-    cdef void __on_close(self)
-    cdef void __render(self) noexcept nogil
-    cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
-    cdef void push_pending_theme_actions(self, int, int) noexcept nogil
-    cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
-    cdef void pop_applied_pending_theme_actions(self) noexcept nogil
-
-
-cdef class dcgCallback:
-    cdef object callback
-    cdef int num_args
-    cdef object user_data
-
 cdef class dcgContext:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
@@ -184,7 +134,7 @@ cdef class baseItem:
     # to indicate what kind of parent
     # and children they can have.
     # Allowed children:
-    cdef bint can_have_0_child
+    cdef bint can_have_window_child
     cdef bint can_have_widget_child
     cdef bint can_have_drawing_child
     cdef bint can_have_payload_child
@@ -194,22 +144,17 @@ cdef class baseItem:
     cdef bint can_have_theme_child
     # Allowed siblings:
     cdef bint can_have_sibling
-    # Allowed parents
-    cdef bint can_have_viewport_parent
-    cdef bint can_have_nonviewport_parent
     # Type of child for the parent
     cdef int element_child_category
-    cdef int element_toplevel_category
 
     # Relationships
-    cdef bint attached
     cdef baseItem _parent
     # It is not possible to access an array of children without the gil
     # Thus instead use a list
     # Each element is responsible for calling draw on its sibling
     cdef baseItem _prev_sibling
     cdef baseItem _next_sibling
-    cdef drawableItem last_0_child #  mvFileExtension, mvFontRangeHint, mvNodeLink, mvAnnotation, mvAxisTag, mvDragLine, mvDragPoint, mvDragRect, mvLegend, mvTableColumn
+    cdef dcgWindow_ last_window_child
     cdef uiItem last_widgets_child
     cdef drawableItem last_drawings_child
     cdef baseItem last_payloads_child
@@ -226,6 +171,46 @@ cdef class baseItem:
     cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
+
+cdef class dcgViewport(baseItem):
+    cdef mvViewport *viewport
+    cdef bint initialized
+    cdef mvGraphics graphics
+    cdef bint graphics_initialized
+    cdef public dcgCallback resize_callback
+    cdef public dcgCallback close_callback
+    cdef baseTheme _theme
+    # Temporary info to be accessed during rendering
+    # Shouldn't be accessed outside draw()
+    cdef bint perspectiveDivide
+    cdef bint depthClipping
+    cdef float[6] clipViewport
+    cdef bint has_matrix_transform
+    cdef float[4][4] transform
+    cdef bint in_plot
+    cdef float thickness_multiplier # in plots
+    cdef int start_pending_theme_actions # managed outside viewport
+    cdef vector[theme_action] pending_theme_actions # managed outside viewport
+    cdef vector[theme_action] applied_theme_actions # managed by viewport
+    cdef vector[int] applied_theme_actions_count # managed by viewport
+    cdef int current_theme_activation_condition_enabled
+    cdef int current_theme_activation_condition_category
+
+    cdef initialize(self, unsigned width, unsigned height)
+    cdef void __check_initialized(self)
+    cdef void __on_resize(self, int width, int height)
+    cdef void __on_close(self)
+    cdef void __render(self) noexcept nogil
+    cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
+    cdef void push_pending_theme_actions(self, int, int) noexcept nogil
+    cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
+    cdef void pop_applied_pending_theme_actions(self) noexcept nogil
+
+
+cdef class dcgCallback:
+    cdef object callback
+    cdef int num_args
+    cdef object user_data
 
 """
 drawable item:

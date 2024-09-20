@@ -7184,7 +7184,7 @@ def maximize_viewport(**kwargs) -> None:
         None
     """
 
-    return dcg_context.viewport.show(maximized=True)
+    dcg_context.viewport.maximized = True
 
 def minimize_viewport(**kwargs) -> None:
     """     Minimizes a viewport.
@@ -7194,7 +7194,7 @@ def minimize_viewport(**kwargs) -> None:
         None
     """
 
-    return dcg_context.viewport.show(minimized=True)
+    dcg_context.viewport.minimized = True
 
 def move_item(item : Union[int, str], parent=None, before=None, **kwargs) -> None:
     """     Moves an item to a new location.
