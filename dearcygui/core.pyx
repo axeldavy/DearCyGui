@@ -3348,6 +3348,7 @@ cdef class itemHandler(baseItem):
 cdef class dcgItemHandlerList(itemHandler):
     def __cinit__(self):
         self.can_have_children = True
+        self.can_have_item_handler_child = True
 
     cdef void check_bind(self, uiItem item):
         cdef unique_lock[recursive_mutex] m

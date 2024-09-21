@@ -90,7 +90,7 @@ def get_dearpygui_version():
 
 def configure_item(item : Union[int, str], **kwargs) -> None:
     """Configures an item after creation."""
-    internal_dpg.configure_item(item, **kwargs)
+    item.configure(**kwargs)
 
 def configure_app(**kwargs) -> None:
     """Configures an item after creation."""
@@ -256,7 +256,7 @@ def get_item_parent(item: Union[int, str]) -> Union[int, None]:
     Returns:
         parent as a int or None
     """
-    return item.parent
+    return dcg_context[item].parent
 
 
 def filter_slot(items, slot):
@@ -292,7 +292,7 @@ def get_item_theme(item: Union[int, str]) -> int:
     Returns:
         theme's uuid
     """
-    return item.theme
+    return dcg_context[item].theme
 
 
 def get_item_font(item: Union[int, str]) -> int:
@@ -301,7 +301,7 @@ def get_item_font(item: Union[int, str]) -> int:
     Returns:
         font's uuid
     """
-    return internal_dpg.get_item_info(item)["font"]
+    return dcg_context[item].font
 
 
 def get_item_disabled_theme(item: Union[int, str]) -> int:
@@ -540,7 +540,7 @@ def show_item(item: Union[int, str]):
     Returns:
         None
     """
-    item.show = True
+    dcg_context[item].show = True
 
 
 def hide_item(item: Union[int, str], *, children_only: bool = False):
@@ -552,6 +552,7 @@ def hide_item(item: Union[int, str], *, children_only: bool = False):
     Returns:
         None
     """
+    item = dcg_context[item]
     if children_only:
         for child in item.children:
             child.show = False
@@ -1234,7 +1235,7 @@ def alias(alias : str, item : Union[int, str], **kwargs) -> None:
         None
     """
 
-    return alias(alias, item, **kwargs)
+    dcg_context[item].tag = alias
 
 def area_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, fill: Union[int, List[int], Tuple[int, ...]] =0, contribute_to_bounds: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an area series to a plot.
@@ -3381,7 +3382,7 @@ def int4_value(*, label: str =None, user_data: Any =None, default_value: Union[L
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return int4_value(label=label, user_data=user_data, default_value=default_value, **kwargs)
+    return dcg.shared_int4(dcg_context, default_value)
 
 def int_value(*, label: str =None, user_data: Any =None, default_value: int =0, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a int value.
@@ -3402,7 +3403,7 @@ def int_value(*, label: str =None, user_data: Any =None, default_value: int =0, 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return int_value(label=label, user_data=user_data, default_value=default_value, **kwargs)
+    return dcg.shared_int(dcg_context, default_value)
 
 def item_activated_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a activated handler.
@@ -3423,7 +3424,7 @@ def item_activated_handler(*, label: str =None, user_data: Any =None, callback: 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_activated_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgActivatedHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_active_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a active handler.
@@ -3444,7 +3445,7 @@ def item_active_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_active_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgActiveHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a clicked handler.
@@ -3466,7 +3467,7 @@ def item_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_clicked_handler(button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgClickedHandler(dcg_context, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_deactivated_after_edit_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a deactivated after edit handler.
@@ -3487,7 +3488,7 @@ def item_deactivated_after_edit_handler(*, label: str =None, user_data: Any =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_deactivated_after_edit_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgDeactivatedAfterEditHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_deactivated_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a deactivated handler.
@@ -3508,7 +3509,7 @@ def item_deactivated_handler(*, label: str =None, user_data: Any =None, callback
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_deactivated_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgDeactivatedHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_double_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a double click handler.
@@ -3530,7 +3531,7 @@ def item_double_clicked_handler(button : int =-1, *, label: str =None, user_data
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_double_clicked_handler(button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgDoubleClickedHandler(dcg_context, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_edited_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an edited handler.
@@ -3551,7 +3552,7 @@ def item_edited_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_edited_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgEditedHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_focus_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a focus handler.
@@ -3572,7 +3573,7 @@ def item_focus_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_focus_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgFocusHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_handler_registry(*, label: str =None, user_data: Any =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an item handler registry.
@@ -3591,7 +3592,7 @@ def item_handler_registry(*, label: str =None, user_data: Any =None, show: bool 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_handler_registry(label=label, user_data=user_data, show=show, **kwargs)
+    return dcg.dcgItemHandlerList(dcg_context, label=label, user_data=user_data, show=show, **kwargs)
 
 def item_hover_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a hover handler.
@@ -3612,7 +3613,7 @@ def item_hover_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_hover_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgHoverHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_resize_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a resize handler.
@@ -3633,7 +3634,7 @@ def item_resize_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_resize_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgResizeHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_toggled_open_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a togged open handler.
@@ -3654,7 +3655,7 @@ def item_toggled_open_handler(*, label: str =None, user_data: Any =None, callbac
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_toggled_open_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgToggledOpenHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def item_visible_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a visible handler.
@@ -3675,7 +3676,7 @@ def item_visible_handler(*, label: str =None, user_data: Any =None, callback: Ca
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return item_visible_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgVisibleHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key down handler.
@@ -3697,7 +3698,7 @@ def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return key_down_handler(key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgKeyDownHandler(dcg_context, key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def key_press_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key press handler.
@@ -3719,7 +3720,7 @@ def key_press_handler(key : int =constants.mvKey_None, *, label: str =None, user
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return key_press_handler(key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgKeyPressHandler(dcg_context, key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def key_release_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key release handler.
@@ -3741,7 +3742,7 @@ def key_release_handler(key : int =constants.mvKey_None, *, label: str =None, us
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return key_release_handler(key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgKeyReleaseHandler(dcg_context, key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def knob_float(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, min_value: float =0.0, max_value: float =100.0, **kwargs) -> Union[int, str]:
     """     Adds a knob that rotates based on change in x mouse position.
@@ -3987,7 +3988,7 @@ def mouse_click_handler(button : int =-1, *, label: str =None, user_data: Any =N
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return mouse_click_handler(button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseClickHandler(dcg_context, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse double click handler.
@@ -4009,7 +4010,7 @@ def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return mouse_double_click_handler(button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseDoubleClickHandler(dcg_context, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse down handler.
@@ -4031,7 +4032,7 @@ def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =No
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return mouse_down_handler(button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseDownHandler(dcg_context, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse drag handler.
@@ -4054,7 +4055,7 @@ def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return mouse_drag_handler(button, threshold, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseDragHandler(dcg_context, button, threshold, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse move handler.
@@ -4075,6 +4076,7 @@ def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
+    # TODO
     return mouse_move_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
@@ -4097,7 +4099,7 @@ def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return mouse_release_handler(button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseReleaseHandler(dcg_context, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse wheel handler.
@@ -4118,6 +4120,7 @@ def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
+    # TODO
     return mouse_wheel_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def node(*, label: str =None, user_data: Any =None, payload_type: str ='$$DPG_PAYLOAD', drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, draggable: bool =True, **kwargs) -> Union[int, str]:
@@ -4551,7 +4554,7 @@ def raw_texture(width : int, height : int, default_value : Union[List[float], Tu
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return raw_texture(width, height, default_value, label=label, user_data=user_data, format=format, **kwargs)
+    return dcg.dcgTexture(dcg_context, default_value, hint_dynamic=True, label=label, user_data=user_data, **kwargs)
 
 def scatter_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, no_clip: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a scatter series to a plot.
@@ -5053,7 +5056,7 @@ def static_texture(width : int, height : int, default_value : Union[List[float],
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return static_texture(width, height, default_value, label=label, user_data=user_data, **kwargs)
+    return dcg.dcgTexture(default_value, label=label, user_data=user_data, **kwargs)
 
 def stem_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, indent: int =0, show: bool =True, horizontal: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a stem series to a plot.
@@ -5510,9 +5513,9 @@ def theme(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str
 
         kwargs.pop('default_theme', None)
 
-    return theme(label=label, user_data=user_data, **kwargs)
+    return dcg.dcgThemeList(dcg_context, label=label, user_data=user_data, **kwargs)
 
-def theme_color(target : int =0, value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, category: int =0, **kwargs) -> Union[int, str]:
+def theme_color(target : int =0, value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, category: int =0, **kwargs) -> Union[int, str]:
     """     Adds a theme color.
 
     Args:
@@ -5532,7 +5535,18 @@ def theme_color(target : int =0, value : Union[List[int], Tuple[int, ...]] =(0, 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return theme_color(target, value, label=label, user_data=user_data, category=category, **kwargs)
+    # Note: This is ok but not very efficient, and purely for
+    # dpg backward compatibility. If you have many elements in your theme,
+    # prefer using a single dcgThemeColor
+    if category == mvThemeCat_Core:
+        theme_element = dcg.dcgThemeColorImGui(dcg_context, **kwargs)
+    elif category == mvThemeCat_Plots:
+        theme_element = dcg.dcgThemeColorImPlot(dcg_context, **kwargs)
+    else:
+        theme_element = dcg.dcgThemeColorImNodes(dcg_context, **kwargs)
+    theme_element[target] = value
+    return theme_element
+
 
 def theme_component(item_type : int =0, *, label: str =None, user_data: Any =None, enabled_state: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a theme component.
@@ -5553,10 +5567,12 @@ def theme_component(item_type : int =0, *, label: str =None, user_data: Any =Non
     if 'id' in kwargs.keys():
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
+    enabled_state = 1 if enabled_state else 2
+    # TODO: convert category
 
-    return theme_component(item_type, label=label, user_data=user_data, enabled_state=enabled_state, **kwargs)
+    return dcg.dcgThemeListWithCondition(dcg_context, condition_category=item_type, condition_enabled=enabled_state, label=label, user_data=user_data, enabled_state=enabled_state, **kwargs)
 
-def theme_style(target : int =0, x : float =1.0, y : float =-1.0, *, label: str =None, user_data: Any =None, category: int =0, **kwargs) -> Union[int, str]:
+def theme_style(target : int =0, x : float =1.0, y : float =-1.0, *, category: int =0, **kwargs) -> Union[int, str]:
     """     Adds a theme style.
 
     Args:
@@ -5577,7 +5593,21 @@ def theme_style(target : int =0, x : float =1.0, y : float =-1.0, *, label: str 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return theme_style(target, x, y, label=label, user_data=user_data, category=category, **kwargs)
+    # Note: This is ok but not very efficient, and purely for
+    # dpg backward compatibility. If you have many elements in your theme,
+    # prefer using a single dcgThemeStyle
+    if category == mvThemeCat_Core:
+        theme_element = dcg.dcgThemeStyleImGui(dcg_context, **kwargs)
+    elif category == mvThemeCat_Plots:
+        theme_element = dcg.dcgThemeStyleImPlot(dcg_context, **kwargs)
+    else:
+        theme_element = dcg.dcgThemeStyleImNodes(dcg_context, **kwargs)
+    try:
+        theme_element[target] = (x, y)
+    except Exception:
+        theme_element[target] = x
+
+    return theme_element
 
 def time_picker(*, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: dict ={'hour': 14, 'min': 32, 'sec': 23}, hour24: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a time picker.
@@ -5707,7 +5737,9 @@ def viewport_drawlist(*, label: str =None, user_data: Any =None, show: bool =Tru
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return viewport_drawlist(label=label, user_data=user_data, show=show, filter_key=filter_key, front=front, **kwargs)
+    item = dcg.dcgViewportDrawList(dcg_context, label=label, user_data=user_data, show=show, filter_key=filter_key, front=front, **kwargs)
+    item.attach_to_parent(dcg_context.viewport)
+    return item
 
 def viewport_menu_bar(*, label: str =None, user_data: Any =None, indent: int =0, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a menubar to the viewport.
@@ -5809,7 +5841,7 @@ def bind_font(font : Union[int, str], **kwargs) -> Union[int, str]:
         Union[int, str]
     """
 
-    return internal_dpg.bind_font(font, **kwargs)
+    dcg_context.viewport.font = dcg_context[font]
 
 def bind_item_font(item : Union[int, str], font : Union[int, str], **kwargs) -> None:
     """     Sets an item's font.
@@ -5821,7 +5853,7 @@ def bind_item_font(item : Union[int, str], font : Union[int, str], **kwargs) -> 
         None
     """
 
-    return internal_dpg.bind_item_font(item, font, **kwargs)
+    dcg_context[item].font = dcg_context[font]
 
 def bind_item_handler_registry(item : Union[int, str], handler_registry : Union[int, str], **kwargs) -> None:
     """     Binds an item handler registry to an item.
@@ -5833,7 +5865,7 @@ def bind_item_handler_registry(item : Union[int, str], handler_registry : Union[
         None
     """
 
-    dcg_context[item].handler = handler_registry
+    dcg_context[item].handler = dcg_context[handler_registry]
 
 def bind_item_theme(item : Union[int, str], theme : Union[int, str], **kwargs) -> None:
     """     Binds a theme to an item.
@@ -5845,7 +5877,7 @@ def bind_item_theme(item : Union[int, str], theme : Union[int, str], **kwargs) -
         None
     """
 
-    dcg_context[item].theme = theme
+    dcg_context[item].theme = dcg_context[theme]
 
 def bind_theme(theme : Union[int, str], **kwargs) -> None:
     """     Binds a global theme.
@@ -5855,8 +5887,10 @@ def bind_theme(theme : Union[int, str], **kwargs) -> None:
     Returns:
         None
     """
-
-    dcg_context.viewport.theme(theme, **kwargs)
+    if isinstance(theme, int) and theme == 0:
+        dcg_context.viewport.theme = None
+    else:
+        dcg_context.viewport.theme = dcg_context[theme]
 
 def capture_next_item(callback : Callable, *, user_data: Any =None, **kwargs) -> None:
     """     Captures the next item.
@@ -8038,22 +8072,19 @@ def setup_viewport():
 @deprecated("Use: `bind_item_theme(...)`")
 def set_item_theme(item, theme):
     """ deprecated function """
-    return internal_dpg.bind_item_theme(item, theme)
+    item.theme = theme
 
 @deprecated("Use: `bind_item_type_disabled_theme(...)`")
 def set_item_type_disabled_theme(item, theme):
-    """ deprecated function """
-    return internal_dpg.bind_item_type_disabled_theme(item, theme)
+    raise RuntimeError("Unsupported feature")
 
 @deprecated("Use: `bind_item_type_theme(...)`")
 def set_item_type_theme(item, theme):
-    """ deprecated function """
-    return internal_dpg.bind_item_type_theme(item, theme)
+    raise RuntimeError("Unsupported feature")
 
 @deprecated("Use: `bind_item_font(...)`")
 def set_item_font(item, font):
-    """ deprecated function """
-    return internal_dpg.bind_item_font(item, font)
+    item.font = font
 
 @deprecated("Use: `item_activated_handler(...)`")
 def add_activated_handler(parent, **kwargs):
@@ -8118,7 +8149,7 @@ def set_colormap(item, source):
 @deprecated("Use: `bind_theme(0)`")
 def reset_default_theme(item, source):
     """ deprecated function """
-    return internal_dpg.bind_theme(item, source)
+    dcg_context.viewport.theme = None
 
 @deprecated
 def set_staging_mode(mode):
@@ -8164,9 +8195,9 @@ def add_spacing(**kwargs):
         result_id = add_group(**kwargs)
         with result_id:
             for i in range(count):
-                add_spacer()
+                spacer()
     else:
-        result_id = add_spacer(**kwargs)
+        result_id = spacer(**kwargs)
     return result_id
 
 @deprecated("Use: add_spacer(...)")
@@ -8188,12 +8219,12 @@ def add_dummy(**kwargs):
         Union[int, str]
     """
 
-    return add_spacer(**kwargs)
+    return spacer(**kwargs)
 
 @deprecated("Use: `destroy_context()`")
 def cleanup_dearpygui():
     """ deprecated function """
-    return internal_dpg.destroy_context()
+    return destroy_context()
 
 @deprecated("Use: group(horizontal=True)")
 def add_same_line(**kwargs):
@@ -8201,7 +8232,7 @@ def add_same_line(**kwargs):
 
     last_item = internal_dpg.last_item()
     group = add_group(horizontal=True, **kwargs)
-    internal_dpg.move_item(last_item, parent=group)
+    move_item(last_item, parent=group)
     internal_dpg.capture_next_item(lambda s: internal_dpg.move_item(s, parent=group))
     return group
 

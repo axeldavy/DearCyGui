@@ -1247,6 +1247,40 @@ cdef class dcgThemeListWithCondition(baseTheme):
         self.theme_activation_condition_enabled = theme_activation_condition_enabled_any
         self.theme_activation_condition_category = theme_activation_condition_category_any
 
+    @property
+    def condition_enabled(self):
+        """
+        Writable attribute: As long as it is active, the theme list
+        waits to be applied that the conditions are met.
+        enabled condition: 0: no condition. 1: enabled must be true. 2: enabled must be false
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.theme_activation_condition_enabled
+
+    def condition_enabled(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # TODO: check bounds
+        self.theme_activation_condition_enabled = value
+
+    @property
+    def condition_category(self):
+        """
+        Writable attribute: As long as it is active, the theme list
+        waits to be applied that the conditions are met.
+        category condition: 0: no condition. other value: see list
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.theme_activation_condition_category
+
+    def condition_category(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # TODO: check bounds
+        self.theme_activation_condition_category = value
+
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
