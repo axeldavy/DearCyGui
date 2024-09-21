@@ -662,6 +662,18 @@ cdef class dcgCheckbox(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
+cdef class dcgSlider(uiItem):
+    cdef int _size
+    cdef int _format
+    cdef bint _drag
+    cdef float _drag_speed
+    cdef double _min
+    cdef double _max
+    cdef string _print_format
+    cdef bint _vertical
+    cdef imgui.ImGuiSliderFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
 """
 Complex UI elements
 """
@@ -730,7 +742,8 @@ cdef int theme_activation_condition_category_simple_plot = 1
 cdef int theme_activation_condition_category_button = 2
 cdef int theme_activation_condition_category_combo = 3
 cdef int theme_activation_condition_category_checkbox = 4
-cdef int theme_activation_condition_category_window = 5
+cdef int theme_activation_condition_category_slider = 5
+cdef int theme_activation_condition_category_window = 6
 
 cdef int theme_value_type_int = 0
 cdef int theme_value_type_float = 1

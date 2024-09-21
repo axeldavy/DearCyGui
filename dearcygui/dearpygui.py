@@ -13,9 +13,11 @@
 import warnings
 import functools
 import inspect
+from contextlib import contextmanager
 
 import dearcygui as dcg
-from dearcygui import dcgContext, dcgWindow, constants
+
+from dearcygui import constants
 
 from typing import List, Any, Callable, Union, Tuple
 
@@ -113,7 +115,7 @@ def start_dearpygui():
         render_dearpygui_frame()   
 
 
-#@contextmanager
+@contextmanager
 def mutex():
     """ Handles locking/unlocking render thread mutex. """
     try:
@@ -2104,7 +2106,7 @@ def drag_double(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return drag_double(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.dcgSlider(label=label, format="double", size=1, drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_doublex(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Any =(0.0, 0.0, 0.0, 0.0), size: int =4, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag input for a set of double values up to 4. Useful when drag float is not accurate enough. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2145,7 +2147,7 @@ def drag_doublex(*, label: str =None, user_data: Any =None, width: int =0, inden
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return drag_doublex(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.dcgSlider(label=label, format="double", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_float(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag for a single float value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2185,7 +2187,7 @@ def drag_float(*, label: str =None, user_data: Any =None, width: int =0, indent:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return drag_float(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.dcgSlider(label=label, format="float", drag=True, size=1, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), size: int =4, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag input for a set of float values up to 4. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2226,7 +2228,7 @@ def drag_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return drag_floatx(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.dcgSlider(label=label, format="float", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_int(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: int =0, format: str ='%d', speed: float =1.0, min_value: int =0, max_value: int =100, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag for a single int value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2266,7 +2268,7 @@ def drag_int(*, label: str =None, user_data: Any =None, width: int =0, indent: i
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return drag_int(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.dcgSlider(label=label, format="int", size=1, drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), size: int =4, format: str ='%d', speed: float =1.0, min_value: int =0, max_value: int =100, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag input for a set of int values up to 4. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2307,7 +2309,7 @@ def drag_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return drag_intx(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.dcgSlider(label=label, format="int", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_line(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, default_value: float =0.0, color: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, show_label: bool =True, vertical: bool =True, delayed: bool =False, no_cursor: bool =False, no_fit: bool =False, no_inputs: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a drag line to a plot.
@@ -4758,7 +4760,7 @@ def slider_double(*, label: str =None, user_data: Any =None, width: int =0, heig
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return slider_double(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, format=format, **kwargs)
+    return dcg.dcgSlider(label=label, format="double", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_doublex(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Any =(0.0, 0.0, 0.0, 0.0), size: int =4, no_input: bool =False, clamped: bool =False, min_value: float =0.0, max_value: float =100.0, format: str ='%.3f', **kwargs) -> Union[int, str]:
     """     Adds multi slider for up to 4 double values. Usueful for when multi slide float is not accurate enough. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4798,7 +4800,7 @@ def slider_doublex(*, label: str =None, user_data: Any =None, width: int =0, ind
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return slider_doublex(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, format=format, **kwargs)
+    return dcg.dcgSlider(label=label, format="double", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_float(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, vertical: bool =False, no_input: bool =False, clamped: bool =False, min_value: float =0.0, max_value: float =100.0, format: str ='%.3f', **kwargs) -> Union[int, str]:
     """     Adds slider for a single float value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4839,7 +4841,7 @@ def slider_float(*, label: str =None, user_data: Any =None, width: int =0, heigh
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return slider_float(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, format=format, **kwargs)
+    return dcg.dcgSlider(label=label, format="float", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), size: int =4, no_input: bool =False, clamped: bool =False, min_value: float =0.0, max_value: float =100.0, format: str ='%.3f', **kwargs) -> Union[int, str]:
     """     Adds multi slider for up to 4 float values. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4879,7 +4881,7 @@ def slider_floatx(*, label: str =None, user_data: Any =None, width: int =0, inde
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return slider_floatx(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, format=format, **kwargs)
+    return dcg.dcgSlider(label=label, format="float", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_int(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: int =0, vertical: bool =False, no_input: bool =False, clamped: bool =False, min_value: int =0, max_value: int =100, format: str ='%d', **kwargs) -> Union[int, str]:
     """     Adds slider for a single int value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4920,7 +4922,7 @@ def slider_int(*, label: str =None, user_data: Any =None, width: int =0, height:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return slider_int(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, format=format, **kwargs)
+    return dcg.dcgSlider(label=label, format="int", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), size: int =4, no_input: bool =False, clamped: bool =False, min_value: int =0, max_value: int =100, format: str ='%d', **kwargs) -> Union[int, str]:
     """     Adds multi slider for up to 4 int values. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4960,7 +4962,7 @@ def slider_intx(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return slider_intx(label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, format=format, **kwargs)
+    return dcg.dcgSlider(label=label, format="int", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def spacer(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], **kwargs) -> Union[int, str]:
     """     Adds a spacer item that can be used to help with layouts or can be used as a placeholder item.
@@ -5770,7 +5772,7 @@ def window(*, label: str =None, user_data: Any =None, width: int =0, height: int
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    win = dcgWindow(dcg_context, label=label, user_data=user_data, width=width, height=height, show=show, pos=pos, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
+    win = dcg.dcgWindow(dcg_context, label=label, user_data=user_data, width=width, height=height, show=show, pos=pos, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, no_close=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
     win.attach_to_parent(dcg_context.viewport)
     return win
 
@@ -5898,7 +5900,7 @@ def create_context(**kwargs) -> None:
     Returns:
         None
     """
-    dcg_context = dcgContext(**kwargs)
+    dcg_context = dcg.dcgContext(**kwargs)
 
     return dcg_context
 

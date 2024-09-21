@@ -4493,12 +4493,14 @@ cdef class dcgCombo(uiItem):
         """
         Writable attribute: Whether the combo should fit available width
         """
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return (self.flags & imgui.ImGuiComboFlags_WidthFitPreview) != 0
 
     @fit_width.setter
     def fit_width(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.flags &= ~imgui.ImGuiComboFlags_WidthFitPreview
         if value:
             self.flags |= imgui.ImGuiComboFlags_WidthFitPreview
@@ -4577,6 +4579,7 @@ cdef class dcgCheckbox(uiItem):
         self.state.can_be_hovered = True
         self.can_be_disabled = True
         self.theme_condition_enabled = theme_activation_condition_enabled_True
+
     cdef bint draw_item(self) noexcept nogil:
         cdef bool checked = shared_bool.get(<shared_bool>self._value)
         cdef bint pressed = imgui.Checkbox(self.imgui_label.c_str(),
@@ -4585,6 +4588,454 @@ cdef class dcgCheckbox(uiItem):
             shared_bool.set(<shared_bool>self._value, checked)
         self.update_current_state()
         return pressed
+
+cdef class dcgSlider(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_slider
+        self._format = 1
+        self._size = 1
+        self._drag = False
+        self._drag_speed = 1.
+        self._print_format = b"%.3f"
+        self.flags = 0
+        self._min = 0.
+        self._max = 100.
+        self._vertical = False
+        self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+        self.state.can_be_active = True # unsure
+        self.state.can_be_clicked = True
+        self.state.can_be_edited = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        self.can_be_disabled = True
+        self.theme_condition_enabled = theme_activation_condition_enabled_True
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Since some options cancel each other, one
+        # must enable them in a specific order
+        if "format" in kwargs:
+            self.format = kwargs.pop("format")
+        if "size" in kwargs:
+            self.size = kwargs.pop("size")
+        if "logarithmic" in kwargs:
+            self.logarithmic = kwargs.pop("logarithmic")
+        # baseItem configure will configure the rest.
+        return super().configure(**kwargs)
+
+    @property
+    def format(self):
+        """
+        Writable attribute: Format of the slider.
+        Must be "int", "float" or "double".
+        Note that float here means the 32 bits version.
+        The python float corresponds to a double.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._format == 1:
+            return "float"
+        elif self._format == 0:
+            return "int"
+        return "double"
+
+    @format.setter
+    def format(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef int target_format
+        if value == "int":
+            target_format = 0
+        elif value == "float":
+            target_format = 1
+        elif value == "double":
+            target_format = 2
+        else:
+            raise ValueError(f"Expected 'int', 'float' or 'double'. Got {value}")
+        if target_format == self._format:
+            return
+        self._format = target_format
+        # Allocate a new value of the right type
+        previous_value = self.value # Pass though the property to do the conversion for us
+        if self._size == 1:
+            if target_format == 0:
+                self._value = <shared_value>(shared_int.__new__(shared_int, self.context))
+            elif target_format == 0:
+                self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+            else:
+                self._value = <shared_value>(shared_double.__new__(shared_double, self.context))
+        else:
+            if target_format == 0:
+                self._value = <shared_value>(shared_int4.__new__(shared_int4, self.context))
+                self.value = previous_value
+            elif target_format == 0:
+                self._value = <shared_value>(shared_float4.__new__(shared_float4, self.context))
+            else:
+                self._value = <shared_value>(shared_double4.__new__(shared_double4, self.context))
+        self.value = previous_value # Use property to pass through python for the conversion
+        self._print_format = b"%d" if target_format == 0 else b"%.3f"
+
+    @property
+    def size(self):
+        """
+        Writable attribute: Size of the slider.
+        Can be 1, 2, 3 or 4.
+        When 1 the item's value is held with
+        a scalar shared value, else it is held
+        with a vector of 4 elements (even for
+        size 2 and 3)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._size
+        
+
+    @size.setter
+    def size(self, int target_size):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if target_size < 0 or target_size > 4:
+            raise ValueError(f"Expected 1, 2, 3, or 4 for size. Got {target_size}")
+        if self._size == target_size:
+            return
+        if (self._size > 1 and target_size > 1):
+            self._size = target_size
+            return
+        # Reallocate the internal vector
+        previous_value = self.value # Pass though the property to do the conversion for us
+        if target_size == 1:
+            if self._format == 0:
+                self._value = <shared_value>(shared_int.__new__(shared_int, self.context))
+            elif self._format == 1:
+                self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+            else:
+                self._value = <shared_value>(shared_double.__new__(shared_double, self.context))
+            self.value = previous_value[0]
+        else:
+            if self._format == 0:
+                self._value = <shared_value>(shared_int4.__new__(shared_int4, self.context))
+                self.value = previous_value
+            elif self._format == 1:
+                self._value = <shared_value>(shared_float4.__new__(shared_float4, self.context))
+            else:
+                self._value = <shared_value>(shared_double4.__new__(shared_double4, self.context))
+            self.value = (previous_value, 0, 0, 0)
+        self._size = target_size
+
+    @property
+    def clamped(self):
+        """
+        Writable attribute: Whether the slider value should be clamped even when keyboard set
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiSliderFlags_AlwaysClamp) != 0
+
+    @clamped.setter
+    def clamped(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiSliderFlags_AlwaysClamp
+        if value:
+            self.flags |= imgui.ImGuiSliderFlags_AlwaysClamp
+
+    @property
+    def drag(self):
+        """
+        Writable attribute: Whether the use a 'drag'
+        slider rather than a regular one.
+        Incompatible with 'vertical'.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._drag
+
+    @drag.setter
+    def drag(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._drag = value
+        if value:
+            self._vertical = False
+
+    @property
+    def logarithmic(self):
+        """
+        Writable attribute: Make the slider logarithmic.
+        Disables round_to_format if enabled
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiSliderFlags_NoInput) != 0
+
+    @logarithmic.setter
+    def logarithmic(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~(imgui.ImGuiSliderFlags_Logarithmic | imgui.ImGuiSliderFlags_NoRoundToFormat)
+        if value:
+            self.flags |= (imgui.ImGuiSliderFlags_Logarithmic | imgui.ImGuiSliderFlags_NoRoundToFormat)
+
+    @property
+    def min_value(self):
+        """
+        Writable attribute: Minimum value the slider
+        will be clamped to.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._min
+
+    @min_value.setter
+    def min_value(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._min = value
+
+    @property
+    def max_value(self):
+        """
+        Writable attribute: Maximum value the slider
+        will be clamped to.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._max
+
+    @max_value.setter
+    def max_value(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._max = value
+
+    @property
+    def no_input(self):
+        """
+        Writable attribute: Disable Ctrl+Click and Enter key to
+        manually set the value
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiSliderFlags_NoInput) != 0
+
+    @no_input.setter
+    def no_input(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiSliderFlags_NoInput
+        if value:
+            self.flags |= imgui.ImGuiSliderFlags_NoInput
+
+    @property
+    def print_format(self):
+        """
+        Writable attribute: format string
+        for the value -> string conversion
+        for display. If round_to_format is
+        enabled, the value is converted
+        back and thus appears rounded.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(bytes(self._print_format), encoding="utf-8")
+
+    @print_format.setter
+    def print_format(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._print_format = bytes(value, 'utf-8')
+
+    @property
+    def round_to_format(self):
+        """
+        Writable attribute: If set (default),
+        the value will not have more digits precision
+        than the requested format string for display.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiSliderFlags_NoRoundToFormat) == 0
+
+    @round_to_format.setter
+    def round_to_format(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value and (self.flags & imgui.ImGuiSliderFlags_Logarithmic) != 0:
+            # Note this is not a limitation from imgui, but they strongly
+            # advise not to combine both, and thus we let the user do his
+            # own rounding if he really wants to.
+            raise ValueError("round_to_format cannot be enabled with logarithmic set")
+        self.flags &= ~imgui.ImGuiSliderFlags_NoRoundToFormat
+        if not(value):
+            self.flags |= imgui.ImGuiSliderFlags_NoRoundToFormat
+
+    @property
+    def speed(self):
+        """
+        Writable attribute: When drag is true,
+        this attributes sets the drag speed.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._drag_speed
+
+    @speed.setter
+    def speed(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._drag_speed = value
+
+    @property
+    def vertical(self):
+        """
+        Writable attribute: Whether the use a vertical
+        slider. Only sliders of size 1 and drag False
+        are supported.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._vertical
+
+    @vertical.setter
+    def vertical(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._size != 1:
+            return
+        self.drag = False
+        self.vertical = value
+        if value:
+            self.drag = False
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef imgui.ImGuiSliderFlags flags = self.flags | imgui.ImGuiSliderFlags_NoInput
+        cdef imgui.ImGuiDataType type
+        cdef int value_int
+        cdef float value_float
+        cdef double value_double
+        cdef int[4] value_int4
+        cdef float[4] value_float4
+        cdef double[4] value_double4
+        cdef void *data
+        cdef void *data_min
+        cdef void *data_max
+        cdef bint modified
+        cdef int imin, imax
+        cdef float fmin, fmax
+        cdef double dmin, dmax
+        # Prepare data type
+        if self._format == 0:
+            type = imgui.ImGuiDataType_S32
+            imin = <int>self._min
+            imax = <int>self._max
+            data_min = &imin
+            data_max = &imax
+        elif self._format == 1:
+            type = imgui.ImGuiDataType_Float
+            fmin = <float>self._min
+            fmax = <float>self._max
+            data_min = &fmin
+            data_max = &fmax
+        else:
+            type = imgui.ImGuiDataType_Double
+            dmin = <double>self._min
+            dmax = <double>self._max
+            data_min = &dmin
+            data_max = &dmax
+
+        # Read the value
+        if self._format == 0:
+            if self._size == 1:
+                value_int = shared_int.get(<shared_int>self._value)
+                data = &value_int
+            else:
+                shared_int4.get(<shared_int4>self._value, value_int4)
+                data = &value_int4
+        elif self._format == 1:
+            if self._size == 1:
+                value_float = shared_float.get(<shared_float>self._value)
+                data = &value_float
+            else:
+                shared_float4.get(<shared_float4>self._value, value_float4)
+                data = &value_float4
+        else:
+            if self._size == 1:
+                value_double = shared_double.get(<shared_double>self._value)
+                data = &value_double
+            else:
+                shared_double4.get(<shared_double4>self._value, value_double4)
+                data = &value_double4
+
+        # Draw
+        if self._drag:
+            if self._size == 1:
+                modified = imgui.DragScalar(self.imgui_label.c_str(),
+                                            type,
+                                            data,
+                                            self._drag_speed,
+                                            data_min,
+                                            data_max,
+                                            self._print_format.c_str(),
+                                            flags)
+            else:
+                modified = imgui.DragScalarN(self.imgui_label.c_str(),
+                                             type,
+                                             data,
+                                             self._size,
+                                             self._drag_speed,
+                                             data_min,
+                                             data_max,
+                                             self._print_format.c_str(),
+                                             flags)
+        else:
+            if self._size == 1:
+                if self._vertical:
+                    modified = imgui.VSliderScalar(self.imgui_label.c_str(),
+                                                   self.requested_size,
+                                                   type,
+                                                   data,
+                                                   data_min,
+                                                   data_max,
+                                                   self._print_format.c_str(),
+                                                   flags)
+                else:
+                    modified = imgui.SliderScalar(self.imgui_label.c_str(),
+                                                  type,
+                                                  data,
+                                                  data_min,
+                                                  data_max,
+                                                  self._print_format.c_str(),
+                                                  flags)
+            else:
+                modified = imgui.SliderScalarN(self.imgui_label.c_str(),
+                                               type,
+                                               data,
+                                               self._size,
+                                               data_min,
+                                               data_max,
+                                               self._print_format.c_str(),
+                                               flags)
+		
+        # Write the value
+        if self._enabled:
+            if self._format == 0:
+                if self._size == 1:
+                    shared_int.set(<shared_int>self._value, value_int)
+                else:
+                    shared_int4.set(<shared_int4>self._value, value_int4)
+            elif self._format == 1:
+                if self._size == 1:
+                    shared_float.set(<shared_float>self._value, value_float)
+                else:
+                    shared_float4.set(<shared_float4>self._value, value_float4)
+            else:
+                if self._size == 1:
+                    shared_double.set(<shared_double>self._value, value_double)
+                else:
+                    shared_double4.set(<shared_double4>self._value, value_double4)
+        self.update_current_state()
+        return modified
 
 """
 Complex ui items
