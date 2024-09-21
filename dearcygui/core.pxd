@@ -3,7 +3,7 @@ from dearcygui.backends.backend cimport mvViewport, mvGraphics
 from libc.time cimport tm
 from libcpp.string cimport string
 from libcpp cimport bool
-from dearcygui.wrapper.mutex cimport recursive_mutex
+from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 from libcpp.atomic cimport atomic
 from libcpp.map cimport map
 from libcpp.vector cimport vector
@@ -36,6 +36,20 @@ Thread safety:
   To prevent dead-locks, the imgui mutex must be locked first before any
   item/parent mutex. During rendering, the mutex is held.
 """
+
+cdef inline void lock_gil_friendly(unique_lock[recursive_mutex] &m,
+                                   recursive_mutex &mutex) noexcept:
+    """
+    Must be called to lock our mutexes whenever we hold the gil
+    """
+    m = unique_lock[recursive_mutex](mutex, defer_lock_t())
+    if m.try_lock():
+        return
+    # Release the gil to enable python processes eventually
+    # holding the lock to run and release it.
+    # Block until we get the lock
+    with nogil:
+        m.lock()
 
 cdef class dcgContext:
     cdef recursive_mutex mutex
@@ -127,6 +141,7 @@ A child then points to its previous and next sibling of its category
 """
 cdef class baseItem:
     cdef recursive_mutex mutex
+    cdef int external_lock
     cdef dcgContext context
     cdef long long uuid
     cdef object _user_data
@@ -161,13 +176,12 @@ cdef class baseItem:
     cdef globalHandler last_global_handler_child
     cdef itemHandler last_item_handler_child
     cdef baseTheme last_theme_child
-    cdef void lock_parent_and_item_mutex(self) noexcept nogil
-    cdef void unlock_parent_mutex(self) noexcept nogil
+    cdef void lock_parent_and_item_mutex(self, unique_lock[recursive_mutex]&, unique_lock[recursive_mutex]&)
     cdef void lock_and_previous_siblings(self) noexcept nogil
     cdef void unlock_and_previous_siblings(self) noexcept nogil
     cpdef void attach_to_parent(self, target_parent)
     cpdef void attach_before(self, target_before)
-    cdef void __detach_item_and_lock(self)
+    cdef void __detach_item_and_lock(self, unique_lock[recursive_mutex]&)
     cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
@@ -609,7 +623,7 @@ cdef class uiItem(baseItem):
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate(self) noexcept nogil
-    cdef object output_current_item_state(self)
+    cpdef object output_current_item_state(self)
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_as_hidden(self) noexcept nogil
     cdef void draw(self) noexcept nogil

@@ -4,7 +4,8 @@ import numpy as np
 
 cdef class dcgDrawList(dcgDrawList_):
     def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if len(args) == 2:
             # positional arguments
             self.clip_width = <float>args[0]
@@ -17,38 +18,46 @@ cdef class dcgDrawList(dcgDrawList_):
         super().configure(**kwargs)
     @property
     def width(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return <int>self.clip_width
     @width.setter
     def width(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.clip_width = <float>value
     @property
     def height(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return <int>self.clip_height
     @height.setter
     def height(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.clip_height = <float>value
 
 cdef class dcgViewportDrawList(dcgViewportDrawList_):
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.front = kwargs.pop("front", self.front)
         super().configure(**kwargs)
     @property
     def front(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.front
     @front.setter
     def front(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.front = value
 
 cdef class dcgDrawLayer(dcgDrawLayer_):
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.cullMode = kwargs.pop("cull_mode", self.cullMode)
         self.perspectiveDivide = kwargs.pop("perspective_divide", self.perspectiveDivide)
         self.depthClipping = kwargs.pop("depth_clipping", self.depthClipping)
@@ -58,31 +67,38 @@ cdef class dcgDrawLayer(dcgDrawLayer_):
         super().configure(**kwargs)
     @property
     def perspective_divide(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.perspectiveDivide
     @perspective_divide.setter
     def perspective_divide(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.perspectiveDivide = value
     @property
     def depth_clipping(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.depthClipping
     @depth_clipping.setter
     def depth_clipping(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.depthClipping = value
     @property
     def cull_mode(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.cullMode
     @cull_mode.setter
     def cull_mode(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.cullMode = value
     @property
     def transform(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if not(self.has_matrix_transform):
             # identity:
             return [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]
@@ -93,7 +109,8 @@ cdef class dcgDrawLayer(dcgDrawLayer_):
         return res
     @transform.setter
     def transform(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef int i, j
         if len(value) == 16:
             for i in range(16):
@@ -128,7 +145,8 @@ cdef class dcgDrawLayer(dcgDrawLayer_):
 
 cdef class dcgDrawArrow(dcgDrawArrow_):
     def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if len(args) == 2:
             read_point[float](self.end, args[0])
             read_point[float](self.start, args[1])
@@ -143,55 +161,66 @@ cdef class dcgDrawArrow(dcgDrawArrow_):
 
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.end)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.end, value)
         self.__compute_tip()
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.start)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.start, value)
         self.__compute_tip()
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
         self.__compute_tip()
     @property
     def size(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.size
     @size.setter
     def size(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.size = value
         self.__compute_tip()
 
 
 cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
     def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if len(args) == 4:
             (p1, p2, p3, p4) = args
             read_point[float](self.p1, p1)
@@ -207,66 +236,81 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
         super().configure(**kwargs)
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p1, value)
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p2)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p2, value)
     @property
     def p3(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p3)
     @p3.setter
     def p3(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p3, value)
     @property
     def p4(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p4)
     @p4.setter
     def p4(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p4, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
     @property
     def segments(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.segments
     @segments.setter
     def segments(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.segments = value
 
 cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
     def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if len(args) == 3:
             (p1, p2, p3) = args
             read_point[float](self.p1, p1)
@@ -281,58 +325,71 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
         super().configure(**kwargs)
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p1, value)
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p2)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p2, value)
     @property
     def p3(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p3)
     @p3.setter
     def p3(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p3, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
     @property
     def segments(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.segments
     @segments.setter
     def segments(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.segments = value
 
 cdef class dcgDrawCircle(dcgDrawCircle_):
     def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if len(args) == 2:
             (center, radius) = args
             read_point[float](self.center, center)
@@ -348,60 +405,73 @@ cdef class dcgDrawCircle(dcgDrawCircle_):
         super().configure(**kwargs)
     @property
     def center(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.center)
     @center.setter
     def center(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.center, value)
     @property
     def radius(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.radius)
     @radius.setter
     def radius(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.radius = value
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def fill(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
         unparse_color(fill, self.fill)
         return list(fill)
     @fill.setter
     def fill(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.fill = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
     @property
     def segments(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.segments
     @segments.setter
     def segments(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.segments = value
 
 cdef class dcgDrawEllipse(dcgDrawEllipse_):
     def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef bint recompute_points = False
         if len(args) == 2:
             (pmin, pmax) = args
@@ -428,65 +498,79 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
             self.__fill_points()
     @property
     def pmin(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pmin)
     @pmin.setter
     def pmin(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pmin, value)
         self.__fill_points()
     @property
     def pmax(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pmax)
     @pmax.setter
     def pmax(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pmax, value)
         self.__fill_points()
     @property
     def radius(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.radius)
     @radius.setter
     def radius(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.radius = value
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def fill(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
         unparse_color(fill, self.fill)
         return list(fill)
     @fill.setter
     def fill(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.fill = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
     @property
     def segments(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.segments
     @segments.setter
     def segments(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.segments = value
         self.__fill_points()
 
@@ -533,47 +617,57 @@ cdef class dcgDrawImage(dcgDrawImage_):
 
     @property
     def texture(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.texture
     @texture.setter
     def texture(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if not(isinstance(value, dcgTexture)):
             raise TypeError("texture must be a dcgTexture")
         self.texture = value
     @property
     def pmin(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pmin)
     @pmin.setter
     def pmin(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pmin, value)
     @property
     def pmax(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pmax)
     @pmax.setter
     def pmax(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pmax, value)
     @property
     def uv(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.uv)
     @uv.setter
     def uv(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.uv, value)
     @property
     def color_multiplier(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color_multiplier
         unparse_color(color_multiplier, self.color_multiplier)
         return list(color_multiplier)
     @color_multiplier.setter
     def color_multiplier(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color_multiplier = parse_color(value)
 
 cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
@@ -624,87 +718,107 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
 
     @property
     def texture(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.texture
     @texture.setter
     def texture(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if not(isinstance(value, dcgTexture)):
             raise TypeError("texture must be a dcgTexture")
         self.texture = value
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p1, value)
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p2)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p2, value)
     @property
     def p3(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p3)
     @p3.setter
     def p3(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p3, value)
     @property
     def p4(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p4)
     @p4.setter
     def p4(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p4, value)
     @property
     def uv1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.uv1)[:2]
     @uv1.setter
     def uv1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.uv1, value)
     @property
     def uv2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.uv2)[:2]
     @uv2.setter
     def uv2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.uv2, value)
     @property
     def uv3(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.uv3)[:2]
     @uv3.setter
     def uv3(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.uv3, value)
     @property
     def uv4(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.uv4)[:2]
     @uv4.setter
     def uv4(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.uv4, value)
     @property
     def color_multiplier(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color_multiplier
         unparse_color(color_multiplier, self.color_multiplier)
         return list(color_multiplier)
     @color_multiplier.setter
     def color_multiplier(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color_multiplier = parse_color(value)
 
 cdef class dcgDrawLine(dcgDrawLine_):
@@ -725,45 +839,55 @@ cdef class dcgDrawLine(dcgDrawLine_):
 
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p1, value)
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p2, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def closed(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.closed
     @closed.setter
     def closed(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.closed = value
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
 cdef class dcgDrawPolyline(dcgDrawPolyline_):
@@ -790,7 +914,8 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
 
     @property
     def points(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         res = []
         cdef float4 p
         cdef int i
@@ -799,7 +924,8 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
         return res
     @points.setter
     def points(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float4 p
         cdef int i
         self.points.clear()
@@ -808,29 +934,35 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
             self.points.push_back(p)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def closed(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.closed
     @closed.setter
     def closed(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.closed = value
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
 cdef class dcgDrawPolygon(dcgDrawPolygon_):
@@ -859,7 +991,8 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
 
     @property
     def points(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         res = []
         cdef float4 p
         cdef int i
@@ -868,7 +1001,8 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
         return res
     @points.setter
     def points(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float4 p
         cdef int i
         self.points.clear()
@@ -878,31 +1012,37 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
         self.__triangulate()
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def fill(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
         unparse_color(fill, self.fill)
         return list(fill)
     @fill.setter
     def fill(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.fill = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
 
@@ -933,63 +1073,77 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
 
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p1, value)
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p2)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p2, value)
     @property
     def p3(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p3)
     @p3.setter
     def p3(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p3, value)
     @property
     def p4(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p4)
     @p4.setter
     def p4(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p4, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def fill(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
         unparse_color(fill, self.fill)
         return list(fill)
     @fill.setter
     def fill(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.fill = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
 cdef class dcgDrawRect(dcgDrawRect_):
@@ -1035,95 +1189,115 @@ cdef class dcgDrawRect(dcgDrawRect_):
 
     @property
     def pmin(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pmin)
     @pmin.setter
     def pmin(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pmin, value)
     @property
     def pmax(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pmax)
     @pmax.setter
     def pmax(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pmax, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def fill(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
         unparse_color(fill, self.fill)
         return list(fill)
     @fill.setter
     def fill(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.fill = parse_color(value)
     @property
     def color_upper_left(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color_upper_left
         unparse_color(color_upper_left, self.color_upper_left)
         return list(color_upper_left)
     @color_upper_left.setter
     def color_upper_left(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color_upper_left = parse_color(value)
     @property
     def color_upper_right(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color_upper_right
         unparse_color(color_upper_right, self.color_upper_right)
         return list(color_upper_right)
     @color_upper_right.setter
     def color_upper_right(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color_upper_right = parse_color(value)
     @property
     def color_bottom_left(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color_bottom_left
         unparse_color(color_bottom_left, self.color_bottom_left)
         return list(color_bottom_left)
     @color_bottom_left.setter
     def color_bottom_left(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color_bottom_left = parse_color(value)
     @property
     def color_bottom_right(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color_bottom_right
         unparse_color(color_bottom_right, self.color_bottom_right)
         return list(color_bottom_right)
     @color_bottom_right.setter
     def color_bottom_right(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color_bottom_right = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
     @property
     def multicolor(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.multicolor
     @multicolor.setter
     def multicolor(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.multicolor = value
 
 cdef class dgcDrawText(dgcDrawText_):
@@ -1143,37 +1317,45 @@ cdef class dgcDrawText(dgcDrawText_):
 
     @property
     def pos(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.pos)
     @pos.setter
     def pos(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.pos, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def text(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return str(self.text)
     @text.setter
     def text(self, str value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.text = bytes(value, 'utf-8')
     @property
     def size(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.size
     @size.setter
     def size(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.size = value
 
 
@@ -1202,63 +1384,77 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
 
     @property
     def p1(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p1)
     @p1.setter
     def p1(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p1, value)
     @property
     def p2(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p2)
     @p2.setter
     def p2(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p2, value)
     @property
     def p3(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return list(self.p3)
     @p3.setter
     def p3(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         read_point[float](self.p3, value)
     @property
     def color(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self.color)
         return list(color)
     @color.setter
     def color(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
     def fill(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
         unparse_color(fill, self.fill)
         return list(fill)
     @fill.setter
     def fill(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.fill = parse_color(value)
     @property
     def thickness(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.thickness
     @thickness.setter
     def thickness(self, float value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.thickness = value
     @property
     def cull_mode(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.cull_mode
     @cull_mode.setter
     def cull_mode(self, int value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.cull_mode = value
 
 cdef class dcgTexture(dcgTexture_):
@@ -1272,33 +1468,41 @@ cdef class dcgTexture(dcgTexture_):
 
     @property
     def hint_dynamic(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.hint_dynamic
     @hint_dynamic.setter
     def hint_dynamic(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.hint_dynamic = self.value
     @property
     def nearest_neighbor_upsampling(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return True if self.filtering_mode == 1 else 0
     @nearest_neighbor_upsampling.setter
     def nearest_neighbor_upsampling(self, bint value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.filtering_mode = 1 if value else 0
     @property
     def width(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.width
     @property
     def height(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.height
     @property
     def num_chans(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self.num_chans
 
     def set_value(self, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.set_content(np.ascontiguousarray(value))

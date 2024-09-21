@@ -25,7 +25,8 @@ cdef class dcgThemeColorImGui(baseTheme):
         return results + ["enabled"]
 
     def __getattr__(self, str name):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -39,7 +40,8 @@ cdef class dcgThemeColorImGui(baseTheme):
         return value
 
     def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int color_index
         cdef unordered_map[int, imgui.ImU32].iterator element_content
@@ -64,7 +66,8 @@ cdef class dcgThemeColorImGui(baseTheme):
         return value
 
     def __setattr__(self, str name, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -77,7 +80,8 @@ cdef class dcgThemeColorImGui(baseTheme):
         self.index_to_value[color_index] = color
 
     def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int color_index
         cdef string name_str
@@ -100,7 +104,8 @@ cdef class dcgThemeColorImGui(baseTheme):
         self.index_to_value[color_index] = color
 
     def __iter__(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef list result = []
         cdef pair[int, imgui.ImU32] element_content
         cdef str name
@@ -169,7 +174,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         return results + ["enabled"]
 
     def __getattr__(self, str name):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -183,7 +189,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         return value
 
     def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int color_index
         cdef unordered_map[int, imgui.ImU32].iterator element_content
@@ -208,7 +215,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         return value
 
     def __setattr__(self, str name, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -221,7 +229,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         self.index_to_value[color_index] = color
 
     def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int color_index
         cdef string name_str
@@ -244,7 +253,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         self.index_to_value[color_index] = color
 
     def __iter__(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef list result = []
         cdef pair[int, imgui.ImU32] element_content
         cdef str name
@@ -337,7 +347,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         return self.names + ["enabled"]
 
     def __getattr__(self, str name):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -351,7 +362,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         return value
 
     def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int color_index
         cdef unordered_map[int, imgui.ImU32].iterator element_content
@@ -376,7 +388,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         return value
 
     def __setattr__(self, str name, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -389,7 +402,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         self.index_to_value[color_index] = color
 
     def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int color_index
         cdef string name_str
@@ -412,7 +426,8 @@ cdef class dcgThemeColorImNodes(baseTheme):
         self.index_to_value[color_index] = color
 
     def __iter__(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef list result = []
         cdef pair[int, imgui.ImU32] element_content
         for element_content in self.index_to_value:
@@ -549,7 +564,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         return self.names + ["enabled"]
 
     def __getattr__(self, str name):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -565,7 +581,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         return value.x
 
     def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int style_index
         cdef unordered_map[int, imgui.ImVec2].iterator element_content
@@ -592,7 +609,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         return value.x
 
     def __setattr__(self, str name, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -617,7 +635,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         self.index_to_value[style_index] = value_to_store
 
     def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int style_index
         cdef string name_str
@@ -653,7 +672,8 @@ cdef class dcgThemeStyleImGui(baseTheme):
         self.index_to_value[style_index] = value_to_store
 
     def __iter__(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef list result = []
         cdef pair[int, imgui.ImVec2] element_content
         for element_content in self.index_to_value:
@@ -789,7 +809,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         return self.names + ["enabled"]
 
     def __getattr__(self, str name):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -807,7 +828,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         return value.x
 
     def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int style_index
         cdef unordered_map[int, imgui.ImVec2].iterator element_content
@@ -836,7 +858,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         return value.x
 
     def __setattr__(self, str name, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -863,7 +886,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         self.index_to_value[style_index] = value_to_store
 
     def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int style_index
         cdef string name_str
@@ -901,7 +925,8 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         self.index_to_value[style_index] = value_to_store
 
     def __iter__(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef list result = []
         cdef pair[int, imgui.ImVec2] element_content
         for element_content in self.index_to_value:
@@ -1018,7 +1043,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         return self.names + ["enabled"]
 
     def __getattr__(self, str name):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -1034,7 +1060,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         return value.x
 
     def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int style_index
         cdef unordered_map[int, imgui.ImVec2].iterator element_content
@@ -1061,7 +1088,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         return value.x
 
     def __setattr__(self, str name, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
         cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
         if element == self.name_to_index.end():
@@ -1088,7 +1116,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         self.index_to_value[style_index] = value_to_store
 
     def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef unordered_map[string, int].iterator element
         cdef int style_index
         cdef string name_str
@@ -1124,7 +1153,8 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         self.index_to_value[style_index] = value_to_store
 
     def __iter__(self):
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         cdef list result = []
         cdef pair[int, imgui.ImVec2] element_content
         for element_content in self.index_to_value:

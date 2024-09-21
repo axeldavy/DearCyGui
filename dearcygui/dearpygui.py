@@ -117,9 +117,9 @@ def start_dearpygui():
 def mutex():
     """ Handles locking/unlocking render thread mutex. """
     try:
-        yield internal_dpg.lock_mutex()
+        yield dcg_context.viewport.lock_mutex(wait=True)
     finally:
-        internal_dpg.unlock_mutex()
+        dcg_context.unlock_mutex()
 
 
 def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Right, modal: bool=False, tag:Union[int, str]=0, min_size:Union[List[int], Tuple[int, ...]]=[100,100], max_size: Union[List[int], Tuple[int, ...]] =[30000, 30000], no_move: bool=False, no_background: bool=False) -> int:
@@ -6055,7 +6055,11 @@ def does_alias_exist(alias : str, **kwargs) -> bool:
         bool
     """
 
-    return internal_dpg.does_alias_exist(alias, **kwargs)
+    try:
+        item = dcg_context[alias]
+        return True
+    except Exception:
+        return False
 
 def does_item_exist(item : Union[int, str], **kwargs) -> bool:
     """     Checks if an item exist..
@@ -6066,7 +6070,11 @@ def does_item_exist(item : Union[int, str], **kwargs) -> bool:
         bool
     """
 
-    return internal_dpg.does_item_exist(item, **kwargs)
+    try:
+        item = dcg_context[item]
+        return True
+    except Exception:
+        return False
 
 def draw_arrow(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, thickness: float =1.0, size: int =4, **kwargs) -> Union[int, str]:
     """     Adds an arrow.
@@ -6693,7 +6701,74 @@ def get_item_alias(item : Union[int, str], **kwargs) -> str:
         str
     """
 
-    return internal_dpg.get_item_alias(item, **kwargs)
+    return dcg_context[item].tag
+
+
+item_configuration_keys = set([
+    "filter_key",
+    "payload_type",
+    "label",
+    "use_internal_label",
+    "source",
+    "show",
+    "enabled",
+    "tracked",
+    "width",
+    "track_offset",
+    "height",
+    "indent",
+    "callback",
+    "drop_callback",
+    "drag_callback",
+    "user_data"
+]) # + specific item keys
+
+item_info_keys = set([
+    "children",
+    "type",
+    "target",
+    "parent",
+    "theme",
+    "handlers",
+    "font",
+    "container"
+    "hover_handler_applicable",
+    "active_handler_applicable",
+    "focus_handler_applicable",
+    "clicked_handler_applicable",
+    "visible_handler_applicable",
+    "edited_handler_applicable",
+    "activated_handler_applicable",
+    "deactivated_handler_applicable",
+    "toggled_open_handler_applicable",
+    "resized_handler_applicable"
+])
+
+item_state_keys = set([
+    "ok",
+    "pos",
+    "hovered",
+    "active",
+    "focused",
+    "clicked",
+    "left_clicked",
+    "right_clicked",
+    "middle_clicked",
+    "visible",
+    "edited",
+    "activated",
+    "deactivated",
+    "deactivated_after_edit",
+    "toggled_open",
+    "rect_min",
+    "rect_max",
+    "rect_size",
+    "resized",
+    "content_region_avail"
+])
+
+item_info_and_state_keys = item_info_keys.union(item_state_keys)
+
 
 def get_item_configuration(item : Union[int, str], **kwargs) -> dict:
     """     Returns an item's configuration.
@@ -6703,8 +6778,22 @@ def get_item_configuration(item : Union[int, str], **kwargs) -> dict:
     Returns:
         dict
     """
+    item = dcg_context[item]
+    item_attributes = dir(item)
+    configuration_attributes = item_attributes.difference(item_info_and_state_keys)
+    if isinstance(item, dcg.baseTheme):
+        # Theme uses attributes for its values
+        # Keep only the generic ones
+        configuration_attributes = configuration_attributes.intersection(item_configuration_keys)
+    result = {}
+    for attribute in configuration_attributes:
+        try:
+            result[attribute] = getattr(item, attribute)
+        except AttributeError:
+            # Some attributes are currently visible but unreachable
+            pass
 
-    return internal_dpg.get_item_configuration(item, **kwargs)
+    return result
 
 def get_item_info(item : Union[int, str], **kwargs) -> dict:
     """     Returns an item's information.
@@ -6714,8 +6803,20 @@ def get_item_info(item : Union[int, str], **kwargs) -> dict:
     Returns:
         dict
     """
-
-    return internal_dpg.get_item_info(item, **kwargs)
+    item = dcg_context[item]
+    result = {
+        "children": item.children,
+        "parent": item.parent
+    }
+    if hasattr(item, "theme"):
+        result["theme"] = item.theme
+    if hasattr(item, "handlers"):
+        result["handlers"] = item.handlers
+    if hasattr(item, "font"):
+        result["font"] = item.font
+    # Ignoring the other fields, which seem
+    # mainly useful for debugging during developpement
+    return result
 
 def get_item_state(item : Union[int, str], **kwargs) -> dict:
     """     Returns an item's state.
@@ -6725,8 +6826,10 @@ def get_item_state(item : Union[int, str], **kwargs) -> dict:
     Returns:
         dict
     """
-
-    return internal_dpg.get_item_state(item, **kwargs)
+    item = dcg_context[item]
+    if isinstance(item, dcg.uiItem):
+        return item.output_current_item_state()
+    return {"ok": True, "visible": True, "pos": (0, 0)}
 
 def get_item_types(**kwargs) -> dict:
     """     Returns an item types.
@@ -6736,7 +6839,7 @@ def get_item_types(**kwargs) -> dict:
         dict
     """
 
-    return internal_dpg.get_item_types(**kwargs)
+    raise ValueError("Item types are different in DCG and DPG")
 
 def get_mouse_drag_delta(**kwargs) -> float:
     """     Returns mouse drag delta.
@@ -6844,7 +6947,7 @@ def get_value(item : Union[int, str], **kwargs) -> Any:
         Any
     """
 
-    return internal_dpg.get_value(item, **kwargs)
+    return dcg_context[item].value
 
 def get_values(items : Union[List[int], Tuple[int, ...]], **kwargs) -> Any:
     """     Returns values of a list of items.
@@ -6855,7 +6958,7 @@ def get_values(items : Union[List[int], Tuple[int, ...]], **kwargs) -> Any:
         Any
     """
 
-    return internal_dpg.get_values(items, **kwargs)
+    return [dcg_context[item].value for item in items]
 
 def get_viewport_configuration(item : Union[int, str], **kwargs) -> dict:
     """     Returns a viewport's configuration.
@@ -7174,7 +7277,7 @@ def lock_mutex(**kwargs) -> None:
         None
     """
 
-    return internal_dpg.lock_mutex(**kwargs)
+    return dcg_context.viewport.lock_mutex(wait=True)
 
 def maximize_viewport(**kwargs) -> None:
     """     Maximizes the viewport.
@@ -7781,7 +7884,7 @@ def unlock_mutex(**kwargs) -> None:
         None
     """
 
-    return internal_dpg.unlock_mutex(**kwargs)
+    return dcg_context.viewport.unlock_mutex()
 
 def unset_table_row_color(table : Union[int, str], row : int, **kwargs) -> None:
     """     Remove user set table row color.
