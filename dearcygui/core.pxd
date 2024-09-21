@@ -500,7 +500,7 @@ cdef class shared_double(shared_value):
 
 cdef class shared_str(shared_value):
     cdef string _value
-    cdef string get(self) noexcept nogil
+    cdef void get(self, string&) noexcept nogil
     cdef void set(self, string) noexcept nogil
 
 cdef class shared_float4(shared_value):
@@ -674,6 +674,18 @@ cdef class dcgSlider(uiItem):
     cdef imgui.ImGuiSliderFlags flags
     cdef bint draw_item(self) noexcept nogil
 
+
+cdef class dcgListBox(uiItem):
+    cdef vector[string] _items
+    cdef int _num_items_shown_when_open
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgRadioButton(uiItem):
+    cdef vector[string] _items
+    cdef bint _horizontal
+    cdef bint draw_item(self) noexcept nogil
+
 """
 Complex UI elements
 """
@@ -743,7 +755,9 @@ cdef int theme_activation_condition_category_button = 2
 cdef int theme_activation_condition_category_combo = 3
 cdef int theme_activation_condition_category_checkbox = 4
 cdef int theme_activation_condition_category_slider = 5
-cdef int theme_activation_condition_category_window = 6
+cdef int theme_activation_condition_category_listbox = 6
+cdef int theme_activation_condition_category_radiobutton = 7
+cdef int theme_activation_condition_category_window = 8
 
 cdef int theme_value_type_int = 0
 cdef int theme_value_type_float = 1

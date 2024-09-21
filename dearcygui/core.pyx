@@ -33,7 +33,7 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from concurrent.futures import ThreadPoolExecutor
 from libc.stdlib cimport malloc, free
 from libcpp.algorithm cimport swap
-from libcpp.cmath cimport atan, sin, cos
+from libcpp.cmath cimport atan, sin, cos, trunc
 from libcpp.vector cimport vector
 from libc.math cimport M_PI
 
@@ -3167,9 +3167,9 @@ cdef class shared_str(shared_value):
         lock_gil_friendly(m, self.mutex)
         self._value = bytes(str(value), 'utf-8')
         self.on_update(True)
-    cdef string get(self) noexcept nogil:
+    cdef void get(self, string& out) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        return self._value
+        out = self._value
     cdef void set(self, string value) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value = value
@@ -4510,8 +4510,8 @@ cdef class dcgCombo(uiItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef bint open
         cdef int i
-        # TODO: avoid string copy
-        cdef string current_value = shared_str.get(<shared_str>self._value)
+        cdef string current_value
+        shared_str.get(<shared_str>self._value, current_value)
         open = imgui.BeginCombo(self.imgui_label.c_str(),
                                 current_value.c_str(),
                                 self.flags)
@@ -4551,7 +4551,7 @@ cdef class dcgCombo(uiItem):
                                                 self.requested_size)
                     if selected:
                         imgui.SetItemDefaultFocus()
-                    if selected != selected_backup:
+                    if selected and selected != selected_backup:
                         changed = True
                         shared_str.set(<shared_str>self._value, self._items[i])
             else:
@@ -5037,6 +5037,252 @@ cdef class dcgSlider(uiItem):
                     shared_double4.set(<shared_double4>self._value, value_double4)
         self.update_current_state()
         return modified
+
+
+cdef class dcgListBox(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_listbox
+        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_deactivated_after_edited = True
+        self.state.can_be_edited = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        self._items_shown_when_open = -1
+        # Frankly unsure why these. Should it include popup ?:
+        #self.state.has_rect_min = True
+        #self.state.has_rect_max = True
+        #self.state.has_rect_size = True
+        #self.state.has_content_region = True
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Support for old args
+        self._num_items_shown_when_open = kwargs.pop("num_items", self._num_items_shown_when_open)
+        # baseItem configure will configure the rest.
+        return super().configure(**kwargs)
+
+    @property
+    def items(self):
+        """
+        Writable attribute: List of text values to select
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [str(v) for v in self._items]
+
+    @items.setter
+    def items(self, value):
+        cdef unique_lock[recursive_mutex] m
+        cdef unique_lock[recursive_mutex] value_m
+        lock_gil_friendly(m, self.mutex)
+        self._items.clear()
+        if value is None:
+            return
+        if value is str:
+            self._items.push_back(bytes(value, 'utf-8'))
+        elif hasattr(value, '__len__'):
+            for v in value:
+                self._items.push_back(bytes(v, 'utf-8'))
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as items. Expected array of strings")
+        lock_gil_friendly(value_m, self._value.mutex)
+        if self._value.num_attached == 1 and \
+           self._value._last_frame_update == -1 and \
+           self._items.size() > 0:
+            # initialize the value with the first element
+            shared_str.set(<shared_str>self._value, self._items[0])
+
+    @property
+    def num_items_shown_when_open(self):
+        """
+        Writable attribute: Number of items
+        shown when the menu is opened
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._num_items_shown_when_open
+
+    @num_items_shown_when_open.setter
+    def num_items_shown_when_open(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._num_items_shown_when_open = value
+
+    cdef bint draw_item(self) noexcept nogil:
+        # TODO: Merge with ComboBox
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint open
+        cdef int i
+        cdef string current_value
+        shared_str.get(<shared_str>self._value, current_value)
+        cdef imgui.ImVec2 popup_size = imgui.ImVec2(0., 0.)
+        cdef float text_height = imgui.GetTextLineHeightWithSpacing()
+        cdef int num_items = min(7, <int>self._items.size())
+        if self._num_items_shown_when_open > 0:
+            num_items = self._num_items_shown_when_open
+        # Computation from imgui
+        popup_size.y = trunc(<float>0.25 + <float>num_items) * text_height
+        popup_size.y += 2. * imgui.GetStyle().FramePadding.y
+        open = imgui.BeginListBox(self.imgui_label.c_str(),
+                                  popup_size)
+
+        # Old code called update_current_state now, and updated edited state
+        # later. Looking at ImGui code there seems to be two items. One
+        # for the combo, and one for the popup that opens. The edited flag
+        # is not set, looking at imgui demo so we have to handle it manually.
+        self.state.activated = not(self.state.active) and open
+        self.state.deactivated = self.state.active and not(open)
+        self.state.active = open
+        self.state.can_be_deactivated = True
+        self.state.can_be_deactivated_after_edited = True
+        self.state.can_be_edited = True
+        self.state.focused = imgui.IsItemFocused()
+        self.state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            self.state.clicked[i] = self.state.hovered and imgui.IsItemClicked(i)
+            self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
+
+
+        cdef bool pressed = False
+        cdef bint changed = False
+        cdef bool selected
+        cdef bool selected_backup
+        # we push an ID because we didn't append ###uuid to the items
+        
+        # TODO: there are nice ImGuiSelectableFlags to add in the future
+        # TODO: use clipper
+        if open:
+            imgui.PushID(self.uuid)
+            if self._enabled:
+                for i in range(<int>self._items.size()):
+                    imgui.PushID(i)
+                    selected = self._items[i] == current_value
+                    selected_backup = selected
+                    pressed |= imgui.Selectable(self._items[i].c_str(),
+                                                &selected,
+                                                imgui.ImGuiSelectableFlags_None,
+                                                self.requested_size)
+                    if selected:
+                        imgui.SetItemDefaultFocus()
+                    if selected and selected != selected_backup:
+                        changed = True
+                        shared_str.set(<shared_str>self._value, self._items[i])
+                    imgui.PopID()
+            else:
+                # TODO: test
+                selected = True
+                imgui.Selectable(current_value.c_str(),
+                                 &selected,
+                                 imgui.ImGuiSelectableFlags_None,
+                                 self.requested_size)
+            imgui.PopID()
+            imgui.EndListBox()
+        # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
+        self.state.edited = changed
+        self.state.deactivated_after_edited = self.state.deactivated and changed
+        return pressed
+
+
+cdef class dcgRadioButton(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_activation_condition_category_radiobutton
+        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_deactivated_after_edited = True
+        self.state.can_be_edited = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        self._horizontal = False
+        # Frankly unsure why these. Should it include popup ?:
+        #self.state.has_rect_min = True
+        #self.state.has_rect_max = True
+        #self.state.has_rect_size = True
+        #self.state.has_content_region = True
+
+    @property
+    def items(self):
+        """
+        Writable attribute: List of text values to select
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [str(v) for v in self._items]
+
+    @items.setter
+    def items(self, value):
+        cdef unique_lock[recursive_mutex] m
+        cdef unique_lock[recursive_mutex] value_m
+        lock_gil_friendly(m, self.mutex)
+        self._items.clear()
+        if value is None:
+            return
+        if value is str:
+            self._items.push_back(bytes(value, 'utf-8'))
+        elif hasattr(value, '__len__'):
+            for v in value:
+                self._items.push_back(bytes(v, 'utf-8'))
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as items. Expected array of strings")
+        lock_gil_friendly(value_m, self._value.mutex)
+        if self._value.num_attached == 1 and \
+           self._value._last_frame_update == -1 and \
+           self._items.size() > 0:
+            # initialize the value with the first element
+            shared_str.set(<shared_str>self._value, self._items[0])
+
+    @property
+    def horizontal(self):
+        """
+        Writable attribute: Horizontal vs vertical placement
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._horizontal
+
+    @horizontal.setter
+    def horizontal(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._horizontal = value
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint open
+        cdef int i
+        cdef string current_value
+        shared_str.get(<shared_str>self._value, current_value)
+        imgui.PushID(self.uuid)
+        imgui.BeginGroup()
+
+        cdef bint changed = False
+        cdef bool selected
+        cdef bool selected_backup
+        # we push an ID because we didn't append ###uuid to the items
+        
+        imgui.PushID(self.uuid)
+        for i in range(<int>self._items.size()):
+            imgui.PushID(i)
+            if (self._horizontal and i != 0):
+                imgui.SameLine(0., -1.)
+            selected_backup = self._items[i] == current_value
+            selected = imgui.RadioButton(self._items[i].c_str(),
+                                         selected_backup)
+            if self._enabled and selected and selected != selected_backup:
+                changed = True
+                shared_str.set(<shared_str>self._value, self._items[i])
+            imgui.PopID()
+        imgui.EndGroup()
+        imgui.PopID()
+        self.update_current_state()
+        return changed
 
 """
 Complex ui items

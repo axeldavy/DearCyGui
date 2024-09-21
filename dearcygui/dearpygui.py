@@ -1938,7 +1938,7 @@ def combo(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, us
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return combo(items, label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, popup_align_left=popup_align_left, no_arrow_button=no_arrow_button, no_preview=no_preview, fit_width=fit_width, height_mode=height_mode, **kwargs)
+    return dcg.dcgCombo(dcg_context, items=items, label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_value=default_value, popup_align_left=popup_align_left, no_arrow_button=no_arrow_button, no_preview=no_preview, fit_width=fit_width, height_mode=height_mode, **kwargs)
 
 def custom_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], channel_count : int, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, y1: Any =[], y2: Any =[], y3: Any =[], tooltip: bool =True, no_fit: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a custom series to a plot. New in 1.6.

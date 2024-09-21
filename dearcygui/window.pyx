@@ -502,14 +502,14 @@ cdef class dcgWindow(dcgWindow_):
             self.size_update_requested = True
 
         # Re-tell imgui the window hierarchy
-        cdef dcgWindow w = self.context.viewport.windowRoots
+        cdef dcgWindow w = self.context.viewport.last_window_child
         cdef dcgWindow next = None
         while w is not None:
             with nogil:
                 w.mutex.lock()
             w.state.focused = True
             w.focus_update_requested = True
-            next = w.prev_sibling
+            next = w._prev_sibling
             w.mutex.unlock()
             # TODO: previous code did restore previous states on each window. Figure out why
             w = next
