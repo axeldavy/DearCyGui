@@ -207,8 +207,8 @@ cdef class dcgViewport(baseItem):
     cdef vector[theme_action] pending_theme_actions # managed outside viewport
     cdef vector[theme_action] applied_theme_actions # managed by viewport
     cdef vector[int] applied_theme_actions_count # managed by viewport
-    cdef int current_theme_activation_condition_enabled
-    cdef int current_theme_activation_condition_category
+    cdef theme_enablers current_theme_activation_condition_enabled
+    cdef theme_categories current_theme_activation_condition_category
 
     cdef initialize(self, unsigned width, unsigned height)
     cdef void __check_initialized(self)
@@ -216,7 +216,7 @@ cdef class dcgViewport(baseItem):
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
-    cdef void push_pending_theme_actions(self, int, int) noexcept nogil
+    cdef void push_pending_theme_actions(self, theme_enablers, theme_categories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
 
@@ -321,7 +321,7 @@ cdef class dcgDrawImage_(drawingItem):
     cdef float[4] pmax
     cdef float[4] uv
     cdef imgui.ImU32 color_multiplier
-    cdef dcgTexture_ texture
+    cdef dcgTexture texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
 cdef class dcgDrawImageQuad_(drawingItem):
@@ -335,7 +335,7 @@ cdef class dcgDrawImageQuad_(drawingItem):
     cdef float[4] uv3
     cdef float[4] uv4
     cdef imgui.ImU32 color_multiplier
-    cdef dcgTexture_ texture
+    cdef dcgTexture texture
     cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
 cdef class dcgDrawLine_(drawingItem):
@@ -610,8 +610,8 @@ cdef class uiItem(baseItem):
     cdef string payloadType
     cdef imgui.ImVec2 requested_size
     cdef float _indent
-    cdef int theme_condition_enabled
-    cdef int theme_condition_category
+    cdef theme_enablers theme_condition_enabled
+    cdef theme_categories theme_condition_category
     #cdef float trackOffset
     #cdef bint tracked
     cdef dcgCallback dragCallback
@@ -686,6 +686,98 @@ cdef class dcgRadioButton(uiItem):
     cdef bint _horizontal
     cdef bint draw_item(self) noexcept nogil
 
+
+cdef class dcgInputText(uiItem):
+    cdef string _hint
+    cdef bint _multiline
+    cdef int _max_characters
+    cdef imgui.ImGuiInputTextFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgInputValue(uiItem):
+    cdef int _size
+    cdef int _format
+    cdef double _step
+    cdef double _step_fast
+    cdef double _min
+    cdef double _max
+    cdef string _print_format
+    cdef imgui.ImGuiInputTextFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgText(uiItem):
+    cdef imgui.ImU32 _color
+    cdef int _wrap
+    cdef bint _bullet
+    cdef bint _show_label
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgSelectable(uiItem):
+    cdef imgui.ImGuiSelectableFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgTabButton(uiItem):
+    cdef imgui.ImGuiTabBarFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgMenuItem(uiItem):
+    cdef string _shortcut
+    cdef bint _check
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgProgressBar(uiItem):
+    cdef string _overlay
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgImage(uiItem):
+    cdef float[4] _uv
+    cdef imgui.ImU32 _color_multiplier
+    cdef imgui.ImU32 _border_color
+    cdef dcgTexture _texture
+    cdef bint draw_item(self) noexcept nogil
+
+
+cdef class dcgImageButton(uiItem):
+    cdef float[4] _uv
+    cdef imgui.ImU32 _color_multiplier
+    cdef imgui.ImU32 _background_color
+    cdef dcgTexture _texture
+    cdef int _frame_padding
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgSeparator(uiItem):
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgSpacer(uiItem):
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgMenuBar(uiItem):
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgMenu(uiItem):
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgTooltip(uiItem):
+    cdef float _delay
+    cdef bint _hide_on_activity
+    cdef bint _only_if_previous_item_hovered
+    cdef bint _only_if_
+    cdef bint draw_item(self) noexcept nogil
+
+#cdef class dcgTab(uiItem):
+#    cdef bint _closable
+#    cdef imgui.ImGuiTabItemFlags flags
+
+cdef class dcgGroup(uiItem):
+    cdef bint draw_item(self) noexcept nogil
+
 """
 Complex UI elements
 """
@@ -729,40 +821,61 @@ cdef class dcgWindow_(uiItem):
 Bindable elements
 """
 
-cdef class dcgTexture_(baseItem):
+cdef class dcgTexture(baseItem):
     cdef recursive_mutex write_mutex
-    cdef bint hint_dynamic
+    cdef bint _hint_dynamic
     cdef bint dynamic
     cdef void* allocated_texture
-    cdef int width
-    cdef int height
-    cdef int num_chans
+    cdef int _width
+    cdef int _height
+    cdef int _num_chans
     cdef int filtering_mode
     cdef void set_content(self, cnp.ndarray content)
 
-cdef int theme_type_color = 0
-cdef int theme_type_style = 1
-cdef int theme_category_imgui = 0
-cdef int theme_category_implot = 1
-cdef int theme_category_imnodes = 2
+cdef enum theme_types:
+    t_color,
+    t_style
 
-cdef int theme_activation_condition_enabled_any = 0
-cdef int theme_activation_condition_enabled_False = 1
-cdef int theme_activation_condition_enabled_True = 2
-cdef int theme_activation_condition_category_any = 0
-cdef int theme_activation_condition_category_simple_plot = 1
-cdef int theme_activation_condition_category_button = 2
-cdef int theme_activation_condition_category_combo = 3
-cdef int theme_activation_condition_category_checkbox = 4
-cdef int theme_activation_condition_category_slider = 5
-cdef int theme_activation_condition_category_listbox = 6
-cdef int theme_activation_condition_category_radiobutton = 7
-cdef int theme_activation_condition_category_window = 8
+cdef enum theme_backends:
+    t_imgui,
+    t_implot,
+    t_imnodes
 
-cdef int theme_value_type_int = 0
-cdef int theme_value_type_float = 1
-cdef int theme_value_type_float2 = 2
-cdef int theme_value_type_u32 = 3
+cpdef enum theme_enablers:
+    t_enabled_any,
+    t_enabled_False,
+    t_enabled_True,
+    t_discarded
+
+cpdef enum theme_categories:
+    t_any,
+    t_simpleplot,
+    t_button,
+    t_combo,
+    t_checkbox,
+    t_slider,
+    t_listbox,
+    t_radiobutton,
+    t_inputtext,
+    t_inputvalue,
+    t_text,
+    t_selectable,
+    t_tabbutton,
+    t_menuitem,
+    t_progressbar,
+    t_image,
+    t_imagebutton,
+    t_menubar,
+    t_menu,
+    t_tooltip,
+    t_group,
+    t_window
+
+cdef enum theme_value_types:
+    t_int,
+    t_float,
+    t_float2,
+    t_u32
 
 ctypedef union theme_value:
     int value_int
@@ -771,12 +884,12 @@ ctypedef union theme_value:
     unsigned value_u32
 
 ctypedef struct theme_action:
-    int theme_activation_condition_enabled
-    int theme_activation_condition_category
-    int theme_type
-    int theme_category
+    theme_enablers activation_condition_enabled
+    theme_categories activation_condition_category
+    theme_types type
+    theme_backends backend
     int theme_index
-    int theme_value_type
+    theme_value_types value_type
     theme_value value
 
 """

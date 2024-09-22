@@ -136,12 +136,12 @@ cdef class dcgThemeColorImGui(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-            action.theme_activation_condition_category = theme_activation_condition_category_any
-            action.theme_type = theme_type_color
-            action.theme_category = theme_category_imgui
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_color
+            action.backend = theme_backends.t_imgui
             action.theme_index = element_content.first
-            action.theme_value_type = theme_value_type_u32
+            action.value_type = theme_value_types.t_u32
             action.value.value_u32 = element_content.second
             v.push_back(action)
 
@@ -285,12 +285,12 @@ cdef class dcgThemeColorImPlot(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-            action.theme_activation_condition_category = theme_activation_condition_category_any
-            action.theme_type = theme_type_color
-            action.theme_category = theme_category_implot
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_color
+            action.backend = theme_backends.t_implot
             action.theme_index = element_content.first
-            action.theme_value_type = theme_value_type_u32
+            action.value_type = theme_value_types.t_u32
             action.value.value_u32 = element_content.second
             v.push_back(action)
 
@@ -457,12 +457,12 @@ cdef class dcgThemeColorImNodes(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-            action.theme_activation_condition_category = theme_activation_condition_category_any
-            action.theme_type = theme_type_color
-            action.theme_category = theme_category_imnodes
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_color
+            action.backend = theme_backends.t_imnodes
             action.theme_index = element_content.first
-            action.theme_value_type = theme_value_type_u32
+            action.value_type = theme_value_types.t_u32
             action.value.value_u32 = element_content.second
             v.push_back(action)
 
@@ -710,16 +710,16 @@ cdef class dcgThemeStyleImGui(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-            action.theme_activation_condition_category = theme_activation_condition_category_any
-            action.theme_type = theme_type_style
-            action.theme_category = theme_category_imgui
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_style
+            action.backend = theme_backends.t_imgui
             action.theme_index = element_content.first
             if styles_imgui_sizes[element_content.first] == 1:
-                action.theme_value_type = theme_value_type_float
+                action.value_type = theme_value_types.t_float
                 action.value.value_float = element_content.second.x
             else:
-                action.theme_value_type = theme_value_type_float2
+                action.value_type = theme_value_types.t_float2
                 action.value.value_float2[0] = element_content.second.x
                 action.value.value_float2[1] = element_content.second.y
             v.push_back(action)
@@ -965,19 +965,19 @@ cdef class dcgThemeStyleImPlot(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-            action.theme_activation_condition_category = theme_activation_condition_category_any
-            action.theme_type = theme_type_style
-            action.theme_category = theme_category_implot
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_style
+            action.backend = theme_backends.t_implot
             action.theme_index = element_content.first
             if styles_imgui_sizes[element_content.first] == 1:
-                action.theme_value_type = theme_value_type_float
+                action.value_type = theme_value_types.t_float
                 action.value.value_float = element_content.second.x
             elif styles_imgui_sizes[element_content.first] == 0:
-                action.theme_value_type = theme_value_type_int
+                action.value_type = theme_value_types.t_int
                 action.value.value_int = <int>element_content.second.x
             else:
-                action.theme_value_type = theme_value_type_float2
+                action.value_type = theme_value_types.t_float2
                 action.value.value_float2[0] = element_content.second.x
                 action.value.value_float2[1] = element_content.second.y
             v.push_back(action)
@@ -1191,16 +1191,16 @@ cdef class dcgThemeStyleImNodes(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-            action.theme_activation_condition_category = theme_activation_condition_category_any
-            action.theme_type = theme_type_style
-            action.theme_category = theme_category_imnodes
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_style
+            action.backend = theme_backends.t_imnodes
             action.theme_index = element_content.first
             if styles_imgui_sizes[element_content.first] == 1:
-                action.theme_value_type = theme_value_type_float
+                action.value_type = theme_value_types.t_float
                 action.value.value_float = element_content.second.x
             else:
-                action.theme_value_type = theme_value_type_float2
+                action.value_type = theme_value_types.t_float2
                 action.value.value_float2[0] = element_content.second.x
                 action.value.value_float2[1] = element_content.second.y
             v.push_back(action)
@@ -1244,8 +1244,8 @@ cdef class dcgThemeList(baseTheme):
 cdef class dcgThemeListWithCondition(baseTheme):
     def __cinit__(self):
         self.can_have_theme_child = True
-        self.theme_activation_condition_enabled = theme_activation_condition_enabled_any
-        self.theme_activation_condition_category = theme_activation_condition_category_any
+        self.activation_condition_enabled = theme_enablers.t_enabled_any
+        self.activation_condition_category = theme_categories.t_any
 
     @property
     def condition_enabled(self):
@@ -1256,13 +1256,14 @@ cdef class dcgThemeListWithCondition(baseTheme):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.theme_activation_condition_enabled
+        return self.activation_condition_enabled
 
-    def condition_enabled(self, int value):
+    @condition_enabled.setter
+    def condition_enabled(self, theme_enablers value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # TODO: check bounds
-        self.theme_activation_condition_enabled = value
+        self.activation_condition_enabled = value
 
     @property
     def condition_category(self):
@@ -1273,13 +1274,14 @@ cdef class dcgThemeListWithCondition(baseTheme):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.theme_activation_condition_category
+        return self.activation_condition_category
 
-    def condition_category(self, int value):
+    @condition_category.setter
+    def condition_category(self, theme_categories value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # TODO: check bounds
-        self.theme_activation_condition_category = value
+        self.activation_condition_category = value
 
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1289,7 +1291,8 @@ cdef class dcgThemeListWithCondition(baseTheme):
             self.last_push_size.push_back(0)
             return
         cdef int prev_size, i, new_size, count, applied_count
-        cdef int condition_enabled, condition_category
+        cdef theme_enablers condition_enabled
+        cdef theme_categories condition_category
         count = 0
         applied_count = 0
         if self.last_theme_child is not None:
@@ -1299,24 +1302,24 @@ cdef class dcgThemeListWithCondition(baseTheme):
             count = new_size - prev_size
             # Set the conditions
             for i in range(prev_size, new_size):
-                condition_enabled = self.context.viewport.pending_theme_actions[i].theme_activation_condition_enabled
-                condition_category = self.context.viewport.pending_theme_actions[i].theme_activation_condition_category
-                if self.theme_activation_condition_enabled != theme_activation_condition_enabled_any:
-                    if condition_enabled != theme_activation_condition_enabled_any and \
-                       condition_enabled != self.theme_activation_condition_enabled:
+                condition_enabled = self.context.viewport.pending_theme_actions[i].activation_condition_enabled
+                condition_category = self.context.viewport.pending_theme_actions[i].activation_condition_category
+                if self.activation_condition_enabled != theme_enablers.t_enabled_any:
+                    if condition_enabled != theme_enablers.t_enabled_any and \
+                       condition_enabled != self.activation_condition_enabled:
                         # incompatible conditions. Disable
-                        condition_enabled = -1
+                        condition_enabled = theme_enablers.t_discarded
                     else:
-                        condition_enabled = self.theme_activation_condition_enabled
-                if self.theme_activation_condition_category != theme_activation_condition_category_any:
-                    if condition_category != theme_activation_condition_category_any and \
-                       condition_category != self.theme_activation_condition_category:
+                        condition_enabled = self.activation_condition_enabled
+                if self.activation_condition_category != theme_categories.t_any:
+                    if condition_category != theme_categories.t_any and \
+                       condition_category != self.activation_condition_category:
                         # incompatible conditions. Disable
-                        condition_category = -1
+                        condition_enabled = theme_enablers.t_discarded
                     else:
-                        condition_category = self.theme_activation_condition_category
-                self.context.viewport.pending_theme_actions[i].theme_activation_condition_enabled = condition_enabled
-                self.context.viewport.pending_theme_actions[i].theme_activation_condition_category = condition_category
+                        condition_category = self.activation_condition_category
+                self.context.viewport.pending_theme_actions[i].activation_condition_enabled = condition_enabled
+                self.context.viewport.pending_theme_actions[i].activation_condition_category = condition_category
             # Find if any of the conditions hold right now, and if so execute them
             # It is important to execute them now rather than later because we need
             # to insert before the next siblings
@@ -1340,30 +1343,32 @@ cdef class dcgThemeListWithCondition(baseTheme):
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int prev_size, i, new_size
+        cdef theme_enablers condition_enabled
+        cdef theme_categories condition_category
         if self._prev_sibling is not None:
             prev_size = <int>v.size()
             (<baseTheme>self._prev_sibling).push_to_list(v)
             new_size = <int>v.size()
             # Set the conditions
             for i in range(prev_size, new_size):
-                condition_enabled = v[i].theme_activation_condition_enabled
-                condition_category = v[i].theme_activation_condition_category
-                if self.theme_activation_condition_enabled != theme_activation_condition_enabled_any:
-                    if condition_enabled != theme_activation_condition_enabled_any and \
-                       condition_enabled != self.theme_activation_condition_enabled:
+                condition_enabled = v[i].activation_condition_enabled
+                condition_category = v[i].activation_condition_category
+                if self.activation_condition_enabled != theme_enablers.t_enabled_any:
+                    if condition_enabled != theme_enablers.t_enabled_any and \
+                       condition_enabled != self.activation_condition_enabled:
                         # incompatible conditions. Disable
-                        condition_enabled = -1
+                        condition_enabled = theme_enablers.t_discarded
                     else:
-                        condition_enabled = self.theme_activation_condition_enabled
-                if self.theme_activation_condition_category != theme_activation_condition_category_any:
-                    if condition_category != theme_activation_condition_category_any and \
-                       condition_category != self.theme_activation_condition_category:
+                        condition_enabled = self.activation_condition_enabled
+                if self.activation_condition_category != theme_categories.t_any:
+                    if condition_category != theme_categories.t_any and \
+                       condition_category != self.activation_condition_category:
                         # incompatible conditions. Disable
-                        condition_category = -1
+                        condition_enabled = theme_enablers.t_discarded
                     else:
-                        condition_category = self.theme_activation_condition_category
-                v[i].theme_activation_condition_enabled = condition_enabled
-                v[i].theme_activation_condition_category = condition_category
+                        condition_category = self.activation_condition_category
+                v[i].activation_condition_enabled = condition_enabled
+                v[i].activation_condition_category = condition_category
         if self.last_theme_child is not None:
             self.last_theme_child.push_to_list(v)
 

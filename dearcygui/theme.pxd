@@ -88,8 +88,8 @@ cdef class dcgThemeListWithCondition(baseTheme):
     As the elements in this list get checked everytime
     a item in the child tree is rendered, use this lightly.
     """
-    cdef int theme_activation_condition_enabled
-    cdef int theme_activation_condition_category
+    cdef theme_enablers activation_condition_enabled
+    cdef theme_categories activation_condition_category
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil

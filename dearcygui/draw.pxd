@@ -54,5 +54,3 @@ cdef class dgcDrawText(dgcDrawText_):
 cdef class dcgDrawTriangle(dcgDrawTriangle_):
     pass
 
-cdef class dcgTexture(dcgTexture_):
-    pass
