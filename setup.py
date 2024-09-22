@@ -126,8 +126,7 @@ def setup_package():
         "dearcygui/handler.pyx",
         "dearcygui/plot.pyx",
         "dearcygui/theme.pyx",
-        "dearcygui/widget.pyx",
-        "dearcygui/window.pyx",
+        "dearcygui/widget.pyx"
     ]
     for cython_source in secondary_cython_sources:
         extension_name = cython_source.split("/")[-1].split(".")[0]

@@ -57,7 +57,7 @@ cdef class dcgContext:
     cdef map[long long, PyObject*] items
     cdef dict[str, long long] tag_to_uuid
     cdef dict[long long, str] uuid_to_tag
-    cdef object _parent_context_queue
+    cdef object threadlocal_data
     cdef bint waitOneFrame
     cdef bint started
     # Mutex that must be held for any
@@ -90,6 +90,7 @@ cdef class dcgContext:
     cdef void queue_callback_arg1int1float(self, dcgCallback, object, int, float) noexcept nogil
     cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
     cdef void queue_callback_arg1int2float(self, dcgCallback, object, int, float, float) noexcept nogil
+    cdef void queue_callback_arg4int(self, dcgCallback, object, int, int, int, int) noexcept nogil
     cdef void register_item(self, baseItem o, long long uuid)
     cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag)
     cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
@@ -98,7 +99,10 @@ cdef class dcgContext:
     cdef baseItem get_registered_item_from_tag(self, str tag)
     cpdef void push_next_parent(self, baseItem next_parent)
     cpdef void pop_next_parent(self)
-    cpdef object fetch_next_parent(self)
+    cpdef object fetch_parent_queue_back(self)
+    cpdef object fetch_parent_queue_front(self)
+    cpdef object fetch_last_created_item(self)
+    cpdef object fetch_last_created_container(self)
 
 """
 Each .so has its own current context. To be able to work
@@ -169,7 +173,7 @@ cdef class baseItem:
     # Each element is responsible for calling draw on its sibling
     cdef baseItem _prev_sibling
     cdef baseItem _next_sibling
-    cdef dcgWindow_ last_window_child
+    cdef dcgWindow last_window_child
     cdef uiItem last_widgets_child
     cdef drawableItem last_drawings_child
     cdef baseItem last_payloads_child
@@ -186,13 +190,22 @@ cdef class baseItem:
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
 
+cdef enum child_type:
+    cat_window
+    cat_ui
+    cat_drawing
+    cat_payload
+    cat_global_handler
+    cat_item_handler
+    cat_theme
+
 cdef class dcgViewport(baseItem):
     cdef mvViewport *viewport
     cdef bint initialized
     cdef mvGraphics graphics
     cdef bint graphics_initialized
-    cdef public dcgCallback resize_callback
-    cdef public dcgCallback close_callback
+    cdef dcgCallback _resize_callback
+    cdef dcgCallback _close_callback
     cdef baseTheme _theme
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
@@ -782,7 +795,7 @@ cdef class dcgGroup(uiItem):
 Complex UI elements
 """
 
-cdef class dcgWindow_(uiItem):
+cdef class dcgWindow(uiItem):
     cdef imgui.ImGuiWindowFlags window_flags
     cdef bint main_window
     cdef bint resized

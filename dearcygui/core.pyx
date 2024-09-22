@@ -31,7 +31,6 @@ from dearcygui.backends.backend cimport *
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 
 from concurrent.futures import ThreadPoolExecutor
-from libc.stdlib cimport malloc, free
 from libcpp.algorithm cimport swap
 from libcpp.cmath cimport atan, sin, cos, trunc
 from libcpp.vector cimport vector
@@ -43,74 +42,7 @@ cimport numpy as cnp
 import scipy
 import scipy.spatial
 import threading
-from .constants import constants
 
-cdef mvColor MV_BASE_COL_bgColor = mvColor(37, 37, 38, 255)
-cdef mvColor MV_BASE_COL_lightBgColor = mvColor(82, 82, 85, 255)
-cdef mvColor MV_BASE_COL_veryLightBgColor = mvColor(90, 90, 95, 255)
-cdef mvColor MV_BASE_COL_panelColor = mvColor(51, 51, 55, 255)
-cdef mvColor MV_BASE_COL_panelHoverColor = mvColor(29, 151, 236, 103)
-cdef mvColor MV_BASE_COL_panelActiveColor = mvColor(0, 119, 200, 153)
-cdef mvColor MV_BASE_COL_textColor = mvColor(255, 255, 255, 255)
-cdef mvColor MV_BASE_COL_textDisabledColor = mvColor(151, 151, 151, 255)
-cdef mvColor MV_BASE_COL_borderColor = mvColor(78, 78, 78, 255)
-cdef mvColor mvImGuiCol_Text = MV_BASE_COL_textColor
-cdef mvColor mvImGuiCol_TextSelectedBg = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_WindowBg = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_ChildBg = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_PopupBg = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_Border = MV_BASE_COL_borderColor
-cdef mvColor mvImGuiCol_BorderShadow = MV_BASE_COL_borderColor
-cdef mvColor mvImGuiCol_FrameBg = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_FrameBgHovered = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_FrameBgActive = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_TitleBg = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_TitleBgActive = mvColor(15, 86, 135, 255)
-cdef mvColor mvImGuiCol_TitleBgCollapsed = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_MenuBarBg = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_ScrollbarBg = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_ScrollbarGrab = MV_BASE_COL_lightBgColor
-cdef mvColor mvImGuiCol_ScrollbarGrabHovered = MV_BASE_COL_veryLightBgColor
-cdef mvColor mvImGuiCol_ScrollbarGrabActive = MV_BASE_COL_veryLightBgColor
-cdef mvColor mvImGuiCol_CheckMark = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_SliderGrab = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_SliderGrabActive = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_Button = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_ButtonHovered = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_ButtonActive = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_Header = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_HeaderHovered = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_HeaderActive = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_Separator = MV_BASE_COL_borderColor
-cdef mvColor mvImGuiCol_SeparatorHovered = MV_BASE_COL_borderColor
-cdef mvColor mvImGuiCol_SeparatorActive = MV_BASE_COL_borderColor
-cdef mvColor mvImGuiCol_ResizeGrip = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_ResizeGripHovered = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_Tab = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_TabHovered = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_TabActive = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_TabUnfocused = MV_BASE_COL_panelColor
-cdef mvColor mvImGuiCol_TabUnfocusedActive = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_DockingPreview = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_DockingEmptyBg = mvColor(51, 51, 51, 255)
-cdef mvColor mvImGuiCol_PlotLines = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_PlotLinesHovered = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_PlotHistogram = MV_BASE_COL_panelActiveColor
-cdef mvColor mvImGuiCol_PlotHistogramHovered = MV_BASE_COL_panelHoverColor
-cdef mvColor mvImGuiCol_DragDropTarget = mvColor(255, 255, 0, 179)
-cdef mvColor mvImGuiCol_NavHighlight = MV_BASE_COL_bgColor
-cdef mvColor mvImGuiCol_NavWindowingHighlight = mvColor(255, 255, 255, 179)
-cdef mvColor mvImGuiCol_NavWindowingDimBg = mvColor(204, 204, 204, 51)
-cdef mvColor mvImGuiCol_ModalWindowDimBg = mvColor(37, 37, 38, 150)
-cdef mvColor mvImGuiCol_TableHeaderBg = mvColor(48, 48, 51, 255)
-cdef mvColor mvImGuiCol_TableBorderStrong = mvColor(79, 79, 89, 255)
-cdef mvColor mvImGuiCol_TableBorderLight = mvColor(59, 59, 64, 255)
-cdef mvColor mvImGuiCol_TableRowBg = mvColor(0, 0, 0, 0)
-cdef mvColor mvImGuiCol_TableRowBgAlt = mvColor(255, 255, 255, 15)
-
-
-cdef unsigned int ConvertToUnsignedInt(const mvColor color):
-    return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(color.r, color.g, color.b, color.a))
 
 cdef void internal_resize_callback(void *object, int a, int b) noexcept nogil:
     with gil:
@@ -134,15 +66,15 @@ cdef void internal_render_callback(void *object) noexcept nogil:
 # The cycle is due to dcgContext referencing dcgViewport
 # and vice-versa
 
-cdef int child_cat_window = 0
-cdef int child_cat_ui = 1
-cdef int child_cat_drawing = 2
-cdef int child_cat_payload = 3
-cdef int child_cat_global_handler = 4
-cdef int child_cat_item_handler = 5
-cdef int child_cat_theme = 6
-
 cdef class dcgContext:
+    """
+    Main class managing the DearCyGui items and imgui context.
+    There is exactly one viewport per context.
+
+    Items are assigned an uuid and eventually a user tag.
+    indexing the context with the uuid or the tag returns
+    the object associated.
+    """
     def __init__(self):
         self.on_close_callback = None
         self.on_frame_callbacks = None
@@ -158,7 +90,7 @@ cdef class dcgContext:
         self.framerate = 0
         self.uuid_to_tag = dict()
         self.tag_to_uuid = dict()
-        self._parent_context_queue = threading.local()
+        self.threadlocal_data = threading.local()
         self.viewport = dcgViewport(self)
         self.resetTheme = False
         imgui.IMGUI_CHECKVERSION()
@@ -253,6 +185,15 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
+    cdef void queue_callback_arg4int(self, dcgCallback callback, object parent_item, int arg1, int arg2, int arg3, int arg4) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, (arg1, arg2, arg3, arg4), None)
+            except Exception as e:
+                print(traceback.format_exc())
+
     cdef void register_item(self, baseItem o, long long uuid):
         """ Stores weak references to objects.
         
@@ -264,6 +205,15 @@ cdef class dcgContext:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.items[uuid] = <PyObject*>o
+        self.threadlocal_data.last_item_uuid = uuid
+        if o.can_have_drawing_child or \
+           o.can_have_global_handler_child or \
+           o.can_have_item_handler_child or \
+           o.can_have_payload_child or \
+           o.can_have_theme_child or \
+           o.can_have_widget_child or \
+           o.can_have_window_child:
+            self.threadlocal_data.last_container_uuid = uuid
 
     cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag):
         """ Stores weak references to objects.
@@ -283,6 +233,15 @@ cdef class dcgContext:
         self.items[uuid] = <PyObject*>o
         self.uuid_to_tag[uuid] = tag
         self.tag_to_uuid[tag] = uuid
+        self.threadlocal_data.last_item_uuid = uuid
+        if o.can_have_drawing_child or \
+           o.can_have_global_handler_child or \
+           o.can_have_item_handler_child or \
+           o.can_have_payload_child or \
+           o.can_have_theme_child or \
+           o.can_have_widget_child or \
+           o.can_have_window_child:
+            self.threadlocal_data.last_container_uuid = uuid
 
     cdef void unregister_item(self, long long uuid):
         """ Free weak reference """
@@ -336,7 +295,8 @@ cdef class dcgContext:
         Retrieves the object associated to
         a tag or an uuid
         """
-        if isinstance(key, baseItem):
+        if isinstance(key, baseItem) or isinstance(key, shared_value):
+            # TODO: register shared values
             # Useful for legacy call wrappers
             return key
         cdef unique_lock[recursive_mutex] m
@@ -356,23 +316,68 @@ cdef class dcgContext:
         return item
 
     cpdef void push_next_parent(self, baseItem next_parent):
+        """
+        Each time 'with' is used on an item, it is pushed
+        to the list of potentialy parents to use if
+        no parent (or before) is set when an item is created.
+        If the list is empty, items are left unattached and
+        can be attached later.
+
+        In order to enable multiple threads from using
+        the 'with' syntax, thread local storage is used,
+        such that each thread has its own list.
+        """
         # Use thread local storage such that multiple threads
         # can build items trees without conflicts.
         # Mutexes are not needed due to the thread locality
-        cdef list parent_queue = getattr(self._parent_context_queue, 'parent_queue', [])
+        cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
         parent_queue.append(next_parent)
-        self._parent_context_queue.parent_queue = parent_queue
+        self.threadlocal_data.parent_queue = parent_queue
 
     cpdef void pop_next_parent(self):
-        cdef list parent_queue = getattr(self._parent_context_queue, 'parent_queue', [])
+        """
+        Remove an item from the potential parent list.
+        """
+        cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
         if len(parent_queue) > 0:
             parent_queue.pop()
 
-    cpdef object fetch_next_parent(self):
-        cdef list parent_queue = getattr(self._parent_context_queue, 'parent_queue', [])
+    cpdef object fetch_parent_queue_back(self):
+        """
+        Retrieve the last item from the potential parent list
+        """
+        cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
         if len(parent_queue) == 0:
             return None
         return parent_queue[len(parent_queue)-1]
+
+    cpdef object fetch_parent_queue_front(self):
+        """
+        Retrieve the top item from the potential parent list
+        """
+        cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
+        if len(parent_queue) == 0:
+            return None
+        return parent_queue[0]
+
+    cpdef object fetch_last_created_item(self):
+        """
+        Return the last item created in this thread.
+        Returns None if the last item created has been
+        deleted.
+        """
+        cdef long long last_uuid = getattr(self.threadlocal_data, 'last_item_uuid', -1)
+        return self.get_registered_item_from_uuid(last_uuid)
+
+    cpdef object fetch_last_created_container(self):
+        """
+        Return the last item which can have children
+        created in this thread.
+        Returns None if the last such item has been
+        deleted.
+        """
+        cdef long long last_uuid = getattr(self.threadlocal_data, 'last_container_uuid', -1)
+        return self.get_registered_item_from_uuid(last_uuid)
 
     def initialize_viewport(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
@@ -380,12 +385,6 @@ cdef class dcgContext:
         self.viewport.initialize(width=kwargs["width"],
                                  height=kwargs["height"])
         self.viewport.configure(**kwargs)
-
-    def start(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if self.started:
-            raise ValueError("Cannot call \"setup_dearpygui\" while a Dear PyGUI app is already running.")
         self.started = True
 
     @property
@@ -394,9 +393,80 @@ cdef class dcgContext:
         lock_gil_friendly(m, self.mutex)
         return self.started
 
+    @running.setter
+    def running(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.started = value
+
 
 
 cdef class baseItem:
+    """
+    Base class for all items (except shared values)
+
+    To be rendered, an item must be in the child tree
+    of the viewport (context.viewport).
+
+    The parent of an item can be set with various ways:
+    1) Using the parent attribute. item.parent = target_item
+    2) Passing (parent=target_item) during item creation
+    3) If the context manager is not empty ('with' on an item),
+       and no parent is set (parent = None passed or nothing),
+       the last item in 'with' is taken as parent. The context
+       manager can be managed directly with context.push_next_parent()
+       and context.pop_next_parent()
+    4) if you set the previous_sibling or next_sibling attribute,
+       the item will be inserted respectively after and before the
+       respective items in the parent item children list. For legacy
+       support, the 'before=target_item' attribute can be used during item creation,
+       and is equivalent to item.next_sibling = target_item
+
+    parent, previous_sibling and next_sibling are baseItem attributes
+    and can be read at any time.
+    It is possible to get the list of children of an item as well
+    with the 'children' attribute: item.children.
+
+    For ease of use, the items can be named for easy retrieval.
+    The tag attribute is a user string that can be set at any
+    moment and can be passed for parent/previous_sibling/next_sibling.
+    The item associated with a tag can be retrieved with context[tag].
+    Note that having a tag doesn't mean the item is referenced by the context.
+    If an item is not in the subtree of the viewport, and is not referenced,
+    it might get deleted.
+
+    During rendering the children of each item are rendered in
+    order from the first one to the last one.
+    When an item is attached to a parent, it is by default inserted
+    last, unless previous_sibling or next_sibling is used.
+
+    previous_sibling and next_sibling enable to insert an item
+    between elements.
+
+    When parent, previous_sibling or next_sibling are set, the item
+    is detached from any parent or sibling it had previously.
+
+    An item can be manually detached from a parent
+    by setting parent = None.
+
+    Most items have restrictions for the parents and children it can
+    have. In addition some items can have several children lists
+    of incompatible types. These children list will be concatenated
+    when reading item.children. In a given list are items of a similar
+    type.
+
+    Finally some items cannot be children of any item in the rendering
+    tree. One such item is dcgPlaceHolderParent, which can be parent
+    of any item which can have a parent. dcgPlaceHolderParent cannot
+    be inserted in the rendering tree, but can be used to store items
+    before their insertion in the rendering tree.
+    Other such items are textures, themes, colormaps and fonts. Those
+    items cannot be made children of items of the rendering tree, but
+    can be bound to them. For example item.theme = theme_item will
+    bind theme_item to item. It is possible to bind such an item to
+    several items, and as long as one item reference them, they will
+    not be deleted by the garbage collector.
+    """
     def __init__(self, context, *args, **kwargs):
         if len(kwargs) > 0 or len(args) > 0:
             self.configure(*args, **kwargs)
@@ -421,25 +491,39 @@ cdef class baseItem:
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self._user_data = kwargs.pop("user_data", self._user_data)
-        before = kwargs.pop("before", None)
-        parent = kwargs.pop("parent", None)
-        if before is not None:
-            self.attach_before(before)
+        # Legacy DPG support: automatic attachement
+        if self._parent is None:
+            before = kwargs.pop("before", None)
+            parent = kwargs.pop("parent", None)
+            if before is not None:
+                self.attach_before(before)
+            else:
+                if parent is None:
+                    parent = self.context.fetch_parent_queue_back()
+                if parent is not None:
+                    self.attach_to_parent(parent)
         else:
-            if parent is None:
-                parent = self.context.fetch_next_parent()
-            if parent is not None:
-                self.attach_to_parent(parent)
-        if "tag" in kwargs:
-            tag = kwargs.pop("tag")
-            self.context.update_registered_item_tag(self, self.uuid, tag)
-        #if len(kwargs) > 0:
-        #    print("Unused configure parameters: ", kwargs)
+            if "before" in kwargs:
+                del kwargs["before"]
+            if "parent" in kwargs:
+                del kwargs["parent"]
+        remaining = {}
+        for (key, value) in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                remaining[key] = value
+        if len(remaining) > 0:
+            print("Unused configure parameters: ", remaining)
         return
 
     @property
     def user_data(self):
+        """
+        User data of any type.
+        When a callback is called, the item user_data
+        is passed as third argument.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._user_data
@@ -456,8 +540,8 @@ cdef class baseItem:
         Readonly attribute: uuid is an unique identifier created
         by the context for the item.
         uuid can be used to access the object by name for parent=,
-        before=, after= arguments, but it is preferred to pass
-        the objects directly. 
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -470,7 +554,10 @@ cdef class baseItem:
         defines the object.
 
         If set (else it is set to None), tag can be used to access
-        the object by name for parent=, before=, after= arguments 
+        the object by name for parent=,
+        previous_sibling=, next_sibling= arguments.
+
+        The tag can be set at any time, but it must be unique.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -695,6 +782,10 @@ cdef class baseItem:
         self.mutex.unlock()
 
     cpdef void attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        """
         cdef baseItem target_parent
         if not(isinstance(target, baseItem)):
             target_parent = self.context[target]
@@ -708,7 +799,7 @@ cdef class baseItem:
         # block all rendering. This is because with the
         # push/pop system, removing/adding items during
         # rendering cannot work
-        if self.element_child_category == child_cat_theme:
+        if self.element_child_category == child_type.cat_theme:
             lock_gil_friendly(m0, self.context.viewport.mutex)
 
         cdef unique_lock[recursive_mutex] m
@@ -730,16 +821,16 @@ cdef class baseItem:
         cdef bint attached = False
 
         # Attach to parent
-        if self.element_child_category == child_cat_window and \
+        if self.element_child_category == child_type.cat_window and \
             target_parent.can_have_window_child:
             if target_parent.last_window_child is not None:
                 lock_gil_friendly(m3, target_parent.last_window_child.mutex)
                 target_parent.last_window_child._next_sibling = self
             self._prev_sibling = target_parent.last_window_child
             self._parent = target_parent
-            target_parent.last_window_child = <dcgWindow_>self
+            target_parent.last_window_child = <dcgWindow>self
             attached = True
-        elif self.element_child_category == child_cat_ui and \
+        elif self.element_child_category == child_type.cat_ui and \
             target_parent.can_have_widget_child:
             if target_parent.last_widgets_child is not None:
                 lock_gil_friendly(m3, target_parent.last_widgets_child.mutex)
@@ -748,7 +839,7 @@ cdef class baseItem:
             self._parent = target_parent
             target_parent.last_widgets_child = <uiItem>self
             attached = True
-        elif self.element_child_category == child_cat_drawing and \
+        elif self.element_child_category == child_type.cat_drawing and \
             target_parent.can_have_drawing_child:
             if target_parent.last_drawings_child is not None:
                 lock_gil_friendly(m3, target_parent.last_drawings_child.mutex)
@@ -757,7 +848,7 @@ cdef class baseItem:
             self._parent = target_parent
             target_parent.last_drawings_child = <drawableItem>self
             attached = True
-        elif self.element_child_category == child_cat_global_handler and \
+        elif self.element_child_category == child_type.cat_global_handler and \
             target_parent.can_have_global_handler_child:
             if target_parent.last_global_handler_child is not None:
                 lock_gil_friendly(m3, target_parent.last_global_handler_child.mutex)
@@ -766,7 +857,7 @@ cdef class baseItem:
             self._parent = target_parent
             target_parent.last_global_handler_child = <globalHandler>self
             attached = True
-        elif self.element_child_category == child_cat_item_handler and \
+        elif self.element_child_category == child_type.cat_item_handler and \
             target_parent.can_have_item_handler_child:
             if target_parent.last_item_handler_child is not None:
                 lock_gil_friendly(m3, target_parent.last_item_handler_child.mutex)
@@ -775,7 +866,7 @@ cdef class baseItem:
             self._parent = target_parent
             target_parent.last_item_handler_child = <itemHandler>self
             attached = True
-        elif self.element_child_category == child_cat_theme and \
+        elif self.element_child_category == child_type.cat_theme and \
             target_parent.can_have_theme_child:
             if target_parent.last_theme_child is not None:
                 lock_gil_friendly(m3, target_parent.last_theme_child.mutex)
@@ -788,6 +879,10 @@ cdef class baseItem:
             raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
 
     cpdef void attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        """
         cdef baseItem target_before
         if not(isinstance(target, baseItem)):
             target_before = self.context[target]
@@ -801,7 +896,7 @@ cdef class baseItem:
         # block all rendering. This is because with the
         # push/pop system, removing/adding items during
         # rendering cannot work
-        if self.element_child_category == child_cat_theme:
+        if self.element_child_category == child_type.cat_theme:
             lock_gil_friendly(m0, self.context.viewport.mutex)
 
         cdef unique_lock[recursive_mutex] m
@@ -896,23 +991,36 @@ cdef class baseItem:
         self._next_sibling = None
 
     cpdef void detach_item(self):
+        """
+        Same as item.parent = None
+        """
         cdef unique_lock[recursive_mutex] m0
         cdef unique_lock[recursive_mutex] m
         # In the case of manipulating the theme tree,
         # block all rendering. This is because with the
         # push/pop system, removing/adding items during
         # rendering cannot work
-        if self.element_child_category == child_cat_theme:
+        if self.element_child_category == child_type.cat_theme:
             lock_gil_friendly(m0, self.context.viewport.mutex)
         self.__detach_item_and_lock(m)
 
     cpdef void delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        """
         cdef unique_lock[recursive_mutex] m0
         # In the case of manipulating the theme tree,
         # block all rendering. This is because with the
         # push/pop system, removing/adding items during
         # rendering cannot work
-        if self.element_child_category == child_cat_theme:
+        if self.element_child_category == child_type.cat_theme:
             lock_gil_friendly(m0, self.context.viewport.mutex)
 
         cdef unique_lock[recursive_mutex] m
@@ -1023,7 +1131,7 @@ cdef class baseItem:
         . Other threads from reading/writing
           attributes or calling methods with this item,
           editing the children/parent of the item
-        . Any rendering of this item and its children
+        . Any rendering of this item and its children.
           If the viewport attemps to render this item,
           it will be blocked until the mutex is released.
           (if the rendering thread is holding the mutex,
@@ -1111,6 +1219,9 @@ cdef class dcgViewport(baseItem):
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex)
         ensure_correct_im_context(self.context)
+        if self.initialized:
+            raise RuntimeError("Viewport already initialized")
+            return
         self.viewport = mvCreateViewport(width,
                                          height,
                                          internal_render_callback,
@@ -1461,6 +1572,31 @@ cdef class dcgViewport(baseItem):
         self.__check_initialized()
         return self.viewport.shown
 
+    @property
+    def resize_callback(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._resize_callback
+
+    @resize_callback.setter
+    def resize_callback(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._resize_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+
+    @property
+    def close_callback(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._close_callback
+
+    @close_callback.setter
+    def close_callback(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._close_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+    
+
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -1476,14 +1612,12 @@ cdef class dcgViewport(baseItem):
         self.viewport.actualWidth = width
         self.viewport.clientWidth = width
         self.viewport.resized = True
-        if self.resize_callback is None:
-            return
-        dimensions = (self.viewport.actualWidth,
-                      self.viewport.actualHeight,
-                      self.viewport.clientWidth,
-                      self.viewport.clientHeight)
-        # TODO: queue
-        self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
+        self.context.queue_callback_arg4int(self._resize_callback,
+                                            self,
+                                            self.viewport.actualWidth,
+                                            self.viewport.actualHeight,
+                                            self.viewport.clientWidth,
+                                            self.viewport.clientHeight)
 
     cdef void __on_close(self):
         cdef unique_lock[recursive_mutex] m
@@ -1491,9 +1625,7 @@ cdef class dcgViewport(baseItem):
         self.__check_initialized()
         if not(<bint>self.viewport.disableClose):
             self.context.started = False
-        if self.close_callback is None:
-            return
-        self.context.queue.submit(self.close_callback, constants.MV_APP_UUID, None)
+        self.context.queue_callback_noarg(self._close_callback, self)
 
     cdef void __render(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
@@ -1709,12 +1841,12 @@ cdef class dcgViewport(baseItem):
 			    		  self.graphics)
             m.lock()
         if self.viewport.resized:
-            if self.resize_callback is not None:
-                dimensions = (self.viewport.actualWidth,
-                              self.viewport.actualHeight,
-                              self.viewport.clientWidth,
-                              self.viewport.clientHeight)
-                self.context.queue.submit(self.resize_callback, constants.MV_APP_UUID, dimensions)
+            self.context.queue_callback_arg4int(self._resize_callback,
+                                                self,
+                                                self.viewport.actualWidth,
+                                                self.viewport.actualHeight,
+                                                self.viewport.clientWidth,
+                                                self.viewport.clientHeight)
             self.viewport.resized = False
         assert(self.pending_theme_actions.empty())
         assert(self.applied_theme_actions.empty())
@@ -1734,6 +1866,7 @@ cdef class dcgViewport(baseItem):
                        maximized)
         if not(self.graphics_initialized):
             self.graphics = setup_graphics(dereference(self.viewport))
+            imgui.StyleColorsClassic()
             """
             imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
             # TODO if (GContext->IO.autoSaveIniFile). if (!GContext->IO.iniFile.empty())
@@ -1744,84 +1877,6 @@ cdef class dcgViewport(baseItem):
             #if(GContext->IO.docking)
             # io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             # io.ConfigDockingWithShift = GContext->IO.dockingShiftOnly;
-
-            # Setup Dear ImGui style
-            imgui.StyleColorsDark()
-            style = &imgui.GetStyle()
-            colors = <mvColor*>style.Colors
-
-            colors[<int>imgui.ImGuiCol_Text] = MV_BASE_COL_textColor
-            colors[<int>imgui.ImGuiCol_TextDisabled] = MV_BASE_COL_textDisabledColor
-            colors[<int>imgui.ImGuiCol_WindowBg] = mvImGuiCol_WindowBg
-            colors[<int>imgui.ImGuiCol_ChildBg] = mvImGuiCol_ChildBg
-            colors[<int>imgui.ImGuiCol_PopupBg] = mvImGuiCol_PopupBg
-            colors[<int>imgui.ImGuiCol_Border] = mvImGuiCol_Border
-            colors[<int>imgui.ImGuiCol_BorderShadow] = mvImGuiCol_BorderShadow
-            colors[<int>imgui.ImGuiCol_FrameBg] = mvImGuiCol_FrameBg
-            colors[<int>imgui.ImGuiCol_FrameBgHovered] = mvImGuiCol_FrameBgHovered
-            colors[<int>imgui.ImGuiCol_FrameBgActive] = mvImGuiCol_FrameBgActive
-            colors[<int>imgui.ImGuiCol_TitleBg] = mvImGuiCol_TitleBg
-            colors[<int>imgui.ImGuiCol_TitleBgActive] = mvImGuiCol_TitleBgActive
-            colors[<int>imgui.ImGuiCol_TitleBgCollapsed] = mvImGuiCol_TitleBgCollapsed
-            colors[<int>imgui.ImGuiCol_MenuBarBg] = mvImGuiCol_MenuBarBg
-            colors[<int>imgui.ImGuiCol_ScrollbarBg] = mvImGuiCol_ScrollbarBg
-            colors[<int>imgui.ImGuiCol_ScrollbarGrab] = mvImGuiCol_ScrollbarGrab
-            colors[<int>imgui.ImGuiCol_ScrollbarGrabHovered] = mvImGuiCol_ScrollbarGrabHovered
-            colors[<int>imgui.ImGuiCol_ScrollbarGrabActive] = mvImGuiCol_ScrollbarGrabActive
-            colors[<int>imgui.ImGuiCol_CheckMark] = mvImGuiCol_CheckMark
-            colors[<int>imgui.ImGuiCol_SliderGrab] = mvImGuiCol_SliderGrab
-            colors[<int>imgui.ImGuiCol_SliderGrabActive] = mvImGuiCol_SliderGrabActive
-            colors[<int>imgui.ImGuiCol_Button] = mvImGuiCol_Button
-            colors[<int>imgui.ImGuiCol_ButtonHovered] = mvImGuiCol_ButtonHovered
-            colors[<int>imgui.ImGuiCol_ButtonActive] = mvImGuiCol_ButtonActive
-            colors[<int>imgui.ImGuiCol_Header] = mvImGuiCol_Header
-            colors[<int>imgui.ImGuiCol_HeaderHovered] = mvImGuiCol_HeaderHovered
-            colors[<int>imgui.ImGuiCol_HeaderActive] = mvImGuiCol_HeaderActive
-            colors[<int>imgui.ImGuiCol_Separator] = mvImGuiCol_Separator
-            colors[<int>imgui.ImGuiCol_SeparatorHovered] = mvImGuiCol_SeparatorHovered
-            colors[<int>imgui.ImGuiCol_SeparatorActive] = mvImGuiCol_SeparatorActive
-            colors[<int>imgui.ImGuiCol_ResizeGrip] = mvImGuiCol_ResizeGrip
-            colors[<int>imgui.ImGuiCol_ResizeGripHovered] = mvImGuiCol_ResizeGripHovered
-            colors[<int>imgui.ImGuiCol_ResizeGripActive] = mvImGuiCol_ResizeGripHovered
-            colors[<int>imgui.ImGuiCol_Tab] = mvImGuiCol_Tab
-            colors[<int>imgui.ImGuiCol_TabHovered] = mvImGuiCol_TabHovered
-            colors[<int>imgui.ImGuiCol_TabActive] = mvImGuiCol_TabActive
-            colors[<int>imgui.ImGuiCol_TabUnfocused] = mvImGuiCol_TabUnfocused
-            colors[<int>imgui.ImGuiCol_TabUnfocusedActive] = mvImGuiCol_TabUnfocusedActive
-            colors[<int>imgui.ImGuiCol_DockingPreview] = mvImGuiCol_DockingPreview
-            colors[<int>imgui.ImGuiCol_DockingEmptyBg] = mvImGuiCol_DockingEmptyBg
-            colors[<int>imgui.ImGuiCol_PlotLines] = mvImGuiCol_PlotLines
-            colors[<int>imgui.ImGuiCol_PlotLinesHovered] = mvImGuiCol_PlotLinesHovered
-            colors[<int>imgui.ImGuiCol_PlotHistogram] = mvImGuiCol_PlotHistogram
-            colors[<int>imgui.ImGuiCol_PlotHistogramHovered] = mvImGuiCol_PlotHistogramHovered
-            colors[<int>imgui.ImGuiCol_TableHeaderBg] = mvImGuiCol_TableHeaderBg
-            colors[<int>imgui.ImGuiCol_TableBorderStrong] = mvImGuiCol_TableBorderStrong   # Prefer using Alpha=1.0 here
-            colors[<int>imgui.ImGuiCol_TableBorderLight] = mvImGuiCol_TableBorderLight   # Prefer using Alpha=1.0 here
-            colors[<int>imgui.ImGuiCol_TableRowBg] = mvImGuiCol_TableRowBg
-            colors[<int>imgui.ImGuiCol_TableRowBgAlt] = mvImGuiCol_TableRowBgAlt
-            colors[<int>imgui.ImGuiCol_TextSelectedBg] = mvImGuiCol_TextSelectedBg
-            colors[<int>imgui.ImGuiCol_DragDropTarget] = mvImGuiCol_DragDropTarget
-            colors[<int>imgui.ImGuiCol_NavHighlight] = mvImGuiCol_NavHighlight
-            colors[<int>imgui.ImGuiCol_NavWindowingHighlight] = mvImGuiCol_NavWindowingHighlight
-            colors[<int>imgui.ImGuiCol_NavWindowingDimBg] = mvImGuiCol_NavWindowingDimBg
-            colors[<int>imgui.ImGuiCol_ModalWindowDimBg] = mvImGuiCol_ModalWindowDimBg
-
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_NodeBackground] = ConvertToUnsignedInt(mvColor(62, 62, 62, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_NodeBackgroundHovered] = ConvertToUnsignedInt(mvColor(75, 75, 75, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_NodeBackgroundSelected] = ConvertToUnsignedInt(mvColor(75, 75, 75, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_NodeOutline] = ConvertToUnsignedInt(mvColor(100, 100, 100, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_TitleBar] = ConvertToUnsignedInt(mvImGuiCol_TitleBg)
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_TitleBarHovered] = ConvertToUnsignedInt(mvImGuiCol_TitleBgActive)
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_TitleBarSelected] = ConvertToUnsignedInt(mvImGuiCol_FrameBgActive)
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_Link] = ConvertToUnsignedInt(mvColor(255, 255, 255, 200))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_LinkHovered] = ConvertToUnsignedInt(mvColor(66, 150, 250, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_LinkSelected] = ConvertToUnsignedInt(mvColor(66, 150, 250, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_Pin] = ConvertToUnsignedInt(mvColor(199, 199, 41, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_PinHovered] = ConvertToUnsignedInt(mvColor(255, 255, 50, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_BoxSelector] = ConvertToUnsignedInt(mvColor(61, 133, 224, 30))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_BoxSelectorOutline] = ConvertToUnsignedInt(mvColor(61, 133, 224, 150))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_GridBackground] = ConvertToUnsignedInt(mvColor(35, 35, 35, 255))
-            imnodes.GetStyle().Colors[<int>imnodes.ImNodesCol_GridLine] = ConvertToUnsignedInt(mvColor(0, 0, 0, 255))
             """
             self.graphics_initialized = True
         self.viewport.shown = 1
@@ -1923,7 +1978,7 @@ Drawing items
 
 cdef class drawingItem(drawableItem):
     def __cinit__(self):
-        self.element_child_category = child_cat_drawing
+        self.element_child_category = child_type.cat_drawing
 
 cdef class dcgDrawList_(drawingItem):
     def __cinit__(self):
@@ -2738,7 +2793,7 @@ cdef class globalHandler(baseItem):
     def __cinit__(self):
         self.enabled = True
         self.can_have_sibling = True
-        self.element_child_category = child_cat_global_handler
+        self.element_child_category = child_type.cat_global_handler
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -3330,7 +3385,7 @@ cdef class itemHandler(baseItem):
     def __cinit__(self):
         self.enabled = True
         self.can_have_sibling = True
-        self.element_child_category = child_cat_item_handler
+        self.element_child_category = child_type.cat_item_handler
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -3410,7 +3465,7 @@ cdef class uiItem(baseItem):
         self.theme_condition_enabled = theme_enablers.t_enabled_any
         self.theme_condition_category = theme_categories.t_any
         self.can_have_sibling = True
-        self.element_child_category = child_cat_ui
+        self.element_child_category = child_type.cat_ui
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.tracked = False
         self.dragCallback = None
@@ -5081,14 +5136,6 @@ cdef class dcgListBox(uiItem):
         #self.state.has_rect_size = True
         #self.state.has_content_region = True
 
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        # Support for old args
-        self._num_items_shown_when_open = kwargs.pop("num_items", self._num_items_shown_when_open)
-        # baseItem configure will configure the rest.
-        return super().configure(**kwargs)
-
     @property
     def items(self):
         """
@@ -5646,7 +5693,6 @@ cdef class dcgInputText(uiItem):
         cdef string current_value
         cdef imgui.ImGuiInputTextFlags flags = self.flags
         shared_str.get(<shared_str>self._value, current_value)
-        cdef char* data = current_value.data()
 
         cdef bint changed = False
         if not(self._enabled):
@@ -5654,6 +5700,7 @@ cdef class dcgInputText(uiItem):
         if current_value.size() != (self._max_characters+1):
             # In theory the +1 is not needed here
             current_value.resize(self._max_characters+1)
+        cdef char* data = current_value.data()
         if self._multiline:
             changed = imgui.InputTextMultiline(self.imgui_label.c_str(),
                                                data,
@@ -7239,7 +7286,7 @@ cdef class dcgGroup(uiItem):
 Complex ui items
 """
 
-cdef class dcgWindow_(uiItem):
+cdef class dcgWindow(uiItem):
     def __cinit__(self):
         self.window_flags = imgui.ImGuiWindowFlags_None
         self.main_window = False
@@ -7270,13 +7317,524 @@ cdef class dcgWindow_(uiItem):
         self.can_have_widget_child = True
         self.can_have_drawing_child = True
         self.can_have_payload_child = True
-        self.element_child_category = child_cat_window
+        self.element_child_category = child_type.cat_window
         self.state.can_be_hovered = True
         self.state.can_be_focused = True
         self.state.has_rect_size = True
         self.state.has_rect_min = True
         self.state.has_rect_max = True
         self.state.has_content_region = True
+
+    def configure(self, **kwargs):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        remaining = {}
+        for (key, value) in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            # convert old flags
+            elif key == "no_close":
+                self.has_close_button = value
+            else:
+                remaining[key] = value
+        super().configure(**remaining)
+
+    @property
+    def no_title_bar(self):
+        """Writable attribute to disable the title-bar"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoTitleBar) else False
+
+    @no_title_bar.setter
+    def no_title_bar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoTitleBar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoTitleBar
+
+    @property
+    def no_resize(self):
+        """Writable attribute to block resizing"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoResize) else False
+
+    @no_resize.setter
+    def no_resize(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoResize
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoResize
+
+    @property
+    def no_move(self):
+        """Writable attribute the window to be move with interactions"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoMove) else False
+
+    @no_move.setter
+    def no_move(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoMove
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoMove
+
+    @property
+    def no_scrollbar(self):
+        """Writable attribute to indicate the window should have no scrollbar
+           Does not disable scrolling via mouse or keyboard
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoScrollbar) else False
+
+    @no_scrollbar.setter
+    def no_scrollbar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoScrollbar
+    
+    @property
+    def no_scroll_with_mouse(self):
+        """Writable attribute to indicate the mouse wheel
+           should have no effect on scrolling of this window
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoScrollWithMouse) else False
+
+    @no_scroll_with_mouse.setter
+    def no_scroll_with_mouse(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoScrollWithMouse
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoScrollWithMouse
+
+    @property
+    def no_collapse(self):
+        """Writable attribute to disable user collapsing window by double-clicking on it
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoCollapse) else False
+
+    @no_collapse.setter
+    def no_collapse(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoCollapse
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoCollapse
+
+    @property
+    def autosize(self):
+        """Writable attribute to tell the window should
+           automatically resize to fit its content
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysAutoResize) else False
+
+    @autosize.setter
+    def autosize(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysAutoResize
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysAutoResize
+
+    @property
+    def no_background(self):
+        """
+        Writable attribute to disable drawing background
+        color and outside border
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoBackground) else False
+
+    @no_background.setter
+    def no_background(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoBackground
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoBackground
+
+    @property
+    def no_saved_settings(self):
+        """
+        Writable attribute to never load/save settings in .ini file
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoSavedSettings) else False
+
+    @no_saved_settings.setter
+    def no_saved_settings(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoSavedSettings
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoSavedSettings
+
+    @property
+    def no_mouse_inputs(self):
+        """
+        Writable attribute to disable mouse input event catching of the window.
+        Events such as clicked, hovering, etc will be passed to items behind the
+        window.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoMouseInputs) else False
+
+    @no_mouse_inputs.setter
+    def no_mouse_inputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoMouseInputs
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoMouseInputs
+
+    @property
+    def no_keyboard_inputs(self):
+        """
+        Writable attribute to disable keyboard manipulation (scroll).
+        The window will not take focus of the keyboard.
+        Does not affect items inside the window.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoNav) else False
+
+    @no_keyboard_inputs.setter
+    def no_keyboard_inputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoNav
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoNav
+
+    @property
+    def menubar(self):
+        """
+        Writable attribute to indicate whether the window should have a menu bar
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_MenuBar) else False
+
+    @menubar.setter
+    def menubar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_MenuBar
+        # Keep this state change if the primary state is changed
+        self.backup_window_flags &= ~imgui.ImGuiWindowFlags_MenuBar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_MenuBar
+            self.backup_window_flags |= imgui.ImGuiWindowFlags_MenuBar
+
+    @property
+    def horizontal_scrollbar(self):
+        """
+        Writable attribute to enable having an horizontal scrollbar
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_HorizontalScrollbar) else False
+
+    @horizontal_scrollbar.setter
+    def horizontal_scrollbar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_HorizontalScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_HorizontalScrollbar
+
+    @property
+    def no_focus_on_appearing(self):
+        """
+        Writable attribute to indicate when the windows moves from
+        an un-shown to a shown item shouldn't be made automatically
+        focused
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoFocusOnAppearing) else False
+
+    @no_focus_on_appearing.setter
+    def no_focus_on_appearing(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoFocusOnAppearing
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoFocusOnAppearing
+
+    @property
+    def no_bring_to_front_on_focus(self):
+        """
+        Writable attribute to indicate when the window takes focus (click on it, etc)
+        it shouldn't be shown in front of other windows
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoBringToFrontOnFocus) else False
+
+    @no_bring_to_front_on_focus.setter
+    def no_bring_to_front_on_focus(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoBringToFrontOnFocus
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoBringToFrontOnFocus
+
+    @property
+    def always_show_vertical_scrollvar(self):
+        """
+        Writable attribute to tell to always show a vertical scrollbar
+        even when the size does not require it
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar) else False
+
+    @always_show_vertical_scrollvar.setter
+    def always_show_vertical_scrollvar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
+
+    @property
+    def always_show_horizontal_scrollvar(self):
+        """
+        Writable attribute to tell to always show a horizontal scrollbar
+        even when the size does not require it (only if horizontal scrollbar
+        are enabled)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar) else False
+
+    @always_show_horizontal_scrollvar.setter
+    def always_show_horizontal_scrollvar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
+
+    @property
+    def unsaved_document(self):
+        """
+        Writable attribute to display a dot next to the title, as if the window
+        contains unsaved changes.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_UnsavedDocument) else False
+
+    @unsaved_document.setter
+    def unsaved_document(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_UnsavedDocument
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_UnsavedDocument
+
+    @property
+    def disallow_docking(self):
+        """
+        Writable attribute to disable docking for the window
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoDocking) else False
+
+    @disallow_docking.setter
+    def disallow_docking(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoDocking
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoDocking
+
+    @property
+    def no_open_over_existing_popup(self):
+        """
+        Writable attribute for modal and popup windows to prevent them from
+        showing if there is already an existing popup/modal window
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.no_open_over_existing_popup
+
+    @no_open_over_existing_popup.setter
+    def no_open_over_existing_popup(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.no_open_over_existing_popup = value
+
+    @property
+    def modal(self):
+        """
+        Writable attribute to indicate the window is a modal window.
+        Modal windows are similar to popup windows, but they have a close
+        button and are not closed by clicking outside.
+        Clicking has no effect of items outside the modal window until it is closed.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.modal
+
+    @modal.setter
+    def modal(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.modal = value
+
+    @property
+    def popup(self):
+        """
+        Writable attribute to indicate the window is a popup window.
+        Popup windows are centered (unless a pos is set), do not have a
+        close button, and are closed when they lose focus (clicking outside the
+        window).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.popup
+
+    @popup.setter
+    def popup(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.popup = value
+
+    @property
+    def has_close_button(self):
+        """
+        Writable attribute to indicate the window has a close button.
+        Has effect only for normal and modal windows.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.has_close_button and not(self.popup)
+
+    @has_close_button.setter
+    def has_close_button(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.has_close_button = value
+
+    @property
+    def collapsed(self):
+        """
+        Writable attribute to collapse (~minimize) or uncollapse the window
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.collapsed 
+
+    @collapsed.setter
+    def collapsed(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.collapsed = value
+        self.collapse_update_requested = True
+
+    @property
+    def on_close(self):
+        """
+        Callback to call when the window is closed.
+        Note closing the window does not destroy or unattach the item.
+        Instead it is switched to a show=False state.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.on_close_callback
+
+    @on_close.setter
+    def on_close(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.on_close_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+
+    @property
+    def primary(self):
+        """
+        Writable attribute: Indicate if the window is the primary window.
+        There is maximum one primary window. The primary window covers the whole
+        viewport and can be used to draw on the background.
+        It is equivalent to setting:
+        no_bring_to_front_on_focus
+        no_saved_settings
+        no_resize
+        no_collapse
+        no_title_bar
+        and running item.focused = True on all the other windows
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.main_window
+
+    @primary.setter
+    def primary(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        cdef unique_lock[recursive_mutex] m2
+        # If window has a parent, it is the viewport
+        lock_gil_friendly(m, self.context.viewport.mutex)
+        lock_gil_friendly(m2, self.mutex)
+
+        if self._parent is None:
+            raise ValueError("Window must be attached before becoming primary")
+        if self.main_window == value:
+            return # Nothing to do
+        self.main_window = value
+        if value:
+            # backup previous state
+            self.backup_window_flags = self.window_flags
+            self.backup_pos = self.state.relative_position
+            self.backup_rect_size = self.state.rect_size
+            # Make primary
+            self.window_flags = \
+                imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
+                imgui.ImGuiWindowFlags_NoSavedSettings | \
+			    imgui.ImGuiWindowFlags_NoResize | \
+                imgui.ImGuiWindowFlags_NoCollapse | \
+                imgui.ImGuiWindowFlags_NoTitleBar
+        else:
+            # Restore previous state
+            self.window_flags = self.backup_window_flags
+            self.state.relative_position = self.backup_pos
+            self.requested_size = self.backup_rect_size
+            # Tell imgui to update the window shape
+            self.pos_update_requested = True
+            self.size_update_requested = True
+
+        # Re-tell imgui the window hierarchy
+        cdef dcgWindow w = self.context.viewport.last_window_child
+        cdef dcgWindow next = None
+        while w is not None:
+            with nogil:
+                w.mutex.lock()
+            w.state.focused = True
+            w.focus_update_requested = True
+            next = w._prev_sibling
+            w.mutex.unlock()
+            # TODO: previous code did restore previous states on each window. Figure out why
+            w = next
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -7619,7 +8177,7 @@ cdef class baseTheme(baseItem):
     to apply for a given category (color, style)/(imgui/implot/imnode)
     """
     def __cinit__(self):
-        self.element_child_category = child_cat_theme
+        self.element_child_category = child_type.cat_theme
         self.can_have_sibling = True
         self.enabled = True
     def configure(self, **kwargs):

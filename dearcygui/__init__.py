@@ -5,4 +5,3 @@ from .handler import *
 from .plot import *
 from .theme import *
 from .widget import *
-from .window import *
