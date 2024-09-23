@@ -153,14 +153,15 @@ cdef class baseItem:
     # to indicate what kind of parent
     # and children they can have.
     # Allowed children:
-    cdef bint can_have_window_child
-    cdef bint can_have_widget_child
     cdef bint can_have_drawing_child
-    cdef bint can_have_payload_child
     # DOES NOT mean "bound" to an item
     cdef bint can_have_global_handler_child
     cdef bint can_have_item_handler_child
+    cdef bint can_have_menubar_child
+    cdef bint can_have_payload_child
     cdef bint can_have_theme_child
+    cdef bint can_have_widget_child
+    cdef bint can_have_window_child
     # Allowed siblings:
     cdef bint can_have_sibling
     # Type of child for the parent
@@ -173,13 +174,14 @@ cdef class baseItem:
     # Each element is responsible for calling draw on its sibling
     cdef baseItem _prev_sibling
     cdef baseItem _next_sibling
-    cdef dcgWindow last_window_child
-    cdef uiItem last_widgets_child
     cdef drawableItem last_drawings_child
-    cdef baseItem last_payloads_child
     cdef globalHandler last_global_handler_child
     cdef itemHandler last_item_handler_child
+    cdef uiItem last_menubar_child
+    cdef baseItem last_payloads_child
     cdef baseTheme last_theme_child
+    cdef uiItem last_widgets_child
+    cdef dcgWindow last_window_child
     cdef void lock_parent_and_item_mutex(self, unique_lock[recursive_mutex]&, unique_lock[recursive_mutex]&)
     cdef void lock_and_previous_siblings(self) noexcept nogil
     cdef void unlock_and_previous_siblings(self) noexcept nogil
@@ -191,13 +193,15 @@ cdef class baseItem:
     cdef void __delete_and_siblings(self)
 
 cdef enum child_type:
-    cat_window
-    cat_ui
     cat_drawing
-    cat_payload
     cat_global_handler
     cat_item_handler
+    cat_menubar
+    cat_payload
     cat_theme
+    cat_widget
+    cat_window
+    
 
 cdef class dcgViewport(baseItem):
     cdef mvViewport *viewport
@@ -810,7 +814,6 @@ cdef class dcgWindow(uiItem):
     cdef bint horizontal_scrollbar
     cdef bint no_focus_on_appearing
     cdef bint no_bring_to_front_on_focus
-    cdef bint menubar
     cdef bint has_close_button
     cdef bint no_background
     cdef bint collapsed

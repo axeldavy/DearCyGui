@@ -2582,7 +2582,7 @@ def file_dialog(*, label: str =None, user_data: Any =None, width: int =0, height
 
     #return file_dialog(label=label, user_data=user_data, width=width, height=height, callback=callback, show=show, default_path=default_path, default_filename=default_filename, file_count=file_count, modal=modal, directory_selector=directory_selector, min_size=min_size, max_size=max_size, cancel_callback=cancel_callback, **kwargs)
 
-def file_extension(extension : str, *, label: str =None, user_data: Any =None, width: int =0, height: int =0, custom_text: str ='', color: Union[int, List[int], Tuple[int, ...]] =(0, 0, 0, 255), **kwargs) -> Union[int, str]:
+def file_extension(extension : str, *, label: str =None, user_data: Any =None, width: int =0, height: int =0, custom_text: str ='', **kwargs) -> Union[int, str]:
     """     Creates a file extension filter option in the file dialog.
 
     Args:
@@ -2605,7 +2605,7 @@ def file_extension(extension : str, *, label: str =None, user_data: Any =None, w
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return file_extension(extension, label=label, user_data=user_data, width=width, height=height, custom_text=custom_text, color=color, **kwargs)
+    #return file_extension(extension, label=label, user_data=user_data, width=width, height=height, custom_text=custom_text, **kwargs)
 
 def filter_set(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, show: bool =True, **kwargs) -> Union[int, str]:
     """     Helper to parse and apply text filters (e.g. aaaaa[, bbbbb][, ccccc])
@@ -5398,7 +5398,7 @@ def template_registry(*, label: str =None, user_data: Any =None, **kwargs) -> Un
 
     #return template_registry(label=label, user_data=user_data, **kwargs)
 
-def text(default_value : str ='', *, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, wrap: int =-1, bullet: bool =False, color: Union[int, List[int], Tuple[int, ...]] =(0, 0, 0, 255), show_label: bool =False, **kwargs) -> Union[int, str]:
+def text(default_value : str ='', *, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, wrap: int =-1, bullet: bool =False, show_label: bool =False, **kwargs) -> Union[int, str]:
     """     Adds text. Text can have an optional label that will display to the right of the text.
 
     Args:
@@ -5431,7 +5431,7 @@ def text(default_value : str ='', *, label: str =None, user_data: Any =None, ind
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgText(dcg_context, value=default_value, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, wrap=wrap, bullet=bullet, color=color, show_label=show_label, **kwargs)
+    return dcg.dcgText(dcg_context, value=default_value, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, wrap=wrap, bullet=bullet, show_label=show_label, **kwargs)
 
 def text_point(x : float, y : float, *, label: str =None, user_data: Any =None, show: bool =True, offset: Union[List[float], Tuple[float, ...]] =(0.0, 0.0), vertical: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a label series to a plot. x and y can only have one elements each.
