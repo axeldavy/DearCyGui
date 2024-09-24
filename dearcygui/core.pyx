@@ -209,7 +209,9 @@ cdef class dcgContext:
         if o.can_have_drawing_child or \
            o.can_have_global_handler_child or \
            o.can_have_item_handler_child or \
+           o.can_have_menubar_child or \
            o.can_have_payload_child or \
+           o.can_have_tab_child or \
            o.can_have_theme_child or \
            o.can_have_widget_child or \
            o.can_have_window_child:
@@ -237,7 +239,9 @@ cdef class dcgContext:
         if o.can_have_drawing_child or \
            o.can_have_global_handler_child or \
            o.can_have_item_handler_child or \
+           o.can_have_menubar_child or \
            o.can_have_payload_child or \
+           o.can_have_tab_child or \
            o.can_have_theme_child or \
            o.can_have_widget_child or \
            o.can_have_window_child:
@@ -387,6 +391,124 @@ cdef class dcgContext:
         self.viewport.configure(**kwargs)
         self.started = True
 
+    def is_key_down(self, int key):
+        """is key being held."""
+        cdef unique_lock[recursive_mutex] m
+        if key < 0 or <imgui.ImGuiKey>key >= imgui.ImGuiKey_NamedKey_END:
+            raise ValueError("Invalid key")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsKeyDown(<imgui.ImGuiKey>key)
+
+    def is_key_pressed(self, int key, bint repeat=True):
+        """was key pressed (went from !Down to Down)?
+        
+        if repeat=true, the pressed state is repeated
+        if the user continue pressing the key
+        """
+        cdef unique_lock[recursive_mutex] m
+        if key < 0 or <imgui.ImGuiKey>key >= imgui.ImGuiKey_NamedKey_END:
+            raise ValueError("Invalid key")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsKeyPressed(<imgui.ImGuiKey>key, repeat)
+
+    def is_key_released(self, int key):
+        """was key released (went from Down to !Down)?"""
+        cdef unique_lock[recursive_mutex] m
+        if key < 0 or <imgui.ImGuiKey>key >= imgui.ImGuiKey_NamedKey_END:
+            raise ValueError("Invalid key")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsKeyReleased(<imgui.ImGuiKey>key)
+
+    def is_mouse_down(self, int button):
+        """is mouse button held?"""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsMouseDown(button)
+
+    def is_mouse_clicked(self, int button, bint repeat=False):
+        """did mouse button clicked? (went from !Down to Down). Same as get_mouse_clicked_count() >= 1."""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsMouseClicked(button, repeat)
+
+    def is_mouse_double_clicked(self, int button, bint repeat=False):
+        """did mouse button double-clicked?. Same as get_mouse_clicked_count() == 2."""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsMouseDoubleClicked(button)
+
+    def get_mouse_clicked_count(self, int button):
+        """how many times a mouse button is clicked in a row"""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.GetMouseClickedCount(button)
+
+    def is_mouse_released(self, int button):
+        """did mouse button released? (went from Down to !Down)"""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsMouseReleased(button)
+
+    def get_mouse_position(self):
+        """Retrieves the mouse position (x, y). Raises KeyError if there is no mouse"""
+        cdef unique_lock[recursive_mutex] m
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        cdef imgui.ImVec2 pos = imgui.GetMousePos()
+        if not(imgui.IsMousePosValid(&pos)):
+            raise KeyError("Cannot get mouse position: no mouse found")
+        return (pos.x, pos.y)
+
+    def is_mouse_dragging(self, int button, float lock_threshold=-1.):
+        """is mouse dragging? (uses default distance threshold if lock_threshold < 0.0f"""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.IsMouseDragging(button, lock_threshold)
+
+    def get_mouse_drag_delta(self, int button, float lock_threshold=-1.):
+        """
+        Return the delta (dx, dy) from the initial clicking position while the mouse button is pressed or was just released.
+        
+        This is locked and return 0.0f until the mouse moves past a distance threshold at least once
+        (uses default distance if lock_threshold < 0.0f)"""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        cdef imgui.ImVec2 delta =  imgui.GetMouseDragDelta(button, lock_threshold)
+        return (delta.x, delta.y)
+
+    def reset_mouse_drag_delta(self, int button, float lock_threshold=-1.):
+        """Reset to 0 the drag delta for the target button"""
+        cdef unique_lock[recursive_mutex] m
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.ResetMouseDragDelta(button)
+
     @property
     def running(self):
         cdef unique_lock[recursive_mutex] m
@@ -398,6 +520,22 @@ cdef class dcgContext:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.started = value
+
+    @property
+    def clipboard(self):
+        """Writable attribute: content of the clipboard"""
+        cdef unique_lock[recursive_mutex] m
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        return imgui.GetClipboardText()
+
+    @clipboard.setter
+    def clipboard(self, str value):
+        cdef string value_str = bytes(value, 'utf-8')
+        cdef unique_lock[recursive_mutex] m
+        ensure_correct_imgui_context(self)
+        lock_gil_friendly(m, self.imgui_mutex)
+        imgui.SetClipboardText(value_str.c_str())
 
 
 
@@ -865,6 +1003,24 @@ cdef class baseItem:
                 self._parent = target_parent
                 target_parent.last_menubar_child = <uiItem>self
                 attached = True
+        elif self.element_child_category == child_type.cat_tab:
+            if target_parent.can_have_tab_child:
+                if target_parent.last_tab_child is not None:
+                    lock_gil_friendly(m3, target_parent.last_tab_child.mutex)
+                    target_parent.last_tab_child._next_sibling = self
+                self._prev_sibling = target_parent.last_tab_child
+                self._parent = target_parent
+                target_parent.last_tab_child = <uiItem>self
+                attached = True
+        elif self.element_child_category == child_type.cat_theme:
+            if target_parent.can_have_theme_child:
+                if target_parent.last_theme_child is not None:
+                    lock_gil_friendly(m3, target_parent.last_theme_child.mutex)
+                    target_parent.last_theme_child._next_sibling = self
+                self._prev_sibling = target_parent.last_theme_child
+                self._parent = target_parent
+                target_parent.last_theme_child = <baseTheme>self
+                attached = True
         elif self.element_child_category == child_type.cat_widget:
             if target_parent.can_have_widget_child:
                 if target_parent.last_widgets_child is not None:
@@ -882,15 +1038,6 @@ cdef class baseItem:
                 self._prev_sibling = target_parent.last_window_child
                 self._parent = target_parent
                 target_parent.last_window_child = <dcgWindow>self
-                attached = True
-        elif self.element_child_category == child_type.cat_theme:
-            if target_parent.can_have_theme_child:
-                if target_parent.last_theme_child is not None:
-                    lock_gil_friendly(m3, target_parent.last_theme_child.mutex)
-                    target_parent.last_theme_child._next_sibling = self
-                self._prev_sibling = target_parent.last_theme_child
-                self._parent = target_parent
-                target_parent.last_theme_child = <baseTheme>self
                 attached = True
         if not(attached):
             raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
@@ -2032,6 +2179,7 @@ cdef class dcgPlaceHolderParent(baseItem):
         self.can_have_item_handler_child = True
         self.can_have_menubar_child = True
         self.can_have_payload_child = True
+        self.can_have_tab_child = True
         self.can_have_theme_child = True
         self.can_have_widget_child = True
         self.can_have_window_child = True
@@ -6627,106 +6775,6 @@ cdef class dcgSelectable(uiItem):
         return changed
 
 
-cdef class dcgTabButton(uiItem):
-    def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_tabbutton
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        # Frankly unsure why these. Should it include popup ?:
-        #self.state.has_rect_min = True
-        #self.state.has_rect_max = True
-        #self.state.has_rect_size = True
-        #self.state.has_content_region = True
-        self.flags = imgui.ImGuiTabItemFlags_None
-
-    @property
-    def no_reorder(self):
-        """
-        Writable attribute: Disable reordering this tab or
-        having another tab cross over this tab
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_NoReorder) != 0
-
-    @no_reorder.setter
-    def no_reorder(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_NoReorder
-        if value:
-            self.flags |= imgui.ImGuiTabItemFlags_NoReorder
-
-    @property
-    def leading(self):
-        """
-        Writable attribute: Enforce the tab position to the
-        left of the tab bar (after the tab list popup button)
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_Leading) != 0
-
-    @leading.setter
-    def leading(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_Leading
-        if value:
-            self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
-            self.flags |= imgui.ImGuiTabItemFlags_Leading
-
-    @property
-    def trailing(self):
-        """
-        Writable attribute: Enforce the tab position to the
-        right of the tab bar (before the scrolling buttons)
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_Trailing) != 0
-
-    @trailing.setter
-    def trailing(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
-        if value:
-            self.flags &= ~imgui.ImGuiTabItemFlags_Leading
-            self.flags |= imgui.ImGuiTabItemFlags_Trailing
-
-    @property
-    def no_tooltip(self):
-        """
-        Writable attribute: Disable tooltip for the given tab
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_NoTooltip) != 0
-
-    @no_tooltip.setter
-    def no_tooltip(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_NoTooltip
-        if value:
-            self.flags |= imgui.ImGuiTabItemFlags_NoTooltip
-
-    cdef bint draw_item(self) noexcept nogil:
-        cdef bint pressed = imgui.TabItemButton(self.imgui_label.c_str(),
-                                                self.flags)
-        self.update_current_state()
-        shared_bool.set(<shared_bool>self._value, self.state.active) # Unsure. Not in original
-        return pressed
-
-
 cdef class dcgMenuItem(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_menuitem
@@ -7194,8 +7242,107 @@ cdef class dcgTooltip(uiItem):
             # NOTE: we could also set the rects. DPG does it.
         return self.state.visible and not(was_visible)
 
+cdef class dcgTabButton(uiItem):
+    def __cinit__(self):
+        self.theme_condition_category = theme_categories.t_tabbutton
+        self.element_child_category = child_type.cat_tab
+        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_deactivated_after_edited = True
+        self.state.can_be_edited = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        # Frankly unsure why these. Should it include popup ?:
+        #self.state.has_rect_min = True
+        #self.state.has_rect_max = True
+        #self.state.has_rect_size = True
+        #self.state.has_content_region = True
+        self.flags = imgui.ImGuiTabItemFlags_None
 
-'''
+    @property
+    def no_reorder(self):
+        """
+        Writable attribute: Disable reordering this tab or
+        having another tab cross over this tab
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabItemFlags_NoReorder) != 0
+
+    @no_reorder.setter
+    def no_reorder(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabItemFlags_NoReorder
+        if value:
+            self.flags |= imgui.ImGuiTabItemFlags_NoReorder
+
+    @property
+    def leading(self):
+        """
+        Writable attribute: Enforce the tab position to the
+        left of the tab bar (after the tab list popup button)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabItemFlags_Leading) != 0
+
+    @leading.setter
+    def leading(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabItemFlags_Leading
+        if value:
+            self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
+            self.flags |= imgui.ImGuiTabItemFlags_Leading
+
+    @property
+    def trailing(self):
+        """
+        Writable attribute: Enforce the tab position to the
+        right of the tab bar (before the scrolling buttons)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabItemFlags_Trailing) != 0
+
+    @trailing.setter
+    def trailing(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
+        if value:
+            self.flags &= ~imgui.ImGuiTabItemFlags_Leading
+            self.flags |= imgui.ImGuiTabItemFlags_Trailing
+
+    @property
+    def no_tooltip(self):
+        """
+        Writable attribute: Disable tooltip for the given tab
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabItemFlags_NoTooltip) != 0
+
+    @no_tooltip.setter
+    def no_tooltip(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabItemFlags_NoTooltip
+        if value:
+            self.flags |= imgui.ImGuiTabItemFlags_NoTooltip
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bint pressed = imgui.TabItemButton(self.imgui_label.c_str(),
+                                                self.flags)
+        self.update_current_state()
+        #shared_bool.set(<shared_bool>self._value, self.state.active) # Unsure. Not in original
+        return pressed
+
+
 cdef class dcgTab(uiItem):
     def __cinit__(self):
         self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
@@ -7301,22 +7448,216 @@ cdef class dcgTab(uiItem):
             self.flags |= imgui.ImGuiTabItemFlags_NoTooltip
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef bint menu_open = imgui.BeginMenu(self.imgui_label.c_str(),
-                                              self._enabled)
+        cdef bool show_status = True
+        cdef imgui.ImGuiTabItemFlags flags = self.flags
+        if (<shared_bool>self._value)._last_frame_change == self.context.frame:
+            # The value was changed after the last time we drew
+            # TODO: will have no effect if we switch from show to no show.
+            # maybe have a counter here.
+            if shared_bool.get(<shared_bool>self._value):
+                flags |= imgui.ImGuiTabItemFlags_SetSelected
+        cdef bint menu_open = imgui.BeginTabItem(self.imgui_label.c_str(),
+                                                 &show_status if self._show else NULL,
+                                                 flags)
+        self._show = show_status
         self.update_current_state()
         if menu_open:
-            self.state.focused = imgui.IsWindowFocused()
-            self.state.hovered = imgui.IsWindowHovered()
-            self.state.rect_size.x = imgui.GetWindowWidth()
-            self.state.rect_size.y = imgui.GetWindowHeight()
             if self.last_widgets_child is not None:
                 self.last_widgets_child.draw()
-            imgui.EndMenu()
+            imgui.EndTabItem()
         else:
             self.propagate_hidden_state_to_children()
         shared_bool.set(<shared_bool>self._value, menu_open)
         return self.state.activated
-'''
+
+
+cdef class dcgTabBar(uiItem):
+    def __cinit__(self):
+        #self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self.can_have_tab_child = True
+        self.theme_condition_category = theme_categories.t_tabbar
+        self.state.can_be_clicked = True
+        self.state.can_be_focused = True
+        self.state.can_be_hovered = True
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_deactivated = True
+        self.state.has_rect_size = True
+        self.state.has_content_region = True
+        self._closable = False
+        self.flags = imgui.ImGuiTabBarFlags_None
+
+    @property
+    def reorderable(self):
+        """
+        Writable attribute: Allow manually dragging tabs
+        to re-order them + New tabs are appended at the end of list
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_Reorderable) != 0
+
+    @reorderable.setter
+    def reorderable(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_Reorderable
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_Reorderable
+
+    @property
+    def autoselect_new_tabs(self):
+        """
+        Writable attribute: Automatically select new
+        tabs when they appear
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_AutoSelectNewTabs) != 0
+
+    @autoselect_new_tabs.setter
+    def autoselect_new_tabs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_AutoSelectNewTabs
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_AutoSelectNewTabs
+
+    @property
+    def no_tab_list_popup_button(self):
+        """
+        Writable attribute: Disable buttons to open the tab list popup
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_TabListPopupButton) != 0
+
+    @no_tab_list_popup_button.setter
+    def no_tab_list_popup_button(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_TabListPopupButton
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_TabListPopupButton
+
+    @property
+    def no_close_with_middle_mouse_button(self):
+        """
+        Writable attribute: Disable behavior of closing tabs with middle mouse button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) != 0
+
+    @no_close_with_middle_mouse_button.setter
+    def no_close_with_middle_mouse_button(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton
+
+    @property
+    def no_scrolling_button(self):
+        """
+        Writable attribute: Disable scrolling buttons
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_NoTabListScrollingButtons) != 0
+
+    @no_scrolling_button.setter
+    def no_scrolling_button(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_NoTabListScrollingButtons
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_NoTabListScrollingButtons
+
+    @property
+    def no_tooltip(self):
+        """
+        Writable attribute: Disable tooltip for all tabs
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_NoTooltip) != 0
+
+    @no_tooltip.setter
+    def no_tooltip(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_NoTooltip
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_NoTooltip
+
+    @property
+    def selected_overline(self):
+        """
+        Writable attribute: Draw selected overline markers over selected tab
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_DrawSelectedOverline) != 0
+
+    @selected_overline.setter
+    def selected_overline(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_DrawSelectedOverline
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_DrawSelectedOverline
+
+    @property
+    def resize_to_fit(self):
+        """
+        Writable attribute: Resize tabs when they don't fit
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_FittingPolicyResizeDown) != 0
+
+    @resize_to_fit.setter
+    def resize_to_fit(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_FittingPolicyResizeDown
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_FittingPolicyResizeDown
+
+    @property
+    def allow_tab_scroll(self):
+        """
+        Writable attribute: Add scroll buttons when tabs don't fit
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiTabBarFlags_FittingPolicyScroll) != 0
+
+    @allow_tab_scroll.setter
+    def allow_tab_scroll(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiTabBarFlags_FittingPolicyScroll
+        if value:
+            self.flags |= imgui.ImGuiTabBarFlags_FittingPolicyScroll
+
+    cdef bint draw_item(self) noexcept nogil:
+        imgui.PushID(self.uuid)
+        imgui.BeginGroup() # from original. Unsure if needed
+        cdef bint visible = imgui.BeginTabBar(self.imgui_label.c_str(),
+                                              self.flags)
+        self.update_current_state()
+        if visible:
+            if self.last_tab_child is not None:
+                self.last_tab_child.draw()
+            imgui.EndTabBar()
+        else:
+            self.propagate_hidden_state_to_children()
+        imgui.EndGroup()
+        imgui.PopID()
+        return self.state.activated
+
 
 cdef class dcgGroup(uiItem):
     """

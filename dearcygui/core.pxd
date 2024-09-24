@@ -159,6 +159,7 @@ cdef class baseItem:
     cdef bint can_have_item_handler_child
     cdef bint can_have_menubar_child
     cdef bint can_have_payload_child
+    cdef bint can_have_tab_child
     cdef bint can_have_theme_child
     cdef bint can_have_widget_child
     cdef bint can_have_window_child
@@ -179,6 +180,7 @@ cdef class baseItem:
     cdef itemHandler last_item_handler_child
     cdef uiItem last_menubar_child
     cdef baseItem last_payloads_child
+    cdef uiItem last_tab_child
     cdef baseTheme last_theme_child
     cdef uiItem last_widgets_child
     cdef dcgWindow last_window_child
@@ -198,6 +200,7 @@ cdef enum child_type:
     cat_item_handler
     cat_menubar
     cat_payload
+    cat_tab
     cat_theme
     cat_widget
     cat_window
@@ -736,12 +739,6 @@ cdef class dcgSelectable(uiItem):
     cdef imgui.ImGuiSelectableFlags flags
     cdef bint draw_item(self) noexcept nogil
 
-
-cdef class dcgTabButton(uiItem):
-    cdef imgui.ImGuiTabBarFlags flags
-    cdef bint draw_item(self) noexcept nogil
-
-
 cdef class dcgMenuItem(uiItem):
     cdef string _shortcut
     cdef bint _check
@@ -788,9 +785,16 @@ cdef class dcgTooltip(uiItem):
     cdef bint _only_if_
     cdef bint draw_item(self) noexcept nogil
 
-#cdef class dcgTab(uiItem):
-#    cdef bint _closable
-#    cdef imgui.ImGuiTabItemFlags flags
+cdef class dcgTabButton(uiItem):
+    cdef imgui.ImGuiTabBarFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgTab(uiItem):
+    cdef bint _closable
+    cdef imgui.ImGuiTabItemFlags flags
+
+cdef class dcgTabBar(uiItem):
+    cdef imgui.ImGuiTabBarFlags flags
 
 cdef class dcgGroup(uiItem):
     cdef bint draw_item(self) noexcept nogil
@@ -876,6 +880,8 @@ cpdef enum theme_categories:
     t_inputvalue,
     t_text,
     t_selectable,
+    t_tab,
+    t_tabbar,
     t_tabbutton,
     t_menuitem,
     t_progressbar,

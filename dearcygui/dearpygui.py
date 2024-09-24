@@ -4076,8 +4076,7 @@ def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    # TODO
-    #return mouse_move_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseMoveHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse release handler.
@@ -4120,8 +4119,7 @@ def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    # TODO
-    #return mouse_wheel_handler(label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.dcgMouseWheelHandler(dcg_context, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
 
 def node(*, label: str =None, user_data: Any =None, payload_type: str ='$$DPG_PAYLOAD', drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, draggable: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a node to a node editor.
@@ -6639,7 +6637,7 @@ def get_clipboard_text(**kwargs) -> str:
         str
     """
 
-    #return internal_dpg.get_clipboard_text(**kwargs)
+    return dcg_context.clipboard
 
 def get_colormap_color(colormap : Union[int, str], index : int, **kwargs) -> Union[List[int], Tuple[int, ...]]:
     """     Returns a color from a colormap given an index >= 0. (ex. 0 will be the first color in the color list of the color map) Modulo will be performed against the number of items in the color list.
@@ -6873,15 +6871,18 @@ def get_item_types(**kwargs) -> dict:
 
     raise ValueError("Item types are different in DCG and DPG")
 
-def get_mouse_drag_delta(**kwargs) -> float:
+def get_mouse_drag_delta(button=0, **kwargs) -> Tuple[float, float]:
     """     Returns mouse drag delta.
 
     Args:
+        button index (between 0 and 4).
+        0 is left click, 1 is right click.
+        2 is middle click
     Returns:
-        float
+        (float, float)
     """
 
-    #return internal_dpg.get_mouse_drag_delta(**kwargs)
+    return dcg_context.get_mouse_drag_delta(button, **kwargs)
 
 def get_mouse_pos(*, local: bool =True, **kwargs) -> Union[List[int], Tuple[int, ...]]:
     """     Returns mouse position.
@@ -6891,8 +6892,11 @@ def get_mouse_pos(*, local: bool =True, **kwargs) -> Union[List[int], Tuple[int,
     Returns:
         Union[List[int], Tuple[int, ...]]
     """
-
-    #return internal_dpg.get_mouse_pos(local=local, **kwargs)
+    if local:
+        # local meant relative to the position of the last window
+        # rendered. One can get that using the window position
+        print("Warning: get_mouse_pos: local=True ignored")
+    return dcg_context.get_mouse_position(**kwargs)
 
 def get_platform(**kwargs) -> int:
     """     New in 1.6. Returns platform constant.
@@ -7128,7 +7132,7 @@ def is_key_down(key : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_key_down(key, **kwargs)
+    return dcg_context.is_key_down(key, **kwargs)
 
 def is_key_pressed(key : int, **kwargs) -> bool:
     """     Checks if key is pressed.
@@ -7139,7 +7143,7 @@ def is_key_pressed(key : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_key_pressed(key, **kwargs)
+    return dcg_context.is_key_pressed(key, **kwargs)
 
 def is_key_released(key : int, **kwargs) -> bool:
     """     Checks if key is released.
@@ -7150,7 +7154,7 @@ def is_key_released(key : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_key_released(key, **kwargs)
+    return dcg_context.is_key_released(key, **kwargs)
 
 def is_mouse_button_clicked(button : int, **kwargs) -> bool:
     """     Checks if mouse button is clicked.
@@ -7161,7 +7165,7 @@ def is_mouse_button_clicked(button : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_mouse_button_clicked(button, **kwargs)
+    return dcg_context.is_mouse_clicked(button, *kwargs)
 
 def is_mouse_button_double_clicked(button : int, **kwargs) -> bool:
     """     Checks if mouse button is double clicked.
@@ -7172,7 +7176,7 @@ def is_mouse_button_double_clicked(button : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_mouse_button_double_clicked(button, **kwargs)
+    return dcg_context.is_mouse_double_clicked(button, *kwargs)
 
 def is_mouse_button_down(button : int, **kwargs) -> bool:
     """     Checks if mouse button is down.
@@ -7183,7 +7187,7 @@ def is_mouse_button_down(button : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_mouse_button_down(button, **kwargs)
+    return dcg_context.is_mouse_down(button, **kwargs)
 
 def is_mouse_button_dragging(button : int, threshold : float, **kwargs) -> bool:
     """     Checks if mouse button is down and dragging.
@@ -7195,7 +7199,7 @@ def is_mouse_button_dragging(button : int, threshold : float, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_mouse_button_dragging(button, threshold, **kwargs)
+    return dcg_context.is_mouse_dragging(button, threshold, **kwargs)
 
 def is_mouse_button_released(button : int, **kwargs) -> bool:
     """     Checks if mouse button is released.
@@ -7206,7 +7210,7 @@ def is_mouse_button_released(button : int, **kwargs) -> bool:
         bool
     """
 
-    #return internal_dpg.is_mouse_button_released(button, **kwargs)
+    return dcg_context.is_mouse_released(button, **kwargs)
 
 def is_table_cell_highlighted(table : Union[int, str], row : int, column : int, **kwargs) -> bool:
     """     Checks if a table cell is highlighted.
@@ -7609,7 +7613,7 @@ def set_clip_space(item : Union[int, str], top_left_x : float, top_left_y : floa
         None
     """
 
-    return item.clip_space(top_left_x, top_left_y, width, height, min_depth, max_depth, **kwargs)
+    return dcg_context[item].clip_space(top_left_x, top_left_y, width, height, min_depth, max_depth, **kwargs)
 
 def set_clipboard_text(text : str, **kwargs) -> None:
     """     New in 1.3. Sets the clipboard text.
@@ -7620,7 +7624,7 @@ def set_clipboard_text(text : str, **kwargs) -> None:
         None
     """
 
-    #return internal_dpg.set_clipboard_text(text, **kwargs)
+    dcg_context.clipboard = text
 
 def set_exit_callback(callback : Callable, *, user_data: Any =None, **kwargs) -> str:
     """     Sets a callback to run on last frame.
