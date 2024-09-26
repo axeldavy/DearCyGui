@@ -20,6 +20,7 @@ import dearcygui as dcg
 from dearcygui import constants
 
 from typing import List, Any, Callable, Union, Tuple
+import numpy as np
 
 dcg_context = None
 
@@ -90,7 +91,7 @@ def get_dearpygui_version():
 
 def configure_item(item : Union[int, str], **kwargs) -> None:
     """Configures an item after creation."""
-    item.configure(**kwargs)
+    dcg_context[item].configure(**kwargs)
 
 def configure_app(**kwargs) -> None:
     """Configures an item after creation."""
@@ -121,7 +122,7 @@ def mutex():
     try:
         yield dcg_context.viewport.lock_mutex(wait=True)
     finally:
-        dcg_context.unlock_mutex()
+        dcg_context.viewport.unlock_mutex()
 
 
 def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Right, modal: bool=False, tag:Union[int, str]=0, min_size:Union[List[int], Tuple[int, ...]]=[100,100], max_size: Union[List[int], Tuple[int, ...]] =[30000, 30000], no_move: bool=False, no_background: bool=False) -> int:
@@ -150,8 +151,10 @@ def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Ri
         item = window(popup=True, show=False, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
     def callback(item=item):
         item.show = True
+    parent_queue = save_parent_queue()
     handler = item_clicked_handler(mousebutton, callback=callback)
-    parent.bind_handler(handler)
+    restore_parent_queue(parent_queue)
+    parent.bind_handlers(handler)
     return item
 
 
@@ -268,7 +271,7 @@ def get_item_children(item: Union[int, str] , slot: int = -1) -> Union[dict, Lis
     Returns:
         A 2-D tuple of children slots ex. ((child_slot_1),(child_slot_2),(child_slot_3),...) or a single slot if slot is used.
     """
-    children = item.children
+    children = dcg_context[item].children
     if slot < 0 or slot > 4:
         return (filter_slot(children, 0),
                 filter_slot(children, 1),
@@ -1531,6 +1534,7 @@ def child_window(*, label: str =None, user_data: Any =None, width: int =0, heigh
         tag=kwargs['id']
 
     #return child_window(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, border=border, autosize_x=autosize_x, autosize_y=autosize_y, no_scrollbar=no_scrollbar, horizontal_scrollbar=horizontal_scrollbar, menubar=menubar, no_scroll_with_mouse=no_scroll_with_mouse, flattened_navigation=flattened_navigation, always_use_window_padding=always_use_window_padding, resizable_x=resizable_x, resizable_y=resizable_y, always_auto_resize=always_auto_resize, frame_style=frame_style, auto_resize_x=auto_resize_x, auto_resize_y=auto_resize_y, **kwargs)
+    return dcg.dcgTreeNode(dcg_context)
 
 def clipper(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, show: bool =True, **kwargs) -> Union[int, str]:
     """     Helper to manually clip large list of items. Increases performance by not searching or drawing widgets outside of the clipped region.
@@ -1588,7 +1592,7 @@ def collapsing_header(*, label: str =None, user_data: Any =None, indent: int =0,
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return collapsing_header(label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, closable=closable, default_open=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, **kwargs)
+    return dcg.dcgCollapsingHeader(dcg_context, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, closable=closable, default_open=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, **kwargs)
 
 def color_button(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_border: bool =False, no_drag_drop: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a color button.
@@ -2472,7 +2476,7 @@ def draw_node(*, label: str =None, user_data: Any =None, show: bool =True, **kwa
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgDrawNode(dcg_context, label=label, user_data=user_data, show=show, **kwargs)
+    return dcg.dcgDrawLayer(dcg_context, label=label, user_data=user_data, show=show, **kwargs)
 
 def drawlist(width : int, height : int, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, **kwargs) -> Union[int, str]:
     """     Adds a drawing canvas.
@@ -2500,7 +2504,7 @@ def drawlist(width : int, height : int, *, label: str =None, user_data: Any =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgDrawList(dcg_context, width, height, label=label, user_data=user_data, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
+    return dcg.dcgDrawInWindow(dcg_context, width=width, height=height, label=label, user_data=user_data, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
 
 def dynamic_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a dynamic texture.
@@ -2522,7 +2526,7 @@ def dynamic_texture(width : int, height : int, default_value : Union[List[float]
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgTexture(dcg_context, default_value, hint_dynamic=True, label=label, user_data=user_data, **kwargs)
+    return dcg.dcgTexture(dcg_context, np.asarray(default_value).reshape([height, width, -1]), hint_dynamic=True, label=label, user_data=user_data, **kwargs)
 
 def error_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], negative : Union[List[float], Tuple[float, ...]], positive : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, contribute_to_bounds: bool =True, horizontal: bool =False, **kwargs) -> Union[int, str]:
     """     Adds an error series to a plot.
@@ -3592,7 +3596,10 @@ def item_handler_registry(*, label: str =None, user_data: Any =None, show: bool 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgItemHandlerList(dcg_context, label=label, user_data=user_data, show=show, **kwargs)
+    parent_queue = save_parent_queue()
+    item = dcg.dcgItemHandlerList(dcg_context, label=label, user_data=user_data, show=show, **kwargs)
+    restore_parent_queue(parent_queue)
+    return item
 
 def item_hover_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a hover handler.
@@ -4552,7 +4559,7 @@ def raw_texture(width : int, height : int, default_value : Union[List[float], Tu
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgTexture(dcg_context, default_value, hint_dynamic=True, label=label, user_data=user_data, **kwargs)
+    return dcg.dcgTexture(dcg_context, np.asarray(default_value).reshape([height, width, -1]), hint_dynamic=True, label=label, user_data=user_data, **kwargs)
 
 def scatter_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, no_clip: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a scatter series to a plot.
@@ -5002,7 +5009,10 @@ def stage(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str
         Union[int, str]
     """
 
-    return dcg.dcgPlacerHolderParent(**kwargs)
+    parent_queue = save_parent_queue()
+    item = dcg.dcgPlaceHolderParent(dcg_context, **kwargs)
+    restore_parent_queue(parent_queue)
+    return item
 
 def stair_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, pre_step: bool =False, shaded: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a stair series to a plot.
@@ -5050,7 +5060,7 @@ def static_texture(width : int, height : int, default_value : Union[List[float],
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.dcgTexture(dcg_context, default_value, label=label, user_data=user_data, **kwargs)
+    return dcg.dcgTexture(dcg_context, np.asarray(default_value).reshape([height, width, -1]), label=label, user_data=user_data, **kwargs)
 
 def stem_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, indent: int =0, show: bool =True, horizontal: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a stem series to a plot.
@@ -5170,7 +5180,7 @@ def tab(*, label: str =None, user_data: Any =None, indent: int =0, payload_type:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return tab(label=label, user_data=user_data, indent=indent, payload_type=payload_type, drop_callback=drop_callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, closable=closable, no_tooltip=no_tooltip, order_mode=order_mode, **kwargs)
+    return dcg.dcgTab(dcg_context, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drop_callback=drop_callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, closable=closable, no_tooltip=no_tooltip, order_mode=order_mode, **kwargs)
 
 def tab_bar(*, label: str =None, user_data: Any =None, indent: int =0, callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, reorderable: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a tab bar.
@@ -5198,7 +5208,7 @@ def tab_bar(*, label: str =None, user_data: Any =None, indent: int =0, callback:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return tab_bar(label=label, user_data=user_data, indent=indent, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, reorderable=reorderable, **kwargs)
+    return dcg.dcgTabBar(dcg_context, label=label, user_data=user_data, indent=indent, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, reorderable=reorderable, **kwargs)
 
 def tab_button(*, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_reorder: bool =False, leading: bool =False, trailing: bool =False, no_tooltip: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a tab button to a tab bar.
@@ -5231,7 +5241,7 @@ def tab_button(*, label: str =None, user_data: Any =None, indent: int =0, payloa
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return tab_button(label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_reorder=no_reorder, leading=leading, trailing=trailing, no_tooltip=no_tooltip, **kwargs)
+    return dcg.dcgTabButton(dcg_context, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_reorder=no_reorder, leading=leading, trailing=trailing, no_tooltip=no_tooltip, **kwargs)
 
 def table(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', header_row: bool =True, clipper: bool =False, inner_width: int =0, policy: int =0, freeze_rows: int =0, freeze_columns: int =0, sort_multi: bool =False, sort_tristate: bool =False, resizable: bool =False, reorderable: bool =False, hideable: bool =False, sortable: bool =False, context_menu_in_body: bool =False, row_background: bool =False, borders_innerH: bool =False, borders_outerH: bool =False, borders_innerV: bool =False, borders_outerV: bool =False, no_host_extendX: bool =False, no_host_extendY: bool =False, no_keep_columns_visible: bool =False, precise_widths: bool =False, no_clip: bool =False, pad_outerX: bool =False, no_pad_outerX: bool =False, no_pad_innerX: bool =False, scrollX: bool =False, scrollY: bool =False, no_saved_settings: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a table.
@@ -5484,6 +5494,19 @@ def texture_registry(*, label: str =None, user_data: Any =None, show: bool =Fals
 
     #return texture_registry(label=label, user_data=user_data, show=show, **kwargs)
 
+def save_parent_queue():
+    parent_queue = []
+    while True:
+        parent = dcg_context.fetch_parent_queue_back()
+        if parent is None:
+            return parent_queue
+        parent_queue.append(parent)
+        dcg_context.pop_next_parent()
+
+def restore_parent_queue(parent_queue):
+    for parent in parent_queue[::-1]:
+        dcg_context.push_next_parent(parent)
+
 def theme(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str]:
     """     Adds a theme.
 
@@ -5507,7 +5530,10 @@ def theme(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str
 
         kwargs.pop('default_theme', None)
 
-    return dcg.dcgThemeList(dcg_context, label=label, user_data=user_data, **kwargs)
+    parent_queue = save_parent_queue()
+    item = dcg.dcgThemeList(dcg_context, label=label, user_data=user_data, **kwargs)
+    restore_parent_queue(parent_queue)
+    return item
 
 def theme_color(target : int =0, value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, category: int =0, **kwargs) -> Union[int, str]:
     """     Adds a theme color.
@@ -5533,12 +5559,13 @@ def theme_color(target : int =0, value : Union[List[int], Tuple[int, ...]] =(0, 
     # dpg backward compatibility. If you have many elements in your theme,
     # prefer using a single dcgThemeColor
     if category == mvThemeCat_Core:
-        theme_element = dcg.dcgThemeColorImGui(dcg_context, **kwargs)
+        theme_element = dcg.dcgThemeColorImGui(dcg_context, parent=None, **kwargs)
     elif category == mvThemeCat_Plots:
-        theme_element = dcg.dcgThemeColorImPlot(dcg_context, **kwargs)
+        theme_element = dcg.dcgThemeColorImPlot(dcg_context, parent=None, **kwargs)
     else:
-        theme_element = dcg.dcgThemeColorImNodes(dcg_context, **kwargs)
+        theme_element = dcg.dcgThemeColorImNodes(dcg_context, parent=None, **kwargs)
     theme_element[target] = value
+    #theme_element.parent = dcg_context.fetch_parent_queue_back()
     return theme_element
 
 
@@ -5594,11 +5621,11 @@ def theme_style(target : int =0, x : float =1.0, y : float =-1.0, *, category: i
     # dpg backward compatibility. If you have many elements in your theme,
     # prefer using a single dcgThemeStyle
     if category == mvThemeCat_Core:
-        theme_element = dcg.dcgThemeStyleImGui(dcg_context, **kwargs)
+        theme_element = dcg.dcgThemeStyleImGui(dcg_context, parent=None, **kwargs)
     elif category == mvThemeCat_Plots:
-        theme_element = dcg.dcgThemeStyleImPlot(dcg_context, **kwargs)
+        theme_element = dcg.dcgThemeStyleImPlot(dcg_context, parent=None, **kwargs)
     else:
-        theme_element = dcg.dcgThemeStyleImNodes(dcg_context, **kwargs)
+        theme_element = dcg.dcgThemeStyleImNodes(dcg_context, parent=None, **kwargs)
     try:
         theme_element[target] = (x, y)
     except Exception:
@@ -5696,7 +5723,7 @@ def tree_node(*, label: str =None, user_data: Any =None, indent: int =0, payload
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return tree_node(label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_open=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, selectable=selectable, span_text_width=span_text_width, span_full_width=span_full_width, **kwargs)
+    return dcg.dcgTreeNode(dcg_context, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_open=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, selectable=selectable, span_text_width=span_text_width, span_full_width=span_full_width, **kwargs)
 
 def value_registry(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str]:
     """     Adds a value registry.
@@ -5859,7 +5886,7 @@ def bind_item_handler_registry(item : Union[int, str], handler_registry : Union[
         None
     """
 
-    dcg_context[item].handler = dcg_context[handler_registry]
+    dcg_context[item].bind_handlers(dcg_context[handler_registry])
 
 def bind_item_theme(item : Union[int, str], theme : Union[int, str], **kwargs) -> None:
     """     Binds a theme to an item.
@@ -6581,6 +6608,7 @@ def get_aliases(**kwargs) -> Union[List[str], Tuple[str, ...]]:
     return results
 
 def get_children_recursive(item):
+    item = dcg_context[item]
     result = [item]
     children = item.children
     result += children
@@ -6809,7 +6837,7 @@ def get_item_configuration(item : Union[int, str], **kwargs) -> dict:
         dict
     """
     item = dcg_context[item]
-    item_attributes = dir(item)
+    item_attributes = set(dir(item))
     configuration_attributes = item_attributes.difference(item_info_and_state_keys)
     if isinstance(item, dcg.baseTheme):
         # Theme uses attributes for its values
@@ -8190,7 +8218,7 @@ def setup_viewport():
 @deprecated("Use: `bind_item_theme(...)`")
 def set_item_theme(item, theme):
     """ deprecated function """
-    item.theme = theme
+    dcg_context[item].theme = dcg_context[theme]
 
 @deprecated("Use: `bind_item_type_disabled_theme(...)`")
 def set_item_type_disabled_theme(item, theme):
@@ -9003,7 +9031,7 @@ mvInputInt=dcg.theme_categories.t_inputvalue
 #mvClipper=constants.mvClipper
 #mvColorPicker=constants.mvColorPicker
 mvTooltip=dcg.theme_categories.t_tooltip
-#mvCollapsingHeader=constants.mvCollapsingHeader
+mvCollapsingHeader=dcg.theme_categories.t_collapsingheader
 #mvSeparator=constants.mvSeparator
 mvCheckbox=dcg.theme_categories.t_checkbox
 mvListbox=dcg.theme_categories.t_listbox
@@ -9014,7 +9042,7 @@ mvSimplePlot=dcg.theme_categories.t_simpleplot
 #mvDrawlist=constants.mvDrawlist
 #mvWindowAppItem=constants.mvWindowAppItem
 mvSelectable=dcg.theme_categories.t_selectable
-#mvTreeNode=constants.mvTreeNode
+mvTreeNode=dcg.theme_categories.t_treenode
 mvProgressBar=dcg.theme_categories.t_progressbar
 #mvSpacer=constants.mvSpacer
 mvImageButton=dcg.theme_categories.t_imagebutton

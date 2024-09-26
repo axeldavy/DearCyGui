@@ -2,99 +2,83 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from .core cimport *
 import numpy as np
 
-cdef class dcgDrawList(dcgDrawList_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if len(args) == 2:
-            # positional arguments
-            self.clip_width = <float>args[0]
-            self.clip_height = <float>args[1]
-        elif len(args) == 0:
-            # Only optional arguments
-            pass
-        else:
-            raise ValueError("Invalid arguments passed to dcgDrawList. Expected width and height")
-        super().configure(**kwargs)
-    @property
-    def width(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return <int>self.clip_width
-    @width.setter
-    def width(self, int value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.clip_width = <float>value
-    @property
-    def height(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return <int>self.clip_height
-    @height.setter
-    def height(self, int value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.clip_height = <float>value
-
 cdef class dcgViewportDrawList(dcgViewportDrawList_):
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.front = kwargs.pop("front", self.front)
+        self._front = kwargs.pop("front", self._front)
+        self._show = kwargs.pop("show", self._show)
         super().configure(**kwargs)
     @property
     def front(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.front
+        return self._front
     @front.setter
     def front(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.front = value
+        self._front = value
+    @property
+    def show(self):
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._show
+    @show.setter
+    def show(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._show = value
 
 cdef class dcgDrawLayer(dcgDrawLayer_):
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.cullMode = kwargs.pop("cull_mode", self.cullMode)
-        self.perspectiveDivide = kwargs.pop("perspective_divide", self.perspectiveDivide)
-        self.depthClipping = kwargs.pop("depth_clipping", self.depthClipping)
+        self._cull_mode = kwargs.pop("cull_mode", self._cull_mode)
+        self._perspective_divide = kwargs.pop("perspective_divide", self._perspective_divide)
+        self._depth_clipping = kwargs.pop("depth_clipping", self._depth_clipping)
         if "transform" in kwargs:
             # call the property setter
-            (<object>self).transform = kwargs.pop("transform")
+            self.transform = kwargs.pop("transform")
         super().configure(**kwargs)
     @property
     def perspective_divide(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.perspectiveDivide
+        return self._perspective_divide
     @perspective_divide.setter
     def perspective_divide(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.perspectiveDivide = value
+        self._perspective_divide = value
     @property
     def depth_clipping(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.depthClipping
+        return self._depth_clipping
     @depth_clipping.setter
     def depth_clipping(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.depthClipping = value
+        self._depth_clipping = value
     @property
     def cull_mode(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.cullMode
+        return self._cull_mode
     @cull_mode.setter
     def cull_mode(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.cullMode = value
+        self._cull_mode = value
     @property
     def transform(self):
         cdef unique_lock[recursive_mutex] m
@@ -105,7 +89,7 @@ cdef class dcgDrawLayer(dcgDrawLayer_):
         res = []
         cdef int i
         for i in range(4):
-            res.append(list(self.transform[i]))
+            res.append(list(self._transform[i]))
         return res
     @transform.setter
     def transform(self, value):
@@ -114,13 +98,13 @@ cdef class dcgDrawLayer(dcgDrawLayer_):
         cdef int i, j
         if len(value) == 16:
             for i in range(16):
-                self.transform[i//4][i%4] = <float>value[i]
+                self._transform[i//4][i%4] = <float>value[i]
         elif len(value) == 4:
             for i in range(4):
                 if len(value[i]) != 4:
                     raise ValueError("Invalid matrix format")
                 for j in range(4):
-                    self.transform[i][j] = <float>value[i][j]
+                    self._transform[i][j] = <float>value[i][j]
         else:
              raise ValueError("Expected a 4x4 matrix")
 

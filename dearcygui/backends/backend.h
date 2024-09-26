@@ -109,7 +109,6 @@ struct mvGraphics
 mvGraphics setup_graphics(mvViewport& viewport);
 void       resize_swapchain(mvGraphics& graphics, int width, int height);
 void       cleanup_graphics(mvGraphics& graphics);
-void       present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vsync);
 
 typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
@@ -128,8 +127,10 @@ void        mvShowViewport    (mvViewport& viewport,
 void        mvMaximizeViewport(mvViewport& viewport);
 void        mvMinimizeViewport(mvViewport& viewport);
 void        mvRestoreViewport (mvViewport& viewport);
+void        mvProcessEvents(mvViewport* viewport);
 void        mvRenderFrame(mvViewport& viewport,
 						  mvGraphics& graphics);
+void		mvPresent(mvViewport* viewport);
 void        mvToggleFullScreen(mvViewport& viewport);
 void        mvWakeRendering(mvViewport& viewport);
 void        mvMakeRenderingContextCurrent(mvViewport& viewport);

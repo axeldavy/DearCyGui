@@ -48,8 +48,8 @@ cleanup_graphics(mvGraphics& graphics)
 
 }
 
-void
-present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vsync)
+static void
+prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vsync)
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
@@ -67,7 +67,15 @@ present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vs
     glClearColor(viewport->clearColor.r, viewport->clearColor.g, viewport->clearColor.b, viewport->clearColor.a);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
+}
 
+void mvPresent(mvViewport* viewport)
+{
+    auto viewportData = (mvViewportData*)viewport->platformSpecifics;
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
     glfwSwapBuffers(viewportData->handle);
     glfwMakeContextCurrent(NULL);
     viewportData->gl_context.unlock();
@@ -93,8 +101,8 @@ glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-static void
-mvPrerender(mvViewport* viewport)
+void
+mvProcessEvents(mvViewport* viewport)
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
@@ -137,25 +145,6 @@ mvPrerender(mvViewport* viewport)
         glfwWaitEvents();
     else
         glfwPollEvents();
-
-    viewportData->gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
-
-    /*if (mvToolManager::GetFontManager().isInvalid())
-    {
-        mvToolManager::GetFontManager().rebuildAtlas();
-        ImGui_ImplOpenGL3_DestroyDeviceObjects();
-        mvToolManager::GetFontManager().updateAtlas();
-    }
-    */
-
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
 }
 
  mvViewport*
@@ -304,14 +293,31 @@ mvRenderFrame(mvViewport& viewport,
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     (void)viewportData;
-    mvPrerender(&viewport);
+
+    viewportData->gl_context.lock();
+    glfwMakeContextCurrent(viewportData->handle);
+
+    /*if (mvToolManager::GetFontManager().isInvalid())
+    {
+        mvToolManager::GetFontManager().rebuildAtlas();
+        ImGui_ImplOpenGL3_DestroyDeviceObjects();
+        mvToolManager::GetFontManager().updateAtlas();
+    }
+    */
+
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    glfwMakeContextCurrent(NULL);
+    viewportData->gl_context.unlock();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
     if (GImGui->CurrentWindow == nullptr)
         return;
 
     viewport.render(viewport.callback_data);
 
-    present(graphics, &viewport, viewport.clearColor, viewport.vsync);
+    prepare_present(graphics, &viewport, viewport.clearColor, viewport.vsync);
 }
 
 void
@@ -401,6 +407,7 @@ void* mvAllocateTexture(unsigned width, unsigned height, unsigned num_chans, uns
     PBO_ids[image_texture] = pboid;
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboid);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    return (void*)(size_t)(GLuint)image_texture;
 }
 
 void mvFreeTexture(void* texture)

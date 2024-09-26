@@ -8,7 +8,7 @@ cdef class dcgActivatedHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_activated):
+        if not(item.state.can_be_activated):
             raise TypeError("Cannot bind activated item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -25,7 +25,7 @@ cdef class dcgActiveHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_active):
+        if not(item.state.can_be_active):
             raise TypeError("Cannot bind activate item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -70,7 +70,7 @@ cdef class dcgClickedHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_clicked):
+        if not(item.state.can_be_clicked):
             raise TypeError("Cannot bind clicked item handler for {}", type(item))
 
     cdef void run_handler(self, uiItem item) noexcept nogil:
@@ -120,7 +120,7 @@ cdef class dcgDoubleClickedHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_clicked):
+        if not(item.state.can_be_clicked):
             raise TypeError("Cannot bind clicked item handler for {}", type(item))
 
     cdef void run_handler(self, uiItem item) noexcept nogil:
@@ -142,7 +142,7 @@ cdef class dcgDeactivatedHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_deactivated):
+        if not(item.state.can_be_deactivated):
             raise TypeError("Cannot bind deactivated item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -159,7 +159,7 @@ cdef class dcgDeactivatedAfterEditHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_deactivated_after_edited):
+        if not(item.state.can_be_deactivated_after_edited):
             raise TypeError("Cannot bind deactivated (after edit) item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -176,7 +176,7 @@ cdef class dcgEditedHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_edited):
+        if not(item.state.can_be_edited):
             raise TypeError("Cannot bind edited item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -193,7 +193,7 @@ cdef class dcgFocusHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_focused):
+        if not(item.state.can_be_focused):
             raise TypeError("Cannot bind focus item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -210,7 +210,7 @@ cdef class dcgHoverHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_hovered):
+        if not(item.state.can_be_hovered):
             raise TypeError("Cannot bind hover item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -227,7 +227,7 @@ cdef class dcgResizeHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.has_rect_size):
+        if not(item.state.has_rect_size):
             raise TypeError("Cannot bind resize item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -244,7 +244,7 @@ cdef class dcgToggledOpenHandler(itemHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(uiItem.state.can_be_toggled):
+        if not(item.state.can_be_toggled):
             raise TypeError("Cannot bind toggle item handler for {}", type(item))
     cdef void run_handler(self, uiItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)

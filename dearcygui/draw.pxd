@@ -1,8 +1,5 @@
 from .core cimport *
 
-cdef class dcgDrawList(dcgDrawList_):
-    pass
-
 cdef class dcgViewportDrawList(dcgViewportDrawList_):
     pass
 

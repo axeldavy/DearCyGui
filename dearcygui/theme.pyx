@@ -22,9 +22,9 @@ cdef class dcgThemeColorImGui(baseTheme):
         for i in range(imgui.ImGuiCol_COUNT):
             name = str(imgui_GetStyleColorName(i), encoding='utf-8')
             results.append(name)
-        return results + ["enabled"]
+        return results + dir(baseTheme)
 
-    def __getattr__(self, str name):
+    def __getattro__(self, str name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -65,7 +65,7 @@ cdef class dcgThemeColorImGui(baseTheme):
         cdef imgui.ImU32 value = dereference(element_content).second
         return value
 
-    def __setattr__(self, str name, value):
+    def __setattro__(self, str name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -171,9 +171,9 @@ cdef class dcgThemeColorImPlot(baseTheme):
         for i in range(implot.ImPlotCol_COUNT):
             name = str(implot_GetStyleColorName(i), encoding='utf-8')
             results.append(name)
-        return results + ["enabled"]
+        return results + dir(baseTheme)
 
-    def __getattr__(self, str name):
+    def __getattro__(self, str name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -214,7 +214,7 @@ cdef class dcgThemeColorImPlot(baseTheme):
         cdef imgui.ImU32 value = dereference(element_content).second
         return value
 
-    def __setattr__(self, str name, value):
+    def __setattro__(self, str name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -307,35 +307,35 @@ cdef class dcgThemeColorImPlot(baseTheme):
 cdef class dcgThemeColorImNodes(baseTheme):
     def __cinit__(self):
         self.names = [
-            "NodeBackground",
-            "NodeBackgroundHovered",
-            "NodeBackgroundSelected",
-            "NodeOutline",
-            "TitleBar",
-            "TitleBarHovered",
-            "TitleBarSelected",
-            "Link",
-            "LinkHovered",
-            "LinkSelected",
-            "Pin",
-            "PinHovered",
-            "BoxSelector",
-            "BoxSelectorOutline",
-            "GridBackground",
-            "GridLine",
-            "GridLinePrimary",
-            "MiniMapBackground",
-            "MiniMapBackgroundHovered",
-            "MiniMapOutline",
-            "MiniMapOutlineHovered",
-            "MiniMapNodeBackground",
-            "MiniMapNodeBackgroundHovered",
-            "MiniMapNodeBackgroundSelected",
-            "MiniMapNodeOutline",
-            "MiniMapLink",
-            "MiniMapLinkSelected",
-            "MiniMapCanvas",
-            "MiniMapCanvasOutline"
+            b"NodeBackground",
+            b"NodeBackgroundHovered",
+            b"NodeBackgroundSelected",
+            b"NodeOutline",
+            b"TitleBar",
+            b"TitleBarHovered",
+            b"TitleBarSelected",
+            b"Link",
+            b"LinkHovered",
+            b"LinkSelected",
+            b"Pin",
+            b"PinHovered",
+            b"BoxSelector",
+            b"BoxSelectorOutline",
+            b"GridBackground",
+            b"GridLine",
+            b"GridLinePrimary",
+            b"MiniMapBackground",
+            b"MiniMapBackgroundHovered",
+            b"MiniMapOutline",
+            b"MiniMapOutlineHovered",
+            b"MiniMapNodeBackground",
+            b"MiniMapNodeBackgroundHovered",
+            b"MiniMapNodeBackgroundSelected",
+            b"MiniMapNodeOutline",
+            b"MiniMapLink",
+            b"MiniMapLinkSelected",
+            b"MiniMapCanvas",
+            b"MiniMapCanvasOutline"
         ]
         cdef int i
         cdef string name_str
@@ -344,9 +344,9 @@ cdef class dcgThemeColorImNodes(baseTheme):
             self.name_to_index[name_str] = i
 
     def __dir__(self):
-        return self.names + ["enabled"]
+        return self.names + dir(baseTheme)
 
-    def __getattr__(self, str name):
+    def __getattro__(self, str name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -387,7 +387,7 @@ cdef class dcgThemeColorImNodes(baseTheme):
         cdef imgui.ImU32 value = dereference(element_content).second
         return value
 
-    def __setattr__(self, str name, value):
+    def __setattro__(self, str name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -519,40 +519,40 @@ cdef extern from * nogil:
 cdef class dcgThemeStyleImGui(baseTheme):
     def __cinit__(self):
         self.names = [
-            "Alpha",                    # float     Alpha
-            "DisabledAlpha",            # float     DisabledAlpha
-            "WindowPadding",            # ImVec2    WindowPadding
-            "WindowRounding",           # float     WindowRounding
-            "WindowBorderSize",         # float     WindowBorderSize
-            "WindowMinSize",            # ImVec2    WindowMinSize
-            "WindowTitleAlign",         # ImVec2    WindowTitleAlign
-            "ChildRounding",            # float     ChildRounding
-            "ChildBorderSize",          # float     ChildBorderSize
-            "PopupRounding",            # float     PopupRounding
-            "PopupBorderSize",          # float     PopupBorderSize
-            "FramePadding",             # ImVec2    FramePadding
-            "FrameRounding",            # float     FrameRounding
-            "FrameBorderSize",          # float     FrameBorderSize
-            "ItemSpacing",              # ImVec2    ItemSpacing
-            "ItemInnerSpacing",         # ImVec2    ItemInnerSpacing
-            "IndentSpacing",            # float     IndentSpacing
-            "CellPadding",              # ImVec2    CellPadding
-            "ScrollbarSize",            # float     ScrollbarSize
-            "ScrollbarRounding",        # float     ScrollbarRounding
-            "GrabMinSize",              # float     GrabMinSize
-            "GrabRounding",             # float     GrabRounding
-            "TabRounding",              # float     TabRounding
-            "TabBorderSize",            # float     TabBorderSize
-            "TabBarBorderSize",         # float     TabBarBorderSize
-            "TabBarOverlineSize",       # float     TabBarOverlineSize
-            "TableAngledHeadersAngle",  # float     TableAngledHeadersAngle
-            "TableAngledHeadersTextAlign",# ImVec2  TableAngledHeadersTextAlign
-            "ButtonTextAlign",          # ImVec2    ButtonTextAlign
-            "SelectableTextAlign",      # ImVec2    SelectableTextAlign
-            "SeparatorTextBorderSize",  # float     SeparatorTextBorderSize
-            "SeparatorTextAlign",       # ImVec2    SeparatorTextAlign
-            "SeparatorTextPadding",     # ImVec2    SeparatorTextPadding
-            "DockingSeparatorSize"     # float
+            b"Alpha",                    # float     Alpha
+            b"DisabledAlpha",            # float     DisabledAlpha
+            b"WindowPadding",            # ImVec2    WindowPadding
+            b"WindowRounding",           # float     WindowRounding
+            b"WindowBorderSize",         # float     WindowBorderSize
+            b"WindowMinSize",            # ImVec2    WindowMinSize
+            b"WindowTitleAlign",         # ImVec2    WindowTitleAlign
+            b"ChildRounding",            # float     ChildRounding
+            b"ChildBorderSize",          # float     ChildBorderSize
+            b"PopupRounding",            # float     PopupRounding
+            b"PopupBorderSize",          # float     PopupBorderSize
+            b"FramePadding",             # ImVec2    FramePadding
+            b"FrameRounding",            # float     FrameRounding
+            b"FrameBorderSize",          # float     FrameBorderSize
+            b"ItemSpacing",              # ImVec2    ItemSpacing
+            b"ItemInnerSpacing",         # ImVec2    ItemInnerSpacing
+            b"IndentSpacing",            # float     IndentSpacing
+            b"CellPadding",              # ImVec2    CellPadding
+            b"ScrollbarSize",            # float     ScrollbarSize
+            b"ScrollbarRounding",        # float     ScrollbarRounding
+            b"GrabMinSize",              # float     GrabMinSize
+            b"GrabRounding",             # float     GrabRounding
+            b"TabRounding",              # float     TabRounding
+            b"TabBorderSize",            # float     TabBorderSize
+            b"TabBarBorderSize",         # float     TabBarBorderSize
+            b"TabBarOverlineSize",       # float     TabBarOverlineSize
+            b"TableAngledHeadersAngle",  # float     TableAngledHeadersAngle
+            b"TableAngledHeadersTextAlign",# ImVec2  TableAngledHeadersTextAlign
+            b"ButtonTextAlign",          # ImVec2    ButtonTextAlign
+            b"SelectableTextAlign",      # ImVec2    SelectableTextAlign
+            b"SeparatorTextBorderSize",  # float     SeparatorTextBorderSize
+            b"SeparatorTextAlign",       # ImVec2    SeparatorTextAlign
+            b"SeparatorTextPadding",     # ImVec2    SeparatorTextPadding
+            b"DockingSeparatorSize"     # float
         ]
         cdef int i
         cdef string name_str
@@ -561,9 +561,9 @@ cdef class dcgThemeStyleImGui(baseTheme):
             self.name_to_index[name_str] = i
 
     def __dir__(self):
-        return self.names + ["enabled"]
+        return self.names + dir(baseTheme)
 
-    def __getattr__(self, str name):
+    def __getattro__(self, str name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -608,7 +608,7 @@ cdef class dcgThemeStyleImGui(baseTheme):
             return (value.x, value.y)
         return value.x
 
-    def __setattr__(self, str name, value):
+    def __setattro__(self, str name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -771,33 +771,33 @@ cdef extern from * nogil:
 cdef class dcgThemeStyleImPlot(baseTheme):
     def __cinit__(self):
         self.names = [
-            "LineWeight",         # float,  plot item line weight in pixels
-            "Marker",             # int,    marker specification
-            "MarkerSize",         # float,  marker size in pixels (roughly the marker's "radius")
-            "MarkerWeight",       # float,  plot outline weight of markers in pixels
-            "FillAlpha",          # float,  alpha modifier applied to all plot item fills
-            "ErrorBarSize",       # float,  error bar whisker width in pixels
-            "ErrorBarWeight",     # float,  error bar whisker weight in pixels
-            "DigitalBitHeight",   # float,  digital channels bit height (at 1) in pixels
-            "DigitalBitGap",      # float,  digital channels bit padding gap in pixels
-            "PlotBorderSize",     # float,  thickness of border around plot area
-            "MinorAlpha",         # float,  alpha multiplier applied to minor axis grid lines
-            "MajorTickLen",       # ImVec2, major tick lengths for X and Y axes
-            "MinorTickLen",       # ImVec2, minor tick lengths for X and Y axes
-            "MajorTickSize",      # ImVec2, line thickness of major ticks
-            "MinorTickSize",      # ImVec2, line thickness of minor ticks
-            "MajorGridSize",      # ImVec2, line thickness of major grid lines
-            "MinorGridSize",      # ImVec2, line thickness of minor grid lines
-            "PlotPadding",        # ImVec2, padding between widget frame and plot area, labels, or outside legends (i.e. main padding)
-            "LabelPadding",       # ImVec2, padding between axes labels, tick labels, and plot edge
-            "LegendPadding",      # ImVec2, legend padding from plot edges
-            "LegendInnerPadding", # ImVec2, legend inner padding from legend edges
-            "LegendSpacing",      # ImVec2, spacing between legend entries
-            "MousePosPadding",    # ImVec2, padding between plot edge and interior info text
-            "AnnotationPadding",  # ImVec2, text padding around annotation labels
-            "FitPadding",         # ImVec2, additional fit padding as a percentage of the fit extents (e.g. ImVec2(0.1f,0.1f) adds 10% to the fit extents of X and Y)
-            "PlotDefaultSize",    # ImVec2, default size used when ImVec2(0,0) is passed to BeginPlot
-            "PlotMinSize",        # ImVec2, minimum size plot frame can be when shrunk
+            b"LineWeight",         # float,  plot item line weight in pixels
+            b"Marker",             # int,    marker specification
+            b"MarkerSize",         # float,  marker size in pixels (roughly the marker's "radius")
+            b"MarkerWeight",       # float,  plot outline weight of markers in pixels
+            b"FillAlpha",          # float,  alpha modifier applied to all plot item fills
+            b"ErrorBarSize",       # float,  error bar whisker width in pixels
+            b"ErrorBarWeight",     # float,  error bar whisker weight in pixels
+            b"DigitalBitHeight",   # float,  digital channels bit height (at 1) in pixels
+            b"DigitalBitGap",      # float,  digital channels bit padding gap in pixels
+            b"PlotBorderSize",     # float,  thickness of border around plot area
+            b"MinorAlpha",         # float,  alpha multiplier applied to minor axis grid lines
+            b"MajorTickLen",       # ImVec2, major tick lengths for X and Y axes
+            b"MinorTickLen",       # ImVec2, minor tick lengths for X and Y axes
+            b"MajorTickSize",      # ImVec2, line thickness of major ticks
+            b"MinorTickSize",      # ImVec2, line thickness of minor ticks
+            b"MajorGridSize",      # ImVec2, line thickness of major grid lines
+            b"MinorGridSize",      # ImVec2, line thickness of minor grid lines
+            b"PlotPadding",        # ImVec2, padding between widget frame and plot area, labels, or outside legends (i.e. main padding)
+            b"LabelPadding",       # ImVec2, padding between axes labels, tick labels, and plot edge
+            b"LegendPadding",      # ImVec2, legend padding from plot edges
+            b"LegendInnerPadding", # ImVec2, legend inner padding from legend edges
+            b"LegendSpacing",      # ImVec2, spacing between legend entries
+            b"MousePosPadding",    # ImVec2, padding between plot edge and interior info text
+            b"AnnotationPadding",  # ImVec2, text padding around annotation labels
+            b"FitPadding",         # ImVec2, additional fit padding as a percentage of the fit extents (e.g. ImVec2(0.1f,0.1f) adds 10% to the fit extents of X and Y)
+            b"PlotDefaultSize",    # ImVec2, default size used when ImVec2(0,0) is passed to BeginPlot
+            b"PlotMinSize",        # ImVec2, minimum size plot frame can be when shrunk
         ]
         cdef int i
         cdef string name_str
@@ -806,9 +806,9 @@ cdef class dcgThemeStyleImPlot(baseTheme):
             self.name_to_index[name_str] = i
 
     def __dir__(self):
-        return self.names + ["enabled"]
+        return self.names + dir(baseTheme)
 
-    def __getattr__(self, str name):
+    def __getattro__(self, str name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -857,7 +857,7 @@ cdef class dcgThemeStyleImPlot(baseTheme):
             return int(value.x)
         return value.x
 
-    def __setattr__(self, str name, value):
+    def __setattro__(self, str name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -1017,21 +1017,21 @@ cdef extern from * nogil:
 cdef class dcgThemeStyleImNodes(baseTheme):
     def __cinit__(self):
         self.names = [
-            "GridSpacing",
-            "NodeCornerRounding",
-            "NodePadding",
-            "NodeBorderThickness",
-            "LinkThickness",
-            "LinkLineSegmentsPerLength",
-            "LinkHoverDistance",
-            "PinCircleRadius",
-            "PinQuadSideLength",
-            "PinTriangleSideLength",
-            "PinLineThickness",
-            "PinHoverRadius",
-            "PinOffset",
-            "MiniMapPadding",
-            "MiniMapOffset"
+            b"GridSpacing",
+            b"NodeCornerRounding",
+            b"NodePadding",
+            b"NodeBorderThickness",
+            b"LinkThickness",
+            b"LinkLineSegmentsPerLength",
+            b"LinkHoverDistance",
+            b"PinCircleRadius",
+            b"PinQuadSideLength",
+            b"PinTriangleSideLength",
+            b"PinLineThickness",
+            b"PinHoverRadius",
+            b"PinOffset",
+            b"MiniMapPadding",
+            b"MiniMapOffset"
         ]
         cdef int i
         cdef string name_str
@@ -1040,9 +1040,9 @@ cdef class dcgThemeStyleImNodes(baseTheme):
             self.name_to_index[name_str] = i
 
     def __dir__(self):
-        return self.names + ["enabled"]
+        return self.names + dir(baseTheme)
 
-    def __getattr__(self, str name):
+    def __getattro__(self, str name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -1087,7 +1087,7 @@ cdef class dcgThemeStyleImNodes(baseTheme):
             return (value.x, value.y)
         return value.x
 
-    def __setattr__(self, str name, value):
+    def __setattro__(self, str name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')

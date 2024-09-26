@@ -63,10 +63,6 @@ cdef class dcgContext:
     # Mutex that must be held for any
     # call to imgui, glfw, etc
     cdef recursive_mutex imgui_mutex
-    cdef float deltaTime # time since last frame
-    cdef double time # total time since starting
-    cdef int frame # frame count
-    cdef int framerate # frame rate
     cdef readonly dcgViewport viewport
     cdef imgui.ImGuiContext* imgui_context
     cdef implot.ImPlotContext* implot_context
@@ -83,14 +79,15 @@ cdef class dcgContext:
     cdef dcgCallback on_close_callback
     cdef public object on_frame_callbacks
     cdef object queue
-    cdef void queue_callback_noarg(self, dcgCallback, object) noexcept nogil
-    cdef void queue_callback_arg1int(self, dcgCallback, object, int) noexcept nogil
-    cdef void queue_callback_arg1float(self, dcgCallback, object, float) noexcept nogil
-    cdef void queue_callback_arg1value(self, dcgCallback, object, shared_value) noexcept nogil
-    cdef void queue_callback_arg1int1float(self, dcgCallback, object, int, float) noexcept nogil
-    cdef void queue_callback_arg2float(self, dcgCallback, object, float, float) noexcept nogil
-    cdef void queue_callback_arg1int2float(self, dcgCallback, object, int, float, float) noexcept nogil
-    cdef void queue_callback_arg4int(self, dcgCallback, object, int, int, int, int) noexcept nogil
+    cdef void queue_callback_noarg(self, dcgCallback, baseItem) noexcept nogil
+    cdef void queue_callback_arg1obj(self, dcgCallback, baseItem, baseItem) noexcept nogil
+    cdef void queue_callback_arg1int(self, dcgCallback, baseItem, int) noexcept nogil
+    cdef void queue_callback_arg1float(self, dcgCallback, baseItem, float) noexcept nogil
+    cdef void queue_callback_arg1value(self, dcgCallback, baseItem, shared_value) noexcept nogil
+    cdef void queue_callback_arg1int1float(self, dcgCallback, baseItem, int, float) noexcept nogil
+    cdef void queue_callback_arg2float(self, dcgCallback, baseItem, float, float) noexcept nogil
+    cdef void queue_callback_arg1int2float(self, dcgCallback, baseItem, int, float, float) noexcept nogil
+    cdef void queue_callback_arg4int(self, dcgCallback, baseItem, int, int, int, int) noexcept nogil
     cdef void register_item(self, baseItem o, long long uuid)
     cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag)
     cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
@@ -114,16 +111,16 @@ that you link to the same version of ImGui (ImPlot/ImNodes if
 applicable) and you must call ensure_correct_* at the start
 of your draw() overrides
 """
-cdef inline void ensure_correct_imgui_context(dcgContext context):
+cdef inline void ensure_correct_imgui_context(dcgContext context) noexcept nogil:
     imgui.SetCurrentContext(context.imgui_context)
 
-cdef inline void ensure_correct_implot_context(dcgContext context):
+cdef inline void ensure_correct_implot_context(dcgContext context) noexcept nogil:
     implot.SetCurrentContext(context.implot_context)
 
-cdef inline void ensure_correct_imnodes_context(dcgContext context):
+cdef inline void ensure_correct_imnodes_context(dcgContext context) noexcept nogil:
     imnodes.SetCurrentContext(context.imnodes_context)
 
-cdef inline void ensure_correct_im_context(dcgContext context):
+cdef inline void ensure_correct_im_context(dcgContext context) noexcept nogil:
     ensure_correct_imgui_context(context)
     ensure_correct_implot_context(context)
     ensure_correct_imnodes_context(context)
@@ -175,7 +172,7 @@ cdef class baseItem:
     # Each element is responsible for calling draw on its sibling
     cdef baseItem _prev_sibling
     cdef baseItem _next_sibling
-    cdef drawableItem last_drawings_child
+    cdef drawingItem last_drawings_child
     cdef globalHandler last_global_handler_child
     cdef itemHandler last_item_handler_child
     cdef uiItem last_menubar_child
@@ -196,6 +193,7 @@ cdef class baseItem:
 
 cdef enum child_type:
     cat_drawing
+    cat_viewportdrawlist
     cat_global_handler
     cat_item_handler
     cat_menubar
@@ -207,6 +205,7 @@ cdef enum child_type:
     
 
 cdef class dcgViewport(baseItem):
+    cdef recursive_mutex mutex_backend
     cdef mvViewport *viewport
     cdef bint initialized
     cdef mvGraphics graphics
@@ -214,6 +213,16 @@ cdef class dcgViewport(baseItem):
     cdef dcgCallback _resize_callback
     cdef dcgCallback _close_callback
     cdef baseTheme _theme
+    # For timing stats
+    cdef long long last_t_before_event_handling
+    cdef long long last_t_before_rendering
+    cdef long long last_t_after_rendering
+    cdef long long last_t_after_swapping
+    cdef float delta_event_handling
+    cdef float delta_rendering
+    cdef float delta_swapping
+    cdef float delta_frame
+    cdef int frame_count # frame count
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
     cdef bint perspectiveDivide
@@ -221,6 +230,8 @@ cdef class dcgViewport(baseItem):
     cdef float[6] clipViewport
     cdef bint has_matrix_transform
     cdef float[4][4] transform
+    cdef float shift_x
+    cdef float shift_y
     cdef bint in_plot
     cdef float thickness_multiplier # in plots
     cdef int start_pending_theme_actions # managed outside viewport
@@ -235,7 +246,7 @@ cdef class dcgViewport(baseItem):
     cdef void __on_resize(self, int width, int height)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
-    cdef void apply_current_transform(self, float *dst_p, float[4] src_p, float dx, float dy) noexcept nogil
+    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil
     cdef void push_pending_theme_actions(self, theme_enablers, theme_categories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
@@ -244,44 +255,28 @@ cdef class dcgViewport(baseItem):
 cdef class dcgCallback:
     cdef object callback
     cdef int num_args
-    cdef object user_data
-
-"""
-drawable item:
-A baseItem which can be drawn and has a show state
-"""
-
-cdef class drawableItem(baseItem):
-    cdef bool show
-    cdef void draw_prev_siblings(self, imgui.ImDrawList*, float, float) noexcept nogil
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
 
 """
 Drawing Items
 """
 
-cdef class drawingItem(drawableItem):
+cdef class drawingItem(baseItem):
+    cdef bint _show
+    cdef void draw_prev_siblings(self, imgui.ImDrawList*) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
     pass
 
-cdef class dcgDrawList_(drawingItem):
-    cdef string imgui_label
-    cdef float clip_width
-    cdef float clip_height
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
-
-cdef class dcgViewportDrawList_(drawingItem):
-    cdef bool front
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+cdef class dcgDrawingList(drawingItem):
+    pass
 
 cdef class dcgDrawLayer_(drawingItem):
-    # mvAppItemDrawInfo
-    cdef long cullMode
-    cdef bint perspectiveDivide
-    cdef bint depthClipping
-    cdef float[6] clipViewport
+    cdef long _cull_mode
+    cdef bint _perspective_divide
+    cdef bint _depth_clipping
+    cdef float[6] clip_viewport
     cdef bint has_matrix_transform
-    cdef float[4][4] transform
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef float[4][4] _transform
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
@@ -294,7 +289,7 @@ cdef class dcgDrawArrow_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef float size
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
     cdef void __compute_tip(self)
 
 cdef class dcgDrawBezierCubic_(drawingItem):
@@ -305,7 +300,7 @@ cdef class dcgDrawBezierCubic_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef int segments
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawBezierQuadratic_(drawingItem):
     cdef float[4] p1
@@ -314,7 +309,7 @@ cdef class dcgDrawBezierQuadratic_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef int segments
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawCircle_(drawingItem):
     cdef float[4] center
@@ -323,7 +318,7 @@ cdef class dcgDrawCircle_(drawingItem):
     cdef imgui.ImU32 fill
     cdef float thickness
     cdef int segments
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawEllipse_(drawingItem):
     cdef float[4] pmin
@@ -334,7 +329,7 @@ cdef class dcgDrawEllipse_(drawingItem):
     cdef int segments
     cdef vector[float4] points
     cdef void __fill_points(self)
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawImage_(drawingItem):
     cdef float[4] pmin
@@ -342,7 +337,7 @@ cdef class dcgDrawImage_(drawingItem):
     cdef float[4] uv
     cdef imgui.ImU32 color_multiplier
     cdef dcgTexture texture
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawImageQuad_(drawingItem):
     cdef float[4] p1
@@ -356,21 +351,21 @@ cdef class dcgDrawImageQuad_(drawingItem):
     cdef float[4] uv4
     cdef imgui.ImU32 color_multiplier
     cdef dcgTexture texture
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawLine_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef imgui.ImU32 color
     cdef float thickness
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawPolyline_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
     cdef vector[float4] points
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawPolygon_(drawingItem):
     cdef imgui.ImU32 color
@@ -379,7 +374,7 @@ cdef class dcgDrawPolygon_(drawingItem):
     cdef vector[float4] points
     cdef int[:,:] triangulation_indices
     cdef void __triangulate(self)
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawQuad_(drawingItem):
     cdef float[4] p1
@@ -389,7 +384,7 @@ cdef class dcgDrawQuad_(drawingItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawRect_(drawingItem):
     cdef float[4] pmin
@@ -403,14 +398,14 @@ cdef class dcgDrawRect_(drawingItem):
     cdef float rounding
     cdef float thickness
     cdef bint multicolor
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dgcDrawText_(drawingItem):
     cdef float[4] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class dcgDrawTriangle_(drawingItem):
     cdef float[4] p1
@@ -420,7 +415,12 @@ cdef class dcgDrawTriangle_(drawingItem):
     cdef imgui.ImU32 fill
     cdef float thickness
     cdef int cull_mode
-    cdef void draw(self, imgui.ImDrawList*, float, float) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
+
+cdef class dcgViewportDrawList_(baseItem):
+    cdef bint _front
+    cdef bint _show
+    cdef void draw(self) noexcept nogil
 
 
 cdef class globalHandler(baseItem):
@@ -471,6 +471,7 @@ cdef class dcgMouseReleaseHandler_(globalHandler):
     cdef void run_handler(self) noexcept nogil
 
 cdef class dcgMouseWheelHandler(globalHandler):
+    cdef bint _horizontal
     cdef void run_handler(self) noexcept nogil
 
 """
@@ -539,6 +540,7 @@ cdef class shared_double4(shared_value):
     cdef void set(self, double[4]) noexcept nogil
 
 cdef class shared_floatvect(shared_value):
+    cdef cnp.ndarray _value_np
     cdef float[:] _value
     cdef float[:] get(self) noexcept nogil
     cdef void set(self, float[:]) noexcept nogil
@@ -594,8 +596,6 @@ cdef struct itemState:
     # Item: indicates if the item was in the clipped region of the window
     # Window: indicates if the window was rendered
     bint visible
-    # relative position to the parent window or the viewport if a window
-    imgui.ImVec2 relative_position
 
 cdef class itemHandler(baseItem):
     cdef bint enabled
@@ -612,6 +612,10 @@ cdef class uiItem(baseItem):
     cdef string imgui_label
     cdef str user_label
     cdef bool _show
+    # relative position to the parent window or the viewport if a window
+    cdef imgui.ImVec2 _relative_position
+    # coordinate of the top left corner relative to the viewport
+    cdef imgui.ImVec2 _absolute_position
     # mvAppItemInfo
     #cdef int location -> for table
     # mvAppItemState
@@ -649,6 +653,8 @@ cdef class uiItem(baseItem):
     cdef void draw(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
 
+cdef class dcgDrawInWindow(uiItem):
+    cdef bint draw_item(self) noexcept nogil
 
 """
 Simple UI elements
@@ -799,6 +805,16 @@ cdef class dcgTabBar(uiItem):
 cdef class dcgGroup(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
+cdef class dcgTreeNode(uiItem):
+    cdef imgui.ImGuiTreeNodeFlags flags
+    cdef bint _selectable
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class dcgCollapsingHeader(uiItem):
+    cdef imgui.ImGuiTreeNodeFlags flags
+    cdef bint _closable
+    cdef bint draw_item(self) noexcept nogil
+
 """
 Complex UI elements
 """
@@ -891,6 +907,8 @@ cpdef enum theme_categories:
     t_menu,
     t_tooltip,
     t_group,
+    t_treenode,
+    t_collapsingheader,
     t_window
 
 cdef enum theme_value_types:
