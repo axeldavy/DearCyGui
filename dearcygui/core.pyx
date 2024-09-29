@@ -1977,10 +1977,10 @@ cdef class Viewport(baseItem):
         #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.last_menubar_child is not None:
             self.last_menubar_child.draw()
-        if self._handler is not None:
-            self._handler.run_handler(self, self.state)
         if self._theme is not None:
             self._theme.pop()
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
@@ -4729,14 +4729,14 @@ cdef class uiItem(baseItem):
             self._theme.pop()
         self.context.viewport.pop_applied_pending_theme_actions()
 
-        if self._handler is not None:
-            self._handler.run_handler(self, self.state)
-
         if self.pos_update_requested:
             imgui.SetCursorPos(cursor_pos_backup)
 
         if self._indent != 0.:
             imgui.Unindent(self._indent)
+
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
 
 
     cdef bint draw_item(self) noexcept nogil:
@@ -7586,11 +7586,29 @@ cdef class Tooltip(uiItem):
         self._target = target
 
     @property
+    def condition_from_handler(self):
+        """
+        When set, the handler referenced in
+        this field will be used to replace
+        the target hovering check.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.secondary_handler
+
+    @condition_from_handler.setter
+    def condition_from_handler(self, baseHandler handler):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.secondary_handler = handler
+
+    @property
     def delay(self):
         """
         Delay in seconds with no motion before showing the tooltip
         -1: Use imgui defaults
-        Has no effect if the target is not the previous sibling.
+        Has no effect if the target is not the previous sibling,
+        or if condition_from_handler is set.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -7619,26 +7637,29 @@ cdef class Tooltip(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef float hoverDelay_backup
-        cdef bint target_hovered
-        if self._target is None or self._target is self._prev_sibling:
-            if self._delay > 0.:
-                hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
-                imgui.GetStyle().HoverStationaryDelay = self._delay
-                target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_Stationary)
-                imgui.GetStyle().HoverStationaryDelay = hoverDelay_backup
-            elif self._delay == 0:
-                target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        cdef bint display_condition
+        if self.secondary_handler is None:
+            if self._target is None or self._target is self._prev_sibling:
+                if self._delay > 0.:
+                    hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
+                    imgui.GetStyle().HoverStationaryDelay = self._delay
+                    display_condition = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_Stationary)
+                    imgui.GetStyle().HoverStationaryDelay = hoverDelay_backup
+                elif self._delay == 0:
+                    display_condition = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+                else:
+                    display_condition = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
             else:
-                target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
+                display_condition = self.target_state.hovered
         else:
-            target_hovered = self.target_state.hovered
+            display_condition = self.secondary_handler.check_state(self._target, dereference(self.target_state))
 
         if self._hide_on_activity and imgui.GetIO().MouseDelta.x != 0. and \
            imgui.GetIO().MouseDelta.y != 0.:
-            target_hovered = False
+            display_condition = False
 
         cdef bint was_visible = self.state.visible
-        if target_hovered and imgui.BeginTooltip():
+        if display_condition and imgui.BeginTooltip():
             if self.last_widgets_child is not None:
                 self.last_widgets_child.draw()
             imgui.EndTooltip()

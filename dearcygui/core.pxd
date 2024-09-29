@@ -794,6 +794,7 @@ cdef class Tooltip(uiItem):
     cdef bint _only_if_
     cdef baseItem _target
     cdef itemState *target_state
+    cdef baseHandler secondary_handler
     cdef bint draw_item(self) noexcept nogil
 
 cdef class TabButton(uiItem):

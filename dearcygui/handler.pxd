@@ -1,5 +1,10 @@
 from .core cimport *
 
+cdef class CustomHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
 cdef class ActivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
