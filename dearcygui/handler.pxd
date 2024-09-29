@@ -1,54 +1,54 @@
 from .core cimport *
 
-cdef class ActivatedHandler(itemHandler):
+cdef class ActivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class ActiveHandler(itemHandler):
+cdef class ActiveHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class ClickedHandler(itemHandler):
+cdef class ClickedHandler(baseHandler):
     cdef int button
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
-cdef class DoubleClickedHandler(itemHandler):
+cdef class DoubleClickedHandler(baseHandler):
     cdef int button
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
-cdef class DeactivatedHandler(itemHandler):
+cdef class DeactivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class DeactivatedAfterEditHandler(itemHandler):
+cdef class DeactivatedAfterEditHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class EditedHandler(itemHandler):
+cdef class EditedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class FocusHandler(itemHandler):
+cdef class FocusHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class HoverHandler(itemHandler):
+cdef class HoverHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class ResizeHandler(itemHandler):
+cdef class ResizeHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class ToggledOpenHandler(itemHandler):
+cdef class ToggledOpenHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class VisibleHandler(itemHandler):
+cdef class VisibleHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 

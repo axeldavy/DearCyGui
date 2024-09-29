@@ -224,8 +224,7 @@ cdef class Context:
         self.items[uuid] = <PyObject*>o
         self.threadlocal_data.last_item_uuid = uuid
         if o.can_have_drawing_child or \
-           o.can_have_global_handler_child or \
-           o.can_have_item_handler_child or \
+           o.can_have_handler_child or \
            o.can_have_menubar_child or \
            o.can_have_payload_child or \
            o.can_have_tab_child or \
@@ -254,8 +253,7 @@ cdef class Context:
         self.tag_to_uuid[tag] = uuid
         self.threadlocal_data.last_item_uuid = uuid
         if o.can_have_drawing_child or \
-           o.can_have_global_handler_child or \
-           o.can_have_item_handler_child or \
+           o.can_have_handler_child or \
            o.can_have_menubar_child or \
            o.can_have_payload_child or \
            o.can_have_tab_child or \
@@ -893,11 +891,7 @@ cdef class baseItem:
         while item is not None:
             result.append(item)
             item = item._prev_sibling
-        item = self.last_item_handler_child
-        while item is not None:
-            result.append(item)
-            item = item._prev_sibling
-        item = self.last_global_handler_child
+        item = self.last_handler_child
         while item is not None:
             result.append(item)
             item = item._prev_sibling
@@ -1045,23 +1039,14 @@ cdef class baseItem:
                 self._parent = target_parent
                 target_parent.last_drawings_child = <drawingItem>self
                 attached = True
-        elif self.element_child_category == child_type.cat_global_handler:
-            if target_parent.can_have_global_handler_child:
-                if target_parent.last_global_handler_child is not None:
-                    lock_gil_friendly(m3, target_parent.last_global_handler_child.mutex)
-                    target_parent.last_global_handler_child._next_sibling = self
-                self._prev_sibling = target_parent.last_global_handler_child
+        elif self.element_child_category == child_type.cat_handler:
+            if target_parent.can_have_handler_child:
+                if target_parent.last_handler_child is not None:
+                    lock_gil_friendly(m3, target_parent.last_handler_child.mutex)
+                    target_parent.last_handler_child._next_sibling = self
+                self._prev_sibling = target_parent.last_handler_child
                 self._parent = target_parent
-                target_parent.last_global_handler_child = <globalHandler>self
-                attached = True
-        elif self.element_child_category == child_type.cat_item_handler:
-            if target_parent.can_have_item_handler_child:
-                if target_parent.last_item_handler_child is not None:
-                    lock_gil_friendly(m3, target_parent.last_item_handler_child.mutex)
-                    target_parent.last_item_handler_child._next_sibling = self
-                self._prev_sibling = target_parent.last_item_handler_child
-                self._parent = target_parent
-                target_parent.last_item_handler_child = <itemHandler>self
+                target_parent.last_handler_child = <baseHandler>self
                 attached = True
         elif self.element_child_category == child_type.cat_menubar:
             if target_parent.can_have_menubar_child:
@@ -1223,10 +1208,8 @@ cdef class baseItem:
                     self._parent.last_payloads_child = self._prev_sibling
                 elif self._parent.last_plot_element_child is self:
                     self._parent.last_plot_element_child = self._prev_sibling
-                elif self._parent.last_global_handler_child is self:
-                    self._parent.last_global_handler_child = self._prev_sibling
-                elif self._parent.last_item_handler_child is self:
-                    self._parent.last_item_handler_child = self._prev_sibling
+                elif self._parent.last_handler_child is self:
+                    self._parent.last_handler_child = self._prev_sibling
                 elif self._parent.last_theme_child is self:
                     self._parent.last_theme_child = self._prev_sibling
         # Free references
@@ -1300,10 +1283,8 @@ cdef class baseItem:
                     self._parent.last_payloads_child = self._prev_sibling
                 elif self._parent.last_plot_element_child is self:
                     self._parent.last_plot_element_child = self._prev_sibling
-                elif self._parent.last_global_handler_child is self:
-                    self._parent.last_global_handler_child = self._prev_sibling
-                elif self._parent.last_item_handler_child is self:
-                    self._parent.last_item_handler_child = self._prev_sibling
+                elif self._parent.last_handler_child is self:
+                    self._parent.last_handler_child = self._prev_sibling
                 elif self._parent.last_theme_child is self:
                     self._parent.last_theme_child = self._prev_sibling
 
@@ -1318,10 +1299,8 @@ cdef class baseItem:
             (<baseItem>self.last_payloads_child).__delete_and_siblings()
         if self.last_plot_element_child is not None:
             (<baseItem>self.last_plot_element_child).__delete_and_siblings()
-        if self.last_global_handler_child is not None:
-            (<baseItem>self.last_global_handler_child).__delete_and_siblings()
-        if self.last_item_handler_child is not None:
-            (<baseItem>self.last_item_handler_child).__delete_and_siblings()
+        if self.last_handler_child is not None:
+            (<baseItem>self.last_handler_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
         # Free references
@@ -1332,8 +1311,7 @@ cdef class baseItem:
         self.last_drawings_child = None
         self.last_payloads_child = None
         self.last_plot_element_child = None
-        self.last_global_handler_child = None
-        self.last_item_handler_child = None
+        self.last_handler_child = None
         self.last_theme_child = None
 
     cdef void __delete_and_siblings(self):
@@ -1353,10 +1331,8 @@ cdef class baseItem:
             (<baseItem>self.last_payloads_child).__delete_and_siblings()
         if self.last_plot_element_child is not None:
             (<baseItem>self.last_plot_element_child).__delete_and_siblings()
-        if self.last_global_handler_child is not None:
-            (<baseItem>self.last_global_handler_child).__delete_and_siblings()
-        if self.last_item_handler_child is not None:
-            (<baseItem>self.last_item_handler_child).__delete_and_siblings()
+        if self.last_handler_child is not None:
+            (<baseItem>self.last_handler_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
         # delete previous sibling
@@ -1372,8 +1348,7 @@ cdef class baseItem:
         self.last_drawings_child = None
         self.last_payloads_child = None
         self.last_plot_element_child = None
-        self.last_global_handler_child = None
-        self.last_item_handler_child = None
+        self.last_handler_child = None
         self.last_theme_child = None
 
     def lock_mutex(self, wait=False):
@@ -1459,7 +1434,6 @@ cdef class Viewport(baseItem):
         self.viewport = NULL
         self.graphics_initialized = False
         self.can_have_window_child = True
-        self.can_have_global_handler_child = True
         self.can_have_menubar_child = True
         self.can_have_sibling = False
         self.last_t_before_event_handling = ctime.monotonic_ns()
@@ -1728,6 +1702,27 @@ cdef class Viewport(baseItem):
         self.viewport.modesDirty = 1
 
     @property
+    def handler(self):
+        """
+        Writable attribute: bound handler (or handlerList)
+        for the viewport.
+        Only Key and Mouse handlers are compatible.
+        Handlers that check item states won't work.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._handler
+
+    @handler.setter
+    def handler(self, baseHandler value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Check the list of handlers can use our states. Else raise error
+        value.check_bind(self, self.state)
+        # yes: bind
+        self._handler = value
+
+    @property
     def theme(self):
         """
         Writable attribute: global theme
@@ -1982,8 +1977,8 @@ cdef class Viewport(baseItem):
         #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.last_menubar_child is not None:
             self.last_menubar_child.draw()
-        if self.last_global_handler_child is not None:
-            self.last_global_handler_child.run_handler()
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
         if self._theme is not None:
             self._theme.pop()
         self.last_t_after_rendering = ctime.monotonic_ns()
@@ -2311,8 +2306,7 @@ Cannot have any parent. Thus cannot render.
 cdef class PlaceHolderParent(baseItem):
     def __cinit__(self):
         self.can_have_drawing_child = True
-        self.can_have_global_handler_child = True
-        self.can_have_item_handler_child = True
+        self.can_have_handler_child = True
         self.can_have_menubar_child = True
         self.can_have_payload_child = True
         self.can_have_tab_child = True
@@ -3179,72 +3173,38 @@ cdef class ViewportDrawList_(baseItem):
 
 """
 Global handlers
+
+A global handler doesn't look at the item states,
+but at global states. It is usually attached to the
+viewport, but can be attached to items. If attached
+to items, the items needs to be visible for the callback
+to be executed.
 """
-cdef class globalHandler(baseItem):
-    def __cinit__(self):
-        self.enabled = True
-        self.can_have_sibling = True
-        self.element_child_category = child_type.cat_global_handler
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.enabled = kwargs.pop("enabled", self.enabled)
-        self.enabled = kwargs.pop("show", self.enabled)
-        callback = kwargs.pop("callback", self.callback)
-        self.callback = callback if isinstance(callback, Callback) or callback is None else Callback(callback)
-        return super().configure(**kwargs)
-    @property
-    def enabled(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self.enabled
-    @enabled.setter
-    def enabled(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.enabled = value
-    @property
-    def callback(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self.callback
-    @callback.setter
-    def callback(self, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.callback = value if isinstance(value, Callback) or value is None else Callback(value)
-    cdef void run_handler(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
-        return
-    cdef void run_callback(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.context.queue_callback_noarg(self.callback, self)
 
-cdef class GlobalHandlerList(globalHandler):
-    def __cinit__(self):
-        self.can_have_global_handler_child = True
-    cdef void run_handler(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
-        if not(self.enabled):
-            return
-        if self.last_global_handler_child is not None:
-            (<globalHandler>self.last_global_handler_child).run_handler()
-        return
-
-cdef class KeyDownHandler_(globalHandler):
+cdef class KeyDownHandler_(baseHandler):
     def __cinit__(self):
         self.key = imgui.ImGuiKey_None
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        cdef imgui.ImGuiKeyData *key_info
+        if self.key == 0:
+            for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
+                key_info = imgui.GetKeyData(<imgui.ImGuiKey>i)
+                if key_info.Down:
+                    return True
+        else:
+            key_info = imgui.GetKeyData(<imgui.ImGuiKey>self.key)
+            if key_info.Down:
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef imgui.ImGuiKeyData *key_info
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         if self.key == 0:
@@ -3257,16 +3217,27 @@ cdef class KeyDownHandler_(globalHandler):
             if key_info.Down:
                 self.context.queue_callback_arg1int1float(self.callback, self, self.key, key_info.DownDuration)
 
-cdef class KeyPressHandler_(globalHandler):
+cdef class KeyPressHandler_(baseHandler):
     def __cinit__(self):
         self.key = imgui.ImGuiKey_None
         self.repeat = True
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        if self.key == 0:
+            for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
+                if imgui.IsKeyPressed(<imgui.ImGuiKey>i, self.repeat):
+                    return True
+        else:
+            if imgui.IsKeyPressed(<imgui.ImGuiKey>self.key, self.repeat):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         if self.key == 0:
@@ -3277,15 +3248,26 @@ cdef class KeyPressHandler_(globalHandler):
             if imgui.IsKeyPressed(<imgui.ImGuiKey>self.key, self.repeat):
                 self.context.queue_callback_arg1int(self.callback, self, self.key)
 
-cdef class KeyReleaseHandler_(globalHandler):
+cdef class KeyReleaseHandler_(baseHandler):
     def __cinit__(self):
         self.key = imgui.ImGuiKey_None
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        if self.key == 0:
+            for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
+                if imgui.IsKeyReleased(<imgui.ImGuiKey>i):
+                    return True
+        else:
+            if imgui.IsKeyReleased(<imgui.ImGuiKey>self.key):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         if self.key == 0:
@@ -3297,16 +3279,25 @@ cdef class KeyReleaseHandler_(globalHandler):
                 self.context.queue_callback_arg1int(self.callback, self, self.key)
 
 
-cdef class MouseClickHandler_(globalHandler):
+cdef class MouseClickHandler_(baseHandler):
     def __cinit__(self):
         self.button = -1
         self.repeat = False
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseClicked(i, self.repeat):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -3315,15 +3306,24 @@ cdef class MouseClickHandler_(globalHandler):
             if imgui.IsMouseClicked(i, self.repeat):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class MouseDoubleClickHandler_(globalHandler):
+cdef class MouseDoubleClickHandler_(baseHandler):
     def __cinit__(self):
         self.button = -1
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseDoubleClicked(i):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -3333,33 +3333,52 @@ cdef class MouseDoubleClickHandler_(globalHandler):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
 
-cdef class MouseDownHandler_(globalHandler):
+cdef class MouseDownHandler_(baseHandler):
     def __cinit__(self):
         self.button = -1
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseDown(i):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
             if imgui.IsMouseDown(i):
-                self.context.queue_callback_arg1int(self.callback, self, i)
+                self.context.queue_callback_arg1int1float(self.callback, self, i, imgui.GetIO().MouseDownDuration[i])
 
-cdef class MouseDragHandler_(globalHandler):
+cdef class MouseDragHandler_(baseHandler):
     def __cinit__(self):
         self.button = -1
         self.threshold = -1 # < 0. means use default
-    cdef void run_handler(self) noexcept nogil:
+
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseDragging(i, self.threshold):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         cdef imgui.ImVec2 delta
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -3370,11 +3389,18 @@ cdef class MouseDragHandler_(globalHandler):
                 self.context.queue_callback_arg1int2float(self.callback, self, i, delta.x, delta.y)
 
 
-cdef class MouseMoveHandler(globalHandler):
-    cdef void run_handler(self) noexcept nogil:
+cdef class MouseMoveHandler(baseHandler):
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if io.MousePos.x != io.MousePosPrev.x or \
+           io.MousePos.y != io.MousePosPrev.y:
+            return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -3383,15 +3409,24 @@ cdef class MouseMoveHandler(globalHandler):
             self.context.queue_callback_arg2float(self.callback, self, io.MousePos.x, io.MousePos.y)
             
 
-cdef class MouseReleaseHandler_(globalHandler):
+cdef class MouseReleaseHandler_(baseHandler):
     def __cinit__(self):
         self.button = -1
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef int i
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if imgui.IsMouseReleased(i):
+                return True
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -3400,7 +3435,7 @@ cdef class MouseReleaseHandler_(globalHandler):
             if imgui.IsMouseReleased(i):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class MouseWheelHandler(globalHandler):
+cdef class MouseWheelHandler(baseHandler):
     def __cinit__(self, *args, **kwargs):
         self._horizontal = False
 
@@ -3420,11 +3455,20 @@ cdef class MouseWheelHandler(globalHandler):
         lock_gil_friendly(m, self.mutex)
         self._horizontal = value
 
+    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if self._horizontal:
+            if abs(io.MouseWheelH) > 0.:
+                return True
+        else:
+            if abs(io.MouseWheel) > 0.:
+                return True
+        return False
 
-    cdef void run_handler(self) noexcept nogil:
+    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<globalHandler>self._prev_sibling).run_handler()
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -3800,11 +3844,11 @@ UI styles
 UI input event handlers
 """
 
-cdef class itemHandler(baseItem):
+cdef class baseHandler(baseItem):
     def __cinit__(self):
         self.enabled = True
         self.can_have_sibling = True
-        self.element_child_category = child_type.cat_item_handler
+        self.element_child_category = child_type.cat_handler
     @property
     def enabled(self):
         cdef unique_lock[recursive_mutex] m
@@ -3851,7 +3895,7 @@ cdef class itemHandler(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
 
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         """
@@ -3866,7 +3910,7 @@ cdef class itemHandler(baseItem):
     cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         if self.check_state(item, state):
@@ -3876,16 +3920,18 @@ cdef class itemHandler(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.queue_callback_arg1obj(self.callback, self, item)
 
-cdef class ItemHandlerList(itemHandler):
+cdef class HandlerList(baseHandler):
     """
     A list of handlers in order to attach several
     handlers to an item.
     In addition if you attach a callback to this handler,
     it will be issued if ALL or ANY of the children handler
     states are met. NONE is also possible.
+    Note however that the handlers are not checked if an item
+    is not rendered. This corresponds to the visible state.
     """
     def __cinit__(self):
-        self.can_have_item_handler_child = True
+        self.can_have_handler_child = True
         self._op = handlerListOP.ANY
 
     @property
@@ -3903,9 +3949,9 @@ cdef class ItemHandlerList(itemHandler):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
-        if self.last_item_handler_child is not None:
-            (<itemHandler>self.last_item_handler_child).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
+        if self.last_handler_child is not None:
+            (<baseHandler>self.last_handler_child).check_bind(item, state)
 
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         """
@@ -3915,18 +3961,20 @@ cdef class ItemHandlerList(itemHandler):
         Classes that might issue non-standard callbacks should
         override run_handler in addition to check_state.
         """
-        if self.last_item_handler_child is None:
+        if self.last_handler_child is None:
             return False
-        self.last_item_handler_child.lock_and_previous_siblings()
+        self.last_handler_child.lock_and_previous_siblings()
         # We use PyObject to avoid refcounting and thus the gil
-        cdef PyObject* child = <PyObject*>self.last_item_handler_child
+        cdef PyObject* child = <PyObject*>self.last_handler_child
         cdef bint current_state = False
         cdef bint child_state
         if self._op == handlerListOP.ALL:
             current_state = True
         while child is not <PyObject*>None:
-            child_state = (<ItemHandlerList>child).check_state(item, state)
-            child = <PyObject*>((<ItemHandlerList>child).last_item_handler_child)
+            child_state = (<baseHandler>child).check_state(item, state)
+            child = <PyObject*>((<baseHandler>child).last_handler_child)
+            if not((<baseHandler>child).enabled):
+                continue
             if self._op == handlerListOP.ALL:
                 current_state = current_state and child_state
             else:
@@ -3934,15 +3982,17 @@ cdef class ItemHandlerList(itemHandler):
         if self._op == handlerListOP.NONE:
             # NONE = not(ANY)
             current_state = not(current_state)
-        self.last_item_handler_child.unlock_and_previous_siblings()
+        self.last_handler_child.unlock_and_previous_siblings()
         return False
 
     cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item, state)
-        if self.last_item_handler_child is not None:
-            (<itemHandler>self.last_item_handler_child).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
+        if not(self.enabled):
+            return
+        if self.last_handler_child is not None:
+            (<baseHandler>self.last_handler_child).run_handler(item, state)
         if self.callback is not None:
             if self.check_state(item, state):
                 self.run_callback(item)
@@ -4563,15 +4613,15 @@ cdef class uiItem(baseItem):
 
     @property
     def handler(self):
+        """
+        Writable attribute: bound handler for the item.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._handler
 
     @handler.setter
-    def handler(self, itemHandler value):
-        """
-        Writable attribute: bound handler for the item.
-        """
+    def handler(self, baseHandler value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # Check the list of handlers can use our states. Else raise error
@@ -9875,7 +9925,7 @@ cdef class PlotAxisConfig(baseItem):
         return self._handler
 
     @handler.setter
-    def handler(self, itemHandler value):
+    def handler(self, baseHandler value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # Check the list of handlers can use our states. Else raise error
@@ -10991,7 +11041,7 @@ cdef class plotElement(baseItem):
         return self._handler
 
     @legend_handler.setter
-    def legend_handler(self, itemHandler value):
+    def legend_handler(self, baseHandler value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # Check the list of handlers can use our states. Else raise error

@@ -245,7 +245,7 @@ def get_item_slot(item: Union[int, str]) -> Union[int, None]:
         slot as a int
     """
     item = DCG_CONTEXT[item]
-    if isinstance(item, dcg.uiItem):
+    if isinstance(item, dcg.uiItem) or isinstance(item, dcg.baseHandler):
         return 1
     elif isinstance(item, dcg.drawingItem):
         return 2
@@ -2868,7 +2868,17 @@ def handler_registry(*, label: str =None, user_data: Any =None, show: bool =True
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.GlobalHandlerList(DCG_CONTEXT, label=label, user_data=user_data, show=show, parent=DCG_CONTEXT.viewport, **kwargs)
+    item = dcg.HandlerList(DCG_CONTEXT, label=label, user_data=user_data, show=show, attach=False, **kwargs)
+    # global handler registries concatenate to each other
+    current_handler = DCG_CONTEXT.viewport.handler
+    if current_handler is None:
+        DCG_CONTEXT.viewport.handler = item
+    else:
+        new_handler = dcg.HandlerList(DCG_CONTEXT)
+        item.parent = new_handler
+        current_handler.parent = new_handler
+        DCG_CONTEXT.viewport.handler = new_handler
+    return item
 
 def heat_series(x : Union[List[float], Tuple[float, ...]], rows : int, cols : int, *, label: str =None, user_data: Any =None, show: bool =True, scale_min: float =0.0, scale_max: float =1.0, bounds_min: Any =(0.0, 0.0), bounds_max: Any =(1.0, 1.0), format: str ='%0.1f', contribute_to_bounds: bool =True, col_major: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a heat series to a plot.
@@ -3605,7 +3615,7 @@ def item_handler_registry(*, label: str =None, user_data: Any =None, show: bool 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    item = dcg.ItemHandlerList(DCG_CONTEXT, label=label, user_data=user_data, show=show, **kwargs)
+    item = dcg.HandlerList(DCG_CONTEXT, label=label, user_data=user_data, show=show, **kwargs)
     return item
 
 def item_hover_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:

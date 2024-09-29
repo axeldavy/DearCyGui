@@ -2,29 +2,29 @@ from .core cimport *
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from dearcygui.wrapper cimport imgui
 
-cdef class ActivatedHandler(itemHandler):
+cdef class ActivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_activated):
             raise TypeError("Cannot bind activated item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.activated
 
-cdef class ActiveHandler(itemHandler):
+cdef class ActiveHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_active):
             raise TypeError("Cannot bind activate item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.active
 
-cdef class ClickedHandler(itemHandler):
+cdef class ClickedHandler(baseHandler):
     def __cinit__(self):
         self.button = -1
     def configure(self, *args, **kwargs):
@@ -57,7 +57,7 @@ cdef class ClickedHandler(itemHandler):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_clicked):
             raise TypeError("Cannot bind clicked item handler for this item")
 
@@ -76,7 +76,7 @@ cdef class ClickedHandler(itemHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -85,7 +85,7 @@ cdef class ClickedHandler(itemHandler):
             if state.clicked[i]:
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class DoubleClickedHandler(itemHandler):
+cdef class DoubleClickedHandler(baseHandler):
     def __cinit__(self):
         self.button = -1
     def configure(self, *args, **kwargs):
@@ -118,7 +118,7 @@ cdef class DoubleClickedHandler(itemHandler):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_clicked):
             raise TypeError("Cannot bind clicked item handler for this item")
 
@@ -137,7 +137,7 @@ cdef class DoubleClickedHandler(itemHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -146,89 +146,89 @@ cdef class DoubleClickedHandler(itemHandler):
             if state.double_clicked[i]:
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class DeactivatedHandler(itemHandler):
+cdef class DeactivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_deactivated):
             raise TypeError("Cannot bind deactivated item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.deactivated
 
-cdef class DeactivatedAfterEditHandler(itemHandler):
+cdef class DeactivatedAfterEditHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_deactivated_after_edited):
             raise TypeError("Cannot bind deactivated (after edit) item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.deactivated_after_edited
 
-cdef class EditedHandler(itemHandler):
+cdef class EditedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_edited):
             raise TypeError("Cannot bind edited item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.edited
 
-cdef class FocusHandler(itemHandler):
+cdef class FocusHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_focused):
             raise TypeError("Cannot bind focus item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.focused
 
-cdef class HoverHandler(itemHandler):
+cdef class HoverHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_hovered):
             raise TypeError("Cannot bind hover item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.hovered
 
-cdef class ResizeHandler(itemHandler):
+cdef class ResizeHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.has_rect_size):
             raise TypeError("Cannot bind resize item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.resized
 
-cdef class ToggledOpenHandler(itemHandler):
+cdef class ToggledOpenHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         if not(state.can_be_toggled):
             raise TypeError("Cannot bind toggle item handler for this item")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.toggled
 
-cdef class VisibleHandler(itemHandler):
+cdef class VisibleHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
         return
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.visible

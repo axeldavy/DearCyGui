@@ -153,8 +153,7 @@ cdef class baseItem:
     # Allowed children:
     cdef bint can_have_drawing_child
     # DOES NOT mean "bound" to an item
-    cdef bint can_have_global_handler_child
-    cdef bint can_have_item_handler_child
+    cdef bint can_have_handler_child
     cdef bint can_have_menubar_child
     cdef bint can_have_payload_child
     cdef bint can_have_plot_element_child
@@ -175,8 +174,7 @@ cdef class baseItem:
     cdef baseItem _prev_sibling
     cdef baseItem _next_sibling
     cdef drawingItem last_drawings_child
-    cdef globalHandler last_global_handler_child
-    cdef itemHandler last_item_handler_child
+    cdef baseHandler last_handler_child
     cdef uiItem last_menubar_child
     cdef baseItem last_payloads_child
     cdef plotElement last_plot_element_child
@@ -197,8 +195,7 @@ cdef class baseItem:
 cdef enum child_type:
     cat_drawing
     cat_viewport_drawlist
-    cat_global_handler
-    cat_item_handler
+    cat_handler
     cat_menubar
     cat_payload
     cat_plot_element
@@ -206,7 +203,40 @@ cdef enum child_type:
     cat_theme
     cat_widget
     cat_window
-    
+
+
+cdef struct itemState:
+    bint can_be_active
+    bint can_be_activated
+    bint can_be_clicked
+    bint can_be_deactivated
+    bint can_be_deactivated_after_edited
+    bint can_be_edited
+    bint can_be_focused
+    bint can_be_hovered
+    bint can_be_toggled
+    bint has_rect_min
+    bint has_rect_max
+    bint has_rect_size
+    bint has_content_region
+    bint hovered
+    bint active
+    bint focused
+    bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
+    bint[<int>imgui.ImGuiMouseButton_COUNT] double_clicked
+    bint edited
+    bint activated
+    bint deactivated
+    bint deactivated_after_edited
+    bint toggled
+    bint resized
+    imgui.ImVec2 rect_min
+    imgui.ImVec2 rect_max
+    imgui.ImVec2 rect_size
+    imgui.ImVec2 content_region
+    # Item: indicates if the item was in the clipped region of the window
+    # Window: indicates if the window was rendered
+    bint visible
 
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
@@ -217,6 +247,8 @@ cdef class Viewport(baseItem):
     cdef Callback _resize_callback
     cdef Callback _close_callback
     cdef baseTheme _theme
+    cdef itemState state # Unused. Just for compatibility with handlers
+    cdef baseHandler _handler
     # For timing stats
     cdef long long last_t_before_event_handling
     cdef long long last_t_before_rendering
@@ -428,57 +460,6 @@ cdef class ViewportDrawList_(baseItem):
     cdef void draw(self) noexcept nogil
 
 
-cdef class globalHandler(baseItem):
-    cdef bint enabled
-    cdef Callback callback
-    cdef void run_handler(self) noexcept nogil
-    cdef void run_callback(self) noexcept nogil
-
-cdef class GlobalHandlerList(globalHandler):
-    cdef void run_handler(self) noexcept nogil
-
-cdef class KeyDownHandler_(globalHandler):
-    cdef int key
-    cdef void run_handler(self) noexcept nogil
-
-cdef class KeyPressHandler_(globalHandler):
-    cdef int key
-    cdef bint repeat
-    cdef void run_handler(self) noexcept nogil
-
-cdef class KeyReleaseHandler_(globalHandler):
-    cdef int key
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseClickHandler_(globalHandler):
-    cdef int button
-    cdef bint repeat
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseDoubleClickHandler_(globalHandler):
-    cdef int button
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseDownHandler_(globalHandler):
-    cdef int button
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseDragHandler_(globalHandler):
-    cdef int button
-    cdef float threshold
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseMoveHandler(globalHandler):
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseReleaseHandler_(globalHandler):
-    cdef int button
-    cdef void run_handler(self) noexcept nogil
-
-cdef class MouseWheelHandler(globalHandler):
-    cdef bint _horizontal
-    cdef void run_handler(self) noexcept nogil
-
 """
 Shared values (sources)
 
@@ -569,40 +550,7 @@ UI item
 A drawable item with various UI states
 """
 
-cdef struct itemState:
-    bint can_be_active
-    bint can_be_activated
-    bint can_be_clicked
-    bint can_be_deactivated
-    bint can_be_deactivated_after_edited
-    bint can_be_edited
-    bint can_be_focused
-    bint can_be_hovered
-    bint can_be_toggled
-    bint has_rect_min
-    bint has_rect_max
-    bint has_rect_size
-    bint has_content_region
-    bint hovered
-    bint active
-    bint focused
-    bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
-    bint[<int>imgui.ImGuiMouseButton_COUNT] double_clicked
-    bint edited
-    bint activated
-    bint deactivated
-    bint deactivated_after_edited
-    bint toggled
-    bint resized
-    imgui.ImVec2 rect_min
-    imgui.ImVec2 rect_max
-    imgui.ImVec2 rect_size
-    imgui.ImVec2 content_region
-    # Item: indicates if the item was in the clipped region of the window
-    # Window: indicates if the window was rendered
-    bint visible
-
-cdef class itemHandler(baseItem):
+cdef class baseHandler(baseItem):
     cdef bint enabled
     cdef Callback callback
     cdef void check_bind(self, baseItem, itemState&)
@@ -615,10 +563,52 @@ cpdef enum handlerListOP:
     ANY,
     NONE
 
-cdef class ItemHandlerList(itemHandler):
+cdef class HandlerList(baseHandler):
     cdef handlerListOP _op
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class KeyDownHandler_(baseHandler):
+    cdef int key
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class KeyPressHandler_(baseHandler):
+    cdef int key
+    cdef bint repeat
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class KeyReleaseHandler_(baseHandler):
+    cdef int key
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseClickHandler_(baseHandler):
+    cdef int button
+    cdef bint repeat
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseDoubleClickHandler_(baseHandler):
+    cdef int button
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseDownHandler_(baseHandler):
+    cdef int button
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseDragHandler_(baseHandler):
+    cdef int button
+    cdef float threshold
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseMoveHandler(baseHandler):
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseReleaseHandler_(baseHandler):
+    cdef int button
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class MouseWheelHandler(baseHandler):
+    cdef bint _horizontal
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class uiItem(baseItem):
@@ -653,7 +643,7 @@ cdef class uiItem(baseItem):
     #cdef bint tracked
     cdef Callback dragCallback
     cdef Callback dropCallback
-    cdef itemHandler _handler
+    cdef baseHandler _handler
     cdef baseTheme _theme
     cdef Callback _callback
     cdef SharedValue _value
@@ -1013,7 +1003,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef double _zoom_max
     cdef double _mouse_coord
     cdef itemState state
-    cdef itemHandler _handler
+    cdef baseHandler _handler
     cdef void setup(self, implot.ImAxis) noexcept nogil
     cdef void after_draw(self, implot.ImAxis) noexcept nogil
     cdef void set_hidden(self) noexcept nogil
@@ -1066,7 +1056,7 @@ cdef class plotElement(baseItem):
     cdef int[2] _axes
     cdef int _legend_button
     cdef baseTheme _theme
-    cdef itemHandler _handler
+    cdef baseHandler _handler
     cdef void draw(self) noexcept nogil
     cdef void draw_element(self) noexcept nogil
 
