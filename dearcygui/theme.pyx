@@ -6,8 +6,9 @@ cimport cython
 from cython.operator cimport dereference
 from .core cimport *
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
+from cpython cimport PyObject_GenericSetAttr
 
-cdef class dcgThemeColorImGui(baseTheme):
+cdef class ThemeColorImGui(baseTheme):
     def __cinit__(self):
         cdef int i
         cdef string col_name
@@ -24,7 +25,7 @@ cdef class dcgThemeColorImGui(baseTheme):
             results.append(name)
         return results + dir(baseTheme)
 
-    def __getattro__(self, str name):
+    def __getattr__(self, name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -65,13 +66,21 @@ cdef class dcgThemeColorImGui(baseTheme):
         cdef imgui.ImU32 value = dereference(element_content).second
         return value
 
-    def __setattro__(self, str name, value):
+    def __setattr__(self, name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Color %s not found" % name)
+        cdef bint found
+        cdef string name_str
+        cdef unordered_map[string, int].iterator element
+        try:
+            name_str = bytes(name, 'utf-8')
+            element = self.name_to_index.find(name_str)
+            found = element != self.name_to_index.end()
+        except Exception:
+            found = False
+        if not(found):
+            PyObject_GenericSetAttr(self, name, value)
+            return
         cdef int color_index = dereference(element).second
         if value is None:
             self.index_to_value.erase(color_index)
@@ -156,7 +165,8 @@ cdef class dcgThemeColorImGui(baseTheme):
             # siblings than during push()
             (<baseTheme>self._prev_sibling).pop()
 
-cdef class dcgThemeColorImPlot(baseTheme):
+@cython.no_gc_clear
+cdef class ThemeColorImPlot(baseTheme):
     def __cinit__(self):
         cdef int i
         cdef string col_name
@@ -173,7 +183,7 @@ cdef class dcgThemeColorImPlot(baseTheme):
             results.append(name)
         return results + dir(baseTheme)
 
-    def __getattro__(self, str name):
+    def __getattr__(self, name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -214,13 +224,21 @@ cdef class dcgThemeColorImPlot(baseTheme):
         cdef imgui.ImU32 value = dereference(element_content).second
         return value
 
-    def __setattro__(self, str name, value):
+    def __setattr__(self, name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Color %s not found" % name)
+        cdef bint found
+        cdef string name_str
+        cdef unordered_map[string, int].iterator element
+        try:
+            name_str = bytes(name, 'utf-8')
+            element = self.name_to_index.find(name_str)
+            found = element != self.name_to_index.end()
+        except Exception:
+            found = False
+        if not(found):
+            PyObject_GenericSetAttr(self, name, value)
+            return
         cdef int color_index = dereference(element).second
         if value is None:
             self.index_to_value.erase(color_index)
@@ -303,8 +321,8 @@ cdef class dcgThemeColorImPlot(baseTheme):
         if self._prev_sibling is not None:
             (<baseTheme>self._prev_sibling).pop()
 
-
-cdef class dcgThemeColorImNodes(baseTheme):
+@cython.no_gc_clear
+cdef class ThemeColorImNodes(baseTheme):
     def __cinit__(self):
         self.names = [
             b"NodeBackground",
@@ -346,7 +364,7 @@ cdef class dcgThemeColorImNodes(baseTheme):
     def __dir__(self):
         return self.names + dir(baseTheme)
 
-    def __getattro__(self, str name):
+    def __getattr__(self, name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -387,13 +405,21 @@ cdef class dcgThemeColorImNodes(baseTheme):
         cdef imgui.ImU32 value = dereference(element_content).second
         return value
 
-    def __setattro__(self, str name, value):
+    def __setattr__(self, name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Color %s not found" % name)
+        cdef bint found
+        cdef string name_str
+        cdef unordered_map[string, int].iterator element
+        try:
+            name_str = bytes(name, 'utf-8')
+            element = self.name_to_index.find(name_str)
+            found = element != self.name_to_index.end()
+        except Exception:
+            found = False
+        if not(found):
+            PyObject_GenericSetAttr(self, name, value)
+            return
         cdef int color_index = dereference(element).second
         if value is None:
             self.index_to_value.erase(color_index)
@@ -516,7 +542,7 @@ cdef extern from * nogil:
     """
     cdef int[34] styles_imgui_sizes
 
-cdef class dcgThemeStyleImGui(baseTheme):
+cdef class ThemeStyleImGui(baseTheme):
     def __cinit__(self):
         self.names = [
             b"Alpha",                    # float     Alpha
@@ -563,7 +589,7 @@ cdef class dcgThemeStyleImGui(baseTheme):
     def __dir__(self):
         return self.names + dir(baseTheme)
 
-    def __getattro__(self, str name):
+    def __getattr__(self, name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -608,13 +634,21 @@ cdef class dcgThemeStyleImGui(baseTheme):
             return (value.x, value.y)
         return value.x
 
-    def __setattro__(self, str name, value):
+    def __setattr__(self, name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Element %s not found" % name)
+        cdef bint found
+        cdef string name_str
+        cdef unordered_map[string, int].iterator element
+        try:
+            name_str = bytes(name, 'utf-8')
+            element = self.name_to_index.find(name_str)
+            found = element != self.name_to_index.end()
+        except Exception:
+            found = False
+        if not(found):
+            PyObject_GenericSetAttr(self, name, value)
+            return
         cdef int style_index = dereference(element).second
         if value is None:
             self.index_to_value.erase(style_index)
@@ -768,7 +802,7 @@ cdef extern from * nogil:
     """
     cdef int[27] styles_implot_sizes
 
-cdef class dcgThemeStyleImPlot(baseTheme):
+cdef class ThemeStyleImPlot(baseTheme):
     def __cinit__(self):
         self.names = [
             b"LineWeight",         # float,  plot item line weight in pixels
@@ -808,7 +842,7 @@ cdef class dcgThemeStyleImPlot(baseTheme):
     def __dir__(self):
         return self.names + dir(baseTheme)
 
-    def __getattro__(self, str name):
+    def __getattr__(self, name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -857,13 +891,21 @@ cdef class dcgThemeStyleImPlot(baseTheme):
             return int(value.x)
         return value.x
 
-    def __setattro__(self, str name, value):
+    def __setattr__(self, name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Element %s not found" % name)
+        cdef bint found
+        cdef string name_str
+        cdef unordered_map[string, int].iterator element
+        try:
+            name_str = bytes(name, 'utf-8')
+            element = self.name_to_index.find(name_str)
+            found = element != self.name_to_index.end()
+        except Exception:
+            found = False
+        if not(found):
+            PyObject_GenericSetAttr(self, name, value)
+            return
         cdef int style_index = dereference(element).second
         if value is None:
             self.index_to_value.erase(style_index)
@@ -1014,7 +1056,7 @@ cdef extern from * nogil:
     """
     cdef int[15] styles_imnodes_sizes
 
-cdef class dcgThemeStyleImNodes(baseTheme):
+cdef class ThemeStyleImNodes(baseTheme):
     def __cinit__(self):
         self.names = [
             b"GridSpacing",
@@ -1042,7 +1084,7 @@ cdef class dcgThemeStyleImNodes(baseTheme):
     def __dir__(self):
         return self.names + dir(baseTheme)
 
-    def __getattro__(self, str name):
+    def __getattr__(self, name):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef string name_str = bytes(name, 'utf-8')
@@ -1087,13 +1129,21 @@ cdef class dcgThemeStyleImNodes(baseTheme):
             return (value.x, value.y)
         return value.x
 
-    def __setattro__(self, str name, value):
+    def __setattr__(self, name, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Element %s not found" % name)
+        cdef bint found
+        cdef string name_str
+        cdef unordered_map[string, int].iterator element
+        try:
+            name_str = bytes(name, 'utf-8')
+            element = self.name_to_index.find(name_str)
+            found = element != self.name_to_index.end()
+        except Exception:
+            found = False
+        if not(found):
+            PyObject_GenericSetAttr(self, name, value)
+            return
         cdef int style_index = dereference(element).second
         if value is None:
             self.index_to_value.erase(style_index)
@@ -1215,7 +1265,7 @@ cdef class dcgThemeStyleImNodes(baseTheme):
             (<baseTheme>self._prev_sibling).pop()
 
 
-cdef class dcgThemeList(baseTheme):
+cdef class ThemeList(baseTheme):
     def __cinit__(self):
         self.can_have_theme_child = True
 
@@ -1241,7 +1291,7 @@ cdef class dcgThemeList(baseTheme):
             self.last_theme_child.push_to_list(v)
 
 
-cdef class dcgThemeListWithCondition(baseTheme):
+cdef class ThemeListWithCondition(baseTheme):
     def __cinit__(self):
         self.can_have_theme_child = True
         self.activation_condition_enabled = theme_enablers.t_enabled_any
@@ -1373,7 +1423,7 @@ cdef class dcgThemeListWithCondition(baseTheme):
             self.last_theme_child.push_to_list(v)
 
 
-cdef class dcgThemeStopCondition(baseTheme):
+cdef class ThemeStopCondition(baseTheme):
     cdef void push(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:

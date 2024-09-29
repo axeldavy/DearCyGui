@@ -1,53 +1,53 @@
 from .core cimport *
 
-cdef class dcgViewportDrawList(dcgViewportDrawList_):
+cdef class ViewportDrawList(ViewportDrawList_):
     pass
 
-cdef class dcgDrawLayer(dcgDrawLayer_):
+cdef class DrawLayer(DrawLayer_):
     pass
 
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
 
-cdef class dcgDrawArrow(dcgDrawArrow_):
+cdef class DrawArrow(DrawArrow_):
     pass
 
-cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
+cdef class DrawBezierCubic(DrawBezierCubic_):
     pass
 
-cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
+cdef class DrawBezierQuadratic(DrawBezierQuadratic_):
     pass
 
-cdef class dcgDrawCircle(dcgDrawCircle_):
+cdef class DrawCircle(DrawCircle_):
     pass
 
-cdef class dcgDrawEllipse(dcgDrawEllipse_):
+cdef class DrawEllipse(DrawEllipse_):
     pass
 
-cdef class dcgDrawImage(dcgDrawImage_):
+cdef class DrawImage(DrawImage_):
     pass
 
-cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
+cdef class DrawImageQuad(DrawImageQuad_):
     pass
 
-cdef class dcgDrawLine(dcgDrawLine_):
+cdef class DrawLine(DrawLine_):
     pass
 
-cdef class dcgDrawPolyline(dcgDrawPolyline_):
+cdef class DrawPolyline(DrawPolyline_):
     pass
 
-cdef class dcgDrawPolygon(dcgDrawPolygon_):
+cdef class DrawPolygon(DrawPolygon_):
     pass
 
-cdef class dcgDrawQuad(dcgDrawQuad_):
+cdef class DrawQuad(DrawQuad_):
     pass
 
-cdef class dcgDrawRect(dcgDrawRect_):
+cdef class DrawRect(DrawRect_):
     pass
 
-cdef class dgcDrawText(dgcDrawText_):
+cdef class DrawText(DrawText_):
     pass
 
-cdef class dcgDrawTriangle(dcgDrawTriangle_):
+cdef class DrawTriangle(DrawTriangle_):
     pass
 

@@ -51,7 +51,7 @@ cdef inline void lock_gil_friendly(unique_lock[recursive_mutex] &m,
     with nogil:
         m.lock()
 
-cdef class dcgContext:
+cdef class Context:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
     cdef map[long long, PyObject*] items
@@ -63,31 +63,32 @@ cdef class dcgContext:
     # Mutex that must be held for any
     # call to imgui, glfw, etc
     cdef recursive_mutex imgui_mutex
-    cdef readonly dcgViewport viewport
+    cdef readonly Viewport viewport
     cdef imgui.ImGuiContext* imgui_context
     cdef implot.ImPlotContext* implot_context
     cdef imnodes.ImNodesContext* imnodes_context
-    #cdef dcgGraphics graphics
+    #cdef Graphics graphics
     cdef bint resetTheme
-    #cdef dcgIO IO
-    #cdef dcgItemRegistry itemRegistry
-    #cdef dcgCallbackRegistry callbackRegistry
-    #cdef dcgToolManager toolManager
-    #cdef dcgInput input
+    #cdef IO IO
+    #cdef ItemRegistry itemRegistry
+    #cdef CallbackRegistry callbackRegistry
+    #cdef ToolManager toolManager
+    #cdef Input input
     #cdef UUID activeWindow
     #cdef UUID focusedItem
-    cdef dcgCallback on_close_callback
+    cdef Callback on_close_callback
     cdef public object on_frame_callbacks
     cdef object queue
-    cdef void queue_callback_noarg(self, dcgCallback, baseItem) noexcept nogil
-    cdef void queue_callback_arg1obj(self, dcgCallback, baseItem, baseItem) noexcept nogil
-    cdef void queue_callback_arg1int(self, dcgCallback, baseItem, int) noexcept nogil
-    cdef void queue_callback_arg1float(self, dcgCallback, baseItem, float) noexcept nogil
-    cdef void queue_callback_arg1value(self, dcgCallback, baseItem, shared_value) noexcept nogil
-    cdef void queue_callback_arg1int1float(self, dcgCallback, baseItem, int, float) noexcept nogil
-    cdef void queue_callback_arg2float(self, dcgCallback, baseItem, float, float) noexcept nogil
-    cdef void queue_callback_arg1int2float(self, dcgCallback, baseItem, int, float, float) noexcept nogil
-    cdef void queue_callback_arg4int(self, dcgCallback, baseItem, int, int, int, int) noexcept nogil
+    cdef void queue_callback_noarg(self, Callback, baseItem) noexcept nogil
+    cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem) noexcept nogil
+    cdef void queue_callback_arg1int(self, Callback, baseItem, int) noexcept nogil
+    cdef void queue_callback_arg1float(self, Callback, baseItem, float) noexcept nogil
+    cdef void queue_callback_arg1value(self, Callback, baseItem, SharedValue) noexcept nogil
+    cdef void queue_callback_arg1int1float(self, Callback, baseItem, int, float) noexcept nogil
+    cdef void queue_callback_arg2float(self, Callback, baseItem, float, float) noexcept nogil
+    cdef void queue_callback_arg1int2float(self, Callback, baseItem, int, float, float) noexcept nogil
+    cdef void queue_callback_arg4int(self, Callback, baseItem, int, int, int, int) noexcept nogil
+    cdef void queue_callback_arg3long1int(self, Callback, baseItem, long long, long long, long long, int) noexcept nogil
     cdef void register_item(self, baseItem o, long long uuid)
     cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag)
     cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
@@ -111,16 +112,16 @@ that you link to the same version of ImGui (ImPlot/ImNodes if
 applicable) and you must call ensure_correct_* at the start
 of your draw() overrides
 """
-cdef inline void ensure_correct_imgui_context(dcgContext context) noexcept nogil:
+cdef inline void ensure_correct_imgui_context(Context context) noexcept nogil:
     imgui.SetCurrentContext(context.imgui_context)
 
-cdef inline void ensure_correct_implot_context(dcgContext context) noexcept nogil:
+cdef inline void ensure_correct_implot_context(Context context) noexcept nogil:
     implot.SetCurrentContext(context.implot_context)
 
-cdef inline void ensure_correct_imnodes_context(dcgContext context) noexcept nogil:
+cdef inline void ensure_correct_imnodes_context(Context context) noexcept nogil:
     imnodes.SetCurrentContext(context.imnodes_context)
 
-cdef inline void ensure_correct_im_context(dcgContext context) noexcept nogil:
+cdef inline void ensure_correct_im_context(Context context) noexcept nogil:
     ensure_correct_imgui_context(context)
     ensure_correct_implot_context(context)
     ensure_correct_imnodes_context(context)
@@ -143,7 +144,7 @@ A child then points to its previous and next sibling of its category
 cdef class baseItem:
     cdef recursive_mutex mutex
     cdef int external_lock
-    cdef dcgContext context
+    cdef Context context
     cdef long long uuid
     cdef object _user_data
     # Attributes set by subclasses
@@ -156,6 +157,7 @@ cdef class baseItem:
     cdef bint can_have_item_handler_child
     cdef bint can_have_menubar_child
     cdef bint can_have_payload_child
+    cdef bint can_have_plot_element_child
     cdef bint can_have_tab_child
     cdef bint can_have_theme_child
     cdef bint can_have_widget_child
@@ -177,10 +179,11 @@ cdef class baseItem:
     cdef itemHandler last_item_handler_child
     cdef uiItem last_menubar_child
     cdef baseItem last_payloads_child
+    cdef plotElement last_plot_element_child
     cdef uiItem last_tab_child
     cdef baseTheme last_theme_child
     cdef uiItem last_widgets_child
-    cdef dcgWindow last_window_child
+    cdef Window last_window_child
     cdef void lock_parent_and_item_mutex(self, unique_lock[recursive_mutex]&, unique_lock[recursive_mutex]&)
     cdef void lock_and_previous_siblings(self) noexcept nogil
     cdef void unlock_and_previous_siblings(self) noexcept nogil
@@ -193,25 +196,26 @@ cdef class baseItem:
 
 cdef enum child_type:
     cat_drawing
-    cat_viewportdrawlist
+    cat_viewport_drawlist
     cat_global_handler
     cat_item_handler
     cat_menubar
     cat_payload
+    cat_plot_element
     cat_tab
     cat_theme
     cat_widget
     cat_window
     
 
-cdef class dcgViewport(baseItem):
+cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
     cdef mvViewport *viewport
     cdef bint initialized
     cdef mvGraphics graphics
     cdef bint graphics_initialized
-    cdef dcgCallback _resize_callback
-    cdef dcgCallback _close_callback
+    cdef Callback _resize_callback
+    cdef Callback _close_callback
     cdef baseTheme _theme
     # For timing stats
     cdef long long last_t_before_event_handling
@@ -234,6 +238,7 @@ cdef class dcgViewport(baseItem):
     cdef float shift_y
     cdef bint in_plot
     cdef float thickness_multiplier # in plots
+    cdef bint[<int>implot.ImAxis_COUNT] enabled_axes
     cdef int start_pending_theme_actions # managed outside viewport
     cdef vector[theme_action] pending_theme_actions # managed outside viewport
     cdef vector[theme_action] applied_theme_actions # managed by viewport
@@ -252,7 +257,7 @@ cdef class dcgViewport(baseItem):
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
 
 
-cdef class dcgCallback:
+cdef class Callback:
     cdef object callback
     cdef int num_args
 
@@ -266,10 +271,10 @@ cdef class drawingItem(baseItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
     pass
 
-cdef class dcgDrawingList(drawingItem):
+cdef class DrawingList(drawingItem):
     pass
 
-cdef class dcgDrawLayer_(drawingItem):
+cdef class DrawLayer_(drawingItem):
     cdef long _cull_mode
     cdef bint _perspective_divide
     cdef bint _depth_clipping
@@ -281,7 +286,7 @@ cdef class dcgDrawLayer_(drawingItem):
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
 
-cdef class dcgDrawArrow_(drawingItem):
+cdef class DrawArrow_(drawingItem):
     cdef float[4] start
     cdef float[4] end
     cdef float[4] corner1
@@ -292,7 +297,7 @@ cdef class dcgDrawArrow_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
     cdef void __compute_tip(self)
 
-cdef class dcgDrawBezierCubic_(drawingItem):
+cdef class DrawBezierCubic_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -302,7 +307,7 @@ cdef class dcgDrawBezierCubic_(drawingItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawBezierQuadratic_(drawingItem):
+cdef class DrawBezierQuadratic_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -311,7 +316,7 @@ cdef class dcgDrawBezierQuadratic_(drawingItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawCircle_(drawingItem):
+cdef class DrawCircle_(drawingItem):
     cdef float[4] center
     cdef float radius
     cdef imgui.ImU32 color
@@ -320,7 +325,7 @@ cdef class dcgDrawCircle_(drawingItem):
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawEllipse_(drawingItem):
+cdef class DrawEllipse_(drawingItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -331,15 +336,15 @@ cdef class dcgDrawEllipse_(drawingItem):
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawImage_(drawingItem):
+cdef class DrawImage_(drawingItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef float[4] uv
     cdef imgui.ImU32 color_multiplier
-    cdef dcgTexture texture
+    cdef Texture texture
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawImageQuad_(drawingItem):
+cdef class DrawImageQuad_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -350,24 +355,24 @@ cdef class dcgDrawImageQuad_(drawingItem):
     cdef float[4] uv3
     cdef float[4] uv4
     cdef imgui.ImU32 color_multiplier
-    cdef dcgTexture texture
+    cdef Texture texture
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawLine_(drawingItem):
+cdef class DrawLine_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawPolyline_(drawingItem):
+cdef class DrawPolyline_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
     cdef vector[float4] points
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawPolygon_(drawingItem):
+cdef class DrawPolygon_(drawingItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -376,7 +381,7 @@ cdef class dcgDrawPolygon_(drawingItem):
     cdef void __triangulate(self)
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawQuad_(drawingItem):
+cdef class DrawQuad_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -386,7 +391,7 @@ cdef class dcgDrawQuad_(drawingItem):
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawRect_(drawingItem):
+cdef class DrawRect_(drawingItem):
     cdef float[4] pmin
     cdef float[4] pmax
     cdef imgui.ImU32 color
@@ -400,14 +405,14 @@ cdef class dcgDrawRect_(drawingItem):
     cdef bint multicolor
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dgcDrawText_(drawingItem):
+cdef class DrawText_(drawingItem):
     cdef float[4] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgDrawTriangle_(drawingItem):
+cdef class DrawTriangle_(drawingItem):
     cdef float[4] p1
     cdef float[4] p2
     cdef float[4] p3
@@ -417,7 +422,7 @@ cdef class dcgDrawTriangle_(drawingItem):
     cdef int cull_mode
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-cdef class dcgViewportDrawList_(baseItem):
+cdef class ViewportDrawList_(baseItem):
     cdef bint _front
     cdef bint _show
     cdef void draw(self) noexcept nogil
@@ -425,52 +430,52 @@ cdef class dcgViewportDrawList_(baseItem):
 
 cdef class globalHandler(baseItem):
     cdef bint enabled
-    cdef dcgCallback callback
+    cdef Callback callback
     cdef void run_handler(self) noexcept nogil
     cdef void run_callback(self) noexcept nogil
 
-cdef class dcgGlobalHandlerList(globalHandler):
+cdef class GlobalHandlerList(globalHandler):
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgKeyDownHandler_(globalHandler):
+cdef class KeyDownHandler_(globalHandler):
     cdef int key
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgKeyPressHandler_(globalHandler):
+cdef class KeyPressHandler_(globalHandler):
     cdef int key
     cdef bint repeat
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgKeyReleaseHandler_(globalHandler):
+cdef class KeyReleaseHandler_(globalHandler):
     cdef int key
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseClickHandler_(globalHandler):
+cdef class MouseClickHandler_(globalHandler):
     cdef int button
     cdef bint repeat
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseDoubleClickHandler_(globalHandler):
+cdef class MouseDoubleClickHandler_(globalHandler):
     cdef int button
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseDownHandler_(globalHandler):
+cdef class MouseDownHandler_(globalHandler):
     cdef int button
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseDragHandler_(globalHandler):
+cdef class MouseDragHandler_(globalHandler):
     cdef int button
     cdef float threshold
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseMoveHandler(globalHandler):
+cdef class MouseMoveHandler(globalHandler):
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseReleaseHandler_(globalHandler):
+cdef class MouseReleaseHandler_(globalHandler):
     cdef int button
     cdef void run_handler(self) noexcept nogil
 
-cdef class dcgMouseWheelHandler(globalHandler):
+cdef class MouseWheelHandler(globalHandler):
     cdef bint _horizontal
     cdef void run_handler(self) noexcept nogil
 
@@ -479,9 +484,9 @@ Shared values (sources)
 
 Should we use cdef recursive_mutex mutex ?
 """
-cdef class shared_value:
+cdef class SharedValue:
     cdef recursive_mutex mutex
-    cdef dcgContext context
+    cdef Context context
     cdef int _num_attached # number of items the value is attached to
     cdef int _last_frame_update
     cdef int _last_frame_change
@@ -489,24 +494,24 @@ cdef class shared_value:
     cdef void inc_num_attached(self) noexcept nogil
     cdef void dec_num_attached(self) noexcept nogil
 
-cdef class shared_bool(shared_value):
+cdef class SharedBool(SharedValue):
     cdef bint _value
     # Internal functions.
     # python uses get_value and set_value
     cdef bint get(self) noexcept nogil
     cdef void set(self, bint) noexcept nogil
 
-cdef class shared_float(shared_value):
+cdef class SharedFloat(SharedValue):
     cdef float _value
     cdef float get(self) noexcept nogil
     cdef void set(self, float) noexcept nogil
 
-cdef class shared_int(shared_value):
+cdef class SharedInt(SharedValue):
     cdef int _value
     cdef int get(self) noexcept nogil
     cdef void set(self, int) noexcept nogil
 
-cdef class shared_color(shared_value):
+cdef class SharedColor(SharedValue):
     cdef imgui.ImU32 _value
     cdef imgui.ImVec4 _value_asfloat4
     cdef imgui.ImU32 getU32(self) noexcept nogil
@@ -514,44 +519,44 @@ cdef class shared_color(shared_value):
     cdef void setU32(self, imgui.ImU32) noexcept nogil
     cdef void setF4(self, imgui.ImVec4) noexcept nogil
 
-cdef class shared_double(shared_value):
+cdef class SharedDouble(SharedValue):
     cdef double _value
     cdef double get(self) noexcept nogil
     cdef void set(self, double) noexcept nogil
 
-cdef class shared_str(shared_value):
+cdef class SharedStr(SharedValue):
     cdef string _value
     cdef void get(self, string&) noexcept nogil
     cdef void set(self, string) noexcept nogil
 
-cdef class shared_float4(shared_value):
+cdef class SharedFloat4(SharedValue):
     cdef float[4] _value
     cdef void get(self, float *) noexcept nogil# cython does support float[4] as return value
     cdef void set(self, float[4]) noexcept nogil
 
-cdef class shared_int4(shared_value):
+cdef class SharedInt4(SharedValue):
     cdef int[4] _value
     cdef void get(self, int *) noexcept nogil
     cdef void set(self, int[4]) noexcept nogil
 
-cdef class shared_double4(shared_value):
+cdef class SharedDouble4(SharedValue):
     cdef double[4] _value
     cdef void get(self, double *) noexcept nogil
     cdef void set(self, double[4]) noexcept nogil
 
-cdef class shared_floatvect(shared_value):
+cdef class SharedFloatVect(SharedValue):
     cdef cnp.ndarray _value_np
     cdef float[:] _value
     cdef float[:] get(self) noexcept nogil
     cdef void set(self, float[:]) noexcept nogil
 """
-cdef class shared_doublevect:
+cdef class SharedDoubleVect:
     cdef double[:] _value
     cdef double[:] get(self) noexcept nogil
     cdef void set(self, double[:]) noexcept nogil
 
 
-cdef class shared_time:
+cdef class SharedTime:
     cdef tm _value
     cdef tm get(self) noexcept nogil
     cdef void set(self, tm) noexcept nogil
@@ -599,14 +604,22 @@ cdef struct itemState:
 
 cdef class itemHandler(baseItem):
     cdef bint enabled
-    cdef dcgCallback callback
-    cdef void check_bind(self, uiItem)
-    cdef void run_handler(self, uiItem) noexcept nogil
-    cdef void run_callback(self, uiItem) noexcept nogil
+    cdef Callback callback
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_callback(self, baseItem) noexcept nogil
 
-cdef class dcgItemHandlerList(itemHandler):
-    cdef void check_bind(self, uiItem)
-    cdef void run_handler(self, uiItem) noexcept nogil
+cpdef enum handlerListOP:
+    ALL,
+    ANY,
+    NONE
+
+cdef class ItemHandlerList(itemHandler):
+    cdef handlerListOP _op
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class uiItem(baseItem):
     cdef string imgui_label
@@ -638,12 +651,12 @@ cdef class uiItem(baseItem):
     cdef theme_categories theme_condition_category
     #cdef float trackOffset
     #cdef bint tracked
-    cdef dcgCallback dragCallback
-    cdef dcgCallback dropCallback
-    cdef itemHandler handlers
+    cdef Callback dragCallback
+    cdef Callback dropCallback
+    cdef itemHandler _handler
     cdef baseTheme _theme
-    cdef dcgCallback _callback
-    cdef shared_value _value
+    cdef Callback _callback
+    cdef SharedValue _value
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate(self) noexcept nogil
@@ -653,13 +666,13 @@ cdef class uiItem(baseItem):
     cdef void draw(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgDrawInWindow(uiItem):
+cdef class DrawInWindow(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 """
 Simple UI elements
 """
-cdef class dcgSimplePlot(uiItem):
+cdef class SimplePlot(uiItem):
     cdef string _overlay
     cdef float _scale_min
     cdef float _scale_max
@@ -669,7 +682,7 @@ cdef class dcgSimplePlot(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgButton(uiItem):
+cdef class Button(uiItem):
     cdef imgui.ImGuiDir _direction
     cdef bint _small
     cdef bint _arrow
@@ -677,18 +690,18 @@ cdef class dcgButton(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgCombo(uiItem):
+cdef class Combo(uiItem):
     cdef imgui.ImGuiComboFlags flags
     cdef vector[string] _items
     cdef string disabled_value
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgCheckbox(uiItem):
+cdef class Checkbox(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgSlider(uiItem):
+cdef class Slider(uiItem):
     cdef int _size
     cdef int _format
     cdef bint _drag
@@ -701,19 +714,19 @@ cdef class dcgSlider(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgListBox(uiItem):
+cdef class ListBox(uiItem):
     cdef vector[string] _items
     cdef int _num_items_shown_when_open
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgRadioButton(uiItem):
+cdef class RadioButton(uiItem):
     cdef vector[string] _items
     cdef bint _horizontal
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgInputText(uiItem):
+cdef class InputText(uiItem):
     cdef string _hint
     cdef bint _multiline
     cdef int _max_characters
@@ -721,7 +734,7 @@ cdef class dcgInputText(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgInputValue(uiItem):
+cdef class InputValue(uiItem):
     cdef int _size
     cdef int _format
     cdef double _step
@@ -733,7 +746,7 @@ cdef class dcgInputValue(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgText(uiItem):
+cdef class Text(uiItem):
     cdef imgui.ImU32 _color
     cdef int _wrap
     cdef bint _bullet
@@ -741,76 +754,78 @@ cdef class dcgText(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgSelectable(uiItem):
+cdef class Selectable(uiItem):
     cdef imgui.ImGuiSelectableFlags flags
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgMenuItem(uiItem):
+cdef class MenuItem(uiItem):
     cdef string _shortcut
     cdef bint _check
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgProgressBar(uiItem):
+cdef class ProgressBar(uiItem):
     cdef string _overlay
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgImage(uiItem):
+cdef class Image(uiItem):
     cdef float[4] _uv
     cdef imgui.ImU32 _color_multiplier
     cdef imgui.ImU32 _border_color
-    cdef dcgTexture _texture
+    cdef Texture _texture
     cdef bint draw_item(self) noexcept nogil
 
 
-cdef class dcgImageButton(uiItem):
+cdef class ImageButton(uiItem):
     cdef float[4] _uv
     cdef imgui.ImU32 _color_multiplier
     cdef imgui.ImU32 _background_color
-    cdef dcgTexture _texture
+    cdef Texture _texture
     cdef int _frame_padding
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgSeparator(uiItem):
+cdef class Separator(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgSpacer(uiItem):
+cdef class Spacer(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgMenuBar(uiItem):
+cdef class MenuBar(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgMenu(uiItem):
+cdef class Menu(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgTooltip(uiItem):
+cdef class Tooltip(uiItem):
     cdef float _delay
     cdef bint _hide_on_activity
     cdef bint _only_if_previous_item_hovered
     cdef bint _only_if_
+    cdef baseItem _target
+    cdef itemState *target_state
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgTabButton(uiItem):
+cdef class TabButton(uiItem):
     cdef imgui.ImGuiTabBarFlags flags
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgTab(uiItem):
+cdef class Tab(uiItem):
     cdef bint _closable
     cdef imgui.ImGuiTabItemFlags flags
 
-cdef class dcgTabBar(uiItem):
+cdef class TabBar(uiItem):
     cdef imgui.ImGuiTabBarFlags flags
 
-cdef class dcgGroup(uiItem):
+cdef class Group(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgTreeNode(uiItem):
+cdef class TreeNode(uiItem):
     cdef imgui.ImGuiTreeNodeFlags flags
     cdef bint _selectable
     cdef bint draw_item(self) noexcept nogil
 
-cdef class dcgCollapsingHeader(uiItem):
+cdef class CollapsingHeader(uiItem):
     cdef imgui.ImGuiTreeNodeFlags flags
     cdef bint _closable
     cdef bint draw_item(self) noexcept nogil
@@ -819,7 +834,10 @@ cdef class dcgCollapsingHeader(uiItem):
 Complex UI elements
 """
 
-cdef class dcgWindow(uiItem):
+cdef class TimeWatcher(uiItem):
+    pass
+
+cdef class Window(uiItem):
     cdef imgui.ImGuiWindowFlags window_flags
     cdef bint main_window
     cdef bint resized
@@ -838,7 +856,7 @@ cdef class dcgWindow(uiItem):
     cdef bint no_background
     cdef bint collapsed
     cdef bint no_open_over_existing_popup
-    cdef dcgCallback on_close_callback
+    cdef Callback on_close_callback
     cdef imgui.ImVec2 min_size
     cdef imgui.ImVec2 max_size
     cdef float scroll_x
@@ -857,7 +875,7 @@ cdef class dcgWindow(uiItem):
 Bindable elements
 """
 
-cdef class dcgTexture(baseItem):
+cdef class Texture(baseItem):
     cdef recursive_mutex write_mutex
     cdef bint _hint_dynamic
     cdef bint dynamic
@@ -909,7 +927,8 @@ cpdef enum theme_categories:
     t_group,
     t_treenode,
     t_collapsingheader,
-    t_window
+    t_window,
+    t_plot
 
 cdef enum theme_value_types:
     t_int,
@@ -950,6 +969,123 @@ cdef class baseTheme(baseItem):
     cdef void push(self) noexcept nogil
     cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
     cdef void pop(self) noexcept nogil
+
+"""
+Plots
+"""
+
+cpdef enum AxisScale:
+    linear=implot.ImPlotScale_Linear
+    time=implot.ImPlotScale_Time
+    log10=implot.ImPlotScale_Log10
+    symlog=implot.ImPlotScale_SymLog
+
+cpdef enum Axis:
+    X1=implot.ImAxis_X1
+    X2=implot.ImAxis_X2
+    X3=implot.ImAxis_X3
+    Y1=implot.ImAxis_Y1
+    Y2=implot.ImAxis_Y2
+    Y3=implot.ImAxis_Y3
+
+cpdef enum LegendLocation:
+    center=implot.ImPlotLocation_Center
+    north=implot.ImPlotLocation_Center
+    south=implot.ImPlotLocation_Center
+    west=implot.ImPlotLocation_Center
+    east=implot.ImPlotLocation_Center
+    northwest=implot.ImPlotLocation_NorthWest
+    northeast=implot.ImPlotLocation_NorthEast
+    southwest=implot.ImPlotLocation_SouthWest
+    southeast=implot.ImPlotLocation_SouthEast
+
+cdef class PlotAxisConfig(baseItem):
+    cdef bint _enabled
+    cdef AxisScale _scale
+    cdef string _tick_format
+    cdef implot.ImPlotAxisFlags flags
+    cdef double _min
+    cdef double _max
+    cdef int last_frame_minmax_update
+    cdef double _constraint_min
+    cdef double _constraint_max
+    cdef double _zoom_min
+    cdef double _zoom_max
+    cdef double _mouse_coord
+    cdef itemState state
+    cdef itemHandler _handler
+    cdef void setup(self, implot.ImAxis) noexcept nogil
+    cdef void after_draw(self, implot.ImAxis) noexcept nogil
+    cdef void set_hidden(self) noexcept nogil
+
+cdef class PlotLegendConfig(baseItem):
+    cdef bint _show
+    cdef LegendLocation _location
+    cdef implot.ImPlotLegendFlags flags
+    cdef void setup(self) noexcept nogil
+    cdef void after_draw(self) noexcept nogil
+
+cdef class Plot(uiItem):
+    cdef PlotAxisConfig _X1
+    cdef PlotAxisConfig _X2
+    cdef PlotAxisConfig _X3
+    cdef PlotAxisConfig _Y1
+    cdef PlotAxisConfig _Y2
+    cdef PlotAxisConfig _Y3
+    cdef PlotLegendConfig _legend
+    cdef int _pan_button
+    cdef imgui.ImGuiKeyChord _pan_modifier
+    cdef int _fit_button
+    cdef int _menu_button
+    cdef int _select_button
+    cdef imgui.ImGuiKeyChord _select_mod
+    cdef int _select_cancel_button
+    cdef imgui.ImGuiKeyChord _override_mod
+    cdef imgui.ImGuiKeyChord _query_toggle_mod
+    cdef imgui.ImGuiKeyChord _select_horz_mod
+    cdef imgui.ImGuiKeyChord _select_vert_mod
+    cdef imgui.ImGuiKeyChord _zoom_mod
+    cdef float _zoom_rate
+    cdef bint _query_enabled
+    cdef imgui.ImU32 _query_color
+    cdef int _min_query_rects
+    cdef int _max_query_rects
+    cdef bint _use_local_time
+    cdef bint _use_ISO8601
+    cdef bint _use_24hour_clock
+    cdef implot.ImPlotFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class plotElement(baseItem):
+    cdef string imgui_label
+    cdef str user_label
+    cdef itemState state
+    cdef int flags
+    cdef bint _show
+    cdef bint _legend
+    cdef int[2] _axes
+    cdef int _legend_button
+    cdef baseTheme _theme
+    cdef itemHandler _handler
+    cdef void draw(self) noexcept nogil
+    cdef void draw_element(self) noexcept nogil
+
+cdef class plotElementXY(plotElement):
+    cdef cnp.ndarray _X
+    cdef cnp.ndarray _Y
+    cdef void check_arrays(self) noexcept nogil
+
+cdef class PlotLine(plotElementXY):
+    cdef void draw_element(self) noexcept nogil
+
+cdef class plotElementXYY(plotElement):
+    cdef cnp.ndarray _X
+    cdef cnp.ndarray _Y1
+    cdef cnp.ndarray _Y2
+    cdef void check_arrays(self) noexcept nogil
+
+cdef class PlotShadedLine(plotElementXYY):
+    cdef void draw_element(self) noexcept nogil
 
 """
 Utils that the other pyx may use

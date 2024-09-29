@@ -17,6 +17,7 @@ from libcpp cimport bool
 import traceback
 
 cimport cython
+cimport cython.view
 from cython.operator cimport dereference
 from cpython.ref cimport PyObject
 
@@ -39,6 +40,7 @@ cimport dearcygui.backends.time as ctime
 
 import numpy as np
 cimport numpy as cnp
+cnp.import_array()
 
 import scipy
 import scipy.spatial
@@ -48,26 +50,26 @@ import threading
 cdef void internal_resize_callback(void *object, int a, int b) noexcept nogil:
     with gil:
         try:
-            (<dcgViewport>object).__on_resize(a, b)
+            (<Viewport>object).__on_resize(a, b)
         except Exception as e:
             print("An error occured in the viewport resize callback", traceback.format_exc())
 
 cdef void internal_close_callback(void *object) noexcept nogil:
     with gil:
         try:
-            (<dcgViewport>object).__on_close()
+            (<Viewport>object).__on_close()
         except Exception as e:
             print("An error occured in the viewport close callback", traceback.format_exc())
 
 cdef void internal_render_callback(void *object) noexcept nogil:
-    (<dcgViewport>object).__render()
+    (<Viewport>object).__render()
 
 # The no gc clear flag enforces that in case
-# of no-reference cycle detected, the dcgContext is freed last.
-# The cycle is due to dcgContext referencing dcgViewport
+# of no-reference cycle detected, the Context is freed last.
+# The cycle is due to Context referencing Viewport
 # and vice-versa
 
-cdef class dcgContext:
+cdef class Context:
     """
     Main class managing the DearCyGui items and imgui context.
     There is exactly one viewport per context.
@@ -88,7 +90,7 @@ cdef class dcgContext:
         self.uuid_to_tag = dict()
         self.tag_to_uuid = dict()
         self.threadlocal_data = threading.local()
-        self.viewport = dcgViewport(self)
+        self.viewport = Viewport(self)
         self.resetTheme = False
         imgui.IMGUI_CHECKVERSION()
         self.imgui_context = imgui.CreateContext()
@@ -118,7 +120,7 @@ cdef class dcgContext:
         if self.queue is not None:
             self.queue.shutdown(wait=True)
 
-    cdef void queue_callback_noarg(self, dcgCallback callback, baseItem parent_item) noexcept nogil:
+    cdef void queue_callback_noarg(self, Callback callback, baseItem parent_item) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -127,7 +129,7 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1obj(self, dcgCallback callback, baseItem parent_item, baseItem arg1) noexcept nogil:
+    cdef void queue_callback_arg1obj(self, Callback callback, baseItem parent_item, baseItem arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -136,7 +138,7 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1int(self, dcgCallback callback, baseItem parent_item, int arg1) noexcept nogil:
+    cdef void queue_callback_arg1int(self, Callback callback, baseItem parent_item, int arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -145,7 +147,7 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1float(self, dcgCallback callback, baseItem parent_item, float arg1) noexcept nogil:
+    cdef void queue_callback_arg1float(self, Callback callback, baseItem parent_item, float arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -154,7 +156,7 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1value(self, dcgCallback callback, baseItem parent_item, shared_value arg1) noexcept nogil:
+    cdef void queue_callback_arg1value(self, Callback callback, baseItem parent_item, SharedValue arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -164,7 +166,7 @@ cdef class dcgContext:
                 print(traceback.format_exc())
 
 
-    cdef void queue_callback_arg1int1float(self, dcgCallback callback, baseItem parent_item, int arg1, float arg2) noexcept nogil:
+    cdef void queue_callback_arg1int1float(self, Callback callback, baseItem parent_item, int arg1, float arg2) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -173,7 +175,7 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg2float(self, dcgCallback callback, baseItem parent_item, float arg1, float arg2) noexcept nogil:
+    cdef void queue_callback_arg2float(self, Callback callback, baseItem parent_item, float arg1, float arg2) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -182,7 +184,7 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1int2float(self, dcgCallback callback, baseItem parent_item, int arg1, float arg2, float arg3) noexcept nogil:
+    cdef void queue_callback_arg1int2float(self, Callback callback, baseItem parent_item, int arg1, float arg2, float arg3) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -191,7 +193,16 @@ cdef class dcgContext:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg4int(self, dcgCallback callback, baseItem parent_item, int arg1, int arg2, int arg3, int arg4) noexcept nogil:
+    cdef void queue_callback_arg4int(self, Callback callback, baseItem parent_item, int arg1, int arg2, int arg3, int arg4) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, (arg1, arg2, arg3, arg4), parent_item._user_data)
+            except Exception as e:
+                print(traceback.format_exc())
+
+    cdef void queue_callback_arg3long1int(self, Callback callback, baseItem parent_item, long long arg1, long long arg2, long long arg3, int arg4) noexcept nogil:
         if callback is None:
             return
         with gil:
@@ -305,7 +316,7 @@ cdef class dcgContext:
         Retrieves the object associated to
         a tag or an uuid
         """
-        if isinstance(key, baseItem) or isinstance(key, shared_value):
+        if isinstance(key, baseItem) or isinstance(key, SharedValue):
             # TODO: register shared values
             # Useful for legacy call wrappers
             return key
@@ -554,14 +565,18 @@ cdef class dcgContext:
     def clipboard(self):
         """Writable attribute: content of the clipboard"""
         cdef unique_lock[recursive_mutex] m
+        if not(self.viewport.initialized):
+            return ""
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.GetClipboardText()
+        return str(imgui.GetClipboardText())
 
     @clipboard.setter
     def clipboard(self, str value):
         cdef string value_str = bytes(value, 'utf-8')
         cdef unique_lock[recursive_mutex] m
+        if not(self.viewport.initialized):
+            return
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
         imgui.SetClipboardText(value_str.c_str())
@@ -623,8 +638,8 @@ cdef class baseItem:
     type.
 
     Finally some items cannot be children of any item in the rendering
-    tree. One such item is dcgPlaceHolderParent, which can be parent
-    of any item which can have a parent. dcgPlaceHolderParent cannot
+    tree. One such item is PlaceHolderParent, which can be parent
+    of any item which can have a parent. PlaceHolderParent cannot
     be inserted in the rendering tree, but can be used to store items
     before their insertion in the rendering tree.
     Other such items are textures, themes, colormaps and fonts. Those
@@ -639,8 +654,8 @@ cdef class baseItem:
             self.configure(*args, **kwargs)
 
     def __cinit__(self, context, *args, **kwargs):
-        if not(isinstance(context, dcgContext)):
-            raise ValueError("Provided context is not a valid dcgContext instance")
+        if not(isinstance(context, Context)):
+            raise ValueError("Provided context is not a valid Context instance")
         self.context = context
         self.external_lock = False
         self.uuid = self.context.next_uuid.fetch_add(1)
@@ -659,16 +674,38 @@ cdef class baseItem:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # Legacy DPG support: automatic attachement
-        if self._parent is None:
+        should_attach = kwargs.pop("attach", None)
+        cdef bint ignore_if_fail = False
+        if should_attach is None:
+            # None: default to False for items which
+            # cannot be attached, True else
+            if self.element_child_category == -1:
+                should_attach = False
+            else:
+                should_attach = True
+                # To avoid failing on items which cannot
+                # be attached to the rendering tree but
+                # can be attached to other items
+                ignore_if_fail = True
+        if self._parent is None and should_attach:
             before = kwargs.pop("before", None)
             parent = kwargs.pop("parent", None)
             if before is not None:
+                # parent manually set. Do not ignore failure
+                ignore_if_fail = False
                 self.attach_before(before)
             else:
                 if parent is None:
                     parent = self.context.fetch_parent_queue_back()
-                if parent is not None:
-                    self.attach_to_parent(parent)
+                else:
+                    # parent manually set. Do not ignore failure
+                    ignore_if_fail = False
+                try:
+                    if parent is not None:
+                        self.attach_to_parent(parent)
+                except Exception as e:
+                    if not(ignore_if_fail):
+                        raise(e)
         else:
             if "before" in kwargs:
                 del kwargs["before"]
@@ -676,9 +713,9 @@ cdef class baseItem:
                 del kwargs["parent"]
         remaining = {}
         for (key, value) in kwargs.items():
-            if hasattr(self, key):
+            try:
                 setattr(self, key, value)
-            else:
+            except AttributeError:
                 remaining[key] = value
         if len(remaining) > 0:
             print("Unused configure parameters: ", remaining)
@@ -865,6 +902,10 @@ cdef class baseItem:
         while item is not None:
             result.append(item)
             item = item._prev_sibling
+        item = self.last_plot_element_child
+        while item is not None:
+            result.append(item)
+            item = item._prev_sibling
         item = self.last_payloads_child
         while item is not None:
             result.append(item)
@@ -1032,6 +1073,15 @@ cdef class baseItem:
                 self._parent = target_parent
                 target_parent.last_menubar_child = <uiItem>self
                 attached = True
+        elif self.element_child_category == child_type.cat_plot_element:
+            if target_parent.can_have_plot_element_child:
+                if target_parent.last_plot_element_child is not None:
+                    lock_gil_friendly(m3, target_parent.last_plot_element_child.mutex)
+                    target_parent.last_plot_element_child._next_sibling = self
+                self._prev_sibling = target_parent.last_plot_element_child
+                self._parent = target_parent
+                target_parent.last_plot_element_child = <plotElement>self
+                attached = True
         elif self.element_child_category == child_type.cat_tab:
             if target_parent.can_have_tab_child:
                 if target_parent.last_tab_child is not None:
@@ -1066,7 +1116,7 @@ cdef class baseItem:
                     target_parent.last_window_child._next_sibling = self
                 self._prev_sibling = target_parent.last_window_child
                 self._parent = target_parent
-                target_parent.last_window_child = <dcgWindow>self
+                target_parent.last_window_child = <Window>self
                 attached = True
         if not(attached):
             raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
@@ -1172,6 +1222,8 @@ cdef class baseItem:
                     self._parent.last_drawings_child = self._prev_sibling
                 elif self._parent.last_payloads_child is self:
                     self._parent.last_payloads_child = self._prev_sibling
+                elif self._parent.last_plot_element_child is self:
+                    self._parent.last_plot_element_child = self._prev_sibling
                 elif self._parent.last_global_handler_child is self:
                     self._parent.last_global_handler_child = self._prev_sibling
                 elif self._parent.last_item_handler_child is self:
@@ -1247,6 +1299,8 @@ cdef class baseItem:
                     self._parent.last_drawings_child = self._prev_sibling
                 elif self._parent.last_payloads_child is self:
                     self._parent.last_payloads_child = self._prev_sibling
+                elif self._parent.last_plot_element_child is self:
+                    self._parent.last_plot_element_child = self._prev_sibling
                 elif self._parent.last_global_handler_child is self:
                     self._parent.last_global_handler_child = self._prev_sibling
                 elif self._parent.last_item_handler_child is self:
@@ -1263,6 +1317,8 @@ cdef class baseItem:
             (<baseItem>self.last_drawings_child).__delete_and_siblings()
         if self.last_payloads_child is not None:
             (<baseItem>self.last_payloads_child).__delete_and_siblings()
+        if self.last_plot_element_child is not None:
+            (<baseItem>self.last_plot_element_child).__delete_and_siblings()
         if self.last_global_handler_child is not None:
             (<baseItem>self.last_global_handler_child).__delete_and_siblings()
         if self.last_item_handler_child is not None:
@@ -1276,6 +1332,7 @@ cdef class baseItem:
         self.last_widgets_child = None
         self.last_drawings_child = None
         self.last_payloads_child = None
+        self.last_plot_element_child = None
         self.last_global_handler_child = None
         self.last_item_handler_child = None
         self.last_theme_child = None
@@ -1295,6 +1352,8 @@ cdef class baseItem:
             (<baseItem>self.last_drawings_child).__delete_and_siblings()
         if self.last_payloads_child is not None:
             (<baseItem>self.last_payloads_child).__delete_and_siblings()
+        if self.last_plot_element_child is not None:
+            (<baseItem>self.last_plot_element_child).__delete_and_siblings()
         if self.last_global_handler_child is not None:
             (<baseItem>self.last_global_handler_child).__delete_and_siblings()
         if self.last_item_handler_child is not None:
@@ -1313,6 +1372,7 @@ cdef class baseItem:
         self.last_widgets_child = None
         self.last_drawings_child = None
         self.last_payloads_child = None
+        self.last_plot_element_child = None
         self.last_global_handler_child = None
         self.last_item_handler_child = None
         self.last_theme_child = None
@@ -1385,7 +1445,7 @@ cdef class baseItem:
 
 @cython.final
 @cython.no_gc_clear
-cdef class dcgViewport(baseItem):
+cdef class Viewport(baseItem):
     """
     The viewport corresponds to the main item containing
     all the visuals. It is decorated by the operating system,
@@ -1815,7 +1875,7 @@ cdef class dcgViewport(baseItem):
     def resize_callback(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self._resize_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+        self._resize_callback = value if isinstance(value, Callback) or value is None else Callback(value)
 
     @property
     def close_callback(self):
@@ -1830,7 +1890,7 @@ cdef class dcgViewport(baseItem):
     def close_callback(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self._close_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+        self._close_callback = value if isinstance(value, Callback) or value is None else Callback(value)
 
     @property
     def metrics(self):
@@ -1863,7 +1923,7 @@ cdef class dcgViewport(baseItem):
             "delta_presenting": self.delta_swapping,
             "delta_whole_frame": self.delta_frame,
             "rendered_vertices": imgui.GetIO().MetricsRenderVertices,
-            "rendered_Indices": imgui.GetIO().MetricsRenderIndices,
+            "rendered_indices": imgui.GetIO().MetricsRenderIndices,
             "rendered_windows": imgui.GetIO().MetricsRenderWindows,
             "active_windows": imgui.GetIO().MetricsActiveWindows,
             "frame_count" : self.frame_count
@@ -1901,6 +1961,7 @@ cdef class dcgViewport(baseItem):
 
     cdef void __render(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.last_t_before_rendering = ctime.monotonic_ns()
         # Initialize drawing state
         if self._theme is not None: # maybe apply in render_frame instead ?
             self._theme.push()
@@ -1926,6 +1987,7 @@ cdef class dcgViewport(baseItem):
             self.last_global_handler_child.run_handler()
         if self._theme is not None:
             self._theme.pop()
+        self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
     cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil:
@@ -2133,11 +2195,11 @@ cdef class dcgViewport(baseItem):
             imgui_m.lock()
             self_m.lock()
             backend_m.lock()
-            self.last_t_before_rendering = ctime.monotonic_ns()
+            #self.last_t_before_rendering = ctime.monotonic_ns()
             ensure_correct_im_context(self.context)
             mvRenderFrame(dereference(self.viewport),
 			    		  self.graphics)
-            self.last_t_after_rendering = ctime.monotonic_ns()
+            #self.last_t_after_rendering = ctime.monotonic_ns()
             backend_m.unlock()
             self_m.unlock()
             imgui_m.unlock()
@@ -2209,14 +2271,15 @@ cdef class dcgViewport(baseItem):
         mvWakeRendering(dereference(self.viewport))
 
 
-cdef class dcgCallback:
+cdef class Callback:
     def __cinit__(self, callback):
         if not(callable(callback)):
-            raise TypeError("dcgCallback requires a callable object")
+            raise TypeError("Callback requires a callable object")
         self.callback = callback
         self.num_args = callback.__code__.co_argcount
         if self.num_args > 3:
-            raise ValueError("Callback function takes too many arguments")
+            self.num_args = 3
+            #raise ValueError("Callback function takes too many arguments")
 
     def __call__(self, item, call_info, user_data):
         try:
@@ -2246,7 +2309,7 @@ To store items outside the rendering tree
 Can be parent to anything.
 Cannot have any parent. Thus cannot render.
 """
-cdef class dcgPlaceHolderParent(baseItem):
+cdef class PlaceHolderParent(baseItem):
     def __cinit__(self):
         self.can_have_drawing_child = True
         self.can_have_global_handler_child = True
@@ -2308,7 +2371,7 @@ cdef class drawingItem(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(l)
 
-cdef class dcgDrawingList(drawingItem):
+cdef class DrawingList(drawingItem):
     """
     A simple drawing item that renders its children.
     Useful to arrange your items and quickly
@@ -2329,9 +2392,9 @@ cdef class dcgDrawingList(drawingItem):
         # draw children
         self.last_drawings_child.draw(drawlist)
 
-cdef class dcgDrawLayer_(drawingItem):
+cdef class DrawLayer_(drawingItem):
     """
-    Similar to a dcgDrawingList, but
+    Similar to a DrawingList, but
     can apply scene clipping, enable
     perspective divide and/or a 4x4 matrix
     transform.
@@ -2372,7 +2435,7 @@ cdef class dcgDrawLayer_(drawingItem):
         # draw children
         self.last_drawings_child.draw(drawlist)
 
-cdef class dcgDrawArrow_(drawingItem):
+cdef class DrawArrow_(drawingItem):
     def __cinit__(self):
         # p1, p2, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2441,7 +2504,7 @@ cdef class dcgDrawArrow_(drawingItem):
         drawlist.AddTriangle(itend, itcorner1, itcorner2, self.color, thickness)
 
 
-cdef class dcgDrawBezierCubic_(drawingItem):
+cdef class DrawBezierCubic_(drawingItem):
     def __cinit__(self):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2473,7 +2536,7 @@ cdef class dcgDrawBezierCubic_(drawingItem):
         cdef imgui.ImVec2 ip4 = imgui.ImVec2(p4[0], p4[1])
         drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self.color, self.thickness, self.segments)
 
-cdef class dcgDrawBezierQuadratic_(drawingItem):
+cdef class DrawBezierQuadratic_(drawingItem):
     def __cinit__(self):
         # p1, etc are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2503,7 +2566,7 @@ cdef class dcgDrawBezierQuadratic_(drawingItem):
         drawlist.AddBezierQuadratic(ip1, ip2, ip3, self.color, self.thickness, self.segments)
 
 
-cdef class dcgDrawCircle_(drawingItem):
+cdef class DrawCircle_(drawingItem):
     def __cinit__(self):
         # center is zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2533,7 +2596,7 @@ cdef class dcgDrawCircle_(drawingItem):
         drawlist.AddCircle(icenter, radius, self.color, self.segments, thickness)
 
 
-cdef class dcgDrawEllipse_(drawingItem):
+cdef class DrawEllipse_(drawingItem):
     # TODO: I adapted the original code,
     # But these deserves rewrite: call the imgui Ellipse functions instead
     # and add rotation parameter
@@ -2597,7 +2660,7 @@ cdef class dcgDrawEllipse_(drawingItem):
                                     thickness)
 
 
-cdef class dcgDrawImage_(drawingItem):
+cdef class DrawImage_(drawingItem):
     def __cinit__(self):
         self.uv = [0., 0., 1., 1.]
         self.color_multiplier = 4294967295 # 0xffffffff
@@ -2622,7 +2685,7 @@ cdef class dcgDrawImage_(drawingItem):
         drawlist.AddImage(self.texture.allocated_texture, ipmin, ipmax, uvmin, uvmax, self.color_multiplier)
 
 
-cdef class dcgDrawImageQuad_(drawingItem):
+cdef class DrawImageQuad_(drawingItem):
     def __cinit__(self):
         # last two fields are unused
         self.uv1 = [0., 0., 0., 0.]
@@ -2666,7 +2729,7 @@ cdef class dcgDrawImageQuad_(drawingItem):
 
 
 
-cdef class dcgDrawLine_(drawingItem):
+cdef class DrawLine_(drawingItem):
     def __cinit__(self):
         # p1, p2 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2691,7 +2754,7 @@ cdef class dcgDrawLine_(drawingItem):
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         drawlist.AddLine(ip1, ip2, self.color, thickness)
 
-cdef class dcgDrawPolyline_(drawingItem):
+cdef class DrawPolyline_(drawingItem):
     def __cinit__(self):
         # points is empty init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2732,7 +2795,7 @@ cdef inline bint is_counter_clockwise(imgui.ImVec2 p1,
     cdef float det = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)
     return det > 0.
 
-cdef class dcgDrawPolygon_(drawingItem):
+cdef class DrawPolygon_(drawingItem):
     def __cinit__(self):
         # points is empty init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2806,7 +2869,7 @@ cdef class dcgDrawPolygon_(drawingItem):
             drawlist.AddLine(ipoints[0], ipoints[<int>self.points.size()-1], self.color, thickness)
 
 
-cdef class dcgDrawQuad_(drawingItem):
+cdef class DrawQuad_(drawingItem):
     def __cinit__(self):
         # p1, p2, p3, p4 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -2866,7 +2929,7 @@ cdef class dcgDrawQuad_(drawingItem):
         drawlist.AddLine(ip4, ip1, self.color, thickness)
 
 
-cdef class dcgDrawRect_(drawingItem):
+cdef class DrawRect_(drawingItem):
     def __cinit__(self):
         self.pmin = [0., 0., 0., 0.]
         self.pmax = [1., 1., 0., 0.]
@@ -2939,7 +3002,7 @@ cdef class dcgDrawRect_(drawingItem):
                                 imgui.ImDrawFlags_RoundCornersAll,
                                 thickness)
 
-cdef class dgcDrawText_(drawingItem):
+cdef class DrawText_(drawingItem):
     def __cinit__(self):
         self.color = 4294967295 # 0xffffffff
         self.size = 1.
@@ -2962,7 +3025,7 @@ cdef class dgcDrawText_(drawingItem):
         drawlist.AddText(NULL, 0., ip, self.color, self.text.c_str())
 
 
-cdef class dcgDrawTriangle_(drawingItem):
+cdef class DrawTriangle_(drawingItem):
     def __cinit__(self):
         # p1, p2, p3 are zero init by cython
         self.color = 4294967295 # 0xffffffff
@@ -3018,7 +3081,7 @@ cdef class dcgDrawTriangle_(drawingItem):
 Items that enable to insert drawings in other elements
 """
 
-cdef class dcgDrawInWindow(uiItem):
+cdef class DrawInWindow(uiItem):
     def __cinit__(self):
         self.can_have_drawing_child = True
         self.state.can_be_clicked = True
@@ -3087,9 +3150,9 @@ cdef class dcgDrawInWindow(uiItem):
         """
         
 
-cdef class dcgViewportDrawList_(baseItem):
+cdef class ViewportDrawList_(baseItem):
     def __cinit__(self):
-        self.element_child_category = child_type.cat_viewportdrawlist
+        self.element_child_category = child_type.cat_viewport_drawlist
         self.can_have_drawing_child = True
         self._show = True
         self._front = True
@@ -3129,7 +3192,7 @@ cdef class globalHandler(baseItem):
         self.enabled = kwargs.pop("enabled", self.enabled)
         self.enabled = kwargs.pop("show", self.enabled)
         callback = kwargs.pop("callback", self.callback)
-        self.callback = callback if isinstance(callback, dcgCallback) or callback is None else dcgCallback(callback)
+        self.callback = callback if isinstance(callback, Callback) or callback is None else Callback(callback)
         return super().configure(**kwargs)
     @property
     def enabled(self):
@@ -3150,7 +3213,7 @@ cdef class globalHandler(baseItem):
     def callback(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+        self.callback = value if isinstance(value, Callback) or value is None else Callback(value)
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
@@ -3160,7 +3223,7 @@ cdef class globalHandler(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.queue_callback_noarg(self.callback, self)
 
-cdef class dcgGlobalHandlerList(globalHandler):
+cdef class GlobalHandlerList(globalHandler):
     def __cinit__(self):
         self.can_have_global_handler_child = True
     cdef void run_handler(self) noexcept nogil:
@@ -3173,7 +3236,7 @@ cdef class dcgGlobalHandlerList(globalHandler):
             (<globalHandler>self.last_global_handler_child).run_handler()
         return
 
-cdef class dcgKeyDownHandler_(globalHandler):
+cdef class KeyDownHandler_(globalHandler):
     def __cinit__(self):
         self.key = imgui.ImGuiKey_None
 
@@ -3195,7 +3258,7 @@ cdef class dcgKeyDownHandler_(globalHandler):
             if key_info.Down:
                 self.context.queue_callback_arg1int1float(self.callback, self, self.key, key_info.DownDuration)
 
-cdef class dcgKeyPressHandler_(globalHandler):
+cdef class KeyPressHandler_(globalHandler):
     def __cinit__(self):
         self.key = imgui.ImGuiKey_None
         self.repeat = True
@@ -3215,7 +3278,7 @@ cdef class dcgKeyPressHandler_(globalHandler):
             if imgui.IsKeyPressed(<imgui.ImGuiKey>self.key, self.repeat):
                 self.context.queue_callback_arg1int(self.callback, self, self.key)
 
-cdef class dcgKeyReleaseHandler_(globalHandler):
+cdef class KeyReleaseHandler_(globalHandler):
     def __cinit__(self):
         self.key = imgui.ImGuiKey_None
 
@@ -3235,7 +3298,7 @@ cdef class dcgKeyReleaseHandler_(globalHandler):
                 self.context.queue_callback_arg1int(self.callback, self, self.key)
 
 
-cdef class dcgMouseClickHandler_(globalHandler):
+cdef class MouseClickHandler_(globalHandler):
     def __cinit__(self):
         self.button = -1
         self.repeat = False
@@ -3253,7 +3316,7 @@ cdef class dcgMouseClickHandler_(globalHandler):
             if imgui.IsMouseClicked(i, self.repeat):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class dcgMouseDoubleClickHandler_(globalHandler):
+cdef class MouseDoubleClickHandler_(globalHandler):
     def __cinit__(self):
         self.button = -1
 
@@ -3271,7 +3334,7 @@ cdef class dcgMouseDoubleClickHandler_(globalHandler):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
 
-cdef class dcgMouseDownHandler_(globalHandler):
+cdef class MouseDownHandler_(globalHandler):
     def __cinit__(self):
         self.button = -1
 
@@ -3288,7 +3351,7 @@ cdef class dcgMouseDownHandler_(globalHandler):
             if imgui.IsMouseDown(i):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class dcgMouseDragHandler_(globalHandler):
+cdef class MouseDragHandler_(globalHandler):
     def __cinit__(self):
         self.button = -1
         self.threshold = -1 # < 0. means use default
@@ -3308,7 +3371,7 @@ cdef class dcgMouseDragHandler_(globalHandler):
                 self.context.queue_callback_arg1int2float(self.callback, self, i, delta.x, delta.y)
 
 
-cdef class dcgMouseMoveHandler(globalHandler):
+cdef class MouseMoveHandler(globalHandler):
     cdef void run_handler(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
@@ -3321,7 +3384,7 @@ cdef class dcgMouseMoveHandler(globalHandler):
             self.context.queue_callback_arg2float(self.callback, self, io.MousePos.x, io.MousePos.y)
             
 
-cdef class dcgMouseReleaseHandler_(globalHandler):
+cdef class MouseReleaseHandler_(globalHandler):
     def __cinit__(self):
         self.button = -1
 
@@ -3338,7 +3401,7 @@ cdef class dcgMouseReleaseHandler_(globalHandler):
             if imgui.IsMouseReleased(i):
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class dcgMouseWheelHandler(globalHandler):
+cdef class MouseWheelHandler(globalHandler):
     def __cinit__(self, *args, **kwargs):
         self._horizontal = False
 
@@ -3378,14 +3441,14 @@ cdef class dcgMouseWheelHandler(globalHandler):
 Sources
 """
 
-cdef class shared_value:
+cdef class SharedValue:
     def __init__(self, *args, **kwargs):
         # We create all shared objects using __new__, thus
         # bypassing __init__. If __init__ is called, it's
         # from the user.
         # __init__ is called after __cinit__
         self._num_attached = 0
-    def __cinit__(self, dcgContext context, *args, **kwargs):
+    def __cinit__(self, Context context, *args, **kwargs):
         self.context = context
         self._last_frame_change = context.viewport.frame_count
         self._last_frame_update = context.viewport.frame_count
@@ -3442,8 +3505,8 @@ cdef class shared_value:
         self._num_attached -= 1
 
 
-cdef class shared_bool(shared_value):
-    def __init__(self, dcgContext context, bint value):
+cdef class SharedBool(SharedValue):
+    def __init__(self, Context context, bint value):
         self._value = value
         self._num_attached = 0
     @property
@@ -3467,8 +3530,8 @@ cdef class shared_bool(shared_value):
         self._value = value
         self.on_update(changed)
 
-cdef class shared_float(shared_value):
-    def __init__(self, dcgContext context, float value):
+cdef class SharedFloat(SharedValue):
+    def __init__(self, Context context, float value):
         self._value = value
         self._num_attached = 0
     @property
@@ -3492,8 +3555,8 @@ cdef class shared_float(shared_value):
         self._value = value
         self.on_update(changed)
 
-cdef class shared_int(shared_value):
-    def __init__(self, dcgContext context, int value):
+cdef class SharedInt(SharedValue):
+    def __init__(self, Context context, int value):
         self._value = value
         self._num_attached = 0
     @property
@@ -3517,8 +3580,8 @@ cdef class shared_int(shared_value):
         self._value = value
         self.on_update(changed)
 
-cdef class shared_color(shared_value):
-    def __init__(self, dcgContext context, value):
+cdef class SharedColor(SharedValue):
+    def __init__(self, Context context, value):
         self._value = parse_color(value)
         self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
         self._num_attached = 0
@@ -3554,8 +3617,8 @@ cdef class shared_color(shared_value):
         self._value = imgui.ColorConvertFloat4ToU32(self._value_asfloat4)
         self.on_update(True)
 
-cdef class shared_double(shared_value):
-    def __init__(self, dcgContext context, double value):
+cdef class SharedDouble(SharedValue):
+    def __init__(self, Context context, double value):
         self._value = value
         self._num_attached = 0
     @property
@@ -3579,8 +3642,8 @@ cdef class shared_double(shared_value):
         self._value = value
         self.on_update(changed)
 
-cdef class shared_str(shared_value):
-    def __init__(self, dcgContext context, str value):
+cdef class SharedStr(SharedValue):
+    def __init__(self, Context context, str value):
         self._value = bytes(str(value), 'utf-8')
         self._num_attached = 0
     @property
@@ -3602,8 +3665,8 @@ cdef class shared_str(shared_value):
         self._value = value
         self.on_update(True)
 
-cdef class shared_float4(shared_value):
-    def __init__(self, dcgContext context, value):
+cdef class SharedFloat4(SharedValue):
+    def __init__(self, Context context, value):
         read_point[float](self._value, value)
         self._num_attached = 0
     @property
@@ -3631,8 +3694,8 @@ cdef class shared_float4(shared_value):
         self._value[3] = value[3]
         self.on_update(True)
 
-cdef class shared_int4(shared_value):
-    def __init__(self, dcgContext context, value):
+cdef class SharedInt4(SharedValue):
+    def __init__(self, Context context, value):
         read_point[int](self._value, value)
         self._num_attached = 0
     @property
@@ -3660,8 +3723,8 @@ cdef class shared_int4(shared_value):
         self._value[3] = value[3]
         self.on_update(True)
 
-cdef class shared_double4(shared_value):
-    def __init__(self, dcgContext context, value):
+cdef class SharedDouble4(SharedValue):
+    def __init__(self, Context context, value):
         read_point[double](self._value, value)
     @property
     def value(self):
@@ -3688,8 +3751,8 @@ cdef class shared_double4(shared_value):
         self._value[3] = value[3]
         self.on_update(True)
 
-cdef class shared_floatvect(shared_value):
-    def __init__(self, dcgContext context, value):
+cdef class SharedFloatVect(SharedValue):
+    def __init__(self, Context context, value):
         self._value = value
     @property
     def value(self):
@@ -3714,12 +3777,12 @@ cdef class shared_floatvect(shared_value):
         self.on_update(True)
 
 """
-cdef class shared_doublevect:
+cdef class SharedDoubleVect:
     cdef double[:] value
     cdef double[:] get(self) noexcept nogil
     cdef void set(self, double[:]) noexcept nogil
 
-cdef class shared_time:
+cdef class SharedTime:
     cdef tm value
     cdef tm get(self) noexcept nogil
     cdef void set(self, tm) noexcept nogil
@@ -3760,39 +3823,125 @@ cdef class itemHandler(baseItem):
         lock_gil_friendly(m, self.mutex)
         self.enabled = value
 
-    cdef void check_bind(self, uiItem item):
+    @property
+    def callback(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.callback
+    @callback.setter
+    def callback(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.callback = value if isinstance(value, Callback) or value is None else Callback(value)
+
+    cdef void check_bind(self, baseItem item, itemState &state):
+        """
+        Must raise en error if the handler cannot be bound for the
+        target item. We pass both item and state because
+        state might not be positioned at the same space for all
+        items, thus it is better to rely on state for the checks.
+        However to allow subclassing handlers, having item enables
+        to check for specific target classes and read fields that
+        are not in itemState.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
 
-    cdef void run_handler(self, uiItem item) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        """
+        Returns whether the target state it True.
+        Is called by the default implementation of run_handler,
+        which will call the default callback in this case.
+        Classes that might issue non-standard callbacks should
+        override run_handler in addition to check_state.
+        """
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
+            (<itemHandler>self._prev_sibling).run_handler(item, state)
+        if not(self.enabled):
+            return
+        if self.check_state(item, state):
+            self.run_callback(item)
 
-    cdef void run_callback(self, uiItem item) noexcept nogil:
+    cdef void run_callback(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.queue_callback_arg1obj(self.callback, self, item)
 
-cdef class dcgItemHandlerList(itemHandler):
+cdef class ItemHandlerList(itemHandler):
+    """
+    A list of handlers in order to attach several
+    handlers to an item.
+    In addition if you attach a callback to this handler,
+    it will be issued if ALL or ANY of the children handler
+    states are met. NONE is also possible.
+    """
     def __cinit__(self):
         self.can_have_item_handler_child = True
+        self._op = handlerListOP.ANY
 
-    cdef void check_bind(self, uiItem item):
+    @property
+    def op(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._op
+
+    def op(self, handlerListOP value):
+        if value not in [handlerListOP.ALL, handlerListOP.ANY, handlerListOP.NONE]:
+            raise ValueError("Unknown op")
+        self._op = value
+
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
         if self.last_item_handler_child is not None:
-            (<itemHandler>self.last_item_handler_child).check_bind(item)
+            (<itemHandler>self.last_item_handler_child).check_bind(item, state)
 
-    cdef void run_handler(self, uiItem item) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        """
+        Returns whether the target state it True.
+        Is called by the default implementation of run_handler,
+        which will call the default callback in this case.
+        Classes that might issue non-standard callbacks should
+        override run_handler in addition to check_state.
+        """
+        if self.last_item_handler_child is None:
+            return False
+        self.last_item_handler_child.lock_and_previous_siblings()
+        # We use PyObject to avoid refcounting and thus the gil
+        cdef PyObject* child = <PyObject*>self.last_item_handler_child
+        cdef bint current_state = False
+        cdef bint child_state
+        if self._op == handlerListOP.ALL:
+            current_state = True
+        while child is not <PyObject*>None:
+            child_state = (<ItemHandlerList>child).check_state(item, state)
+            child = <PyObject*>((<ItemHandlerList>child).last_item_handler_child)
+            if self._op == handlerListOP.ALL:
+                current_state = current_state and child_state
+            else:
+                current_state = current_state or child_state
+        if self._op == handlerListOP.NONE:
+            # NONE = not(ANY)
+            current_state = not(current_state)
+        self.last_item_handler_child.unlock_and_previous_siblings()
+        return False
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
+            (<itemHandler>self._prev_sibling).run_handler(item, state)
         if self.last_item_handler_child is not None:
-            (<itemHandler>self.last_item_handler_child).run_handler(item)
+            (<itemHandler>self.last_item_handler_child).run_handler(item, state)
+        if self.callback is not None:
+            if self.check_state(item, state):
+                self.run_callback(item)
 
 cdef inline object IntPairFromVec2(imgui.ImVec2 v):
     return (<int>v.x, <int>v.y)
@@ -3802,7 +3951,7 @@ cdef class uiItem(baseItem):
         # mvAppItemInfo
         self.imgui_label = b'###%ld'% self.uuid
         self.user_label = ""
-        self.show = True
+        self._show = True
         self._enabled = True
         self.can_be_disabled = False
         #self.location = -1
@@ -3827,23 +3976,17 @@ cdef class uiItem(baseItem):
         #self.tracked = False
         self.dragCallback = None
         self.dropCallback = None
-        self._value = shared_value(self.context) # To be changed by class
+        self._value = SharedValue(self.context) # To be changed by class
 
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        remaining = {}
-        for (key, value) in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-            # Convert old names to new attributes
-            elif key == "min_size":
-                self.rect_min = value
-            elif key == "max_size":
-                self.rect_max = value
-            else:
-                remaining[key] = value
-        super().configure(**remaining)
+        # Convert old names to new attributes
+        if "min_size" in kwargs:
+            self.rect_min = kwargs.pop("min_size")
+        if "max_size" in kwargs:
+            self.rect_max = kwargs.pop("max_size")
+        super().configure(**kwargs)
 
     cdef void update_current_state(self) noexcept nogil:
         """
@@ -3963,14 +4106,6 @@ cdef class uiItem(baseItem):
         if self._prev_sibling is not None:
             (<uiItem>self._prev_sibling).set_hidden_and_propagate()
         self.update_current_state_as_hidden()
-
-    def bind_handlers(self, itemHandler handlers):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        # Check the list of handlers can use our states. Else raise error
-        handlers.check_bind(self)
-        # yes: bind
-        self.handlers = handlers
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
 
@@ -4226,7 +4361,7 @@ cdef class uiItem(baseItem):
     def callback(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self._callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+        self._callback = value if isinstance(value, Callback) or value is None else Callback(value)
 
     @property
     def enabled(self):
@@ -4423,6 +4558,24 @@ cdef class uiItem(baseItem):
         self._show = value
 
     @property
+    def handler(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._handler
+
+    @handler.setter
+    def handler(self, itemHandler value):
+        """
+        Writable attribute: bound handler for the item.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Check the list of handlers can use our states. Else raise error
+        value.check_bind(self, self.state)
+        # yes: bind
+        self._handler = value
+
+    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -4522,8 +4675,8 @@ cdef class uiItem(baseItem):
             self._theme.pop()
         self.context.viewport.pop_applied_pending_theme_actions()
 
-        if self.handlers is not None:
-            self.handlers.run_handler(self)
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
 
         if self.pos_update_requested:
             imgui.SetCursorPos(cursor_pos_backup)
@@ -4557,10 +4710,10 @@ cdef class uiItem(baseItem):
 Simple ui items
 """
 
-cdef class dcgSimplePlot(uiItem):
+cdef class SimplePlot(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_simpleplot
-        self._value = <shared_value>(shared_floatvect.__new__(shared_floatvect, self.context))
+        self._value = <SharedValue>(SharedFloatVect.__new__(SharedFloatVect, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -4663,7 +4816,7 @@ cdef class dcgSimplePlot(uiItem):
         self._overlay = bytes(str(value), 'utf-8')
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef float[:] data = shared_floatvect.get(<shared_floatvect>self._value)
+        cdef float[:] data = SharedFloatVect.get(<SharedFloatVect>self._value)
         cdef int i
         if self._autoscale and data.shape[0] > 0:
             if self._value._last_frame_change != self.last_frame_autoscale_update:
@@ -4699,10 +4852,10 @@ cdef class dcgSimplePlot(uiItem):
         self.update_current_state()
         return False
 
-cdef class dcgButton(uiItem):
+cdef class Button(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_button
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -4795,14 +4948,14 @@ cdef class dcgButton(uiItem):
                                      self.requested_size)
         imgui.PopItemFlag()
         self.update_current_state()
-        shared_bool.set(<shared_bool>self._value, self.state.active) # Unsure. Not in original
+        SharedBool.set(<SharedBool>self._value, self.state.active) # Unsure. Not in original
         return activated
 
 
-cdef class dcgCombo(uiItem):
+cdef class Combo(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_combo
-        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -4847,7 +5000,7 @@ cdef class dcgCombo(uiItem):
            self._value._last_frame_update == -1 and \
            self._items.size() > 0:
             # initialize the value with the first element
-            shared_str.set(<shared_str>self._value, self._items[0])
+            SharedStr.set(<SharedStr>self._value, self._items[0])
 
     @property
     def height_mode(self):
@@ -4959,7 +5112,7 @@ cdef class dcgCombo(uiItem):
         cdef bint open
         cdef int i
         cdef string current_value
-        shared_str.get(<shared_str>self._value, current_value)
+        SharedStr.get(<SharedStr>self._value, current_value)
         open = imgui.BeginCombo(self.imgui_label.c_str(),
                                 current_value.c_str(),
                                 self.flags)
@@ -5001,7 +5154,7 @@ cdef class dcgCombo(uiItem):
                         imgui.SetItemDefaultFocus()
                     if selected and selected != selected_backup:
                         changed = True
-                        shared_str.set(<shared_str>self._value, self._items[i])
+                        SharedStr.set(<SharedStr>self._value, self._items[i])
             else:
                 # TODO: test
                 selected = True
@@ -5017,10 +5170,10 @@ cdef class dcgCombo(uiItem):
         return pressed
 
 
-cdef class dcgCheckbox(uiItem):
+cdef class Checkbox(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_checkbox
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.can_be_activated = True
         self.state.can_be_clicked = True
         self.state.can_be_deactivated = True
@@ -5031,15 +5184,15 @@ cdef class dcgCheckbox(uiItem):
         
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef bool checked = shared_bool.get(<shared_bool>self._value)
+        cdef bool checked = SharedBool.get(<SharedBool>self._value)
         cdef bint pressed = imgui.Checkbox(self.imgui_label.c_str(),
                                              &checked)
         if self._enabled:
-            shared_bool.set(<shared_bool>self._value, checked)
+            SharedBool.set(<SharedBool>self._value, checked)
         self.update_current_state()
         return pressed
 
-cdef class dcgSlider(uiItem):
+cdef class Slider(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_slider
         self._format = 1
@@ -5051,7 +5204,7 @@ cdef class dcgSlider(uiItem):
         self._min = 0.
         self._max = 100.
         self._vertical = False
-        self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+        self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
         self.state.can_be_active = True # unsure
         self.state.can_be_clicked = True
         self.state.can_be_edited = True
@@ -5110,18 +5263,18 @@ cdef class dcgSlider(uiItem):
         previous_value = self.value # Pass though the property to do the conversion for us
         if self._size == 1:
             if target_format == 0:
-                self._value = <shared_value>(shared_int.__new__(shared_int, self.context))
+                self._value = <SharedValue>(SharedInt.__new__(SharedInt, self.context))
             elif target_format == 0:
-                self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+                self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
             else:
-                self._value = <shared_value>(shared_double.__new__(shared_double, self.context))
+                self._value = <SharedValue>(SharedDouble.__new__(SharedDouble, self.context))
         else:
             if target_format == 0:
-                self._value = <shared_value>(shared_int4.__new__(shared_int4, self.context))
+                self._value = <SharedValue>(SharedInt4.__new__(SharedInt4, self.context))
             elif target_format == 0:
-                self._value = <shared_value>(shared_float4.__new__(shared_float4, self.context))
+                self._value = <SharedValue>(SharedFloat4.__new__(SharedFloat4, self.context))
             else:
-                self._value = <shared_value>(shared_double4.__new__(shared_double4, self.context))
+                self._value = <SharedValue>(SharedDouble4.__new__(SharedDouble4, self.context))
         self.value = previous_value # Use property to pass through python for the conversion
         self._print_format = b"%d" if target_format == 0 else b"%.3f"
 
@@ -5155,19 +5308,19 @@ cdef class dcgSlider(uiItem):
         previous_value = self.value # Pass though the property to do the conversion for us
         if target_size == 1:
             if self._format == 0:
-                self._value = <shared_value>(shared_int.__new__(shared_int, self.context))
+                self._value = <SharedValue>(SharedInt.__new__(SharedInt, self.context))
             elif self._format == 1:
-                self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+                self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
             else:
-                self._value = <shared_value>(shared_double.__new__(shared_double, self.context))
+                self._value = <SharedValue>(SharedDouble.__new__(SharedDouble, self.context))
             self.value = previous_value[0]
         else:
             if self._format == 0:
-                self._value = <shared_value>(shared_int4.__new__(shared_int4, self.context))
+                self._value = <SharedValue>(SharedInt4.__new__(SharedInt4, self.context))
             elif self._format == 1:
-                self._value = <shared_value>(shared_float4.__new__(shared_float4, self.context))
+                self._value = <SharedValue>(SharedFloat4.__new__(SharedFloat4, self.context))
             else:
-                self._value = <shared_value>(shared_double4.__new__(shared_double4, self.context))
+                self._value = <SharedValue>(SharedDouble4.__new__(SharedDouble4, self.context))
             self.value = (previous_value, 0, 0, 0)
         self._size = target_size
 
@@ -5397,24 +5550,24 @@ cdef class dcgSlider(uiItem):
         # Read the value
         if self._format == 0:
             if self._size == 1:
-                value_int = shared_int.get(<shared_int>self._value)
+                value_int = SharedInt.get(<SharedInt>self._value)
                 data = &value_int
             else:
-                shared_int4.get(<shared_int4>self._value, value_int4)
+                SharedInt4.get(<SharedInt4>self._value, value_int4)
                 data = &value_int4
         elif self._format == 1:
             if self._size == 1:
-                value_float = shared_float.get(<shared_float>self._value)
+                value_float = SharedFloat.get(<SharedFloat>self._value)
                 data = &value_float
             else:
-                shared_float4.get(<shared_float4>self._value, value_float4)
+                SharedFloat4.get(<SharedFloat4>self._value, value_float4)
                 data = &value_float4
         else:
             if self._size == 1:
-                value_double = shared_double.get(<shared_double>self._value)
+                value_double = SharedDouble.get(<SharedDouble>self._value)
                 data = &value_double
             else:
-                shared_double4.get(<shared_double4>self._value, value_double4)
+                SharedDouble4.get(<SharedDouble4>self._value, value_double4)
                 data = &value_double4
 
         # Draw
@@ -5471,27 +5624,27 @@ cdef class dcgSlider(uiItem):
         if self._enabled:
             if self._format == 0:
                 if self._size == 1:
-                    shared_int.set(<shared_int>self._value, value_int)
+                    SharedInt.set(<SharedInt>self._value, value_int)
                 else:
-                    shared_int4.set(<shared_int4>self._value, value_int4)
+                    SharedInt4.set(<SharedInt4>self._value, value_int4)
             elif self._format == 1:
                 if self._size == 1:
-                    shared_float.set(<shared_float>self._value, value_float)
+                    SharedFloat.set(<SharedFloat>self._value, value_float)
                 else:
-                    shared_float4.set(<shared_float4>self._value, value_float4)
+                    SharedFloat4.set(<SharedFloat4>self._value, value_float4)
             else:
                 if self._size == 1:
-                    shared_double.set(<shared_double>self._value, value_double)
+                    SharedDouble.set(<SharedDouble>self._value, value_double)
                 else:
-                    shared_double4.set(<shared_double4>self._value, value_double4)
+                    SharedDouble4.set(<SharedDouble4>self._value, value_double4)
         self.update_current_state()
         return modified
 
 
-cdef class dcgListBox(uiItem):
+cdef class ListBox(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_listbox
-        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -5536,7 +5689,7 @@ cdef class dcgListBox(uiItem):
            self._value._last_frame_update == -1 and \
            self._items.size() > 0:
             # initialize the value with the first element
-            shared_str.set(<shared_str>self._value, self._items[0])
+            SharedStr.set(<SharedStr>self._value, self._items[0])
 
     @property
     def num_items_shown_when_open(self):
@@ -5560,7 +5713,7 @@ cdef class dcgListBox(uiItem):
         cdef bint open
         cdef int i
         cdef string current_value
-        shared_str.get(<shared_str>self._value, current_value)
+        SharedStr.get(<SharedStr>self._value, current_value)
         cdef imgui.ImVec2 popup_size = imgui.ImVec2(0., 0.)
         cdef float text_height = imgui.GetTextLineHeightWithSpacing()
         cdef int num_items = min(7, <int>self._items.size())
@@ -5612,7 +5765,7 @@ cdef class dcgListBox(uiItem):
                         imgui.SetItemDefaultFocus()
                     if selected and selected != selected_backup:
                         changed = True
-                        shared_str.set(<shared_str>self._value, self._items[i])
+                        SharedStr.set(<SharedStr>self._value, self._items[i])
                     imgui.PopID()
             else:
                 # TODO: test
@@ -5629,10 +5782,10 @@ cdef class dcgListBox(uiItem):
         return pressed
 
 
-cdef class dcgRadioButton(uiItem):
+cdef class RadioButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_radiobutton
-        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -5677,7 +5830,7 @@ cdef class dcgRadioButton(uiItem):
            self._value._last_frame_update == -1 and \
            self._items.size() > 0:
             # initialize the value with the first element
-            shared_str.set(<shared_str>self._value, self._items[0])
+            SharedStr.set(<SharedStr>self._value, self._items[0])
 
     @property
     def horizontal(self):
@@ -5699,7 +5852,7 @@ cdef class dcgRadioButton(uiItem):
         cdef bint open
         cdef int i
         cdef string current_value
-        shared_str.get(<shared_str>self._value, current_value)
+        SharedStr.get(<SharedStr>self._value, current_value)
         imgui.PushID(self.uuid)
         imgui.BeginGroup()
 
@@ -5718,7 +5871,7 @@ cdef class dcgRadioButton(uiItem):
                                          selected_backup)
             if self._enabled and selected and selected != selected_backup:
                 changed = True
-                shared_str.set(<shared_str>self._value, self._items[i])
+                SharedStr.set(<SharedStr>self._value, self._items[i])
             imgui.PopID()
         imgui.EndGroup()
         imgui.PopID()
@@ -5726,10 +5879,10 @@ cdef class dcgRadioButton(uiItem):
         return changed
 
 
-cdef class dcgInputText(uiItem):
+cdef class InputText(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_inputtext
-        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -6063,7 +6216,7 @@ cdef class dcgInputText(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         cdef string current_value
         cdef imgui.ImGuiInputTextFlags flags = self.flags
-        shared_str.get(<shared_str>self._value, current_value)
+        SharedStr.get(<SharedStr>self._value, current_value)
 
         cdef bint changed = False
         if not(self._enabled):
@@ -6095,7 +6248,7 @@ cdef class dcgInputText(uiItem):
                                               NULL, NULL)
         self.update_current_state()
         if changed:
-            shared_str.set(<shared_str>self._value, current_value)
+            SharedStr.set(<SharedStr>self._value, current_value)
         if not(self._enabled):
             changed = False
             self.state.edited = False
@@ -6128,7 +6281,7 @@ cdef inline void clamp4(clamp_types[4] &value, double lower, double upper) noexc
         value[2] = <clamp_types>min(<double>value[2], upper)
         value[3] = <clamp_types>min(<double>value[3], upper)
 
-cdef class dcgInputValue(uiItem):
+cdef class InputValue(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_inputvalue
         self._format = 1
@@ -6140,7 +6293,7 @@ cdef class dcgInputValue(uiItem):
         self._step = 0.1
         self._step_fast = 1.
         self.flags = imgui.ImGuiInputTextFlags_None
-        self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+        self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
         self.state.can_be_active = True # unsure
         self.state.can_be_clicked = True
         self.state.can_be_edited = True
@@ -6208,18 +6361,18 @@ cdef class dcgInputValue(uiItem):
         previous_value = self.value # Pass though the property to do the conversion for us
         if self._size == 1:
             if target_format == 0:
-                self._value = <shared_value>(shared_int.__new__(shared_int, self.context))
+                self._value = <SharedValue>(SharedInt.__new__(SharedInt, self.context))
             elif target_format == 0:
-                self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+                self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
             else:
-                self._value = <shared_value>(shared_double.__new__(shared_double, self.context))
+                self._value = <SharedValue>(SharedDouble.__new__(SharedDouble, self.context))
         else:
             if target_format == 0:
-                self._value = <shared_value>(shared_int4.__new__(shared_int4, self.context))
+                self._value = <SharedValue>(SharedInt4.__new__(SharedInt4, self.context))
             elif target_format == 0:
-                self._value = <shared_value>(shared_float4.__new__(shared_float4, self.context))
+                self._value = <SharedValue>(SharedFloat4.__new__(SharedFloat4, self.context))
             else:
-                self._value = <shared_value>(shared_double4.__new__(shared_double4, self.context))
+                self._value = <SharedValue>(SharedDouble4.__new__(SharedDouble4, self.context))
         self.value = previous_value # Use property to pass through python for the conversion
         self._print_format = b"%d" if target_format == 0 else b"%.3f"
 
@@ -6253,19 +6406,19 @@ cdef class dcgInputValue(uiItem):
         previous_value = self.value # Pass though the property to do the conversion for us
         if target_size == 1:
             if self._format == 0:
-                self._value = <shared_value>(shared_int.__new__(shared_int, self.context))
+                self._value = <SharedValue>(SharedInt.__new__(SharedInt, self.context))
             elif self._format == 1:
-                self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+                self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
             else:
-                self._value = <shared_value>(shared_double.__new__(shared_double, self.context))
+                self._value = <SharedValue>(SharedDouble.__new__(SharedDouble, self.context))
             self.value = previous_value[0]
         else:
             if self._format == 0:
-                self._value = <shared_value>(shared_int4.__new__(shared_int4, self.context))
+                self._value = <SharedValue>(SharedInt4.__new__(SharedInt4, self.context))
             elif self._format == 1:
-                self._value = <shared_value>(shared_float4.__new__(shared_float4, self.context))
+                self._value = <SharedValue>(SharedFloat4.__new__(SharedFloat4, self.context))
             else:
-                self._value = <shared_value>(shared_double4.__new__(shared_double4, self.context))
+                self._value = <SharedValue>(SharedDouble4.__new__(SharedDouble4, self.context))
             self.value = (previous_value, 0, 0, 0)
         self._size = target_size
 
@@ -6615,24 +6768,24 @@ cdef class dcgInputValue(uiItem):
         # Read the value
         if self._format == 0:
             if self._size == 1:
-                value_int = shared_int.get(<shared_int>self._value)
+                value_int = SharedInt.get(<SharedInt>self._value)
                 data = &value_int
             else:
-                shared_int4.get(<shared_int4>self._value, value_int4)
+                SharedInt4.get(<SharedInt4>self._value, value_int4)
                 data = &value_int4
         elif self._format == 1:
             if self._size == 1:
-                value_float = shared_float.get(<shared_float>self._value)
+                value_float = SharedFloat.get(<SharedFloat>self._value)
                 data = &value_float
             else:
-                shared_float4.get(<shared_float4>self._value, value_float4)
+                SharedFloat4.get(<SharedFloat4>self._value, value_float4)
                 data = &value_float4
         else:
             if self._size == 1:
-                value_double = shared_double.get(<shared_double>self._value)
+                value_double = SharedDouble.get(<SharedDouble>self._value)
                 data = &value_double
             else:
-                shared_double4.get(<shared_double4>self._value, value_double4)
+                SharedDouble4.get(<SharedDouble4>self._value, value_double4)
                 data = &value_double4
 
         # Draw
@@ -6660,42 +6813,42 @@ cdef class dcgInputValue(uiItem):
                 if self._size == 1:
                     if modified:
                         clamp1[int](value_int, self._min, self._max)
-                    shared_int.set(<shared_int>self._value, value_int)
+                    SharedInt.set(<SharedInt>self._value, value_int)
                 else:
                     if modified:
                         clamp4[int](value_int4, self._min, self._max)
-                    shared_int4.set(<shared_int4>self._value, value_int4)
+                    SharedInt4.set(<SharedInt4>self._value, value_int4)
             elif self._format == 1:
                 if self._size == 1:
                     if modified:
                         clamp1[float](value_float, self._min, self._max)
-                    shared_float.set(<shared_float>self._value, value_float)
+                    SharedFloat.set(<SharedFloat>self._value, value_float)
                 else:
                     if modified:
                         clamp4[float](value_float4, self._min, self._max)
-                    shared_float4.set(<shared_float4>self._value, value_float4)
+                    SharedFloat4.set(<SharedFloat4>self._value, value_float4)
             else:
                 if self._size == 1:
                     if modified:
                         clamp1[double](value_double, self._min, self._max)
-                    shared_double.set(<shared_double>self._value, value_double)
+                    SharedDouble.set(<SharedDouble>self._value, value_double)
                 else:
                     if modified:
                         clamp4[double](value_double4, self._min, self._max)
-                    shared_double4.set(<shared_double4>self._value, value_double4)
+                    SharedDouble4.set(<SharedDouble4>self._value, value_double4)
             modified = modified and (self._value._last_frame_update == self._value._last_frame_change)
         self.update_current_state()
         return modified
 
 
-cdef class dcgText(uiItem):
+cdef class Text(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_text
         self._color = 0 # invisible
         self._wrap = -1
         self._bullet = False
         self._show_label = False
-        self._value = <shared_value>(shared_str.__new__(shared_str, self.context))
+        self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.can_be_active = True # unsure
         self.state.can_be_clicked = True
         self.state.can_be_focused = True
@@ -6808,7 +6961,7 @@ cdef class dcgText(uiItem):
             imgui.Bullet()
 
         cdef string current_value
-        shared_str.get(<shared_str>self._value, current_value)
+        SharedStr.get(<SharedStr>self._value, current_value)
 
         imgui.TextUnformatted(current_value.c_str(), current_value.c_str()+current_value.size())
 
@@ -6828,10 +6981,10 @@ cdef class dcgText(uiItem):
         return False
 
 
-cdef class dcgSelectable(uiItem):
+cdef class Selectable(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_selectable
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -6920,21 +7073,21 @@ cdef class dcgSelectable(uiItem):
         if not(self._enabled):
             flags |= imgui.ImGuiSelectableFlags_Disabled
 
-        cdef bool checked = shared_bool.get(<shared_bool>self._value)
+        cdef bool checked = SharedBool.get(<SharedBool>self._value)
         cdef bint changed = imgui.Selectable(self.imgui_label.c_str(),
                                              &checked,
                                              flags,
                                              self.requested_size)
         if self._enabled:
-            shared_bool.set(<shared_bool>self._value, checked)
+            SharedBool.set(<SharedBool>self._value, checked)
         self.update_current_state()
         return changed
 
 
-cdef class dcgMenuItem(uiItem):
+cdef class MenuItem(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_menuitem
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -6982,19 +7135,19 @@ cdef class dcgMenuItem(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         # TODO dpg does overwrite textdisabled...
-        cdef bool current_value = shared_bool.get(<shared_bool>self._value)
+        cdef bool current_value = SharedBool.get(<SharedBool>self._value)
         cdef bint activated = imgui.MenuItem(self.imgui_label.c_str(),
                                              self._shortcut.c_str(),
                                              NULL if self._check else &current_value,
                                              self._enabled)
         self.update_current_state()
-        shared_bool.set(<shared_bool>self._value, current_value)
+        SharedBool.set(<SharedBool>self._value, current_value)
         return activated
 
-cdef class dcgProgressBar(uiItem):
+cdef class ProgressBar(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_progressbar
-        self._value = <shared_value>(shared_float.__new__(shared_float, self.context))
+        self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
         self.state.can_be_clicked = True
         self.state.can_be_focused = True
         self.state.can_be_hovered = True
@@ -7020,7 +7173,7 @@ cdef class dcgProgressBar(uiItem):
         self._overlay = bytes(value, 'utf-8')
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef float current_value = shared_float.get(<shared_float>self._value)
+        cdef float current_value = SharedFloat.get(<SharedFloat>self._value)
         cdef const char *overlay_text = self._overlay.c_str()
         imgui.PushID(self.uuid)
         imgui.ProgressBar(current_value,
@@ -7030,7 +7183,7 @@ cdef class dcgProgressBar(uiItem):
         self.update_current_state()
         return False
 
-cdef class dcgImage(uiItem):
+cdef class Image(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_image
         self.state.can_be_clicked = True
@@ -7053,8 +7206,8 @@ cdef class dcgImage(uiItem):
     def texture(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if not(isinstance(value, dcgTexture)):
-            raise TypeError("texture must be a dcgTexture")
+        if not(isinstance(value, Texture)):
+            raise TypeError("texture must be a Texture")
         # TODO: MV_ATLAS_UUID
         self._texture = value
     @property
@@ -7113,10 +7266,10 @@ cdef class dcgImage(uiItem):
         return False
 
 
-cdef class dcgImageButton(uiItem):
+cdef class ImageButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_imagebutton
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.can_be_clicked = True
         self.state.can_be_focused = True
         self.state.can_be_hovered = True
@@ -7139,8 +7292,8 @@ cdef class dcgImageButton(uiItem):
     def texture(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if not(isinstance(value, dcgTexture)):
-            raise TypeError("texture must be a dcgTexture")
+        if not(isinstance(value, Texture)):
+            raise TypeError("texture must be a Texture")
         # TODO: MV_ATLAS_UUID
         self._texture = value
     @property
@@ -7216,7 +7369,7 @@ cdef class dcgImageButton(uiItem):
         self.update_current_state()
         return activated
 
-cdef class dcgSeparator(uiItem):
+cdef class Separator(uiItem):
     # TODO: is label override really needed ?
     @property
     def label(self):
@@ -7247,7 +7400,7 @@ cdef class dcgSeparator(uiItem):
             imgui.SeparatorText(self.imgui_label.c_str())
         return False
 
-cdef class dcgSpacer(uiItem):
+cdef class Spacer(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         if self.requested_size.x == 0 and \
            self.requested_size.y == 0:
@@ -7256,7 +7409,7 @@ cdef class dcgSpacer(uiItem):
             imgui.Dummy(self.requested_size)
         return False
 
-cdef class dcgMenuBar(uiItem):
+cdef class MenuBar(uiItem):
     # TODO: must be allowed as viewport child
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
@@ -7294,10 +7447,10 @@ cdef class dcgMenuBar(uiItem):
         return self.state.activated
 
 
-cdef class dcgMenu(uiItem):
+cdef class Menu(uiItem):
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.theme_condition_category = theme_categories.t_menu
         self.state.can_be_clicked = True
@@ -7323,10 +7476,10 @@ cdef class dcgMenu(uiItem):
             imgui.EndMenu()
         else:
             self.propagate_hidden_state_to_children()
-        shared_bool.set(<shared_bool>self._value, menu_open)
+        SharedBool.set(<SharedBool>self._value, menu_open)
         return self.state.activated
 
-cdef class dcgTooltip(uiItem):
+cdef class Tooltip(uiItem):
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
@@ -7338,12 +7491,50 @@ cdef class dcgTooltip(uiItem):
         self.state.has_content_region = True
         self._delay = 0.
         self._hide_on_activity = False
+        self._target = None
+
+
+    @property
+    def target(self):
+        """
+        Target item which state will be checked
+        to trigger the tooltip.
+        Note if the item is after this tooltip
+        in the rendering tree, there will be
+        a frame delay.
+        If no target is set, the previous sibling
+        is the target.
+        If the target is not the previous sibling,
+        delay will have no effect.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._delay
+
+    @target.setter
+    def target(self, baseItem target):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._target = None
+        cdef bint success = True
+        if isinstance(target, uiItem):
+            self.target_state = &(<uiItem>target).state
+        elif isinstance(target, PlotAxisConfig):
+            self.target_state = &(<PlotAxisConfig>target).state
+        elif isinstance(target, plotElement):
+            self.target_state = &(<plotElement>target).state
+        else:
+            success = False
+        if not(self.target_state.can_be_hovered) or not(success):
+            raise TypeError(f"Unsupported target instance {target}")
+        self._target = target
 
     @property
     def delay(self):
         """
         Delay in seconds with no motion before showing the tooltip
         -1: Use imgui defaults
+        Has no effect if the target is not the previous sibling.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -7373,15 +7564,22 @@ cdef class dcgTooltip(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         cdef float hoverDelay_backup
         cdef bint target_hovered
-        if self._delay > 0.:
-            hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
-            imgui.GetStyle().HoverStationaryDelay = self._delay
-            target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_Stationary)
-            imgui.GetStyle().HoverStationaryDelay = hoverDelay_backup
-        elif self._delay == 0:
-            target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        with gil:
+            print(self, self._target)
+        if self._target is None or self._target is self._prev_sibling:
+            if self._delay > 0.:
+                hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
+                imgui.GetStyle().HoverStationaryDelay = self._delay
+                target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_Stationary)
+                imgui.GetStyle().HoverStationaryDelay = hoverDelay_backup
+            elif self._delay == 0:
+                target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+            else:
+                target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
         else:
-            target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
+            with gil:
+                print(self, self.target, self.target_state.hovered)
+            target_hovered = self.target_state.hovered
 
         if self._hide_on_activity and imgui.GetIO().MouseDelta.x != 0. and \
            imgui.GetIO().MouseDelta.y != 0.:
@@ -7398,11 +7596,11 @@ cdef class dcgTooltip(uiItem):
             # NOTE: we could also set the rects. DPG does it.
         return self.state.visible and not(was_visible)
 
-cdef class dcgTabButton(uiItem):
+cdef class TabButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_tabbutton
         self.element_child_category = child_type.cat_tab
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.can_be_activated = True
         self.state.can_be_active = True
         self.state.can_be_clicked = True
@@ -7495,13 +7693,13 @@ cdef class dcgTabButton(uiItem):
         cdef bint pressed = imgui.TabItemButton(self.imgui_label.c_str(),
                                                 self.flags)
         self.update_current_state()
-        #shared_bool.set(<shared_bool>self._value, self.state.active) # Unsure. Not in original
+        #SharedBool.set(<SharedBool>self._value, self.state.active) # Unsure. Not in original
         return pressed
 
 
-cdef class dcgTab(uiItem):
+cdef class Tab(uiItem):
     def __cinit__(self):
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_tab
         self.theme_condition_category = theme_categories.t_tab
@@ -7606,11 +7804,11 @@ cdef class dcgTab(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef imgui.ImGuiTabItemFlags flags = self.flags
-        if (<shared_bool>self._value)._last_frame_change == self.context.viewport.frame_count:
+        if (<SharedBool>self._value)._last_frame_change == self.context.viewport.frame_count:
             # The value was changed after the last time we drew
             # TODO: will have no effect if we switch from show to no show.
             # maybe have a counter here.
-            if shared_bool.get(<shared_bool>self._value):
+            if SharedBool.get(<SharedBool>self._value):
                 flags |= imgui.ImGuiTabItemFlags_SetSelected
         cdef bint menu_open = imgui.BeginTabItem(self.imgui_label.c_str(),
                                                  &self._show if self._closable else NULL,
@@ -7624,13 +7822,13 @@ cdef class dcgTab(uiItem):
             imgui.EndTabItem()
         else:
             self.propagate_hidden_state_to_children()
-        shared_bool.set(<shared_bool>self._value, menu_open)
+        SharedBool.set(<SharedBool>self._value, menu_open)
         return self.state.activated
 
 
-cdef class dcgTabBar(uiItem):
+cdef class TabBar(uiItem):
     def __cinit__(self):
-        #self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        #self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_tab_child = True
         self.theme_condition_category = theme_categories.t_tabbar
         self.state.can_be_clicked = True
@@ -7815,12 +8013,13 @@ cdef class dcgTabBar(uiItem):
         return self.state.activated
 
 
-cdef class dcgGroup(uiItem):
+cdef class Group(uiItem):
     """
     A group enables two things:
     . Share the same indentation for the children
     . The group states correspond to an OR of all
       the item states within
+    TODO: very incomplete
     """
     def __cinit__(self):
         self.can_have_widget_child = True
@@ -7849,9 +8048,9 @@ cdef class dcgGroup(uiItem):
         self.update_current_state()
 
 
-cdef class dcgTreeNode(uiItem):
+cdef class TreeNode(uiItem):
     def __cinit__(self):
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.state.can_be_active = True
         self.state.can_be_activated = True
@@ -8009,7 +8208,7 @@ cdef class dcgTreeNode(uiItem):
             self.flags |= imgui.ImGuiTreeNodeFlags_SpanFullWidth
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef bint was_open = shared_bool.get(<shared_bool>self._value)
+        cdef bint was_open = SharedBool.get(<SharedBool>self._value)
         cdef bint closed = False
         cdef imgui.ImGuiTreeNodeFlags flags = self.flags
         imgui.PushID(self.uuid)
@@ -8023,7 +8222,7 @@ cdef class dcgTreeNode(uiItem):
                                                       flags)
         self.update_current_state()
         if self.state.toggled:
-            shared_bool.set(<shared_bool>self._value, open_and_visible)
+            SharedBool.set(<SharedBool>self._value, open_and_visible)
             if not(open_and_visible):
                 self.state.toggled = False
                 self.propagate_hidden_state_to_children()
@@ -8035,9 +8234,9 @@ cdef class dcgTreeNode(uiItem):
         imgui.EndGroup()
         imgui.PopID()
 
-cdef class dcgCollapsingHeader(uiItem):
+cdef class CollapsingHeader(uiItem):
     def __cinit__(self):
-        self._value = <shared_value>(shared_bool.__new__(shared_bool, self.context))
+        self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.state.can_be_active = True
         self.state.can_be_activated = True
@@ -8142,7 +8341,7 @@ cdef class dcgCollapsingHeader(uiItem):
             self.flags |= imgui.ImGuiTreeNodeFlags_Bullet
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef bint was_open = shared_bool.get(<shared_bool>self._value)
+        cdef bint was_open = SharedBool.get(<SharedBool>self._value)
         cdef bint closed = False
         cdef imgui.ImGuiTreeNodeFlags flags = self.flags
         if self._closable:
@@ -8157,7 +8356,7 @@ cdef class dcgCollapsingHeader(uiItem):
             self.show_update_requested = True
         self.update_current_state()
         if self.state.toggled:
-            shared_bool.set(<shared_bool>self._value, open_and_visible)
+            SharedBool.set(<SharedBool>self._value, open_and_visible)
             if not(open_and_visible):
                 self.state.toggled = False
                 self.propagate_hidden_state_to_children()
@@ -8170,7 +8369,52 @@ cdef class dcgCollapsingHeader(uiItem):
 Complex ui items
 """
 
-cdef class dcgWindow(uiItem):
+cdef class TimeWatcher(uiItem):
+    """
+    A placeholder uiItem that doesn't draw
+    or have any impact on rendering.
+    This item calls the callback with times in ns.
+    These times can be compared with the times in the metrics
+    that can be obtained from the viewport in order to
+    precisely figure out the time spent rendering specific items.
+
+    The first time corresponds to the time when the next sibling
+    requested this sibling to render. At this step, no sibling
+    of this item (previous or next) have rendered anything.
+
+    The second time corresponds to the time when the previous
+    siblings have finished rendering and it is now the turn
+    of this item to render. Next items have not rendered yet.
+
+    The third time corresponds to the time when viewport
+    started rendering items for this frame. It is a duplicate of
+    context.viewport.metrics.last_t_before_rendering. It is
+    given to prevent the user from having to keep track of the
+    viewport metrics (since the callback might be called
+    after or before the viewport updated its metrics for this
+    frame or another one).
+
+    The fourth number corresponds to the frame count
+    at the the time the callback was issued.
+
+    Note the times relate to CPU time (checking states, preparing
+    GPU data, etc), not to GPU rendering time.
+    """
+    cdef void draw(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef long long time_start = ctime.monotonic_ns()
+        if self._prev_sibling is not None:
+            (<uiItem>self._prev_sibling).draw()
+        cdef long long time_end = ctime.monotonic_ns()
+        self.context.queue_callback_arg3long1int(self._callback,
+                                                 self,
+                                                 time_start,
+                                                 time_end,
+                                                 self.context.viewport.last_t_before_rendering,
+                                                 self.context.viewport.frame_count)
+        
+
+cdef class Window(uiItem):
     def __cinit__(self):
         self.window_flags = imgui.ImGuiWindowFlags_None
         self.main_window = False
@@ -8209,20 +8453,6 @@ cdef class dcgWindow(uiItem):
         self.state.has_rect_min = True
         self.state.has_rect_max = True
         self.state.has_content_region = True
-
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        remaining = {}
-        for (key, value) in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-            # convert old flags
-            elif key == "no_close":
-                self.has_close_button = value
-            else:
-                remaining[key] = value
-        super().configure(**remaining)
 
     @property
     def no_title_bar(self):
@@ -8660,7 +8890,7 @@ cdef class dcgWindow(uiItem):
     def on_close(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.on_close_callback = value if isinstance(value, dcgCallback) or value is None else dcgCallback(value)
+        self.on_close_callback = value if isinstance(value, Callback) or value is None else Callback(value)
 
     @property
     def primary(self):
@@ -8715,8 +8945,8 @@ cdef class dcgWindow(uiItem):
             self.size_update_requested = True
 
         # Re-tell imgui the window hierarchy
-        cdef dcgWindow w = self.context.viewport.last_window_child
-        cdef dcgWindow next = None
+        cdef Window w = self.context.viewport.last_window_child
+        cdef Window next = None
         while w is not None:
             with nogil:
                 w.mutex.lock()
@@ -8843,8 +9073,8 @@ cdef class dcgWindow(uiItem):
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
-            # Seems redundant with dcgDrawInWindow
-            # dcgDrawInWindow is more powerful
+            # Seems redundant with DrawInWindow
+            # DrawInWindow is more powerful
             startx = <float>imgui.GetCursorScreenPos().x
             starty = <float>imgui.GetCursorScreenPos().y
             self.context.viewport.in_plot = False
@@ -8929,8 +9159,8 @@ cdef class dcgWindow(uiItem):
                                               self)
         self.show_update_requested = False
 
-        if self.handlers is not None:
-            self.handlers.run_handler(self)
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
 
 
 """
@@ -8939,7 +9169,7 @@ Textures
 
 
 
-cdef class dcgTexture(baseItem):
+cdef class Texture(baseItem):
     def __cinit__(self):
         self.hint_dynamic = False
         self.dynamic = False
@@ -8965,7 +9195,7 @@ cdef class dcgTexture(baseItem):
         if len(args) == 1:
             self.set_content(np.ascontiguousarray(args[0]))
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgTexture. Expected content")
+            raise ValueError("Invalid arguments passed to Texture. Expected content")
         self.filtering_mode = 1 if kwargs.pop("nearest_neighbor_upsampling", False) else 0
         return super().configure(**kwargs)
 
@@ -9109,6 +9339,2047 @@ cdef class baseTheme(baseItem):
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         return
 
+"""
+Plots
+"""
+
+# BaseItem that has has no parent/child nor sibling
+cdef class PlotAxisConfig(baseItem):
+    def __cinit__(self):
+        self.state.can_be_hovered = True
+        self.state.can_be_clicked = True
+        self._enabled = True
+        self._scale = AxisScale.linear
+        self._tick_format = b""
+        self.flags = 0
+        self._min = 0
+        self._max = 1
+        self.last_frame_minmax_update = -1
+        self._constraint_min = -INFINITY
+        self._constraint_max = INFINITY
+        self._zoom_min = 0
+        self._zoom_max = INFINITY
+        self._handler = None
+
+    @property
+    def enabled(self):
+        """
+        Whether elements using this axis should
+        be drawn.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._enabled = value
+
+    @property
+    def scale(self):
+        """
+        Current AxisScale.
+        Default is AxisScale.linear
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._scale
+
+    @scale.setter
+    def scale(self, AxisScale value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value == AxisScale.linear or \
+           value == AxisScale.time or \
+           value == AxisScale.log10 or\
+           value == AxisScale.symlog:
+            self._scale = value
+        else:
+            raise ValueError("Invalid scale. Expecting an AxisScale")
+
+    @property
+    def min(self):
+        """
+        Current minimum of the range displayed.
+        Do not set max <= min. Set invert to change
+        the axis order.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._min
+
+    @min.setter
+    def min(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._min = value
+        self.last_frame_minmax_update = self.context.viewport.frame_count
+
+    @property
+    def max(self):
+        """
+        Current maximum of the range displayed.
+        Do not set max <= min. Set invert to change
+        the axis order.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._max
+
+    @max.setter
+    def max(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._max = value
+        self.last_frame_minmax_update = self.context.viewport.frame_count
+
+    @property
+    def constraint_min(self):
+        """
+        Constraint on the minimum value
+        of min.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._constraint_min
+
+    @constraint_min.setter
+    def constraint_min(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._constraint_min = value
+
+    @property
+    def constraint_max(self):
+        """
+        Constraint on the maximum value
+        of max.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._constraint_max
+
+    @constraint_max.setter
+    def constraint_max(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._constraint_max = value
+
+    @property
+    def zoom_min(self):
+        """
+        Constraint on the minimum value
+        of the zoom
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._zoom_min
+
+    @zoom_min.setter
+    def zoom_min(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._zoom_min = value
+
+    @property
+    def zoom_max(self):
+        """
+        Constraint on the maximum value
+        of the zoom
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._zoom_max
+
+    @zoom_max.setter
+    def zoom_max(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._zoom_max = value
+
+    @property
+    def no_label(self):
+        """
+        Writable attribute to not render the axis label
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoLabel) != 0
+
+    @no_label.setter
+    def no_label(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoLabel
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoLabel
+
+    @property
+    def no_gridlines(self):
+        """
+        Writable attribute to not render grid lines
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoGridLines) != 0
+
+    @no_gridlines.setter
+    def no_gridlines(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoGridLines
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoGridLines
+
+    @property
+    def no_tick_marks(self):
+        """
+        Writable attribute to not render tick marks
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoTickMarks) != 0
+
+    @no_tick_marks.setter
+    def no_tick_marks(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoTickMarks
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoTickMarks
+
+    @property
+    def no_tick_labels(self):
+        """
+        Writable attribute to not render tick labels
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoTickLabels) != 0
+
+    @no_tick_labels.setter
+    def no_tick_labels(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoTickLabels
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoTickLabels
+
+    @property
+    def no_initial_fit(self):
+        """
+        Writable attribute to disable fitting the extent
+        of the axis to the data on the first frame.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoInitialFit) != 0
+
+    @no_initial_fit.setter
+    def no_initial_fit(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoInitialFit
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoInitialFit
+
+    @property
+    def no_menus(self):
+        """
+        Writable attribute to prevent right-click to
+        open context menus.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoMenus) != 0
+
+    @no_menus.setter
+    def no_menus(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoMenus
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoMenus
+
+    @property
+    def no_side_switch(self):
+        """
+        Writable attribute to prevent the user from switching
+        the axis by dragging it.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoSideSwitch) != 0
+
+    @no_side_switch.setter
+    def no_side_switch(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoSideSwitch
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoSideSwitch
+
+    @property
+    def no_highlight(self):
+        """
+        Writable attribute to not highlight the axis background
+        when hovered or held
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_NoHighlight) != 0
+
+    @no_highlight.setter
+    def no_highlight(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_NoHighlight
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_NoHighlight
+
+    @property
+    def opposite(self):
+        """
+        Writable attribute to render ticks and labels on
+        the opposite side.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_Opposite) != 0
+
+    @opposite.setter
+    def opposite(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_Opposite
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_Opposite
+
+    @property
+    def foreground_grid(self):
+        """
+        Writable attribute to render gridlines on top of
+        the data rather than behind.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_Foreground) != 0
+
+    @foreground_grid.setter
+    def foreground_grid(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_Foreground
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_Foreground
+
+    @property
+    def invert(self):
+        """
+        Writable attribute to invert the values of the axis
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_Invert) != 0
+
+    @invert.setter
+    def invert(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_Invert
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_Invert
+
+    @property
+    def auto_fit(self):
+        """
+        Writable attribute to force the axis to fit its range
+        to the data every frame.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_AutoFit) != 0
+
+    @auto_fit.setter
+    def auto_fit(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_AutoFit
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_AutoFit
+
+    @property
+    def restrict_fit_to_range(self):
+        """
+        Writable attribute to ignore points that are outside
+        the visible region of the opposite axis when fitting
+        this axis.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_RangeFit) != 0
+
+    @restrict_fit_to_range.setter
+    def restrict_fit_to_range(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_RangeFit
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_RangeFit
+
+    @property
+    def pan_stretch(self):
+        """
+        Writable attribute that when set, if panning in a locked or
+        constrained state, will cause the axis to stretch
+        if possible.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_PanStretch) != 0
+
+    @pan_stretch.setter
+    def pan_stretch(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_PanStretch
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_PanStretch
+
+    @property
+    def lock_min(self):
+        """
+        Writable attribute to lock the axis minimum value
+        when panning/zooming
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_LockMin) != 0
+
+    @lock_min.setter
+    def lock_min(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_LockMin
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_LockMin
+
+    @property
+    def lock_max(self):
+        """
+        Writable attribute to lock the axis maximum value
+        when panning/zooming
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotAxisFlags_LockMax) != 0
+
+    @lock_max.setter
+    def lock_max(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotAxisFlags_LockMax
+        if value:
+            self.flags |= implot.ImPlotAxisFlags_LockMax
+
+    cdef void setup(self, implot.ImAxis axis) noexcept nogil:
+        """
+        Apply the config to the target axis during plot
+        setup
+        """
+        self.state.hovered = False
+        self.state.visible = False
+
+        if self._enabled == False:
+            self.context.viewport.enabled_axes[axis] = False
+            return
+        self.context.viewport.enabled_axes[axis] = True
+        # TODO label
+        implot.SetupAxis(axis, NULL, self.flags)
+        # we test the frame count to correctly support the
+        # same config instance applied to several axes
+        if self.last_frame_minmax_update >= self.context.viewport.frame_count-1:
+            # enforce min < max
+            self._max = max(self._max, self._min + 1e-12)
+            implot.SetupAxisLimits(axis,
+                                   self._min,
+                                   self._max,
+                                   implot.ImPlotCond_Always)
+        # TODO format, ticks
+        implot.SetupAxisScale(axis, self._scale)
+
+        if self._constraint_min != -INFINITY or \
+           self._constraint_max != INFINITY:
+            self._constraint_max = max(self._constraint_max, self._constraint_min + 1e-12)
+            implot.SetupAxisLimitsConstraints(axis,
+                                              self._constraint_min,
+                                              self._constraint_max)
+        if self._zoom_min != 0 or \
+           self._zoom_max != INFINITY:
+            self._zoom_min = max(0, self._zoom_min)
+            self._zoom_max = max(self._zoom_min, self._zoom_max)
+            implot.SetupAxisZoomConstraints(axis,
+                                            self._zoom_min,
+                                            self._zoom_max)
+
+    @property
+    def hovered(self):
+        """
+        Readonly attribute: Is the mouse inside the axis label area
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.state.hovered
+
+    @property
+    def clicked(self):
+        """
+        Readonly attribute: has the item just been clicked.
+        The returned value is a tuple of len 5 containing the individual test
+        mouse buttons (up to 5 buttons)
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return tuple(self.state.clicked)
+
+    @property
+    def mouse_coord(self):
+        """
+        Readonly attribute:
+        The last estimated mouse position in plot space
+        for this axis.
+        Beware not to assign the same instance of
+        PlotAxisConfig to several axes if you plan on using
+        this.
+        The mouse position is updated everytime the plot is
+        drawn and the axis is enabled.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._mouse_coord
+
+    @property
+    def handler(self):
+        """
+        Writable attribute: bound handler for the axis.
+        Only visible, hovered and clicked handlers are compatible.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._handler
+
+    @handler.setter
+    def handler(self, itemHandler value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Check the list of handlers can use our states. Else raise error
+        value.check_bind(self, self.state)
+        # yes: bind
+        self._handler = value
+
+    cdef void after_draw(self, implot.ImAxis axis) noexcept nogil:
+        """
+        Update states, etc. after the elements were drawn
+        """
+        cdef implot.ImPlotRect rect
+        if axis <= implot.ImAxis_X3:
+            rect = implot.GetPlotLimits(axis, implot.IMPLOT_AUTO)
+            self._min = rect.X.Min
+            self._max = rect.X.Max
+            self._mouse_coord = implot.GetPlotMousePos(axis, implot.IMPLOT_AUTO).x
+        else:
+            rect = implot.GetPlotLimits(implot.IMPLOT_AUTO, axis)
+            self._min = rect.Y.Min
+            self._max = rect.Y.Max
+            self._mouse_coord = implot.GetPlotMousePos(implot.IMPLOT_AUTO, axis).y
+
+        # DPG does update flags.. why ?
+        cdef bint hovered = implot.IsAxisHovered(axis)
+        cdef int i
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            self.state.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
+            self.state.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
+        cdef bint backup_hovered = self.state.hovered
+        self.state.hovered = hovered
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
+        if not(backup_hovered) or self.state.hovered:
+            return
+        # Restore correct states
+        # We do it here and not above to trigger the handlers only once
+        self.state.hovered |= backup_hovered
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            self.state.clicked[i] = self.state.hovered and imgui.IsMouseClicked(i, False)
+            self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
+
+    cdef void set_hidden(self) noexcept nogil:
+        self.state.hovered = False
+        cdef int i
+        for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+            self.state.clicked[i] = False
+            self.state.double_clicked[i] = False
+
+cdef class PlotLegendConfig(baseItem):
+    def __cinit__(self):
+        self._show = True
+        self._location = LegendLocation.northwest
+        self.flags = 0
+
+    @property
+    def show(self):
+        """
+        Whether the legend is shown or hidden
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._show
+
+    @show.setter
+    def show(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._show = value
+
+    @property
+    def location(self):
+        """
+        Position of the legend.
+        Default is LegendLocation.northwest
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._location
+
+    @location.setter
+    def location(self, LegendLocation value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value == LegendLocation.center or \
+           value == LegendLocation.north or \
+           value == LegendLocation.south or \
+           value == LegendLocation.west or \
+           value == LegendLocation.east or \
+           value == LegendLocation.northeast or \
+           value == LegendLocation.northwest or \
+           value == LegendLocation.southeast or \
+           value == LegendLocation.southwest:
+            self._location = value
+        else:
+            raise ValueError("Invalid location. Must be a LegendLocation")
+
+    @property
+    def no_buttons(self):
+        """
+        Writable attribute to prevent legend icons
+        tot function as hide/show buttons
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_NoButtons) != 0
+
+    @no_buttons.setter
+    def no_buttons(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_NoButtons
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_NoButtons
+
+    @property
+    def no_highlight_item(self):
+        """
+        Writable attribute to disable highlighting plot items
+        when their legend entry is hovered
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_NoHighlightItem) != 0
+
+    @no_highlight_item.setter
+    def no_highlight_item(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_NoHighlightItem
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_NoHighlightItem
+
+    @property
+    def no_highlight_axis(self):
+        """
+        Writable attribute to disable highlighting axes
+        when their legend entry is hovered
+        (only relevant if x/y-axis count > 1)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_NoHighlightAxis) != 0
+
+    @no_highlight_axis.setter
+    def no_highlight_axis(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_NoHighlightAxis
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_NoHighlightAxis
+
+    @property
+    def no_menus(self):
+        """
+        Writable attribute to disable right-clicking
+        to open context menus.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_NoMenus) != 0
+
+    @no_menus.setter
+    def no_menus(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_NoMenus
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_NoMenus
+
+    @property
+    def outside(self):
+        """
+        Writable attribute to render the legend outside
+        of the plot area
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_Outside) != 0
+
+    @outside.setter
+    def outside(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_Outside
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_Outside
+
+    @property
+    def horizontal(self):
+        """
+        Writable attribute to display the legend entries
+        horizontally rather than vertically
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_Horizontal) != 0
+
+    @horizontal.setter
+    def horizontal(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_Horizontal
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_Horizontal
+
+    @property
+    def sorted(self):
+        """
+        Writable attribute to display the legend entries
+        in alphabetical order
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLegendFlags_Sort) != 0
+
+    @sorted.setter
+    def sorted(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLegendFlags_Sort
+        if value:
+            self.flags |= implot.ImPlotLegendFlags_Sort
+
+    cdef void setup(self) noexcept nogil:
+        implot.SetupLegend(self._location, self.flags)
+        # NOTE: Setup does just fill the location and flags.
+        # No item is created at this point,
+        # and thus we don't push fonts, check states, etc.
+
+    cdef void after_draw(self) noexcept nogil:
+        # DPG does update legend location and flags... why ?
+        return
+
+
+cdef class Plot(uiItem):
+    def __cinit__(self, context, *args, **kwargs):
+        self.can_have_plot_element_child = True
+        self.state.can_be_clicked = True
+        self.state.can_be_hovered = True
+        self._X1 = PlotAxisConfig(context)
+        self._X2 = PlotAxisConfig(context, enabled=False)
+        self._X3 = PlotAxisConfig(context, enabled=False)
+        self._Y1 = PlotAxisConfig(context)
+        self._Y2 = PlotAxisConfig(context, enabled=False)
+        self._Y3 = PlotAxisConfig(context, enabled=False)
+        self._legend = PlotLegendConfig(context)
+        self._pan_button = imgui.ImGuiMouseButton_Left
+        self._pan_modifier = 0
+        self._fit_button = imgui.ImGuiMouseButton_Left
+        self._menu_button = imgui.ImGuiMouseButton_Right
+        self._select_button = imgui.ImGuiMouseButton_Right
+        self._select_mod = 0
+        self._select_cancel_button = imgui.ImGuiMouseButton_Left
+        self._override_mod = imgui.ImGuiMod_Ctrl
+        self._query_toggle_mod = imgui.ImGuiMod_Ctrl
+        self._select_horz_mod = imgui.ImGuiMod_Alt
+        self._select_vert_mod = imgui.ImGuiMod_Shift
+        self._zoom_mod = 0
+        self._zoom_rate = 0.1
+        self._query_enabled = True
+        self._query_color = 255*256*256
+        self._min_query_rects = 1
+        self._max_query_rects = 1
+        self._use_local_time = False
+        self._use_ISO8601 = False
+        self._use_24hour_clock = False
+
+    @property
+    def X1(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._X1
+
+    @X1.setter
+    def X1(self, PlotAxisConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._X1 = value
+
+    @property
+    def X2(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._X2
+
+    @X2.setter
+    def X2(self, PlotAxisConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._X2 = value
+
+    @property
+    def X3(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._X3
+
+    @X3.setter
+    def X3(self, PlotAxisConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._X3 = value
+
+    @property
+    def Y1(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._Y1
+
+    @Y1.setter
+    def Y1(self, PlotAxisConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._Y1 = value
+
+    @property
+    def Y2(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._Y2
+
+    @Y2.setter
+    def Y2(self, PlotAxisConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._Y2 = value
+
+    @property
+    def Y3(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._Y3
+
+    @Y3.setter
+    def Y3(self, PlotAxisConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._Y3 = value
+
+    @property
+    def legend_config(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._legend
+
+    @legend_config.setter
+    def legend_config(self, PlotLegendConfig value not None):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._legend = value
+
+    @property
+    def pan_button(self):
+        """
+        Button that when held enables to navigate inside the plot
+        Default is the left mouse button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._pan_button
+
+    @pan_button.setter
+    def pan_button(self, int button):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._pan_button = button
+
+    @property
+    def pan_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that must be
+        pressed for pan_button to have effect.
+        Default is no modifier.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._pan_modifier
+
+    @pan_mod.setter
+    def pan_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("pan_mod must be a combinaison of modifiers")
+        self._pan_modifier = modifier
+
+    @property
+    def fit_button(self):
+        """
+        Button that must be double-clicked to initiate
+        a fit of the axes to the displayed data.
+        Default is the left mouse button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._fit_button
+
+    @fit_button.setter
+    def fit_button(self, int button):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._fit_button = button
+
+    @property
+    def menu_button(self):
+        """
+        Button that opens context menus
+        (if enabled) when clicked.
+        Default is the right mouse button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._menu_button
+
+    @menu_button.setter
+    def menu_button(self, int button):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._menu_button = button
+
+    @property
+    def select_button(self):
+        """
+        Button that begins box selection when
+        pressed and confirms selection when released
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._select_button
+
+    @select_button.setter
+    def select_button(self, int button):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._select_button = button
+
+    @property
+    def select_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that must be
+        pressed for select_button to have effect.
+        Default is no modifier.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._select_mod
+
+    @select_mod.setter
+    def select_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("select_mod must be a combinaison of modifiers")
+        self._select_mod = modifier
+
+    @property
+    def select_cancel_button(self):
+        """
+        Button that cancels active box selection
+        when pressed; cannot be same as Select
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._select_cancel_button
+
+    @select_cancel_button.setter
+    def select_cancel_button(self, int button):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._select_cancel_button = button
+
+    @property
+    def override_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that
+        when held, all input is ignored; used to enable
+        axis/plots as DND sources.
+        Default is the Ctrl button
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._override_mod
+
+    @override_mod.setter
+    def override_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("override_mod must be a combinaison of modifiers")
+        self._override_mod = modifier
+
+    @property
+    def query_toggle_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that
+        when held during selection, adds a query rect;
+        has higher priority than override_mod.
+        Default is the Ctrl button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._query_toggle_mod
+
+    @query_toggle_mod.setter
+    def query_toggle_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("query_toggle_mod must be a combinaison of modifiers")
+        self._query_toggle_mod = modifier
+
+    @property
+    def select_horz_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that
+        expands active box selection horizontally to plot
+        edge when held.
+        Default is the Alt button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._select_horz_mod
+
+    @select_horz_mod.setter
+    def select_horz_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("select_horz_mod must be a combinaison of modifiers")
+        self._select_horz_mod = modifier
+
+    @property
+    def select_vert_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that
+        expands active box selection vertically to plot
+        edge when held.
+        Default is the Shift button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._select_vert_mod
+
+    @select_vert_mod.setter
+    def select_vert_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("select_vert_mod must be a combinaison of modifiers")
+        self._select_vert_mod = modifier
+
+    @property
+    def zoom_mod(self):
+        """
+        Modifier combination (shift/ctrl/alt/super) that
+        must be hold for the mouse wheel to trigger a zoom
+        of the plot.
+        Default is no modifier.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._zoom_mod
+
+    @zoom_mod.setter
+    def zoom_mod(self, int modifier):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
+            raise ValueError("zoom_mod must be a combinaison of modifiers")
+        self._zoom_mod = modifier
+
+    @property
+    def zoom_rate(self):
+        """
+        Zoom rate for scroll (e.g. 0.1 = 10% plot range every
+        scroll click);
+        make negative to invert.
+        Default is 0.1
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._zoom_rate
+
+    @zoom_rate.setter
+    def zoom_rate(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._zoom_rate = value
+
+    @property
+    def query_enabled(self):
+        """
+        Enables query rects when Select is held
+        Default is True
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._query_enabled
+
+    @query_enabled.setter
+    def query_enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._query_enabled = value
+
+    @property
+    def query_color(self):
+        """
+        Color of the query rects.
+        Default is green.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._query_color)
+        return tuple(color)
+
+    @query_color.setter
+    def query_color(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._query_color = parse_color(value)
+
+    @property
+    def min_query_rects(self):
+        """
+        Minimum number of query rects that
+        can be active at once.
+        Default is 1.
+        """
+        return self._min_query_rects
+
+    @min_query_rects.setter
+    def min_query_rects(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._min_query_rects = value
+
+    @property
+    def max_query_rects(self):
+        """
+        Maximum number of query rects that
+        can be active at once.
+        Default is 1.
+        """
+        return self._max_query_rects
+
+    @max_query_rects.setter
+    def max_query_rects(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._max_query_rects = value
+
+    @property
+    def use_local_time(self):
+        """
+        If set, axis labels will be formatted for the system
+        timezone when ImPlotAxisFlag_Time is enabled.
+        Default is False.
+        """
+        return self._use_local_time
+
+    @use_local_time.setter
+    def use_local_time(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._use_local_time = value
+
+    @property
+    def use_ISO8601(self):
+        """
+        If set, dates will be formatted according to ISO 8601
+        where applicable (e.g. YYYY-MM-DD, YYYY-MM,
+        --MM-DD, etc.)
+        Default is False.
+        """
+        return self._use_ISO8601
+
+    @use_ISO8601.setter
+    def use_ISO8601(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._use_ISO8601 = value
+
+    @property
+    def use_24hour_clock(self):
+        """
+        If set, times will be formatted using a 24 hour clock.
+        Default is False
+        """
+        return self._use_24hour_clock
+
+    @use_24hour_clock.setter
+    def use_24hour_clock(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._use_24hour_clock = value
+
+    @property
+    def no_title(self):
+        """
+        Writable attribute to disable the display of the
+        plot title
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoTitle) != 0
+
+    @no_title.setter
+    def no_title(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoTitle
+        if value:
+            self.flags |= implot.ImPlotFlags_NoTitle
+
+    @property
+    def no_menus(self):
+        """
+        Writable attribute to disable the user interactions
+        to open the context menus
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoMenus) != 0
+
+    @no_menus.setter
+    def no_menus(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoMenus
+        if value:
+            self.flags |= implot.ImPlotFlags_NoMenus
+
+    @property
+    def no_box_select(self):
+        """
+        Writable attribute to disable the user interactions
+        to box-select
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoBoxSelect) != 0
+
+    @no_box_select.setter
+    def no_box_select(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoBoxSelect
+        if value:
+            self.flags |= implot.ImPlotFlags_NoBoxSelect
+
+    @property
+    def no_mouse_pos(self):
+        """
+        Writable attribute to disable the display of the
+        mouse position
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoMouseText) != 0
+
+    @no_mouse_pos.setter
+    def no_mouse_pos(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoMouseText
+        if value:
+            self.flags |= implot.ImPlotFlags_NoMouseText
+
+    @property
+    def crosshairs(self):
+        """
+        Writable attribute to replace the default mouse
+        cursor by a crosshair when hovered
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_Crosshairs) != 0
+
+    @crosshairs.setter
+    def crosshairs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_Crosshairs
+        if value:
+            self.flags |= implot.ImPlotFlags_Crosshairs
+
+    @property
+    def equal_aspects(self):
+        """
+        Writable attribute to constrain x/y axes
+        pairs to have the same units/pixels
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_Equal) != 0
+
+    @equal_aspects.setter
+    def equal_aspects(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_Equal
+        if value:
+            self.flags |= implot.ImPlotFlags_Equal
+
+    @property
+    def no_inputs(self):
+        """
+        Writable attribute to disable user interactions with
+        the plot.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoInputs) != 0
+
+    @no_inputs.setter
+    def no_inputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoInputs
+        if value:
+            self.flags |= implot.ImPlotFlags_NoInputs
+
+    @property
+    def no_frame(self):
+        """
+        Writable attribute to disable the drawing of the
+        imgui frame.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoFrame) != 0
+
+    @no_frame.setter
+    def no_frame(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoFrame
+        if value:
+            self.flags |= implot.ImPlotFlags_NoFrame
+
+    @property
+    def no_legend(self):
+        """
+        Writable attribute to disable the display of the
+        legend
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotFlags_NoLegend) != 0
+
+    @no_legend.setter
+    def no_legend(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotFlags_NoLegend
+        if value:
+            self.flags |= implot.ImPlotFlags_NoLegend
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef int i
+        implot.GetStyle().UseLocalTime = self._use_local_time
+        implot.GetStyle().UseISO8601 = self._use_ISO8601
+        implot.GetStyle().Use24HourClock = self._use_24hour_clock
+        implot.GetInputMap().Pan = self._pan_button
+        implot.GetInputMap().Fit = self._fit_button
+        implot.GetInputMap().Select = self._select_button
+        implot.GetInputMap().SelectCancel = self._select_cancel_button
+        implot.GetInputMap().Menu = self._menu_button
+        implot.GetInputMap().ZoomRate = self._zoom_rate
+        implot.GetInputMap().PanMod = self._pan_modifier
+        implot.GetInputMap().SelectMod = self._select_mod
+        implot.GetInputMap().ZoomMod = self._zoom_mod
+        implot.GetInputMap().OverrideMod = self._override_mod
+        implot.GetInputMap().SelectHorzMod = self._select_horz_mod
+        implot.GetInputMap().SelectVertMod = self._select_vert_mod
+
+        self._X1.mutex.lock()
+        self._X2.mutex.lock()
+        self._X3.mutex.lock()
+        self._Y1.mutex.lock()
+        self._Y2.mutex.lock()
+        self._Y3.mutex.lock()
+        self._legend.mutex.lock()
+
+        # Check at least one axis of each is enabled ?
+
+        if implot.BeginPlot(self.imgui_label.c_str(),
+                            self.requested_size,
+                            self.flags):
+            # Setup axes
+            self._X1.setup(implot.ImAxis_X1)
+            self._X2.setup(implot.ImAxis_X2)
+            self._X3.setup(implot.ImAxis_X3)
+            self._Y1.setup(implot.ImAxis_Y1)
+            self._Y2.setup(implot.ImAxis_Y2)
+            self._Y3.setup(implot.ImAxis_Y3)
+
+            # From DPG: workaround for stuck selection
+            # Unsure why it should be done here and not above
+            if (imgui.GetIO().KeyMods & self._query_toggle_mod) == imgui.GetIO().KeyMods and \
+                (imgui.IsMouseDown(self._select_button) or imgui.IsMouseReleased(self._select_button)):
+                implot.GetInputMap().OverrideMod = imgui.ImGuiMod_None
+
+            # TODO: querying
+            self._legend.setup()
+
+            if self.last_plot_element_child is not None:
+                self.last_plot_element_child.draw()
+            self._X1.after_draw(implot.ImAxis_X1)
+            self._X2.after_draw(implot.ImAxis_X2)
+            self._X3.after_draw(implot.ImAxis_X3)
+            self._Y1.after_draw(implot.ImAxis_Y1)
+            self._Y2.after_draw(implot.ImAxis_Y2)
+            self._Y3.after_draw(implot.ImAxis_Y3)
+            self._legend.after_draw()
+            self.state.hovered = implot.IsPlotHovered()
+            #self.state.selected = implot.IsPlotSelected()
+            #GetPlotSize
+            #GetPlotPos
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.clicked[i] = self.state.hovered and imgui.IsMouseClicked(i, False)
+                self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
+            implot.EndPlot()
+        else:
+            self.set_hidden_and_propagate()
+            self._X1.set_hidden()
+            self._X2.set_hidden()
+            self._X3.set_hidden()
+            self._Y1.set_hidden()
+            self._Y2.set_hidden()
+            self._Y3.set_hidden()
+        self._X1.mutex.unlock()
+        self._X2.mutex.unlock()
+        self._X3.mutex.unlock()
+        self._Y1.mutex.unlock()
+        self._Y2.mutex.unlock()
+        self._Y3.mutex.unlock()
+        self._legend.mutex.unlock()
+    # We don't need to restore the plot config as we
+    # always overwrite it.
+
+
+cdef class plotElement(baseItem):
+    """
+    Base class for plot children.
+
+    Children of plot elements are rendered on a legend
+    popup entry that gets shown an a right click (TODO configure)
+    """
+    def __cinit__(self):
+        self.imgui_label = b'###%ld'% self.uuid
+        self.user_label = ""
+        self.state.can_be_hovered = True
+        self.flags = implot.ImPlotItemFlags_None
+        self.can_have_sibling = True
+        self.can_have_widget_child = True
+        self.element_child_category = child_type.cat_plot_element
+        self._show = True
+        self._axes = [implot.ImAxis_X1, implot.ImAxis_Y1]
+        self._legend_button = imgui.ImGuiMouseButton_Right
+        self._legend = True
+        self._theme = None
+
+    @property
+    def show(self):
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._show
+
+    @show.setter
+    def show(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._show = value
+
+    @property
+    def axes(self):
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this plot element.
+        Default is (X1, Y1)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return tuple(self._axes[0], self._axes[1])
+
+    @axes.setter
+    def axes(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef int axis_x, axis_y
+        try:
+            (axis_x, axis_y) = value
+            assert(axis_x in [implot.ImAxis_X1,
+                              implot.ImAxis_X2,
+                              implot.ImAxis_X3])
+            assert(axis_y in [implot.ImAxis_Y1,
+                              implot.ImAxis_Y2,
+                              implot.ImAxis_Y3])
+        except Exception as e:
+            raise ValueError("Axes must be a tuple of valid X/Y axes")
+        self._axes[0] = axis_x
+        self._axes[1] = axis_y
+
+    @property
+    def label(self):
+        """
+        Writable attribute: label assigned to the element
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.user_label
+
+    @label.setter
+    def label(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value is None:
+            self.user_label = ""
+        else:
+            self.user_label = value
+        # Using ### means that imgui will ignore the user_label for
+        # its internal ID of the object. Indeed else the ID would change
+        # when the user label would change
+        self.imgui_label = bytes(self.user_label, 'utf-8') + b'###%ld'% self.uuid
+
+    @property
+    def no_legend(self):
+        """
+        Writable attribute to disable the legend for this plot
+        element
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return not(self._legend)
+
+    @no_legend.setter
+    def no_legend(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._legend = not(value)
+        # unsure if needed
+        self.flags &= ~implot.ImPlotItemFlags_NoLegend
+        if value:
+            self.flags |= implot.ImPlotItemFlags_NoLegend
+
+    @property
+    def ignore_fit(self):
+        """
+        Writable attribute to make this element
+        be ignored during plot fits
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotItemFlags_NoFit) != 0
+
+    @ignore_fit.setter
+    def ignore_fit(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotItemFlags_NoFit
+        if value:
+            self.flags |= implot.ImPlotItemFlags_NoFit
+
+    @property
+    def legend_button(self):
+        """
+        Button that opens the legend entry for
+        this element.
+        Default is the right mouse button.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._legend_button
+
+    @legend_button.setter
+    def legend_button(self, int button):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._legend_button = button
+
+    @property
+    def legend_handler(self):
+        """
+        Writable attribute: bound handler for the legend.
+        Only visible and hovered handlers are compatible.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._handler
+
+    @legend_handler.setter
+    def legend_handler(self, itemHandler value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Check the list of handlers can use our states. Else raise error
+        value.check_bind(self, self.state)
+        # yes: bind
+        self._handler = value
+
+    @property
+    def theme(self):
+        """
+        Writable attribute: theme for the legend and plot
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._theme
+
+    @theme.setter
+    def theme(self, baseTheme value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._theme = value
+
+    cdef void draw(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+
+        # Render siblings first
+        if self._prev_sibling is not None:
+            (<plotElement>self._prev_sibling).draw()
+
+        # Check the axes are enabled
+        if not(self.context.viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context.viewport.enabled_axes[self._axes[1]]):
+            if self.last_widgets_child is not None:
+                self.last_widgets_child.set_hidden_and_propagate()
+            return
+
+        # push theme, font
+        self.context.viewport.push_pending_theme_actions(
+            theme_enablers.t_enabled_any,
+            theme_categories.t_plot
+        )
+
+        if self._theme is not None:
+            self._theme.push()
+
+        implot.SetAxes(self._axes[0], self._axes[1])
+        self.draw_element()
+
+        self.state.visible = False
+        self.state.hovered = False
+        if self._legend:
+            if implot.BeginLegendPopup(self.imgui_label.c_str(),
+                                       self._legend_button):
+                if self.last_widgets_child is not None:
+                    self.last_widgets_child.draw()
+                self.state.visible = True
+                implot.EndLegendPopup()
+            self.state.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
+
+
+        # pop theme, font
+        if self._theme is not None:
+            self._theme.pop()
+
+        self.context.viewport.pop_applied_pending_theme_actions()
+
+        if self._handler is not None:
+            self._handler.run_handler(self, self.state)
+
+    cdef void draw_element(self) noexcept nogil:
+        return
+
+cdef class plotElementXY(plotElement):
+    def __cinit__(self):
+        self._X = np.zeros(shape=(1,), dtype=np.float64)
+        self._Y = np.zeros(shape=(1,), dtype=np.float64)
+
+    @property
+    def X(self):
+        """Values on the X axis.
+
+        By default, will try to use the passed array
+        directly for its internal backing (no copy).
+        Supported types for no copy are np.int32,
+        np.float32, np.float64.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._X
+
+    @X.setter
+    def X(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value).reshape([-1])
+        # We don't support array of pointers. Must be data,
+        # with eventually a non-standard stride
+        # type must also be one of the supported types
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._X = array
+        else:
+            self._X = np.ascontiguousarray(array, dtype=np.float64)
+
+    @property
+    def Y(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._Y
+
+    @Y.setter
+    def Y(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value).reshape([-1])
+        # We don't support array of pointers. Must be data,
+        # with eventually a non-standard stride
+        # type must also be one of the supported types
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._Y = array
+        else:
+            self._Y = np.ascontiguousarray(array, dtype=np.float64)
+
+    cdef void check_arrays(self) noexcept nogil:
+        # X and Y must be same type and same stride
+        if cnp.PyArray_TYPE(self._X) != cnp.PyArray_TYPE(self._Y):
+            with gil:
+                self._X = np.ascontiguousarray(self._X, dtype=np.float64)
+                self._Y = np.ascontiguousarray(self._Y, dtype=np.float64)
+        if cnp.PyArray_STRIDE(self._X, 0) != cnp.PyArray_STRIDE(self._Y, 0):
+            with gil:
+                self._X = np.ascontiguousarray(self._X, dtype=np.float64)
+                self._Y = np.ascontiguousarray(self._Y, dtype=np.float64)
+
+cdef class PlotLine(plotElementXY):
+    @property
+    def segments(self):
+        """
+        Plot segments rather than a full line
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLineFlags_Segments) != 0
+
+    @segments.setter
+    def segments(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLineFlags_Segments
+        if value:
+            self.flags |= implot.ImPlotLineFlags_Segments
+
+    @property
+    def loop(self):
+        """
+        Connect the first and last points
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLineFlags_Loop) != 0
+
+    @loop.setter
+    def loop(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLineFlags_Loop
+        if value:
+            self.flags |= implot.ImPlotLineFlags_Loop
+
+    @property
+    def skip_nan(self):
+        """
+        A NaN data point will be ignored instead of
+        being rendered as missing data.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLineFlags_SkipNaN) != 0
+
+    @skip_nan.setter
+    def skip_nan(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLineFlags_SkipNaN
+        if value:
+            self.flags |= implot.ImPlotLineFlags_SkipNaN
+
+    @property
+    def no_clip(self):
+        """
+        Markers (if displayed) on the edge of a plot will not be clipped.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLineFlags_NoClip) != 0
+
+    @no_clip.setter
+    def no_clip(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLineFlags_NoClip
+        if value:
+            self.flags |= implot.ImPlotLineFlags_NoClip
+
+    @property
+    def shaded(self):
+        """
+        A filled region between the line and horizontal
+        origin will be rendered.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & implot.ImPlotLineFlags_Shaded) != 0
+
+    @shaded.setter
+    def shaded(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~implot.ImPlotLineFlags_Shaded
+        if value:
+            self.flags |= implot.ImPlotLineFlags_Shaded
+
+    cdef void draw_element(self) noexcept nogil:
+        self.check_arrays()
+        cdef int size = min(self._X.shape[0], self._Y.shape[0])
+        if size == 0:
+            return
+
+        if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
+            implot.PlotLine[int](self.imgui_label.c_str(),
+                                 <const int*>cnp.PyArray_DATA(self._X),
+                                 <const int*>cnp.PyArray_DATA(self._Y),
+                                 size,
+                                 self.flags,
+                                 0,
+                                 cnp.PyArray_STRIDE(self._X, 0))
+        elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
+            implot.PlotLine[float](self.imgui_label.c_str(),
+                                   <const float*>cnp.PyArray_DATA(self._X),
+                                   <const float*>cnp.PyArray_DATA(self._Y),
+                                   size,
+                                   self.flags,
+                                   0,
+                                   cnp.PyArray_STRIDE(self._X, 0))
+        else:
+            implot.PlotLine[double](self.imgui_label.c_str(),
+                                    <const double*>cnp.PyArray_DATA(self._X),
+                                    <const double*>cnp.PyArray_DATA(self._Y),
+                                    size,
+                                    self.flags,
+                                    0,
+                                    cnp.PyArray_STRIDE(self._X, 0))
+
+cdef class plotElementXYY(plotElement):
+    def __cinit__(self):
+        self._X = np.zeros(shape=(1,), dtype=np.float64)
+        self._Y1 = np.zeros(shape=(1,), dtype=np.float64)
+        self._Y2 = np.zeros(shape=(1,), dtype=np.float64)
+
+    @property
+    def X(self):
+        """Values on the X axis.
+
+        By default, will try to use the passed array
+        directly for its internal backing (no copy).
+        Supported types for no copy are np.int32,
+        np.float32, np.float64.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._X
+
+    @X.setter
+    def X(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value).reshape([-1])
+        # We don't support array of pointers. Must be data,
+        # with eventually a non-standard stride
+        # type must also be one of the supported types
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._X = array
+        else:
+            self._X = np.ascontiguousarray(array, dtype=np.float64)
+
+    @property
+    def Y1(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._Y1
+
+    @Y1.setter
+    def Y1(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value).reshape([-1])
+        # We don't support array of pointers. Must be data,
+        # with eventually a non-standard stride
+        # type must also be one of the supported types
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._Y1 = array
+        else:
+            self._Y1 = np.ascontiguousarray(array, dtype=np.float64)
+
+    @property
+    def Y2(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._Y2
+
+    @Y2.setter
+    def Y2(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value).reshape([-1])
+        # We don't support array of pointers. Must be data,
+        # with eventually a non-standard stride
+        # type must also be one of the supported types
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._Y2 = array
+        else:
+            self._Y2 = np.ascontiguousarray(array, dtype=np.float64)
+
+    cdef void check_arrays(self) noexcept nogil:
+        # X, Y1 and Y2 must be same type and same stride
+        if cnp.PyArray_TYPE(self._X) != cnp.PyArray_TYPE(self._Y1) or \
+           cnp.PyArray_TYPE(self._X) != cnp.PyArray_TYPE(self._Y2):
+            with gil:
+                self._X = np.ascontiguousarray(self._X, dtype=np.float64)
+                self._Y1 = np.ascontiguousarray(self._Y1, dtype=np.float64)
+                self._Y2 = np.ascontiguousarray(self._Y2, dtype=np.float64)
+        if cnp.PyArray_STRIDE(self._X, 0) != cnp.PyArray_STRIDE(self._Y1, 0) or \
+           cnp.PyArray_STRIDE(self._X, 0) != cnp.PyArray_STRIDE(self._Y2, 0):
+            with gil:
+                self._X = np.ascontiguousarray(self._X, dtype=np.float64)
+                self._Y1 = np.ascontiguousarray(self._Y1, dtype=np.float64)
+                self._Y2 = np.ascontiguousarray(self._Y2, dtype=np.float64)
+
+cdef class PlotShadedLine(plotElementXYY):
+    cdef void draw_element(self) noexcept nogil:
+        self.check_arrays()
+        cdef int size = min(min(self._X.shape[0], self._Y1.shape[0]), self._Y2.shape[0])
+        if size == 0:
+            return
+
+        if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
+            implot.PlotShaded[int](self.imgui_label.c_str(),
+                                   <const int*>cnp.PyArray_DATA(self._X),
+                                   <const int*>cnp.PyArray_DATA(self._Y1),
+                                   <const int*>cnp.PyArray_DATA(self._Y2),
+                                   size,
+                                   self.flags,
+                                   0,
+                                   cnp.PyArray_STRIDE(self._X, 0))
+        elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
+            implot.PlotShaded[float](self.imgui_label.c_str(),
+                                     <const float*>cnp.PyArray_DATA(self._X),
+                                     <const float*>cnp.PyArray_DATA(self._Y1),
+                                     <const float*>cnp.PyArray_DATA(self._Y2),
+                                     size,
+                                     self.flags,
+                                     0,
+                                     cnp.PyArray_STRIDE(self._X, 0))
+        else:
+            implot.PlotShaded[double](self.imgui_label.c_str(),
+                                      <const double*>cnp.PyArray_DATA(self._X),
+                                      <const double*>cnp.PyArray_DATA(self._Y1),
+                                      <const double*>cnp.PyArray_DATA(self._Y2),
+                                      size,
+                                      self.flags,
+                                      0,
+                                      cnp.PyArray_STRIDE(self._X, 0))
+
+"""
+To avoid linking to imgui in the other .so
+"""
 
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4 color_float4) noexcept nogil:
     return imgui.ColorConvertFloat4ToU32(color_float4)

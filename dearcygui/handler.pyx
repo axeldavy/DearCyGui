@@ -2,41 +2,29 @@ from .core cimport *
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from dearcygui.wrapper cimport imgui
 
-cdef class dcgActivatedHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class ActivatedHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_activated):
-            raise TypeError("Cannot bind activated item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.activated:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_activated):
+            raise TypeError("Cannot bind activated item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.activated
 
-cdef class dcgActiveHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class ActiveHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_active):
-            raise TypeError("Cannot bind activate item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.active:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_active):
+            raise TypeError("Cannot bind activate item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.active
 
-cdef class dcgClickedHandler(itemHandler):
+cdef class ClickedHandler(itemHandler):
     def __cinit__(self):
         self.button = -1
     def configure(self, *args, **kwargs):
@@ -46,7 +34,7 @@ cdef class dcgClickedHandler(itemHandler):
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgClickedHandler. Expected button")
+            raise ValueError("Invalid arguments passed to ClickedHandler. Expected button")
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -65,28 +53,39 @@ cdef class dcgClickedHandler(itemHandler):
             raise ValueError("Invalid button")
         self.button = value
 
-    cdef void check_bind(self, uiItem item):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_clicked):
-            raise TypeError("Cannot bind clicked item handler for {}", type(item))
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_clicked):
+            raise TypeError("Cannot bind clicked item handler for this item")
 
-    cdef void run_handler(self, uiItem item) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        cdef bint clicked = False
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if state.clicked[i]:
+                clicked = True
+        return clicked
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
+            (<itemHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
-            if item.state.clicked[i]:
+            if state.clicked[i]:
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class dcgDoubleClickedHandler(itemHandler):
+cdef class DoubleClickedHandler(itemHandler):
     def __cinit__(self):
         self.button = -1
     def configure(self, *args, **kwargs):
@@ -96,7 +95,7 @@ cdef class dcgDoubleClickedHandler(itemHandler):
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgClickedHandler. Expected button")
+            raise ValueError("Invalid arguments passed to ClickedHandler. Expected button")
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -115,163 +114,126 @@ cdef class dcgDoubleClickedHandler(itemHandler):
             raise ValueError("Invalid button")
         self.button = value
 
-    cdef void check_bind(self, uiItem item):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_clicked):
-            raise TypeError("Cannot bind clicked item handler for {}", type(item))
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_clicked):
+            raise TypeError("Cannot bind clicked item handler for this item")
 
-    cdef void run_handler(self, uiItem item) noexcept nogil:
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        cdef bint clicked = False
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self.button >= 0 and self.button != i:
+                continue
+            if state.double_clicked[i]:
+                clicked = True
+        return clicked
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
+            (<itemHandler>self._prev_sibling).run_handler(item, state)
         if not(self.enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self.button >= 0 and self.button != i:
                 continue
-            if item.state.double_clicked[i]:
+            if state.double_clicked[i]:
                 self.context.queue_callback_arg1int(self.callback, self, i)
 
-cdef class dcgDeactivatedHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class DeactivatedHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_deactivated):
-            raise TypeError("Cannot bind deactivated item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.deactivated:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_deactivated):
+            raise TypeError("Cannot bind deactivated item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.deactivated
 
-cdef class dcgDeactivatedAfterEditHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class DeactivatedAfterEditHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_deactivated_after_edited):
-            raise TypeError("Cannot bind deactivated (after edit) item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.deactivated_after_edited:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_deactivated_after_edited):
+            raise TypeError("Cannot bind deactivated (after edit) item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.deactivated_after_edited
 
-cdef class dcgEditedHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class EditedHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_edited):
-            raise TypeError("Cannot bind edited item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.edited:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_edited):
+            raise TypeError("Cannot bind edited item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.edited
 
-cdef class dcgFocusHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class FocusHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_focused):
-            raise TypeError("Cannot bind focus item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.focused:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_focused):
+            raise TypeError("Cannot bind focus item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.focused
 
-cdef class dcgHoverHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class HoverHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_hovered):
-            raise TypeError("Cannot bind hover item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.hovered:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_hovered):
+            raise TypeError("Cannot bind hover item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.hovered
 
-cdef class dcgResizeHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class ResizeHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.has_rect_size):
-            raise TypeError("Cannot bind resize item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.resized:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.has_rect_size):
+            raise TypeError("Cannot bind resize item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.resized
 
-cdef class dcgToggledOpenHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class ToggledOpenHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
-        if not(item.state.can_be_toggled):
-            raise TypeError("Cannot bind toggle item handler for {}", type(item))
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.toggled:
-            self.run_callback(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_toggled):
+            raise TypeError("Cannot bind toggle item handler for this item")
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.toggled
 
-cdef class dcgVisibleHandler(itemHandler):
-    cdef void check_bind(self, uiItem item):
+cdef class VisibleHandler(itemHandler):
+    cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).check_bind(item)
+            (<itemHandler>self._prev_sibling).check_bind(item, state)
         return
-    cdef void run_handler(self, uiItem item) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<itemHandler>self._prev_sibling).run_handler(item)
-        if not(self.enabled):
-            return
-        if item.state.visible:
-            self.run_callback(item)
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return state.visible
 
-cdef class dcgKeyDownHandler(dcgKeyDownHandler_):
+cdef class KeyDownHandler(KeyDownHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -279,7 +241,7 @@ cdef class dcgKeyDownHandler(dcgKeyDownHandler_):
         if len(args) == 1:
             key = args[0]
         elif len(key) != 0:
-            raise ValueError("Invalid arguments passed to dcgKeyDownHandler. Expected key")
+            raise ValueError("Invalid arguments passed to KeyDownHandler. Expected key")
         key = kwargs.pop("key", key)
         if key < 0 or key >= imgui.ImGuiKey_NamedKey_END:
             raise ValueError("Invalid key")
@@ -299,7 +261,7 @@ cdef class dcgKeyDownHandler(dcgKeyDownHandler_):
             raise ValueError("Invalid key")
         self.key = value
 
-cdef class dcgKeyPressHandler(dcgKeyPressHandler_):
+cdef class KeyPressHandler(KeyPressHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -307,7 +269,7 @@ cdef class dcgKeyPressHandler(dcgKeyPressHandler_):
         if len(args) == 1:
             key = args[0]
         elif len(key) != 0:
-            raise ValueError("Invalid arguments passed to dcgKeyPresHandler. Expected key")
+            raise ValueError("Invalid arguments passed to KeyPresHandler. Expected key")
         key = kwargs.pop("key", key)
         if key < 0 or key >= imgui.ImGuiKey_NamedKey_END:
             raise ValueError("Invalid key")
@@ -338,7 +300,7 @@ cdef class dcgKeyPressHandler(dcgKeyPressHandler_):
         lock_gil_friendly(m, self.mutex)
         self.repeat = value
 
-cdef class dcgKeyReleaseHandler(dcgKeyReleaseHandler_):
+cdef class KeyReleaseHandler(KeyReleaseHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -346,7 +308,7 @@ cdef class dcgKeyReleaseHandler(dcgKeyReleaseHandler_):
         if len(args) == 1:
             key = args[0]
         elif len(key) != 0:
-            raise ValueError("Invalid arguments passed to dcgKeyReleaseHandler. Expected key")
+            raise ValueError("Invalid arguments passed to KeyReleaseHandler. Expected key")
         key = kwargs.pop("key", key)
         if key < 0 or key >= imgui.ImGuiKey_NamedKey_END:
             raise ValueError("Invalid key")
@@ -366,7 +328,7 @@ cdef class dcgKeyReleaseHandler(dcgKeyReleaseHandler_):
             raise ValueError("Invalid key")
         self.key = value
 
-cdef class dcgMouseClickHandler(dcgMouseClickHandler_):
+cdef class MouseClickHandler(MouseClickHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -374,7 +336,7 @@ cdef class dcgMouseClickHandler(dcgMouseClickHandler_):
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgMouseClickedHandler. Expected button")
+            raise ValueError("Invalid arguments passed to MouseClickedHandler. Expected button")
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -404,7 +366,7 @@ cdef class dcgMouseClickHandler(dcgMouseClickHandler_):
         lock_gil_friendly(m, self.mutex)
         self.repeat = value
 
-cdef class dcgMouseDoubleClickHandler(dcgMouseDoubleClickHandler_):
+cdef class MouseDoubleClickHandler(MouseDoubleClickHandler_):
     def __cinit__(self):
         self.button = -1
     def configure(self, *args, **kwargs):
@@ -414,7 +376,7 @@ cdef class dcgMouseDoubleClickHandler(dcgMouseDoubleClickHandler_):
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgMouseDoubleClickedHandler. Expected button")
+            raise ValueError("Invalid arguments passed to MouseDoubleClickedHandler. Expected button")
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -433,7 +395,7 @@ cdef class dcgMouseDoubleClickHandler(dcgMouseDoubleClickHandler_):
             raise ValueError("Invalid button")
         self.button = value
 
-cdef class dcgMouseDownHandler(dcgMouseDownHandler_):
+cdef class MouseDownHandler(MouseDownHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -441,7 +403,7 @@ cdef class dcgMouseDownHandler(dcgMouseDownHandler_):
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgMouseDownHandler. Expected button")
+            raise ValueError("Invalid arguments passed to MouseDownHandler. Expected button")
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -460,7 +422,7 @@ cdef class dcgMouseDownHandler(dcgMouseDownHandler_):
             raise ValueError("Invalid button")
         self.button = value
 
-cdef class dcgMouseDragHandler(dcgMouseDragHandler_):
+cdef class MouseDragHandler(MouseDragHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -471,7 +433,7 @@ cdef class dcgMouseDragHandler(dcgMouseDragHandler_):
             button = args[0]
             threshold = args[1]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgMouseDragHandler. Expected button")
+            raise ValueError("Invalid arguments passed to MouseDragHandler. Expected button")
         button = kwargs.pop("button", button)
         threshold = kwargs.pop("threshold", threshold)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
@@ -492,7 +454,7 @@ cdef class dcgMouseDragHandler(dcgMouseDragHandler_):
             raise ValueError("Invalid button")
         self.button = value
 
-cdef class dcgMouseReleaseHandler(dcgMouseReleaseHandler_):
+cdef class MouseReleaseHandler(MouseReleaseHandler_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -500,7 +462,7 @@ cdef class dcgMouseReleaseHandler(dcgMouseReleaseHandler_):
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgMouseReleaseHandler. Expected button")
+            raise ValueError("Invalid arguments passed to MouseReleaseHandler. Expected button")
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")

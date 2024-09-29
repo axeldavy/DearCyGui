@@ -2,7 +2,7 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from .core cimport *
 import numpy as np
 
-cdef class dcgViewportDrawList(dcgViewportDrawList_):
+cdef class ViewportDrawList(ViewportDrawList_):
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -38,7 +38,7 @@ cdef class dcgViewportDrawList(dcgViewportDrawList_):
         lock_gil_friendly(m, self.mutex)
         self._show = value
 
-cdef class dcgDrawLayer(dcgDrawLayer_):
+cdef class DrawLayer(DrawLayer_):
     def configure(self, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -127,7 +127,7 @@ cdef class dcgDrawLayer(dcgDrawLayer_):
         self.transform[1] = [0., 0., 0., 1.]
         self.has_matrix_transform = True
 
-cdef class dcgDrawArrow(dcgDrawArrow_):
+cdef class DrawArrow(DrawArrow_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -135,7 +135,7 @@ cdef class dcgDrawArrow(dcgDrawArrow_):
             read_point[float](self.end, args[0])
             read_point[float](self.start, args[1])
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawArrow. Expected p1 and p2")
+            raise ValueError("Invalid arguments passed to DrawArrow. Expected p1 and p2")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         self.thickness = kwargs.pop("thickness", self.thickness)
@@ -201,7 +201,7 @@ cdef class dcgDrawArrow(dcgDrawArrow_):
         self.__compute_tip()
 
 
-cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
+cdef class DrawBezierCubic(DrawBezierCubic_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -212,7 +212,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
             read_point[float](self.p3, p3)
             read_point[float](self.p4, p4)
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawBezierCubic. Expected p1, p2, p3 and p4")
+            raise ValueError("Invalid arguments passed to DrawBezierCubic. Expected p1, p2, p3 and p4")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         self.thickness = kwargs.pop("thickness", self.thickness)
@@ -291,7 +291,7 @@ cdef class dcgDrawBezierCubic(dcgDrawBezierCubic_):
         lock_gil_friendly(m, self.mutex)
         self.segments = value
 
-cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
+cdef class DrawBezierQuadratic(DrawBezierQuadratic_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -301,7 +301,7 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
             read_point[float](self.p2, p2)
             read_point[float](self.p3, p3)
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawBezierQuadratic. Expected p1, p2 and p3")
+            raise ValueError("Invalid arguments passed to DrawBezierQuadratic. Expected p1, p2 and p3")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         self.thickness = kwargs.pop("thickness", self.thickness)
@@ -370,7 +370,7 @@ cdef class dcgDrawBezierQuadratic(dcgDrawBezierQuadratic_):
         lock_gil_friendly(m, self.mutex)
         self.segments = value
 
-cdef class dcgDrawCircle(dcgDrawCircle_):
+cdef class DrawCircle(DrawCircle_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -379,7 +379,7 @@ cdef class dcgDrawCircle(dcgDrawCircle_):
             read_point[float](self.center, center)
             self.radius = radius
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawCircle. Expected center and radius")
+            raise ValueError("Invalid arguments passed to DrawCircle. Expected center and radius")
         if "color" in kwargs:
             self.color = parse_color(kwargs.pop("color"))
         if "fill" in kwargs:
@@ -452,7 +452,7 @@ cdef class dcgDrawCircle(dcgDrawCircle_):
         lock_gil_friendly(m, self.mutex)
         self.segments = value
 
-cdef class dcgDrawEllipse(dcgDrawEllipse_):
+cdef class DrawEllipse(DrawEllipse_):
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -463,7 +463,7 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
             read_point[float](self.pmax, pmax)
             recompute_points = True
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawEllipse. Expected pmin and pmax")
+            raise ValueError("Invalid arguments passed to DrawEllipse. Expected pmin and pmax")
         # pmin/pmax can also be passed as optional arguments
         if "pmin" in kwargs:
             read_point[float](self.pmin, kwargs.pop("pmin"))
@@ -559,31 +559,31 @@ cdef class dcgDrawEllipse(dcgDrawEllipse_):
         self.__fill_points()
 
 
-cdef class dcgDrawImage(dcgDrawImage_):
+cdef class DrawImage(DrawImage_):
     def configure(self, *args, **kwargs):
         if len(args) == 3:
             texture = args[0]
             if texture == 2:#MV_ATLAS_UUID:
                 assert(False) # TODO
             else:
-                if not(isinstance(texture, dcgTexture)):
-                    raise TypeError("texture input must be a dcgTexture")
-                self.texture = <dcgTexture>texture
+                if not(isinstance(texture, Texture)):
+                    raise TypeError("texture input must be a Texture")
+                self.texture = <Texture>texture
             read_point[float](self.pmin, args[1])
             read_point[float](self.pmax, args[2])
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, pmin, pmax")
+            raise ValueError("Invalid arguments passed to DrawImage. Expected texture, pmin, pmax")
         if "pmin" in kwargs:
             read_point[float](self.pmin, kwargs.pop("pmin"))
         if "pmax" in kwargs:
             read_point[float](self.pmax, kwargs.pop("pmax"))
         if "texture_tag" in kwargs:
-            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to dcgTexture reference")
+            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to Texture reference")
         if "texture" in kwargs:
             texture = kwargs.pop("texture")
-            if not(isinstance(texture, dcgTexture)):
-                raise TypeError("texture input must be a dcgTexture")
-            self.texture = <dcgTexture>texture
+            if not(isinstance(texture, Texture)):
+                raise TypeError("texture input must be a Texture")
+            self.texture = <Texture>texture
         if "uv_max" in kwargs:
             uv_max = kwargs.pop("uv_max")
             self.uv[2] = uv_max[0]
@@ -608,8 +608,8 @@ cdef class dcgDrawImage(dcgDrawImage_):
     def texture(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if not(isinstance(value, dcgTexture)):
-            raise TypeError("texture must be a dcgTexture")
+        if not(isinstance(value, Texture)):
+            raise TypeError("texture must be a Texture")
         self.texture = value
     @property
     def pmin(self):
@@ -654,22 +654,22 @@ cdef class dcgDrawImage(dcgDrawImage_):
         lock_gil_friendly(m, self.mutex)
         self.color_multiplier = parse_color(value)
 
-cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
+cdef class DrawImageQuad(DrawImageQuad_):
     def configure(self, *args, **kwargs):
         if len(args) == 5:
             texture = args[0]
             if texture == 2:#MV_ATLAS_UUID:
                 assert(False) # TODO
             else:
-                if not(isinstance(texture, dcgTexture)):
-                    raise TypeError("texture input must be a dcgTexture")
-                self.texture = <dcgTexture>texture
+                if not(isinstance(texture, Texture)):
+                    raise TypeError("texture input must be a Texture")
+                self.texture = <Texture>texture
             read_point[float](self.p1, args[1])
             read_point[float](self.p2, args[2])
             read_point[float](self.p3, args[3])
             read_point[float](self.p4, args[4])
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawImage. Expected texture, p1, p2, p3, p4")
+            raise ValueError("Invalid arguments passed to DrawImage. Expected texture, p1, p2, p3, p4")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
@@ -679,12 +679,12 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
         if "p4" in kwargs:
             read_point[float](self.p4, kwargs.pop("p4"))
         if "texture_tag" in kwargs:
-            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to dcgTexture reference")
+            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to Texture reference")
         if "texture" in kwargs:
             texture = kwargs.pop("texture")
-            if not(isinstance(texture, dcgTexture)):
-                raise TypeError("texture input must be a dcgTexture")
-            self.texture = <dcgTexture>texture
+            if not(isinstance(texture, Texture)):
+                raise TypeError("texture input must be a Texture")
+            self.texture = <Texture>texture
         if "uv1" in kwargs:
             read_point[float](self.uv1, kwargs.pop("uv1"))
         if "uv2" in kwargs:
@@ -709,8 +709,8 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
     def texture(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if not(isinstance(value, dcgTexture)):
-            raise TypeError("texture must be a dcgTexture")
+        if not(isinstance(value, Texture)):
+            raise TypeError("texture must be a Texture")
         self.texture = value
     @property
     def p1(self):
@@ -805,13 +805,13 @@ cdef class dcgDrawImageQuad(dcgDrawImageQuad_):
         lock_gil_friendly(m, self.mutex)
         self.color_multiplier = parse_color(value)
 
-cdef class dcgDrawLine(dcgDrawLine_):
+cdef class DrawLine(DrawLine_):
     def configure(self, *args, **kwargs):
         if len(args) == 2:
             read_point[float](self.p1, args[0])
             read_point[float](self.p2, args[1])
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawLine. Expected p1, p2")
+            raise ValueError("Invalid arguments passed to DrawLine. Expected p1, p2")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
@@ -874,13 +874,13 @@ cdef class dcgDrawLine(dcgDrawLine_):
         lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
-cdef class dcgDrawPolyline(dcgDrawPolyline_):
+cdef class DrawPolyline(DrawPolyline_):
     def configure(self, *args, **kwargs):
         points = None
         if len(args) == 1:
             points = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawPolyline. Expected list of points")
+            raise ValueError("Invalid arguments passed to DrawPolyline. Expected list of points")
         if "points" in kwargs:
             points = kwargs.pop("points")
         cdef float4 p
@@ -949,13 +949,13 @@ cdef class dcgDrawPolyline(dcgDrawPolyline_):
         lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
-cdef class dcgDrawPolygon(dcgDrawPolygon_):
+cdef class DrawPolygon(DrawPolygon_):
     def configure(self, *args, **kwargs):
         points = None
         if len(args) == 1:
             points = args[0]
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawPolygon. Expected list of points")
+            raise ValueError("Invalid arguments passed to DrawPolygon. Expected list of points")
         if "points" in kwargs:
             points = kwargs.pop("points")
         cdef float4 p
@@ -1030,7 +1030,7 @@ cdef class dcgDrawPolygon(dcgDrawPolygon_):
         self.thickness = value
 
 
-cdef class dcgDrawQuad(dcgDrawQuad_):
+cdef class DrawQuad(DrawQuad_):
     def configure(self, *args, **kwargs):
         if len(args) == 4:
             (p1, p2, p3, p4) = args
@@ -1039,7 +1039,7 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
             read_point[float](self.p3, p3)
             read_point[float](self.p4, p4)
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2, p3 and p4")
+            raise ValueError("Invalid arguments passed to DrawQuad. Expected p1, p2, p3 and p4")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:
@@ -1130,14 +1130,14 @@ cdef class dcgDrawQuad(dcgDrawQuad_):
         lock_gil_friendly(m, self.mutex)
         self.thickness = value
 
-cdef class dcgDrawRect(dcgDrawRect_):
+cdef class DrawRect(DrawRect_):
     def configure(self, *args, **kwargs):
         if len(args) == 2:
             (pmin, pmax) = args
             read_point[float](self.pmin, pmin)
             read_point[float](self.pmax, pmax)
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawRect. Expected pmin and pmax")
+            raise ValueError("Invalid arguments passed to DrawRect. Expected pmin and pmax")
         if "pmin" in kwargs:
             read_point[float](self.pmin, kwargs.pop("pmin"))
         if "pmax" in kwargs:
@@ -1284,12 +1284,12 @@ cdef class dcgDrawRect(dcgDrawRect_):
         lock_gil_friendly(m, self.mutex)
         self.multicolor = value
 
-cdef class dgcDrawText(dgcDrawText_):
+cdef class DrawText(DrawText_):
     def configure(self, *args, **kwargs):
         if len(args) == 1:
             read_point[float](self.pos, args[0])
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dgcDrawText. Expected pos")
+            raise ValueError("Invalid arguments passed to DrawText. Expected pos")
         if "pos" in kwargs:
             read_point[float](self.pos, kwargs.pop("pos"))
         if "color" in kwargs:
@@ -1343,7 +1343,7 @@ cdef class dgcDrawText(dgcDrawText_):
         self.size = value
 
 
-cdef class dcgDrawTriangle(dcgDrawTriangle_):
+cdef class DrawTriangle(DrawTriangle_):
     def configure(self, *args, **kwargs):
         if len(args) == 3:
             (p1, p2, p3) = args
@@ -1351,7 +1351,7 @@ cdef class dcgDrawTriangle(dcgDrawTriangle_):
             read_point[float](self.p2, p2)
             read_point[float](self.p3, p3)
         elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to dcgDrawQuad. Expected p1, p2 and p3")
+            raise ValueError("Invalid arguments passed to DrawQuad. Expected p1, p2 and p3")
         if "p1" in kwargs:
             read_point[float](self.p1, kwargs.pop("p1"))
         if "p2" in kwargs:

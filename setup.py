@@ -175,7 +175,7 @@ def setup_package():
         ext_modules = cythonize(extensions, language_level=3)
     )
     metadata["package_data"] = {}
-    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py']
+    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi']
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')
