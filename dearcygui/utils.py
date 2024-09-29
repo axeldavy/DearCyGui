@@ -155,7 +155,6 @@ class MetricsWindow(dcg.Window):
         # be small.
         dcg.TimeWatcher(context, parent=self, callback=self.log_times)
         # Attach to the viewport
-        print(self.children)
         self.parent = context.viewport
         self.metrics_window_rendering_time = 0
         self.start_time = 1e-9*self.context.viewport.metrics["last_time_before_rendering"]

@@ -98,7 +98,14 @@ def configure_item(item : Union[int, str], **kwargs) -> None:
 
 def configure_app(**kwargs) -> None:
     """Configures an item after creation."""
-    internal_dpg.configure_app(**kwargs)
+    for (key, value) in kwargs.items():
+        try:
+            setattr(DCG_CONTEXT, key, value)
+        except AttributeError:
+            try:
+                setattr(DCG_CONTEXT.viewport, key, value)
+            except AttributeError:
+                print(f"Unhandled app configure {key}, {value}")
 
 def configure_viewport(item : Union[int, str], **kwargs) -> None:
     """Configures a viewport after creation."""
@@ -149,14 +156,13 @@ def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Ri
         item's uuid
     """
     if modal:
-        item = window(modal=True, show=False, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
+        item = window(modal=True, show=False, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background, tag=tag)
     else:
-        item = window(popup=True, show=False, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background)
-    def callback(item=item):
+        item = window(popup=True, show=False, autosize=True, min_size=min_size, max_size=max_size, no_move=no_move, no_background=no_background, tag=tag)
+    def callback(sender, source, user_data, item=item):
         item.show = True
-    parent_queue = save_parent_queue()
+    item.parent = DCG_CONTEXT.viewport
     handler = item_clicked_handler(mousebutton, callback=callback)
-    restore_parent_queue(parent_queue)
     DCG_CONTEXT[parent].handler = handler
     return item
 
@@ -1595,7 +1601,7 @@ def collapsing_header(*, label: str =None, user_data: Any =None, indent: int =0,
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.CollapsingHeader(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, closable=closable, default_open=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, **kwargs)
+    return dcg.CollapsingHeader(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, closable=closable, value=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, **kwargs)
 
 def color_button(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_border: bool =False, no_drag_drop: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a color button.
@@ -1907,7 +1913,7 @@ def colormap_slider(*, label: str =None, user_data: Any =None, width: int =0, he
 
     #return colormap_slider(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, **kwargs)
 
-def combo(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: str ='', popup_align_left: bool =False, no_arrow_button: bool =False, no_preview: bool =False, fit_width: bool =False, height_mode: int =1, **kwargs) -> Union[int, str]:
+def combo(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: str ='', popup_align_left: bool =False, no_arrow_button: bool =False, no_preview: bool =False, fit_width: bool =False, height_mode: str ="regular", **kwargs) -> Union[int, str]:
     """     Adds a combo dropdown that allows a user to select a single option from a drop down window. All items will be shown as selectables on the dropdown.
 
     Args:
@@ -1935,7 +1941,7 @@ def combo(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, us
         no_arrow_button (bool, optional): Display the preview box without the square arrow button indicating dropdown activity.
         no_preview (bool, optional): Display only the square arrow button and not the selected value.
         fit_width (bool, optional): Fit the available width.
-        height_mode (int, optional): Controlls the number of items shown in the dropdown by the constants mvComboHeight_Small, mvComboHeight_Regular, mvComboHeight_Large, mvComboHeight_Largest
+        height_mode (str, optional): Controlls the number of items shown in the dropdown by the constants mvComboHeight_Small, mvComboHeight_Regular, mvComboHeight_Large, mvComboHeight_Largest
         id (Union[int, str], optional): (deprecated) 
     Returns:
         Union[int, str]
@@ -5569,19 +5575,6 @@ def texture_registry(*, label: str =None, user_data: Any =None, show: bool =Fals
 
     #return texture_registry(label=label, user_data=user_data, show=show, **kwargs)
 
-def save_parent_queue():
-    parent_queue = []
-    while True:
-        parent = DCG_CONTEXT.fetch_parent_queue_back()
-        if parent is None:
-            return parent_queue
-        parent_queue.append(parent)
-        DCG_CONTEXT.pop_next_parent()
-
-def restore_parent_queue(parent_queue):
-    for parent in parent_queue[::-1]:
-        DCG_CONTEXT.push_next_parent(parent)
-
 def theme(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str]:
     """     Adds a theme.
 
@@ -5811,7 +5804,7 @@ def tree_node(*, label: str =None, user_data: Any =None, indent: int =0, payload
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.TreeNode(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, default_open=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, selectable=selectable, span_text_width=span_text_width, span_full_width=span_full_width, **kwargs)
+    return dcg.TreeNode(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_open, open_on_double_click=open_on_double_click, open_on_arrow=open_on_arrow, leaf=leaf, bullet=bullet, selectable=selectable, span_text_width=span_text_width, span_full_width=span_full_width, **kwargs)
 
 def value_registry(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str]:
     """     Adds a value registry.

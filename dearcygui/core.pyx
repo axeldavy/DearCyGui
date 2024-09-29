@@ -650,8 +650,7 @@ cdef class baseItem:
     not be deleted by the garbage collector.
     """
     def __init__(self, context, *args, **kwargs):
-        if len(kwargs) > 0 or len(args) > 0:
-            self.configure(*args, **kwargs)
+        self.configure(*args, **kwargs)
 
     def __cinit__(self, context, *args, **kwargs):
         if not(isinstance(context, Context)):
@@ -1834,19 +1833,19 @@ cdef class Viewport(baseItem):
             mvRestoreViewport(dereference(self.viewport))
 
     @property
-    def wait_for_inputs(self):
+    def wait_for_input(self):
         """
         Writable attribute: When the app doesn't need to be
         refreshed, one can save power comsumption by not
-        rendering. wait_for_inputs will pause rendering until
+        rendering. wait_for_input will pause rendering until
         a mouse or keyboard event is received.
         wake() can also be used to restart rendering
         for one frame.
         """
         return self.viewport.waitForEvents
 
-    @wait_for_inputs.setter
-    def wait_for_inputs(self, bint value):
+    @wait_for_input.setter
+    def wait_for_input(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.viewport.waitForEvents = value
@@ -1906,7 +1905,7 @@ cdef class Viewport(baseItem):
         delta of times are return in float as seconds.
 
         Render frames does in the folowing order:
-        event handling (wait_for_inputs has effect there)
+        event handling (wait_for_input has effect there)
         rendering (going through all objects and calling imgui)
         presenting to the os (send to the OS the rendered frame)
 
@@ -2165,7 +2164,7 @@ cdef class Viewport(baseItem):
 
         Rendering occurs in several separated steps:
         . Mouse/Keyboard events are processed. it's there
-          that wait_for_inputs has an effect.
+          that wait_for_input has an effect.
         . The viewport item, and then all the rendering tree are
           walked through to query their state and prepare the rendering
           commands using ImGui, ImPlot and ImNodes
@@ -2188,7 +2187,7 @@ cdef class Viewport(baseItem):
             self_m.unlock()
             # Process input events.
             # Doesn't need imgui mutex.
-            # if wait_for_inputs is set, can take a long time
+            # if wait_for_input is set, can take a long time
             mvProcessEvents(self.viewport)
             backend_m.unlock() # important to respect lock order
             # Core rendering - uses imgui and viewport
@@ -3806,12 +3805,6 @@ cdef class itemHandler(baseItem):
         self.enabled = True
         self.can_have_sibling = True
         self.element_child_category = child_type.cat_item_handler
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.enabled = kwargs.pop("enabled", self.enabled)
-        self.enabled = kwargs.pop("show", self.enabled)
-        return super().configure(**kwargs)
     @property
     def enabled(self):
         cdef unique_lock[recursive_mutex] m
@@ -3819,6 +3812,17 @@ cdef class itemHandler(baseItem):
         return self.enabled
     @enabled.setter
     def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.enabled = value
+    # for backward compatibility
+    @property
+    def show(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.enabled
+    @show.setter
+    def show(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.enabled = value
@@ -5006,39 +5010,41 @@ cdef class Combo(uiItem):
     def height_mode(self):
         """
         Writable attribute: height mode of the combo.
-        0: small
-        1: regular
-        2: large
-        3: largest
+        Supported values are
+        "small"
+        "regular"
+        "large"
+        "largest"
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if (self.flags & imgui.ImGuiComboFlags_HeightSmall) != 0:
-            return 0
+            return "small"
         elif (self.flags & imgui.ImGuiComboFlags_HeightLargest) != 0:
-            return 3
+            return "largest"
         elif (self.flags & imgui.ImGuiComboFlags_HeightLarge) != 0:
-            return 2
-        return 1
+            return "large"
+        return "regular"
 
     @height_mode.setter
-    def height_mode(self, int value):
+    def height_mode(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < 0 or value >= 4:
-            raise ValueError("Invalid height mode {value}")
         self.flags &= ~(imgui.ImGuiComboFlags_HeightSmall |
                         imgui.ImGuiComboFlags_HeightRegular |
                         imgui.ImGuiComboFlags_HeightLarge |
                         imgui.ImGuiComboFlags_HeightLargest)
-        if value == 0:
+        if value == "small":
             self.flags |= imgui.ImGuiComboFlags_HeightSmall
-        elif value == 1:
+        elif value == "regular":
             self.flags |= imgui.ImGuiComboFlags_HeightRegular
-        elif value == 2:
+        elif value == "large":
             self.flags |= imgui.ImGuiComboFlags_HeightLarge
-        else:
+        elif value == "largest":
             self.flags |= imgui.ImGuiComboFlags_HeightLargest
+        else:
+            self.flags |= imgui.ImGuiComboFlags_HeightRegular
+            raise ValueError("Invalid height mode {value}")
 
     @property
     def popup_align_left(self):
@@ -7138,7 +7144,7 @@ cdef class MenuItem(uiItem):
         cdef bool current_value = SharedBool.get(<SharedBool>self._value)
         cdef bint activated = imgui.MenuItem(self.imgui_label.c_str(),
                                              self._shortcut.c_str(),
-                                             NULL if self._check else &current_value,
+                                             &current_value if self._check else NULL,
                                              self._enabled)
         self.update_current_state()
         SharedBool.set(<SharedBool>self._value, current_value)
@@ -7564,8 +7570,6 @@ cdef class Tooltip(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         cdef float hoverDelay_backup
         cdef bint target_hovered
-        with gil:
-            print(self, self._target)
         if self._target is None or self._target is self._prev_sibling:
             if self._delay > 0.:
                 hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
@@ -7577,8 +7581,6 @@ cdef class Tooltip(uiItem):
             else:
                 target_hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
         else:
-            with gil:
-                print(self, self.target, self.target_state.hovered)
             target_hovered = self.target_state.hovered
 
         if self._hide_on_activity and imgui.GetIO().MouseDelta.x != 0. and \

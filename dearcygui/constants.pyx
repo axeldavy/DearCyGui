@@ -153,10 +153,10 @@ class constants:
     mvDir_Right = imgui.ImGuiDir_Right
     mvDir_Up = imgui.ImGuiDir_Up
     mvDir_Down = imgui.ImGuiDir_Down
-    mvComboHeight_Small = 0
-    mvComboHeight_Regular = 1
-    mvComboHeight_Large = 2
-    mvComboHeight_Largest = 3
+    mvComboHeight_Small = "small"
+    mvComboHeight_Regular = "regular"
+    mvComboHeight_Large = "large"
+    mvComboHeight_Largest = "largest"
 
     mvPlatform_Windows = 0
     mvPlatform_Apple = 1
