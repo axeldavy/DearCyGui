@@ -14,13 +14,13 @@ cdef class ActiveHandler(baseHandler):
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
 cdef class ClickedHandler(baseHandler):
-    cdef int button
+    cdef int _button
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class DoubleClickedHandler(baseHandler):
-    cdef int button
+    cdef int _button
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
@@ -32,6 +32,18 @@ cdef class DeactivatedHandler(baseHandler):
 cdef class DeactivatedAfterEditHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class DraggedHandler(baseHandler):
+    cdef int _button
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class DraggingHandler(baseHandler):
+    cdef int _button
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class EditedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)

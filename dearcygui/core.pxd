@@ -79,16 +79,16 @@ cdef class Context:
     cdef Callback on_close_callback
     cdef public object on_frame_callbacks
     cdef object queue
-    cdef void queue_callback_noarg(self, Callback, baseItem) noexcept nogil
-    cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem) noexcept nogil
-    cdef void queue_callback_arg1int(self, Callback, baseItem, int) noexcept nogil
-    cdef void queue_callback_arg1float(self, Callback, baseItem, float) noexcept nogil
-    cdef void queue_callback_arg1value(self, Callback, baseItem, SharedValue) noexcept nogil
-    cdef void queue_callback_arg1int1float(self, Callback, baseItem, int, float) noexcept nogil
-    cdef void queue_callback_arg2float(self, Callback, baseItem, float, float) noexcept nogil
-    cdef void queue_callback_arg1int2float(self, Callback, baseItem, int, float, float) noexcept nogil
-    cdef void queue_callback_arg4int(self, Callback, baseItem, int, int, int, int) noexcept nogil
-    cdef void queue_callback_arg3long1int(self, Callback, baseItem, long long, long long, long long, int) noexcept nogil
+    cdef void queue_callback_noarg(self, Callback, baseItem, baseItem) noexcept nogil
+    cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem, baseItem) noexcept nogil
+    cdef void queue_callback_arg1int(self, Callback, baseItem, baseItem, int) noexcept nogil
+    cdef void queue_callback_arg1float(self, Callback, baseItem, baseItem, float) noexcept nogil
+    cdef void queue_callback_arg1value(self, Callback, baseItem, baseItem, SharedValue) noexcept nogil
+    cdef void queue_callback_arg1int1float(self, Callback, baseItem, baseItem, int, float) noexcept nogil
+    cdef void queue_callback_arg2float(self, Callback, baseItem, baseItem, float, float) noexcept nogil
+    cdef void queue_callback_arg1int2float(self, Callback, baseItem, baseItem, int, float, float) noexcept nogil
+    cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
+    cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
     cdef void register_item(self, baseItem o, long long uuid)
     cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag)
     cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
@@ -206,17 +206,17 @@ cdef enum child_type:
 
 
 cdef struct itemState:
-    bint can_be_active
     bint can_be_activated
+    bint can_be_active
     bint can_be_clicked
     bint can_be_deactivated
     bint can_be_deactivated_after_edited
+    bint can_be_dragged
     bint can_be_edited
     bint can_be_focused
     bint can_be_hovered
     bint can_be_toggled
-    bint has_rect_min
-    bint has_rect_max
+    bint has_position
     bint has_rect_size
     bint has_content_region
     bint hovered
@@ -224,19 +224,27 @@ cdef struct itemState:
     bint focused
     bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
     bint[<int>imgui.ImGuiMouseButton_COUNT] double_clicked
+    bint[<int>imgui.ImGuiMouseButton_COUNT] dragging
+    bint[<int>imgui.ImGuiMouseButton_COUNT] dragged
+    imgui.ImVec2[<int>imgui.ImGuiMouseButton_COUNT] drag_deltas # only valid when dragging or dragged
     bint edited
     bint activated
     bint deactivated
     bint deactivated_after_edited
     bint toggled
     bint resized
-    imgui.ImVec2 rect_min
-    imgui.ImVec2 rect_max
+    imgui.ImVec2 pos_to_viewport
+    imgui.ImVec2 pos_to_window
+    imgui.ImVec2 pos_to_parent
+    imgui.ImVec2 pos_to_default
     imgui.ImVec2 rect_size
-    imgui.ImVec2 content_region
-    # Item: indicates if the item was in the clipped region of the window
-    # Window: indicates if the window was rendered
+    imgui.ImVec2 content_region_size
+    # Indicates if the item was rendered or not
+    # not clipped, no optimization because hidden.
     bint visible
+
+cdef void update_current_state_as_hidden(itemState& state) noexcept nogil
+cdef void update_current_mouse_states(itemState& state) noexcept nogil
 
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
@@ -248,7 +256,7 @@ cdef class Viewport(baseItem):
     cdef Callback _close_callback
     cdef baseTheme _theme
     cdef itemState state # Unused. Just for compatibility with handlers
-    cdef baseHandler _handler
+    cdef vector[PyObject*] _handlers # type baseHandler
     # For timing stats
     cdef long long last_t_before_event_handling
     cdef long long last_t_before_rendering
@@ -266,8 +274,8 @@ cdef class Viewport(baseItem):
     cdef float[6] clipViewport
     cdef bint has_matrix_transform
     cdef float[4][4] transform
-    cdef float shift_x
-    cdef float shift_y
+    cdef imgui.ImVec2 window_pos
+    cdef imgui.ImVec2 parent_pos
     cdef bint in_plot
     cdef float thickness_multiplier # in plots
     cdef bint[<int>implot.ImAxis_COUNT] enabled_axes
@@ -287,6 +295,7 @@ cdef class Viewport(baseItem):
     cdef void push_pending_theme_actions(self, theme_enablers, theme_categories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
+    cdef void cwake(self) noexcept nogil
 
 
 cdef class Callback:
@@ -551,12 +560,19 @@ A drawable item with various UI states
 """
 
 cdef class baseHandler(baseItem):
-    cdef bint enabled
-    cdef Callback callback
+    cdef bint _enabled
+    cdef Callback _callback
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
     cdef void run_callback(self, baseItem) noexcept nogil
+
+cdef inline void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil:
+    if handlers.empty():
+        return
+    cdef int i
+    for i in range(<int>handlers.size()):
+        (<baseHandler>(handlers[i])).run_handler(item, state)
 
 cpdef enum handlerListOP:
     ALL,
@@ -569,56 +585,65 @@ cdef class HandlerList(baseHandler):
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
+cdef class ConditionalHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
 cdef class KeyDownHandler_(baseHandler):
-    cdef int key
+    cdef int _key
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class KeyPressHandler_(baseHandler):
-    cdef int key
-    cdef bint repeat
+    cdef int _key
+    cdef bint _repeat
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class KeyReleaseHandler_(baseHandler):
-    cdef int key
+    cdef int _key
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseClickHandler_(baseHandler):
-    cdef int button
-    cdef bint repeat
+    cdef int _button
+    cdef bint _repeat
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseDoubleClickHandler_(baseHandler):
-    cdef int button
+    cdef int _button
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseDownHandler_(baseHandler):
-    cdef int button
+    cdef int _button
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseDragHandler_(baseHandler):
-    cdef int button
-    cdef float threshold
+    cdef int _button
+    cdef float _threshold
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseMoveHandler(baseHandler):
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseReleaseHandler_(baseHandler):
-    cdef int button
+    cdef int _button
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
 cdef class MouseWheelHandler(baseHandler):
     cdef bint _horizontal
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
+cpdef enum positioning:
+    DEFAULT,
+    REL_DEFAULT,
+    REL_PARENT,
+    REL_WINDOW,
+    REL_VIEWPORT
+
 cdef class uiItem(baseItem):
     cdef string imgui_label
     cdef str user_label
     cdef bool _show
-    # relative position to the parent window or the viewport if a window
-    cdef imgui.ImVec2 _relative_position
-    # coordinate of the top left corner relative to the viewport
-    cdef imgui.ImVec2 _absolute_position
+    cdef positioning[2] _pos_policy
     # mvAppItemInfo
     #cdef int location -> for table
     # mvAppItemState
@@ -629,6 +654,7 @@ cdef class uiItem(baseItem):
     cdef bint show_update_requested
     cdef bint size_update_requested
     cdef bint pos_update_requested
+    cdef bint _no_newline
     cdef bint enabled_update_requested
     cdef int last_frame_update
     # mvAppItemConfig
@@ -643,17 +669,18 @@ cdef class uiItem(baseItem):
     #cdef bint tracked
     cdef Callback dragCallback
     cdef Callback dropCallback
-    cdef baseHandler _handler
+    cdef vector[PyObject*] _handlers # type baseHandler
     cdef baseTheme _theme
-    cdef Callback _callback
+    cdef vector[PyObject*] _callbacks # type Callback
     cdef SharedValue _value
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
-    cdef void set_hidden_and_propagate(self) noexcept nogil
-    cpdef object output_current_item_state(self)
+    cdef void set_hidden_and_propagate_to_siblings(self) noexcept nogil
+    cdef void set_hidden_and_propagate_to_children(self) noexcept nogil
     cdef void update_current_state(self) noexcept nogil
-    cdef void update_current_state_as_hidden(self) noexcept nogil
+    cdef void update_current_state_subset(self) noexcept nogil
     cdef void draw(self) noexcept nogil
+    #cdef void draw_children(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
 
 cdef class DrawInWindow(uiItem):
@@ -808,7 +835,38 @@ cdef class Tab(uiItem):
 cdef class TabBar(uiItem):
     cdef imgui.ImGuiTabBarFlags flags
 
-cdef class Group(uiItem):
+cdef class Layout(uiItem):
+    cdef bint force_update
+    cdef PyObject* previous_last_child
+    cdef imgui.ImVec2 prev_content_area
+    cdef bint check_change(self) noexcept nogil
+    cdef bint draw_item(self) noexcept nogil
+
+cpdef enum alignment:
+    LEFT=0,
+    TOP=0,
+    RIGHT=1,
+    BOTTOM=1,
+    CENTER=2,
+    JUSTIFIED=3,
+    MANUAL=4
+
+cdef class HorizontalLayout(Layout):
+    cdef alignment _alignment_mode
+    cdef float _spacing
+    cdef vector[float] _positions
+    cdef float __compute_items_size(self, int&) noexcept nogil
+    cdef void __update_layout(self) noexcept nogil
+    cdef bint check_change(self) noexcept nogil
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class VerticalLayout(Layout):
+    cdef alignment _alignment_mode
+    cdef float _spacing
+    cdef vector[float] _positions
+    cdef float __compute_items_size(self, int&) noexcept nogil
+    cdef void __update_layout(self) noexcept nogil
+    cdef bint check_change(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
 
 cdef class TreeNode(uiItem):
@@ -915,7 +973,7 @@ cpdef enum theme_categories:
     t_menubar,
     t_menu,
     t_tooltip,
-    t_group,
+    t_layout,
     t_treenode,
     t_collapsingheader,
     t_window,
@@ -1004,7 +1062,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef double _zoom_max
     cdef double _mouse_coord
     cdef itemState state
-    cdef baseHandler _handler
+    cdef vector[PyObject*] _handlers # type baseHandler
     cdef void setup(self, implot.ImAxis) noexcept nogil
     cdef void after_draw(self, implot.ImAxis) noexcept nogil
     cdef void set_hidden(self) noexcept nogil
@@ -1053,15 +1111,18 @@ cdef class plotElement(baseItem):
     cdef itemState state
     cdef int flags
     cdef bint _show
-    cdef bint _legend
     cdef int[2] _axes
-    cdef int _legend_button
     cdef baseTheme _theme
-    cdef baseHandler _handler
+    cdef vector[PyObject*] _handlers # type baseHandler
+    cdef void draw(self) noexcept nogil
+
+cdef class plotElementWithLegend(plotElement):
+    cdef bint _legend
+    cdef int _legend_button
     cdef void draw(self) noexcept nogil
     cdef void draw_element(self) noexcept nogil
 
-cdef class plotElementXY(plotElement):
+cdef class plotElementXY(plotElementWithLegend):
     cdef cnp.ndarray _X
     cdef cnp.ndarray _Y
     cdef void check_arrays(self) noexcept nogil
@@ -1069,7 +1130,7 @@ cdef class plotElementXY(plotElement):
 cdef class PlotLine(plotElementXY):
     cdef void draw_element(self) noexcept nogil
 
-cdef class plotElementXYY(plotElement):
+cdef class plotElementXYY(plotElementWithLegend):
     cdef cnp.ndarray _X
     cdef cnp.ndarray _Y1
     cdef cnp.ndarray _Y2
@@ -1077,6 +1138,39 @@ cdef class plotElementXYY(plotElement):
 
 cdef class PlotShadedLine(plotElementXYY):
     cdef void draw_element(self) noexcept nogil
+
+cdef class PlotStems(plotElementXY):
+    cdef void draw_element(self) noexcept nogil
+
+cdef class PlotBars(plotElementXY):
+    cdef double _weight
+    cdef void draw_element(self) noexcept nogil
+
+cdef class PlotStairs(plotElementXY):
+    cdef void draw_element(self) noexcept nogil
+
+cdef class plotElementX(plotElementWithLegend):
+    cdef cnp.ndarray _X
+    cdef void check_arrays(self) noexcept nogil
+
+cdef class PlotInfLines(plotElementX):
+    cdef void draw_element(self) noexcept nogil
+
+cdef class PlotScatter(plotElementXY):
+    cdef void draw_element(self) noexcept nogil
+
+"""
+cdef class PlotHistogram2D(plotElementXY):
+    cdef void draw_element(self) noexcept nogil
+"""
+
+cdef class plotDraggable(plotElement):
+    cdef imgui.ImU32 _color
+    cdef bint _show_label
+    cdef void draw(self) noexcept nogil
+    cdef void draw_element(self) noexcept nogil
+
+
 
 """
 Utils that the other pyx may use

@@ -1866,6 +1866,7 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     bint Button(const char*, ImVec2&)
     bint SmallButton(const char*)
     bint InvisibleButton(const char*, ImVec2&, ImGuiButtonFlags)
+    bint InvisibleDrawButton(int, ImVec2&, ImVec2&, ImGuiButtonFlags, bint *, bint *)
     bint ArrowButton(const char*, ImGuiDir)
     bint Checkbox(const char*, bint*)
     bint CheckboxFlags(const char*, int*, int)

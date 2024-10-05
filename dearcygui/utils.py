@@ -52,9 +52,8 @@ text_hints = {
 }
 
 class MetricsWindow(dcg.Window):
-    def __init__(self, context : dcg.Context, *args, **kwargs):
-        super().__init__(context, *args, **kwargs)
-        self.context = context
+    def __init__(self, context : dcg.Context, width=0, height=0, *args, **kwargs):
+        super().__init__(context, width=width, height=height, *args, **kwargs)
         c = context
         # At this step the window is created
 
@@ -158,8 +157,9 @@ class MetricsWindow(dcg.Window):
         self.parent = context.viewport
         self.metrics_window_rendering_time = 0
         self.start_time = 1e-9*self.context.viewport.metrics["last_time_before_rendering"]
+        self.rendering_metrics = self.context.viewport.metrics
 
-    def log_times(self, watcher, watcher_data, user_data):
+    def log_times(self, watcher, target, watcher_data):
         start_metrics_rendering = watcher_data[0]
         stop_metrics_rendering = watcher_data[1]
         delta = stop_metrics_rendering - start_metrics_rendering
@@ -191,6 +191,7 @@ class MetricsWindow(dcg.Window):
             self.main_plot.theme = self.medium_framerate_theme
         else:
             self.main_plot.theme = self.high_framerate_theme
+
         self.text1.value = "Application average %.3f ms/frame (%.1f FPS)" % (time_average, fps_average)
         self.text2.value = "%d vertices, %d indices (%d triangles)" % (self.rendered_vertices, self.rendered_indices, self.rendered_indices//3)
         self.text3.value = "%d active windows (%d visible)" % (self.active_windows, self.rendered_windows)
@@ -207,4 +208,160 @@ class MetricsWindow(dcg.Window):
         for key in self.plots.keys():
             self.plots[key].X = self.times.get()
             self.plots[key].Y = self.data[key].get()
+
+def get_children_recursive(item):
+    result = [item]
+    children = item.children
+    result += children
+    for c in children:
+        result += get_children_recursive(c)
+    return result
+
+class ItemInspecter(dcg.Window):
+    def __init__(self, context : dcg.Context, width=0, height=0, *args, **kwargs):
+        super().__init__(context, width=width, height=height, *args, **kwargs)
+        self.inspected_items = []
+        C = context
+        with self:
+            with dcg.HorizontalLayout(C, alignment_mode=dcg.alignment.LEFT):
+                dcg.Button(C, label="Install handlers", callbacks=self.setup_handlers)
+                dcg.Button(C, label="Remove handlers", callbacks=self.remove_handlers)
+            with dcg.HorizontalLayout(C, alignment_mode=dcg.alignment.CENTER):
+                with dcg.VerticalLayout(C):
+                    dcg.Text(C, wrap=0).value = \
+                    "Help: Hover an item to inspect it. Alt+right click to move it."
+
+        self.item_handler = dcg.HandlerList(C)
+        with self.item_handler:
+            dcg.HoverHandler(C, callback=self.handle_item_hovered)
+            # If an item is hovered and the Alt key is pressed,
+            # handle dragging an item.
+            with dcg.ConditionalHandler(C):
+                with dcg.HandlerList(C):
+                    dcg.DraggingHandler(C, button=1, callback=self.handle_item_dragging)
+                    dcg.DraggedHandler(C, button=1, callback=self.handle_item_dragged)
+                dcg.HoverHandler(C)
+                dcg.KeyDownHandler(C, key=dcg.constants.mvKey_LAlt) # TODO: modifiers
+            # If a compatible item is hovered and the ALT key is set,
+            # change the cursor to show we can drag
+            with dcg.HandlerList(C,
+                                 op=dcg.handlerListOP.ALL,
+                                 callback=self.setup_dragging_mouse_cursor):
+                dcg.HoverHandler(C)
+                dcg.KeyDownHandler(C, key=dcg.constants.mvKey_LAlt)
+
+        # If the alt key is unpressed, restore the cursor in case
+        # it wasn't done already
+        self.global_handler = dcg.HandlerList(C)
+        with self.global_handler:
+            dcg.KeyReleaseHandler(C,
+                                  key=dcg.constants.mvKey_LAlt,
+                                  callback=self.restore_mouse_cursor)
+            dcg.MouseMoveHandler(C,
+                                 callback=self.clean_tooltips)
+        C.viewport.handlers += [self.global_handler]
+        self.dragging_item = None
+        self.dragging_item_original_pos = None
+        self.items_with_tooltips = set()
+        # Attach to the viewport
+        self.parent = context.viewport
+
+    def setup_handlers(self):
+        if len(self.inspected_items) > 0:
+            # Uninstall previous handlers first
+            self.remove_handlers()
+        children_list = get_children_recursive(self.context.viewport)
+        self.inspected_items += children_list
+        for c in children_list:
+            try:
+                c.handlers += [self.item_handler]
+            except Exception:
+                # Pass incompatible items
+                pass
+
+    def remove_handlers(self):
+        for item in self.inspected_items:
+            handlers = item.handlers
+            handlers = [h for h in handlers if h is not self.item_handler]
+            item.handlers = handlers
+        self.inspected_items = []
+
+    def setup_dragging_mouse_cursor(self):
+        return
+        #self.context.set_cursor(self, dcg.cursors.ARROWS_NWSE)
+
+    def restore_mouse_cursor(self):
+        return
+        #self.context.set_cursor(self, dcg.cursors.NORMAL)
+
+    def handle_item_dragging(self, handler, item, drag_deltas):
+        # Just to be safe. Might not be needed
+        if item is not self.dragging_item and self.dragging_item is not None:
+            return
+        if self.dragging_item is None:
+            self.dragging_item = item
+            self.dragging_item_original_pos = item.pos_to_parent
+            self.setup_dragging_mouse_cursor()
+        item.pos_to_parent = [
+            self.dragging_item_original_pos[0] + drag_deltas[0],
+            self.dragging_item_original_pos[1] + drag_deltas[1]
+        ]
+
+    def handle_item_dragged(self, handler, item):
+        self.dragging_item = None
+        self.restore_mouse_cursor()
+
+    def handle_item_hovered(self, handler, item):
+        if item in self.items_with_tooltips:
+            return
+        self.items_with_tooltips.add(item)
+        item_states = dir(item)
+        C = self.context
+        # Attach the tooltip to our window.
+        # This is to not perturb the item states
+        # and child tree.
+        default_item = item.__class__(C)
+        ignore_list = [
+            "shareable_value",
+        ]
+        with dcg.Tooltip(C, parent=self, target=item) as t:
+            dcg.Text(C).value = f"{item}:"
+            with dcg.HorizontalLayout(C, indent=-1, theme=dcg.ThemeStyleImGui(C, ItemSpacing=(40., -3.))):
+                left = dcg.VerticalLayout(C)
+                right = dcg.VerticalLayout(C)
+                for state in item_states:
+                    if state[0] == "_":
+                        continue
+                    try:
+                        value = getattr(item, state)
+                        if hasattr(value, '__code__'):
+                            # ignore methods
+                            continue
+                        if state == "handlers":
+                            # remove ourselves
+                            value = [v for v in value if v is not self.item_handler]
+                        if value == getattr(default_item, state):
+                            # ignore non defaults
+                            continue
+                        if state in ignore_list:
+                            continue
+                    except AttributeError:
+                        # Some states are advertised, but not
+                        # available
+                        continue
+                    with left:
+                        dcg.Text(C, value=f"{state}:")
+                    with right:
+                        dcg.Text(C, value=value)
+
+    def clean_tooltips(self):
+        for c in self.children:
+            if isinstance(c, dcg.Tooltip):
+                if not(c.visible) and c.target in self.items_with_tooltips:
+                    self.items_with_tooltips.remove(c.target)
+                    c.delete_item()
+
+            
+        
+            
 

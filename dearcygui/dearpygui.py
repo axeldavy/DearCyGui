@@ -64,6 +64,11 @@ constants.mvReservedUUID_10 = 20
 # Helper Commands
 ########################################################################################################################
 
+def wrap_callback(callback):
+    if callback is None:
+        return None
+    return dcg.DPGCallback(callback)
+
 def run_callbacks(jobs):
     """ New in 1.2. Runs callbacks from the callback queue and checks arguments. """
 
@@ -163,7 +168,7 @@ def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Ri
         item.show = True
     item.parent = DCG_CONTEXT.viewport
     handler = item_clicked_handler(mousebutton, callback=callback)
-    DCG_CONTEXT[parent].handler = handler
+    DCG_CONTEXT[parent].handlers += [handler]
     return item
 
 
@@ -397,7 +402,9 @@ def set_item_pos(item: Union[int, str], pos: List[float]):
     Returns:
         None
     """
-    DCG_CONTEXT[item].pos = pos
+    # Contrary to the description, DPG does it against
+    # the window, not the parent.
+    DCG_CONTEXT[item].pos_to_window = pos
 
 
 def set_item_width(item: Union[int, str], width: int):
@@ -475,7 +482,12 @@ def set_item_callback(item: Union[int, str], callback: Callable):
     Returns:
         None
     """
-    DCG_CONTEXT[item].callback = callback
+    try:
+        # UIitems
+        DCG_CONTEXT[item].callbacks = wrap_callback(callback)
+    except AttributeError:
+        # Handlers
+        DCG_CONTEXT[item].callback = wrap_callback(callback)
 
 
 def set_item_drag_callback(item: Union[int, str], callback: Callable):
@@ -488,7 +500,7 @@ def set_item_drag_callback(item: Union[int, str], callback: Callable):
     Returns:
         None
     """
-    internal_dpg.configure_item(item, drag_callback=callback)
+    internal_dpg.configure_item(item, drag_callback=wrap_callback(callback))
 
 
 def set_item_drop_callback(item: Union[int, str], callback: Callable):
@@ -501,7 +513,7 @@ def set_item_drop_callback(item: Union[int, str], callback: Callable):
     Returns:
         None
     """
-    internal_dpg.configure_item(item, drop_callback=callback)
+    internal_dpg.configure_item(item, drop_callback=wrap_callback(callback))
 
 
 def track_item(item: Union[int, str]):
@@ -646,7 +658,7 @@ def get_item_callback(item: Union[int, str]) -> Union[Callable, None]:
         callback as a callable or None
     """
     # TODO: callback.callback ?
-    return DCG_CONTEXT[item].callback
+    return DCG_CONTEXT[item].callbacks[0]
 
 
 def get_item_drag_callback(item: Union[int, str]) -> Union[Callable, None]:
@@ -1235,7 +1247,7 @@ def add_3d_slider(*, label: str =None, user_data: Any =None, width: int =0, heig
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return add_3d_slider(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, max_x=max_x, max_y=max_y, max_z=max_z, min_x=min_x, min_y=min_y, min_z=min_z, scale=scale, **kwargs)
+    #return add_3d_slider(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, max_x=max_x, max_y=max_y, max_z=max_z, min_x=min_x, min_y=min_y, min_z=min_z, scale=scale, **kwargs)
 
 def alias(alias : str, item : Union[int, str], **kwargs) -> None:
     """     Adds an alias.
@@ -1411,7 +1423,7 @@ def button(*, label: str =None, user_data: Any =None, width: int =0, height: int
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Button(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, small=small, arrow=arrow, direction=direction, repeat=repeat, **kwargs)
+    return dcg.Button(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, small=small, arrow=arrow, direction=direction, repeat=repeat, **kwargs)
 
 def candle_series(dates : Union[List[float], Tuple[float, ...]], opens : Union[List[float], Tuple[float, ...]], closes : Union[List[float], Tuple[float, ...]], lows : Union[List[float], Tuple[float, ...]], highs : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, bull_color: Union[int, List[int], Tuple[int, ...]] =(0, 255, 113, 255), bear_color: Union[int, List[int], Tuple[int, ...]] =(218, 13, 79, 255), weight: float =0.25, tooltip: bool =True, time_unit: int =5, **kwargs) -> Union[int, str]:
     """     Adds a candle series to a plot.
@@ -1497,7 +1509,7 @@ def checkbox(*, label: str =None, user_data: Any =None, indent: int =0, payload_
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Checkbox(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, **kwargs)
+    return dcg.Checkbox(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, **kwargs)
 
 def child_window(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, border: bool =True, autosize_x: bool =False, autosize_y: bool =False, no_scrollbar: bool =False, horizontal_scrollbar: bool =False, menubar: bool =False, no_scroll_with_mouse: bool =False, flattened_navigation: bool =True, always_use_window_padding: bool =False, resizable_x: bool =False, resizable_y: bool =False, always_auto_resize: bool =False, frame_style: bool =False, auto_resize_x: bool =False, auto_resize_y: bool =False, **kwargs) -> Union[int, str]:
     """     Adds an embedded child window. Will show scrollbars when items do not fit. About using auto_resize/resizable flags: size measurement for a given axis is only performed when the child window is within visible boundaries, or is just appearing and it won't update its auto-size while clipped. While not perfect, it is a better default behavior as the always-on performance gain is more valuable than the occasional 'resizing after becoming visible again' glitch. You may also use always_auto_resize to force an update even when child window is not in view. However doing so will degrade performance. Remember that combining both auto_resize_x and auto_resize_y defeats purpose of a scrolling region and is NOT recommended.
@@ -1638,7 +1650,7 @@ def color_button(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 25
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return color_button(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_border=no_border, no_drag_drop=no_drag_drop, **kwargs)
+    #return color_button(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_border=no_border, no_drag_drop=no_drag_drop, **kwargs)
 
 def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_picker: bool =False, no_options: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, no_drag_drop: bool =False, alpha_bar: bool =False, alpha_preview: int =0, display_mode: int =constants.mvColorEdit_rgb, display_type: int =constants.mvColorEdit_uint8, input_mode: int =constants.mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
     """     Adds an RGBA color editor. Left clicking the small color preview will provide a color picker. Click and draging the small color preview will copy the color to be applied on any other color widget.
@@ -1686,7 +1698,7 @@ def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255)
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return color_edit(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_picker=no_picker, no_options=no_options, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, no_drag_drop=no_drag_drop, alpha_bar=alpha_bar, alpha_preview=alpha_preview, display_mode=display_mode, display_type=display_type, input_mode=input_mode, **kwargs)
+    #return color_edit(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_picker=no_picker, no_options=no_options, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, no_drag_drop=no_drag_drop, alpha_bar=alpha_bar, alpha_preview=alpha_preview, display_mode=display_mode, display_type=display_type, input_mode=input_mode, **kwargs)
 
 def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_side_preview: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, alpha_bar: bool =False, display_rgb: bool =False, display_hsv: bool =False, display_hex: bool =False, picker_mode: int =constants.mvColorPicker_bar, alpha_preview: int =0, display_type: int =constants.mvColorEdit_uint8, input_mode: int =constants.mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
     """     Adds an RGB color picker. Right click the color picker for options. Click and drag the color preview to copy the color and drop on any other color widget to apply. Right Click allows the style of the color picker to be changed.
@@ -1735,7 +1747,7 @@ def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 25
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return color_picker(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_side_preview=no_side_preview, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, alpha_bar=alpha_bar, display_rgb=display_rgb, display_hsv=display_hsv, display_hex=display_hex, picker_mode=picker_mode, alpha_preview=alpha_preview, display_type=display_type, input_mode=input_mode, **kwargs)
+    #return color_picker(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_side_preview=no_side_preview, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, alpha_bar=alpha_bar, display_rgb=display_rgb, display_hsv=display_hsv, display_hex=display_hex, picker_mode=picker_mode, alpha_preview=alpha_preview, display_type=display_type, input_mode=input_mode, **kwargs)
 
 def color_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a color value.
@@ -1812,7 +1824,7 @@ def colormap_button(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0,
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return colormap_button(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
+    #return colormap_button(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
 
 def colormap_registry(*, label: str =None, user_data: Any =None, show: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a colormap registry.
@@ -1911,7 +1923,7 @@ def colormap_slider(*, label: str =None, user_data: Any =None, width: int =0, he
 
         kwargs.pop('drag_callback', None)
 
-    #return colormap_slider(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, **kwargs)
+    #return colormap_slider(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, **kwargs)
 
 def combo(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: str ='', popup_align_left: bool =False, no_arrow_button: bool =False, no_preview: bool =False, fit_width: bool =False, height_mode: str ="regular", **kwargs) -> Union[int, str]:
     """     Adds a combo dropdown that allows a user to select a single option from a drop down window. All items will be shown as selectables on the dropdown.
@@ -1951,7 +1963,7 @@ def combo(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, us
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Combo(DCG_CONTEXT, items=items, label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, popup_align_left=popup_align_left, no_arrow_button=no_arrow_button, no_preview=no_preview, fit_width=fit_width, height_mode=height_mode, **kwargs)
+    return dcg.Combo(DCG_CONTEXT, items=items, label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, popup_align_left=popup_align_left, no_arrow_button=no_arrow_button, no_preview=no_preview, fit_width=fit_width, height_mode=height_mode, **kwargs)
 
 def custom_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], channel_count : int, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, y1: Any =[], y2: Any =[], y3: Any =[], tooltip: bool =True, no_fit: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a custom series to a plot. New in 1.6.
@@ -1982,7 +1994,7 @@ def custom_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[floa
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return custom_series(x, y, channel_count, label=label, user_data=user_data, callback=callback, show=show, y1=y1, y2=y2, y3=y3, tooltip=tooltip, no_fit=no_fit, **kwargs)
+    #return custom_series(x, y, channel_count, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, y1=y1, y2=y2, y3=y3, tooltip=tooltip, no_fit=no_fit, **kwargs)
 
 def date_picker(*, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: dict ={'month_day': 14, 'year':20, 'month':5}, level: int =0, **kwargs) -> Union[int, str]:
     """     Adds a data picker.
@@ -2014,7 +2026,7 @@ def date_picker(*, label: str =None, user_data: Any =None, indent: int =0, paylo
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return date_picker(label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, level=level, **kwargs)
+    #return date_picker(label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, level=level, **kwargs)
 
 def digital_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a digital series to a plot. Digital plots do not respond to y drag or zoom, and are always referenced to the bottom of the plot.
@@ -2120,7 +2132,7 @@ def drag_double(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="double", size=1, drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="double", size=1, drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_doublex(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Any =(0.0, 0.0, 0.0, 0.0), size: int =4, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag input for a set of double values up to 4. Useful when drag float is not accurate enough. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2161,7 +2173,7 @@ def drag_doublex(*, label: str =None, user_data: Any =None, width: int =0, inden
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="double", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="double", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_float(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag for a single float value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2201,7 +2213,7 @@ def drag_float(*, label: str =None, user_data: Any =None, width: int =0, indent:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="float", drag=True, size=1, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="float", drag=True, size=1, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), size: int =4, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag input for a set of float values up to 4. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2242,7 +2254,7 @@ def drag_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="float", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="float", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_int(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: int =0, format: str ='%d', speed: float =1.0, min_value: int =0, max_value: int =100, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag for a single int value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2282,7 +2294,7 @@ def drag_int(*, label: str =None, user_data: Any =None, width: int =0, indent: i
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="int", size=1, drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="int", size=1, drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), size: int =4, format: str ='%d', speed: float =1.0, min_value: int =0, max_value: int =100, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag input for a set of int values up to 4. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -2323,7 +2335,7 @@ def drag_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="int", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="int", drag=True, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, print_format=format, speed=speed, min_value=min_value, max_value=max_value, no_input=no_input, clamped=clamped, **kwargs)
 
 def drag_line(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, default_value: float =0.0, color: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, show_label: bool =True, vertical: bool =True, delayed: bool =False, no_cursor: bool =False, no_fit: bool =False, no_inputs: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a drag line to a plot.
@@ -2355,7 +2367,7 @@ def drag_line(*, label: str =None, user_data: Any =None, callback: Callable =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return drag_line(label=label, user_data=user_data, callback=callback, show=show, value=default_value, color=color, thickness=thickness, show_label=show_label, vertical=vertical, delayed=delayed, no_cursor=no_cursor, no_fit=no_fit, no_inputs=no_inputs, **kwargs)
+    #return drag_line(label=label, user_data=user_data, callback=wrap_callback(callback), show=show, value=default_value, color=color, thickness=thickness, show_label=show_label, vertical=vertical, delayed=delayed, no_cursor=no_cursor, no_fit=no_fit, no_inputs=no_inputs, **kwargs)
 
 def drag_payload(*, label: str =None, user_data: Any =None, show: bool =True, drag_data: Any =None, drop_data: Any =None, payload_type: str ='$$DPG_PAYLOAD', **kwargs) -> Union[int, str]:
     """     User data payload for drag and drop operations.
@@ -2411,7 +2423,7 @@ def drag_point(*, label: str =None, user_data: Any =None, callback: Callable =No
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return drag_point(label=label, user_data=user_data, callback=callback, show=show, value=default_value, color=color, thickness=thickness, show_label=show_label, offset=offset, clamped=clamped, delayed=delayed, no_cursor=no_cursor, no_fit=no_fit, no_inputs=no_inputs, **kwargs)
+    #return drag_point(label=label, user_data=user_data, callback=wrap_callback(callback), show=show, value=default_value, color=color, thickness=thickness, show_label=show_label, offset=offset, clamped=clamped, delayed=delayed, no_cursor=no_cursor, no_fit=no_fit, no_inputs=no_inputs, **kwargs)
 
 def drag_rect(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, default_value: Any =(0.0, 0.0, 0.0, 0.0), color: Union[int, List[int], Tuple[int, ...]] =0, delayed: bool =False, no_cursor: bool =False, no_fit: bool =False, no_inputs: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a drag rectangle to a plot.
@@ -2440,7 +2452,7 @@ def drag_rect(*, label: str =None, user_data: Any =None, callback: Callable =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return drag_rect(label=label, user_data=user_data, callback=callback, show=show, value=default_value, color=color, delayed=delayed, no_cursor=no_cursor, no_fit=no_fit, no_inputs=no_inputs, **kwargs)
+    #return drag_rect(label=label, user_data=user_data, callback=wrap_callback(callback), show=show, value=default_value, color=color, delayed=delayed, no_cursor=no_cursor, no_fit=no_fit, no_inputs=no_inputs, **kwargs)
 
 def draw_layer(*, label: str =None, user_data: Any =None, show: bool =True, perspective_divide: bool =False, depth_clipping: bool =False, cull_mode: int =0, **kwargs) -> Union[int, str]:
     """     New in 1.1. Creates a layer useful for grouping drawlist items.
@@ -2513,7 +2525,7 @@ def drawlist(width : int, height : int, *, label: str =None, user_data: Any =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawInWindow(DCG_CONTEXT, width=width, height=height, label=label, user_data=user_data, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
+    return dcg.DrawInWindow(DCG_CONTEXT, width=width, height=height, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
 
 def dynamic_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a dynamic texture.
@@ -2593,7 +2605,7 @@ def file_dialog(*, label: str =None, user_data: Any =None, width: int =0, height
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return file_dialog(label=label, user_data=user_data, width=width, height=height, callback=callback, show=show, default_path=default_path, default_filename=default_filename, file_count=file_count, modal=modal, directory_selector=directory_selector, min_size=min_size, max_size=max_size, cancel_callback=cancel_callback, **kwargs)
+    #return file_dialog(label=label, user_data=user_data, width=width, height=height, callback=wrap_callback(callback), show=show, default_path=default_path, default_filename=default_filename, file_count=file_count, modal=modal, directory_selector=directory_selector, min_size=min_size, max_size=max_size, cancel_callback=cancel_callback, **kwargs)
 
 def file_extension(extension : str, *, label: str =None, user_data: Any =None, width: int =0, height: int =0, custom_text: str ='', **kwargs) -> Union[int, str]:
     """     Creates a file extension filter option in the file dialog.
@@ -2849,7 +2861,20 @@ Enable property acts in a special way enabling/disabling everything inside the g
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Group(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, horizontal=horizontal, horizontal_spacing=horizontal_spacing, xoffset=xoffset, **kwargs)
+    if horizontal:
+        target_class = dcg.HorizontalLayout
+    else:
+        target_class = dcg.VerticalLayout
+    if horizontal_spacing != -1:
+        kwargs["spacing"] = horizontal_spacing
+    if xoffset != 0.:
+        # We use a callback as we don't know at this point the number of children
+        def assign_spaces(item, other, user_data, xoffset=xoffset):
+            num_items = len(item.children)
+            positions = [i * xoffset for i in range(num_items)]
+            item.positions = positions
+        kwargs["callback"] = assign_spaces
+    return target_class(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
 
 def handler_registry(*, label: str =None, user_data: Any =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a handler registry.
@@ -2870,14 +2895,7 @@ def handler_registry(*, label: str =None, user_data: Any =None, show: bool =True
 
     item = dcg.HandlerList(DCG_CONTEXT, label=label, user_data=user_data, show=show, attach=False, **kwargs)
     # global handler registries concatenate to each other
-    current_handler = DCG_CONTEXT.viewport.handler
-    if current_handler is None:
-        DCG_CONTEXT.viewport.handler = item
-    else:
-        new_handler = dcg.HandlerList(DCG_CONTEXT)
-        item.parent = new_handler
-        current_handler.parent = new_handler
-        DCG_CONTEXT.viewport.handler = new_handler
+    DCG_CONTEXT.viewport.handlers += [item]
     return item
 
 def heat_series(x : Union[List[float], Tuple[float, ...]], rows : int, cols : int, *, label: str =None, user_data: Any =None, show: bool =True, scale_min: float =0.0, scale_max: float =1.0, bounds_min: Any =(0.0, 0.0), bounds_max: Any =(1.0, 1.0), format: str ='%0.1f', contribute_to_bounds: bool =True, col_major: bool =False, **kwargs) -> Union[int, str]:
@@ -3027,7 +3045,7 @@ def image_button(texture_tag : Union[int, str], *, label: str =None, user_data: 
     if 'frame_padding' in kwargs.keys():
         warnings.warn('frame_padding keyword deprecated. This is not supported anymore by ImGui but still used here as deprecated.', DeprecationWarning, 2)
 
-    return dcg.ImageButton(DCG_CONTEXT, texture=DCG_CONTEXT[texture_tag], label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, color_multiplier=tint_color, background_color=background_color, uv=(uv_min[0], uv_min[1], uv_max[0], uv_max[1]), **kwargs)
+    return dcg.ImageButton(DCG_CONTEXT, texture=DCG_CONTEXT[texture_tag], label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, color_multiplier=tint_color, background_color=background_color, uv=(uv_min[0], uv_min[1], uv_max[0], uv_max[1]), **kwargs)
 
 def image_series(texture_tag : Union[int, str], bounds_min : Union[List[float], Tuple[float, ...]], bounds_max : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, uv_min: Union[List[float], Tuple[float, ...]] =(0.0, 0.0), uv_max: Union[List[float], Tuple[float, ...]] =(1.0, 1.0), tint_color: Union[int, List[int], Tuple[int, ...]] =-1, **kwargs) -> Union[int, str]:
     """     Adds an image series to a plot.
@@ -3122,7 +3140,7 @@ def input_double(*, label: str =None, user_data: Any =None, width: int =0, inden
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputValue(DCG_CONTEXT, format="double", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, step=step, step_fast=step_fast, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
+    return dcg.InputValue(DCG_CONTEXT, format="double", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, step=step, step_fast=step_fast, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
 
 def input_doublex(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Any =(0.0, 0.0, 0.0, 0.0), format: str ='%.3f', min_value: float =0.0, max_value: float =100.0, size: int =4, min_clamped: bool =False, max_clamped: bool =False, on_enter: bool =False, readonly: bool =False, **kwargs) -> Union[int, str]:
     """     Adds multi double input for up to 4 double values. Useful when input float mulit is not accurate enough.
@@ -3164,7 +3182,7 @@ def input_doublex(*, label: str =None, user_data: Any =None, width: int =0, inde
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputValue(DCG_CONTEXT, format="double", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, size=size, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
+    return dcg.InputValue(DCG_CONTEXT, format="double", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, size=size, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
 
 def input_float(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, format: str ='%.3f', min_value: float =0.0, max_value: float =100.0, step: float =0.1, step_fast: float =1.0, min_clamped: bool =False, max_clamped: bool =False, on_enter: bool =False, readonly: bool =False, **kwargs) -> Union[int, str]:
     """     Adds input for an float. +/- buttons can be activated by setting the value of step.
@@ -3207,7 +3225,7 @@ def input_float(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputValue(DCG_CONTEXT, format="float", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, step=step, step_fast=step_fast, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
+    return dcg.InputValue(DCG_CONTEXT, format="float", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, step=step, step_fast=step_fast, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
 
 def input_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), format: str ='%.3f', min_value: float =0.0, max_value: float =100.0, size: int =4, min_clamped: bool =False, max_clamped: bool =False, on_enter: bool =False, readonly: bool =False, **kwargs) -> Union[int, str]:
     """     Adds multi float input for up to 4 float values.
@@ -3249,7 +3267,7 @@ def input_floatx(*, label: str =None, user_data: Any =None, width: int =0, inden
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputValue(DCG_CONTEXT, format="float", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, size=size, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
+    return dcg.InputValue(DCG_CONTEXT, format="float", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, print_format=format, min_value=min_value, max_value=max_value, size=size, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
 
 def input_int(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: int =0, min_value: int =0, max_value: int =100, step: int =1, step_fast: int =100, min_clamped: bool =False, max_clamped: bool =False, on_enter: bool =False, readonly: bool =False, **kwargs) -> Union[int, str]:
     """     Adds input for an int. +/- buttons can be activated by setting the value of step.
@@ -3291,7 +3309,7 @@ def input_int(*, label: str =None, user_data: Any =None, width: int =0, indent: 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputValue(DCG_CONTEXT, format="int", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, min_value=min_value, max_value=max_value, step=step, step_fast=step_fast, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
+    return dcg.InputValue(DCG_CONTEXT, format="int", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, min_value=min_value, max_value=max_value, step=step, step_fast=step_fast, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
 
 def input_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), min_value: int =0, max_value: int =100, size: int =4, min_clamped: bool =False, max_clamped: bool =False, on_enter: bool =False, readonly: bool =False, **kwargs) -> Union[int, str]:
     """     Adds multi int input for up to 4 integer values.
@@ -3332,7 +3350,7 @@ def input_intx(*, label: str =None, user_data: Any =None, width: int =0, indent:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputValue(DCG_CONTEXT, format="int", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, min_value=min_value, max_value=max_value, size=size, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
+    return dcg.InputValue(DCG_CONTEXT, format="int", label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, min_value=min_value, max_value=max_value, size=size, min_clamped=min_clamped, max_clamped=max_clamped, on_enter=on_enter, readonly=readonly, **kwargs)
 
 def input_text(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: str ='', hint: str ='', multiline: bool =False, no_spaces: bool =False, uppercase: bool =False, tab_input: bool =False, decimal: bool =False, hexadecimal: bool =False, readonly: bool =False, password: bool =False, scientific: bool =False, on_enter: bool =False, auto_select_all: bool =False, ctrl_enter_for_new_line: bool =False, no_horizontal_scroll: bool =False, always_overwrite: bool =False, no_undo_redo: bool =False, escape_clears_all: bool =False, **kwargs) -> Union[int, str]:
     """     Adds input for text.
@@ -3384,7 +3402,7 @@ def input_text(*, label: str =None, user_data: Any =None, width: int =0, height:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.InputText(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, hint=hint, multiline=multiline, no_spaces=no_spaces, uppercase=uppercase, tab_input=tab_input, decimal=decimal, hexadecimal=hexadecimal, readonly=readonly, password=password, scientific=scientific, on_enter=on_enter, auto_select_all=auto_select_all, ctrl_enter_for_new_line=ctrl_enter_for_new_line, no_horizontal_scroll=no_horizontal_scroll, always_overwrite=always_overwrite, no_undo_redo=no_undo_redo, escape_clears_all=escape_clears_all, **kwargs)
+    return dcg.InputText(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, hint=hint, multiline=multiline, no_spaces=no_spaces, uppercase=uppercase, tab_input=tab_input, decimal=decimal, hexadecimal=hexadecimal, readonly=readonly, password=password, scientific=scientific, on_enter=on_enter, auto_select_all=auto_select_all, ctrl_enter_for_new_line=ctrl_enter_for_new_line, no_horizontal_scroll=no_horizontal_scroll, always_overwrite=always_overwrite, no_undo_redo=no_undo_redo, escape_clears_all=escape_clears_all, **kwargs)
 
 def int4_value(*, label: str =None, user_data: Any =None, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a int4 value.
@@ -3447,7 +3465,7 @@ def item_activated_handler(*, label: str =None, user_data: Any =None, callback: 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ActivatedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.ActivatedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_active_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a active handler.
@@ -3468,7 +3486,7 @@ def item_active_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ActiveHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.ActiveHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a clicked handler.
@@ -3490,7 +3508,7 @@ def item_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ClickedHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.ClickedHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_deactivated_after_edit_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a deactivated after edit handler.
@@ -3511,7 +3529,7 @@ def item_deactivated_after_edit_handler(*, label: str =None, user_data: Any =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DeactivatedAfterEditHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.DeactivatedAfterEditHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_deactivated_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a deactivated handler.
@@ -3532,7 +3550,7 @@ def item_deactivated_handler(*, label: str =None, user_data: Any =None, callback
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DeactivatedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.DeactivatedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_double_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a double click handler.
@@ -3554,7 +3572,7 @@ def item_double_clicked_handler(button : int =-1, *, label: str =None, user_data
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DoubleClickedHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.DoubleClickedHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_edited_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an edited handler.
@@ -3575,7 +3593,7 @@ def item_edited_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.EditedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.EditedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_focus_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a focus handler.
@@ -3596,7 +3614,7 @@ def item_focus_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.FocusHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.FocusHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_handler_registry(*, label: str =None, user_data: Any =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an item handler registry.
@@ -3637,7 +3655,7 @@ def item_hover_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.HoverHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.HoverHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_resize_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a resize handler.
@@ -3658,7 +3676,7 @@ def item_resize_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ResizeHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.ResizeHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_toggled_open_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a togged open handler.
@@ -3679,7 +3697,7 @@ def item_toggled_open_handler(*, label: str =None, user_data: Any =None, callbac
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ToggledOpenHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.ToggledOpenHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_visible_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a visible handler.
@@ -3700,7 +3718,7 @@ def item_visible_handler(*, label: str =None, user_data: Any =None, callback: Ca
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.VisibleHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.VisibleHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key down handler.
@@ -3722,7 +3740,7 @@ def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.KeyDownHandler(DCG_CONTEXT, key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.KeyDownHandler(DCG_CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def key_press_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key press handler.
@@ -3744,7 +3762,7 @@ def key_press_handler(key : int =constants.mvKey_None, *, label: str =None, user
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.KeyPressHandler(DCG_CONTEXT, key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.KeyPressHandler(DCG_CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def key_release_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key release handler.
@@ -3766,7 +3784,7 @@ def key_release_handler(key : int =constants.mvKey_None, *, label: str =None, us
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.KeyReleaseHandler(DCG_CONTEXT, key, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.KeyReleaseHandler(DCG_CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def knob_float(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, min_value: float =0.0, max_value: float =100.0, **kwargs) -> Union[int, str]:
     """     Adds a knob that rotates based on change in x mouse position.
@@ -3803,7 +3821,7 @@ def knob_float(*, label: str =None, user_data: Any =None, width: int =0, height:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return knob_float(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, min_value=min_value, max_value=max_value, **kwargs)
+    #return knob_float(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, min_value=min_value, max_value=max_value, **kwargs)
 
 def line_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, segments: bool =False, loop: bool =False, skip_nan: bool =False, no_clip: bool =False, shaded: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a line series to a plot.
@@ -3876,7 +3894,7 @@ def listbox(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =None, 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ListBox(DCG_CONTEXT, items=items, label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, num_items_shown_when_open=num_items, **kwargs)
+    return dcg.ListBox(DCG_CONTEXT, items=items, label=label, user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, num_items_shown_when_open=num_items, **kwargs)
 
 def loading_indicator(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], style: int =0, circle_count: int =8, speed: float =1.0, radius: float =3.0, thickness: float =1.0, color: Union[int, List[int], Tuple[int, ...]] =(51, 51, 55, 255), secondary_color: Union[int, List[int], Tuple[int, ...]] =(29, 151, 236, 103), **kwargs) -> Union[int, str]:
     """     Adds a rotating animated loading symbol.
@@ -3998,7 +4016,7 @@ def menu_item(*, label: str =None, user_data: Any =None, indent: int =0, payload
 
         kwargs.pop('drag_callback', None)
 
-    return dcg.MenuItem(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drop_callback=drop_callback, show=show, enabled=enabled, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, shortcut=shortcut, check=check, **kwargs)
+    return dcg.MenuItem(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drop_callback=drop_callback, show=show, enabled=enabled, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, shortcut=shortcut, check=check, **kwargs)
 
 def mouse_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse click handler.
@@ -4020,7 +4038,7 @@ def mouse_click_handler(button : int =-1, *, label: str =None, user_data: Any =N
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseClickHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseClickHandler(DCG_CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse double click handler.
@@ -4042,7 +4060,7 @@ def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseDoubleClickHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseDoubleClickHandler(DCG_CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse down handler.
@@ -4064,7 +4082,7 @@ def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =No
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseDownHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseDownHandler(DCG_CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse drag handler.
@@ -4087,7 +4105,7 @@ def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseDragHandler(DCG_CONTEXT, button, threshold, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseDragHandler(DCG_CONTEXT, button=button, threshold=threshold, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse move handler.
@@ -4108,7 +4126,7 @@ def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Call
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseMoveHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseMoveHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse release handler.
@@ -4130,7 +4148,7 @@ def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseReleaseHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseReleaseHandler(DCG_CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse wheel handler.
@@ -4151,7 +4169,7 @@ def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Cal
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.MouseWheelHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=callback, show=show, **kwargs)
+    return dcg.MouseWheelHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def node(*, label: str =None, user_data: Any =None, payload_type: str ='$$DPG_PAYLOAD', drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, draggable: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a node to a node editor.
@@ -4239,7 +4257,7 @@ def node_editor(*, label: str =None, user_data: Any =None, width: int =0, height
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return node_editor(label=label, user_data=user_data, width=width, height=height, callback=callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, delink_callback=delink_callback, menubar=menubar, minimap=minimap, minimap_location=minimap_location, **kwargs)
+    #return node_editor(label=label, user_data=user_data, width=width, height=height, callback=wrap_callback(callback), show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, delink_callback=delink_callback, menubar=menubar, minimap=minimap, minimap_location=minimap_location, **kwargs)
 
 def node_link(attr_1 : Union[int, str], attr_2 : Union[int, str], *, label: str =None, user_data: Any =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a node link between 2 node attributes.
@@ -4390,7 +4408,7 @@ def plot(*, label: str =None, user_data: Any =None, width: int =0, height: int =
     # Won't work if plot are created in a row and them the axes
     LOCAL_STORAGE.Y_AXIS = dcg.Axis.Y1
 
-    return dcg.Plot(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_title=no_title, no_menus=no_menus, no_box_select=no_box_select, no_mouse_pos=no_mouse_pos, query=query, query_color=query_color, min_query_rects=min_query_rects, max_query_rects=max_query_rects, crosshairs=crosshairs, equal_aspects=equal_aspects, no_inputs=no_inputs, no_frame=no_frame, use_local_time=use_local_time, use_ISO8601=use_ISO8601, use_24hour_clock=use_24hour_clock, pan_button=pan_button, pan_mod=pan_mod, context_menu_button=context_menu_button, fit_button=fit_button, box_select_button=box_select_button, box_select_mod=box_select_mod, box_select_cancel_button=box_select_cancel_button, query_toggle_mod=query_toggle_mod, horizontal_mod=horizontal_mod, vertical_mod=vertical_mod, override_mod=override_mod, zoom_mod=zoom_mod, zoom_rate=zoom_rate, **kwargs)
+    return dcg.Plot(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_title=no_title, no_menus=no_menus, no_box_select=no_box_select, no_mouse_pos=no_mouse_pos, query=query, query_color=query_color, min_query_rects=min_query_rects, max_query_rects=max_query_rects, crosshairs=crosshairs, equal_aspects=equal_aspects, no_inputs=no_inputs, no_frame=no_frame, use_local_time=use_local_time, use_ISO8601=use_ISO8601, use_24hour_clock=use_24hour_clock, pan_button=pan_button, pan_mod=pan_mod, context_menu_button=context_menu_button, fit_button=fit_button, box_select_button=box_select_button, box_select_mod=box_select_mod, box_select_cancel_button=box_select_cancel_button, query_toggle_mod=query_toggle_mod, horizontal_mod=horizontal_mod, vertical_mod=vertical_mod, override_mod=override_mod, zoom_mod=zoom_mod, zoom_rate=zoom_rate, **kwargs)
 
 def plot_annotation(*, label: str =None, user_data: Any =None, show: bool =True, default_value: Any =(0.0, 0.0), offset: Union[List[float], Tuple[float, ...]] =(0.0, 0.0), color: Union[int, List[int], Tuple[int, ...]] =0, clamped: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an annotation to a plot.
@@ -4629,7 +4647,7 @@ def radio_button(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =N
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.RadioButton(DCG_CONTEXT, items=items, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, horizontal=horizontal, **kwargs)
+    return dcg.RadioButton(DCG_CONTEXT, items=items, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, horizontal=horizontal, **kwargs)
 
 def raw_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, format: int =constants.mvFormat_Float_rgba, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a raw texture.
@@ -4714,7 +4732,7 @@ def selectable(*, label: str =None, user_data: Any =None, width: int =0, height:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Selectable(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, span_columns=span_columns, disable_popup_close=disable_popup_close, **kwargs)
+    return dcg.Selectable(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, span_columns=span_columns, disable_popup_close=disable_popup_close, **kwargs)
 
 def separator(*, label: str =None, user_data: Any =None, indent: int =0, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], **kwargs) -> Union[int, str]:
     """     Adds a horizontal line separator. Use 'label' parameter to add text and mvStyleVar_SeparatorText* elements to style it.
@@ -4861,7 +4879,7 @@ def slider_double(*, label: str =None, user_data: Any =None, width: int =0, heig
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="double", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="double", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_doublex(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Any =(0.0, 0.0, 0.0, 0.0), size: int =4, no_input: bool =False, clamped: bool =False, min_value: float =0.0, max_value: float =100.0, format: str ='%.3f', **kwargs) -> Union[int, str]:
     """     Adds multi slider for up to 4 double values. Usueful for when multi slide float is not accurate enough. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4901,7 +4919,7 @@ def slider_doublex(*, label: str =None, user_data: Any =None, width: int =0, ind
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="double", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="double", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_float(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, vertical: bool =False, no_input: bool =False, clamped: bool =False, min_value: float =0.0, max_value: float =100.0, format: str ='%.3f', **kwargs) -> Union[int, str]:
     """     Adds slider for a single float value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4942,7 +4960,7 @@ def slider_float(*, label: str =None, user_data: Any =None, width: int =0, heigh
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="float", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="float", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_floatx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), size: int =4, no_input: bool =False, clamped: bool =False, min_value: float =0.0, max_value: float =100.0, format: str ='%.3f', **kwargs) -> Union[int, str]:
     """     Adds multi slider for up to 4 float values. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -4982,7 +5000,7 @@ def slider_floatx(*, label: str =None, user_data: Any =None, width: int =0, inde
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="float", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="float", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_int(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: int =0, vertical: bool =False, no_input: bool =False, clamped: bool =False, min_value: int =0, max_value: int =100, format: str ='%d', **kwargs) -> Union[int, str]:
     """     Adds slider for a single int value. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -5023,7 +5041,7 @@ def slider_int(*, label: str =None, user_data: Any =None, width: int =0, height:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="int", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="int", size=1, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, vertical=vertical, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def slider_intx(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), size: int =4, no_input: bool =False, clamped: bool =False, min_value: int =0, max_value: int =100, format: str ='%d', **kwargs) -> Union[int, str]:
     """     Adds multi slider for up to 4 int values. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the slider. Use clamped keyword to also apply limits to the direct entry modes.
@@ -5063,7 +5081,7 @@ def slider_intx(*, label: str =None, user_data: Any =None, width: int =0, indent
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Slider(DCG_CONTEXT, label=label, format="int", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
+    return dcg.Slider(DCG_CONTEXT, label=label, format="int", user_data=user_data, width=width, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, size=size, no_input=no_input, clamped=clamped, min_value=min_value, max_value=max_value, print_format=format, **kwargs)
 
 def spacer(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], **kwargs) -> Union[int, str]:
     """     Adds a spacer item that can be used to help with layouts or can be used as a placeholder item.
@@ -5241,7 +5259,7 @@ def subplots(rows : int, columns : int, *, label: str =None, user_data: Any =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return subplots(rows, columns, label=label, user_data=user_data, width=width, height=height, indent=indent, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, row_ratios=row_ratios, column_ratios=column_ratios, no_title=no_title, no_menus=no_menus, no_resize=no_resize, no_align=no_align, share_series=share_series, link_rows=link_rows, link_columns=link_columns, link_all_x=link_all_x, link_all_y=link_all_y, column_major=column_major, **kwargs)
+    #return subplots(rows, columns, label=label, user_data=user_data, width=width, height=height, indent=indent, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, row_ratios=row_ratios, column_ratios=column_ratios, no_title=no_title, no_menus=no_menus, no_resize=no_resize, no_align=no_align, share_series=share_series, link_rows=link_rows, link_columns=link_columns, link_all_x=link_all_x, link_all_y=link_all_y, column_major=column_major, **kwargs)
 
 def tab(*, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drop_callback: Callable =None, show: bool =True, filter_key: str ='', tracked: bool =False, track_offset: float =0.5, closable: bool =False, no_tooltip: bool =False, order_mode: int =0, **kwargs) -> Union[int, str]:
     """     Adds a tab to a tab bar.
@@ -5299,7 +5317,7 @@ def tab_bar(*, label: str =None, user_data: Any =None, indent: int =0, callback:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.TabBar(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, callback=callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, reorderable=reorderable, **kwargs)
+    return dcg.TabBar(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, reorderable=reorderable, **kwargs)
 
 def tab_button(*, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_reorder: bool =False, leading: bool =False, trailing: bool =False, no_tooltip: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a tab button to a tab bar.
@@ -5332,7 +5350,7 @@ def tab_button(*, label: str =None, user_data: Any =None, indent: int =0, payloa
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.TabButton(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_reorder=no_reorder, leading=leading, trailing=trailing, no_tooltip=no_tooltip, **kwargs)
+    return dcg.TabButton(DCG_CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_reorder=no_reorder, leading=leading, trailing=trailing, no_tooltip=no_tooltip, **kwargs)
 
 def table(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', header_row: bool =True, clipper: bool =False, inner_width: int =0, policy: int =0, freeze_rows: int =0, freeze_columns: int =0, sort_multi: bool =False, sort_tristate: bool =False, resizable: bool =False, reorderable: bool =False, hideable: bool =False, sortable: bool =False, context_menu_in_body: bool =False, row_background: bool =False, borders_innerH: bool =False, borders_outerH: bool =False, borders_innerV: bool =False, borders_outerV: bool =False, no_host_extendX: bool =False, no_host_extendY: bool =False, no_keep_columns_visible: bool =False, precise_widths: bool =False, no_clip: bool =False, pad_outerX: bool =False, no_pad_outerX: bool =False, no_pad_innerX: bool =False, scrollX: bool =False, scrollY: bool =False, no_saved_settings: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a table.
@@ -5389,7 +5407,7 @@ def table(*, label: str =None, user_data: Any =None, width: int =0, height: int 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return table(label=label, user_data=user_data, width=width, height=height, indent=indent, callback=callback, show=show, pos=pos, filter_key=filter_key, header_row=header_row, clipper=clipper, inner_width=inner_width, policy=policy, freeze_rows=freeze_rows, freeze_columns=freeze_columns, sort_multi=sort_multi, sort_tristate=sort_tristate, resizable=resizable, reorderable=reorderable, hideable=hideable, sortable=sortable, context_menu_in_body=context_menu_in_body, row_background=row_background, borders_innerH=borders_innerH, borders_outerH=borders_outerH, borders_innerV=borders_innerV, borders_outerV=borders_outerV, no_host_extendX=no_host_extendX, no_host_extendY=no_host_extendY, no_keep_columns_visible=no_keep_columns_visible, precise_widths=precise_widths, no_clip=no_clip, pad_outerX=pad_outerX, no_pad_outerX=no_pad_outerX, no_pad_innerX=no_pad_innerX, scrollX=scrollX, scrollY=scrollY, no_saved_settings=no_saved_settings, **kwargs)
+    #return table(label=label, user_data=user_data, width=width, height=height, indent=indent, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, header_row=header_row, clipper=clipper, inner_width=inner_width, policy=policy, freeze_rows=freeze_rows, freeze_columns=freeze_columns, sort_multi=sort_multi, sort_tristate=sort_tristate, resizable=resizable, reorderable=reorderable, hideable=hideable, sortable=sortable, context_menu_in_body=context_menu_in_body, row_background=row_background, borders_innerH=borders_innerH, borders_outerH=borders_outerH, borders_innerV=borders_innerV, borders_outerV=borders_outerV, no_host_extendX=no_host_extendX, no_host_extendY=no_host_extendY, no_keep_columns_visible=no_keep_columns_visible, precise_widths=precise_widths, no_clip=no_clip, pad_outerX=pad_outerX, no_pad_outerX=no_pad_outerX, no_pad_innerX=no_pad_innerX, scrollX=scrollX, scrollY=scrollY, no_saved_settings=no_saved_settings, **kwargs)
 
 def table_cell(*, label: str =None, user_data: Any =None, height: int =0, show: bool =True, filter_key: str ='', **kwargs) -> Union[int, str]:
     """     Adds a table.
@@ -5739,7 +5757,7 @@ def time_picker(*, label: str =None, user_data: Any =None, indent: int =0, paylo
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return time_picker(label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=callback, drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, hour24=hour24, **kwargs)
+    #return time_picker(label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, hour24=hour24, **kwargs)
 
 def tooltip(parent : Union[int, str], *, label: str =None, user_data: Any =None, show: bool =True, delay: float =0.0, hide_on_activity: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a tooltip window.
@@ -5918,7 +5936,7 @@ def window(*, label: str =None, user_data: Any =None, width: int =0, height: int
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.Window(DCG_CONTEXT, parent=DCG_CONTEXT.viewport, label=label, user_data=user_data, width=width, height=height, show=show, pos=pos, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, has_close_button=no_close, no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
+    return dcg.Window(DCG_CONTEXT, parent=DCG_CONTEXT.viewport, label=label, user_data=user_data, width=width, height=height, show=show, pos=pos, min_size=min_size, max_size=max_size, menubar=menubar, collapsed=collapsed, autosize=autosize, no_resize=no_resize, unsaved_document=unsaved_document, no_title_bar=no_title_bar, no_move=no_move, no_scrollbar=no_scrollbar, no_collapse=no_collapse, horizontal_scrollbar=horizontal_scrollbar, no_focus_on_appearing=no_focus_on_appearing, no_bring_to_front_on_focus=no_bring_to_front_on_focus, has_close_button=not(no_close), no_background=no_background, modal=modal, popup=popup, no_saved_settings=no_saved_settings, no_open_over_existing_popup=no_open_over_existing_popup, no_scroll_with_mouse=no_scroll_with_mouse, on_close=on_close, **kwargs)
 
 def apply_transform(item : Union[int, str], transform : Any, **kwargs) -> None:
     """     New in 1.1. Applies a transformation matrix to a layer.
@@ -5977,7 +5995,7 @@ def bind_item_handler_registry(item : Union[int, str], handler_registry : Union[
         None
     """
 
-    DCG_CONTEXT[item].handler = DCG_CONTEXT[handler_registry]
+    DCG_CONTEXT[item].handlers = DCG_CONTEXT[handler_registry]
 
 def bind_item_theme(item : Union[int, str], theme : Union[int, str], **kwargs) -> None:
     """     Binds a theme to an item.
@@ -6176,9 +6194,12 @@ def delete_item(item : Union[int, str], *, children_only: bool =False, slot: int
     Returns:
         None
     """
-
     if not(children_only):
-        DCG_CONTEXT[item].delete_item()
+        try:
+            item = DCG_CONTEXT[item]
+        except KeyError:
+            return # already deleted
+        item.delete_item()
     else:
         for child in filter_slot(DCG_CONTEXT[item].children, slot):
             child.delete_item()
@@ -6976,9 +6997,41 @@ def get_item_state(item : Union[int, str], **kwargs) -> dict:
         dict
     """
     item = DCG_CONTEXT[item]
-    if isinstance(item, dcg.uiItem):
-        return item.output_current_item_state()
-    return {"ok": True, "visible": True, "pos": (0, 0)}
+    result = {}
+    keys = ["hovered", "active", "activated", "deactivated",
+            "edited", "focused", "edited", "rect_size",
+            "resized", "visible", "content_region_avail"]
+    # These states are available as is.
+    for key in keys:
+        try:
+            result[key] = item[key]
+        except AttributeError:
+            pass
+    # These states are renamed
+    keys = [("deactivated_after_edit", "deactivated_after_edited"),
+            ("toggle_open", "toggled"),
+            ("pos", "pos_to_window")]
+    for (key_before, key_after) in keys:
+        try:
+            result[key_after] = item[key_before]
+        except AttributeError:
+            pass
+
+    # These states completly changed
+    try:
+        result["clicked"] = max(item.clicked)
+        result["left_clicked"] = item.clicked[0]
+        result["right_clicked"] = item.clicked[1]
+        result["middle_clicked"] = item.clicked[2]
+    except AttributeError:
+        pass
+
+    result["ok"] = True
+    if "visible" not in result:
+        result["visible"] = True
+    if "pos" not in result:
+        result["pos"] = (0, 0)
+    return result
 
 def get_item_types(**kwargs) -> dict:
     """     Returns an item types.
@@ -7514,7 +7567,7 @@ def output_frame_buffer(file : str ='', *, callback: Callable =None, **kwargs) -
         Any
     """
 
-    #return internal_dpg.output_frame_buffer(file, callback=callback, **kwargs)
+    #return internal_dpg.output_frame_buffer(file, callback=wrap_callback(callback), **kwargs)
 
 def pop_container_stack(**kwargs) -> Union[int, str]:
     """     Pops the top item off the parent stack and return its ID.
@@ -7614,7 +7667,7 @@ def reset_pos(item : Union[int, str], **kwargs) -> None:
         None
     """
 
-    DCG_CONTEXT[item].pos = []
+    DCG_CONTEXT[item].pos_to_default = (0, 0)
 
 def sample_colormap(colormap : Union[int, str], t : float, **kwargs) -> Union[List[int], Tuple[int, ...]]:
     """     Returns a color from a colormap given t between 0.0-1.0.
@@ -9110,7 +9163,7 @@ mvViewportMenuBar=dcg.theme_categories.t_menubar
 mvMenu=dcg.theme_categories.t_menu
 mvMenuItem=dcg.theme_categories.t_menuitem
 #mvChildWindow=constants.mvChildWindow
-mvGroup=dcg.theme_categories.t_group
+mvGroup=dcg.theme_categories.t_layout
 mvSliderFloat=dcg.theme_categories.t_slider
 mvSliderInt=dcg.theme_categories.t_slider
 mvFilterSet=dcg.theme_categories.t_slider

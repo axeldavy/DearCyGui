@@ -76,7 +76,7 @@ cdef class CustomHandler(baseHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).run_handler(item, state)
-        if not(self.enabled):
+        if not(self._enabled):
             return
         cdef bint condition = False
         with gil:
@@ -117,11 +117,11 @@ cdef class ActiveHandler(baseHandler):
 
 cdef class ClickedHandler(baseHandler):
     def __cinit__(self):
-        self.button = -1
+        self._button = -1
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        button = self.button
+        button = self._button
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
@@ -129,20 +129,20 @@ cdef class ClickedHandler(baseHandler):
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self.button = button
+        self._button = button
         super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self.button = value
+        self._button = value
 
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
@@ -157,7 +157,7 @@ cdef class ClickedHandler(baseHandler):
         cdef int i
         cdef bint clicked = False
         for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self.button >= 0 and self.button != i:
+            if self._button >= 0 and self._button != i:
                 continue
             if state.clicked[i]:
                 clicked = True
@@ -168,21 +168,21 @@ cdef class ClickedHandler(baseHandler):
         cdef int i
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).run_handler(item, state)
-        if not(self.enabled):
+        if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self.button >= 0 and self.button != i:
+            if self._button >= 0 and self._button != i:
                 continue
             if state.clicked[i]:
-                self.context.queue_callback_arg1int(self.callback, self, i)
+                self.context.queue_callback_arg1int(self._callback, self, item, i)
 
 cdef class DoubleClickedHandler(baseHandler):
     def __cinit__(self):
-        self.button = -1
+        self._button = -1
     def configure(self, *args, **kwargs):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        button = self.button
+        button = self._button
         if len(args) == 1:
             button = args[0]
         elif len(args) != 0:
@@ -190,20 +190,20 @@ cdef class DoubleClickedHandler(baseHandler):
         button = kwargs.pop("button", button)
         if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self.button = button
+        self._button = button
         super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self.button = value
+        self._button = value
 
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
@@ -218,7 +218,7 @@ cdef class DoubleClickedHandler(baseHandler):
         cdef int i
         cdef bint clicked = False
         for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self.button >= 0 and self.button != i:
+            if self._button >= 0 and self._button != i:
                 continue
             if state.double_clicked[i]:
                 clicked = True
@@ -229,13 +229,13 @@ cdef class DoubleClickedHandler(baseHandler):
         cdef int i
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).run_handler(item, state)
-        if not(self.enabled):
+        if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self.button >= 0 and self.button != i:
+            if self._button >= 0 and self._button != i:
                 continue
             if state.double_clicked[i]:
-                self.context.queue_callback_arg1int(self.callback, self, i)
+                self.context.queue_callback_arg1int(self._callback, self, item, i)
 
 cdef class DeactivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -258,6 +258,136 @@ cdef class DeactivatedAfterEditHandler(baseHandler):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return state.deactivated_after_edited
+
+cdef class DraggedHandler(baseHandler):
+    def __cinit__(self):
+        self._button = -1
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        button = self._button
+        if len(args) == 1:
+            button = args[0]
+        elif len(args) != 0:
+            raise ValueError("Invalid arguments passed to DraggedHandler. Expected button")
+        button = kwargs.pop("button", button)
+        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._button = button
+        super().configure(**kwargs)
+    @property
+    def button(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._button
+    @button.setter
+    def button(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._button = value
+
+    cdef void check_bind(self, baseItem item, itemState &state):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_dragged):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        cdef bint dragged = False
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self._button >= 0 and self._button != i:
+                continue
+            if state.dragged[i]:
+                dragged = True
+        return dragged
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
+        if not(self._enabled):
+            return
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self._button >= 0 and self._button != i:
+                continue
+            if state.dragged[i]:
+                self.context.queue_callback_arg2float(self._callback,
+                                                      self,
+                                                      item,
+                                                      state.drag_deltas[i].x,
+                                                      state.drag_deltas[i].y)
+
+cdef class DraggingHandler(baseHandler):
+    def __cinit__(self):
+        self._button = -1
+    def configure(self, *args, **kwargs):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        button = self._button
+        if len(args) == 1:
+            button = args[0]
+        elif len(args) != 0:
+            raise ValueError("Invalid arguments passed to DraggingHandler. Expected button")
+        button = kwargs.pop("button", button)
+        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._button = button
+        super().configure(**kwargs)
+    @property
+    def button(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._button
+    @button.setter
+    def button(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+            raise ValueError("Invalid button")
+        self._button = value
+
+    cdef void check_bind(self, baseItem item, itemState &state):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
+        if not(state.can_be_dragged):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        cdef bint dragging = False
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self._button >= 0 and self._button != i:
+                continue
+            if state.dragging[i]:
+                dragging = True
+        return dragging
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef int i
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
+        if not(self._enabled):
+            return
+        for i in range(imgui.ImGuiMouseButton_COUNT):
+            if self._button >= 0 and self._button != i:
+                continue
+            if state.dragging[i]:
+                self.context.queue_callback_arg2float(self._callback,
+                                                      self,
+                                                      item,
+                                                      state.drag_deltas[i].x,
+                                                      state.drag_deltas[i].y)
 
 cdef class EditedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -325,249 +455,145 @@ cdef class VisibleHandler(baseHandler):
         return state.visible
 
 cdef class KeyDownHandler(KeyDownHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        key = self.key
-        if len(args) == 1:
-            key = args[0]
-        elif len(key) != 0:
-            raise ValueError("Invalid arguments passed to KeyDownHandler. Expected key")
-        key = kwargs.pop("key", key)
-        if key < 0 or key >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
-        self.key = key
-        super().configure(**kwargs)
-
     @property
     def key(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.key
+        return self._key
     @key.setter
     def key(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < 0 or value >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
-        self.key = value
+            raise ValueError(f"Invalid key {value} passed to {self}")
+        self._key = value
 
 cdef class KeyPressHandler(KeyPressHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        key = self.key
-        if len(args) == 1:
-            key = args[0]
-        elif len(key) != 0:
-            raise ValueError("Invalid arguments passed to KeyPresHandler. Expected key")
-        key = kwargs.pop("key", key)
-        if key < 0 or key >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
-        self.key = key
-        self.repeat = kwargs.pop("repeat", self.repeat)
-        super().configure(**kwargs)
-
     @property
     def key(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.key
+        return self._key
     @key.setter
     def key(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < 0 or value >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
-        self.key = value
+            raise ValueError(f"Invalid key {value} passed to {self}")
+        self._key = value
     @property
     def repeat(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.repeat
+        return self._repeat
     @repeat.setter
     def repeat(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.repeat = value
+        self._repeat = value
 
 cdef class KeyReleaseHandler(KeyReleaseHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        key = self.key
-        if len(args) == 1:
-            key = args[0]
-        elif len(key) != 0:
-            raise ValueError("Invalid arguments passed to KeyReleaseHandler. Expected key")
-        key = kwargs.pop("key", key)
-        if key < 0 or key >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
-        self.key = key
-        super().configure(**kwargs)
-
     @property
     def key(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.key
+        return self._key
     @key.setter
     def key(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < 0 or value >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
-        self.key = value
+            raise ValueError(f"Invalid key {value} passed to {self}")
+        self._key = value
 
 cdef class MouseClickHandler(MouseClickHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self.button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to MouseClickedHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = button
-        self.repeat = kwargs.pop("repeat", self.repeat)
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = value
+            raise ValueError(f"Invalid button {value} passed to {self}")
+        self._button = value
     @property
     def repeat(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.repeat
+        return self._repeat
     @repeat.setter
     def repeat(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.repeat = value
+        self._repeat = value
 
 cdef class MouseDoubleClickHandler(MouseDoubleClickHandler_):
     def __cinit__(self):
-        self.button = -1
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self.button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to MouseDoubleClickedHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = button
-        super().configure(**kwargs)
+        self._button = -1
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = value
+            raise ValueError(f"Invalid button {value} passed to {self}")
+        self._button = value
 
 cdef class MouseDownHandler(MouseDownHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self.button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to MouseDownHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = button
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = value
+            raise ValueError(f"Invalid button {value} passed to {self}")
+        self._button = value
 
 cdef class MouseDragHandler(MouseDragHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef int button = self.button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) == 2:
-            button = args[0]
-            threshold = args[1]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to MouseDragHandler. Expected button")
-        button = kwargs.pop("button", button)
-        threshold = kwargs.pop("threshold", threshold)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = button
-        self.threshold = threshold
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = value
+            raise ValueError(f"Invalid button {value} passed to {self}")
+        self._button = value
+    @property
+    def threshold(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._threshold
+    @threshold.setter
+    def threshold(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._threshold = value
 
 cdef class MouseReleaseHandler(MouseReleaseHandler_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self.button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to MouseReleaseHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = button
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.button
+        return self._button
     @button.setter
     def button(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self.button = value
+            raise ValueError(f"Invalid button {value} passed to {self}")
+        self._button = value
