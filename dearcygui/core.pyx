@@ -2353,7 +2353,6 @@ cdef class Callback:
     """
     def __init__(self, *args, **kwargs):
         if self.num_args > 3:
-            #self.num_args = 3
             raise ValueError("Callback function takes too many arguments")
     def __cinit__(self, callback, *args, **kwargs):
         if not(callable(callback)):
@@ -2388,7 +2387,7 @@ cdef class Callback:
                 print("Callback called without arguments")
             print(traceback.format_exc())
 
-cdef class DPGCallback(Callback):
+class DPGCallback(Callback):
     """
     Used to run callbacks created for DPG
     """
@@ -3254,12 +3253,11 @@ in a pressed state as soon as the mouse is down.
 
 cdef extern from * nogil:
     """
-    bool ImGui::InvisibleDrawButton(int uuid, const ImVec2& pos, const ImVec2& size,
+    bool InvisibleDrawButton(int uuid, const ImVec2& pos, const ImVec2& size,
                                            ImGuiButtonFlags flags,
                                            bool *out_hovered, bool *out_held)
     {
-        ImGuiContext& g = *GImGui;
-        ImGuiWindow* window = GetCurrentWindow();
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
         const ImRect bb(pos, pos + size);
 
         const ImGuiID id = window->GetID(uuid);
@@ -3267,39 +3265,351 @@ cdef extern from * nogil:
 
         flags |= ImGuiButtonFlags_AllowOverlap | ImGuiButtonFlags_PressedOnClick;
 
-        bool pressed = ButtonBehavior(bb, id, out_hovered, out_held, flags);
+        bool pressed = ImGui::ButtonBehavior(bb, id, out_hovered, out_held, flags);
 
         return pressed;
     }
     """
-    bint InvisibleDrawButton(int, ImVec2&, ImVec2&, ImGuiButtonFlags, bint *, bint *)
+    bint InvisibleDrawButton(int, ImVec2&, ImVec2&, imgui.ImGuiButtonFlags, bint *, bint *)
     
 
-'''
+
 cdef class DrawInvisibleButton(drawingItem):
     """
-    Invisible area behaving like a button (using
-    imgui default handling of buttons).
+    Invisible rectangular area, parallel to axes, behaving
+    like a button (using imgui default handling of buttons).
 
     Unlike other Draw items, this item accepts handlers and callbacks.
+
+    DrawInvisibleButton can be overlapped on top of each other. In that
+    case only one will be considered hovered. This one corresponds to the
+    last one of the rendering tree that is hovered. If the button is
+    considered active (see below), it retains the hover status to itself.
+    Thus if you drag an invisible button on top of items later in the
+    rendering tree, they will not be considered hovered.
+
+    Note that only the mouse button(s) that trigger activation will
+    have the above described behaviour for hover tests.
+
+    When inside a plot, drag deltas are returned in plot coordinates,
+    that is the deltas correspond to the deltas you must apply
+    to your drawing coordinates compared to their original position
+    to apply the dragging. When not in a plot, the drag deltas are
+    in screen coordinates, and you must convert yourself to drawing
+    coordinates if you are applying matrix transforms to your data.
+    Generally matrix transforms are not well supported by
+    DrawInvisibleButtons, and the shifted position that is updated
+    during dragging might be invalid.
+
+    Dragging handlers will not be triggered if the item is not active
+    (unlike normal imgui items).
     """
     def __cinit__(self):
-        return
+        self._button = 1
+        self.state.can_be_activated = True
+        self.state.can_be_active = True
+        self.state.can_be_clicked = True
+        self.state.can_be_deactivated = True
+        self.state.can_be_hovered = True
+        self._draggable = False
+
+    def __dealloc__(self):
+        clear_obj_vector(self._handlers)
 
     @property
     def button(self):
         """
-        Button that triggers
+        Mouse button mask that makes the invisible button
+        active and triggers the item's callback.
+
+        Default is left-click.
+
+        The mask is an (OR) combination of
+        1: left button
+        2: right button
+        4: middle button
         """
-        return
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._button
+
+    @button.setter
+    def button(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < 0 or value > 7:
+            raise ValueError(f"Invalid button mask {value} passed to {self}")
+        self._button = value
+
+    @property
+    def draggable(self):
+        """
+        For very small objects, moving the item
+        in response to handlers reacting to dragging
+        might not be convenient, as if the mouse moves fast,
+        and leaves the item, it might not be hovered anymore
+        before the motion is treated.
+        This state locks the object to the mouse when
+        it is activated. Handlers can still react to
+        dragging or dragged events, but the user doesn't
+        need to shift this item in response to them.
+
+        If you need dragging to be only active in specific
+        conditions, the following handler combination can be used:
+        ConditionalHandler
+            Custom Handler (set draggable to False right away
+                            if condition not met)
+            Activated Handler
+        Deactivated Handler (callback that resets draggable to True)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._draggable
 
     @draggable.setter
     def draggable(self, bint value):
-        return
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._draggable = value
 
     @property
-    def 
-'''
+    def p1(self):
+        """
+        Corner of the invisible button in plot/drawing
+        space
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return list(self._p1)
+    @p1.setter
+    def p1(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        read_point[float](self._p1, value)
+    @property
+    def p2(self):
+        """
+        Opposite corner of the invisible button in plot/drawing
+        space
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return list(self._p2)
+    @p2.setter
+    def p2(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        read_point[float](self._p2, value)
+
+    @property
+    def handlers(self):
+        """
+        Writable attribute: bound handlers for the item.
+        If read returns a list of handlers. Accept
+        a handler or a list of handlers as input.
+        This enables to do item.handlers += [new_handler].
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        result = []
+        cdef int i
+        cdef baseHandler handler
+        for i in range(<int>self._handlers.size()):
+            handler = <baseHandler>self._handlers[i]
+            result.append(handler)
+        return result
+
+    @handlers.setter
+    def handlers(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef list items = []
+        cdef int i
+        if value is None:
+            clear_obj_vector(self._handlers)
+            return
+        if not hasattr(value, "__len__"):
+            value = [value]
+        for i in range(len(value)):
+            if not(isinstance(value[i], baseHandler)):
+                raise TypeError(f"{value[i]} is not a handler")
+            # Check the handlers can use our states. Else raise error
+            (<baseHandler>value[i]).check_bind(self, self.state)
+            items.append(value[i])
+        # Success: bind
+        clear_obj_vector(self._handlers)
+        append_obj_vector(self._handlers, items)
+
+    @property
+    def hovered(self):
+        """
+        Readonly attribute: Is the mouse inside area
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.state.hovered
+
+    @property
+    def activated(self):
+        """
+        Readonly attribute: has the button just been pressed
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.state.activated
+
+    @property
+    def active(self):
+        """
+        Readonly attribute: is the button held
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.state.active
+
+    @property
+    def clicked(self):
+        """
+        Readonly attribute: has the item just been clicked.
+        The returned value is a tuple of len 5 containing the individual test
+        mouse buttons (up to 5 buttons)
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return tuple(self.state.clicked)
+
+    @property
+    def deactivated(self):
+        """
+        Readonly attribute: has the button just been unpressed
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.state.deactivated
+
+    cdef void draw(self,
+                   imgui.ImDrawList* drawlist) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.draw_prev_siblings(drawlist)
+        if not(self._show):
+            return
+
+        # Get button position in screen space
+        cdef float[4] p1
+        cdef float[4] p2
+        self.context.viewport.apply_current_transform(p1, self._p1)
+        self.context.viewport.apply_current_transform(p2, self._p2)
+        cdef imgui.ImVec2 top_left
+        cdef imgui.ImVec2 bottom_right
+        cdef imgui.ImVec2 size
+        top_left.x = min(p1[0], p2[0])
+        top_left.y = min(p1[1], p2[1])
+        bottom_right.x = max(p1[0], p2[0])
+        bottom_right.y = max(p1[1], p2[1])
+        size.x = bottom_right.x - top_left.x
+        size.y = bottom_right.y - top_left.y
+        cdef bint was_visible = self.state.visible
+        self.state.visible = imgui.IsRectVisible(top_left, bottom_right)
+        if not(was_visible) and not(self.state.visible):
+            # Item is entirely clipped.
+            # Do not skip the first time it is clipped,
+            # in order to update the relevant states to False.
+            return
+
+        cdef bint mouse_down = False
+        if (self._button & 1) != 0 and imgui.IsMouseDown(imgui.ImGuiMouseButton_Left):
+            mouse_down = True
+        if (self._button & 2) != 0 and imgui.IsMouseDown(imgui.ImGuiMouseButton_Right):
+            mouse_down = True
+        if (self._button & 4) != 0 and imgui.IsMouseDown(imgui.ImGuiMouseButton_Middle):
+            mouse_down = True
+
+        # We were active and draggable -> follow the mouse
+        # Do not follow if the mouse was released this frame
+        cdef imgui.ImVec2 cur_mouse_pos
+        cdef implot.ImPlotPoint cur_mouse_pos_plot
+        if self.state.active and self._draggable and mouse_down:
+            cur_mouse_pos = imgui.GetMousePos()
+            # We want to make sure the item will still get under the
+            # mouse as long as we drag. Thus behave as if a square below
+            # the mouse.
+            top_left.x = cur_mouse_pos.x - 2
+            top_left.y = cur_mouse_pos.y - 2
+            size.x = 5
+            size.y = 5
+            # Shift internal position for the user
+            if self.context.viewport.in_plot:
+                # IMPLOT_AUTO uses current axes
+                cur_mouse_pos_plot = \
+                    implot.GetPlotMousePos(implot.IMPLOT_AUTO,
+                                           implot.IMPLOT_AUTO)
+                cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
+                cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
+            self._p1[0] = self._p1_backup[0] + cur_mouse_pos.x - self.initial_mouse_position.x
+            self._p1[1] = self._p1_backup[1] + cur_mouse_pos.y - self.initial_mouse_position.y
+            self._p2[0] = self._p2_backup[0] + cur_mouse_pos.x - self.initial_mouse_position.x
+            self._p2[1] = self._p2_backup[1] + cur_mouse_pos.y - self.initial_mouse_position.y
+
+        cdef bool hovered = False
+        cdef bool held = False
+        cdef bint activated = InvisibleDrawButton(self.uuid,
+                                                  top_left,
+                                                  size,
+                                                  self._button,
+                                                  &hovered,
+                                                  &held)
+        self.state.deactivated = self.state.active and not(held)
+        self.state.activated = activated
+        self.state.active = activated or held
+        self.state.hovered = hovered
+        if activated:
+            if self.context.viewport.in_plot:
+                # IMPLOT_AUTO uses current axes
+                cur_mouse_pos_plot = \
+                    implot.GetPlotMousePos(implot.IMPLOT_AUTO,
+                                           implot.IMPLOT_AUTO)
+                cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
+                cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
+            else:
+                self.initial_mouse_position = imgui.GetMousePos()
+            self._p1_backup = self._p1
+            self._p2_backup = self._p2
+        cdef bint dragging = False
+        cdef int i
+        if self.state.active:
+            if self.context.viewport.in_plot:
+                cur_mouse_pos_plot = implot.GetPlotMousePos(implot.IMPLOT_AUTO,
+                                                            implot.IMPLOT_AUTO)
+                cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
+                cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
+            else:
+                cur_mouse_pos = imgui.GetMousePos()
+            dragging = cur_mouse_pos.x != self.initial_mouse_position.x or \
+                       cur_mouse_pos.y != self.initial_mouse_position.y
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.dragging[i] = dragging and imgui.IsMouseDown(i)
+                self.state.dragged[i] = False
+                if dragging:
+                    self.state.drag_deltas[i].x = cur_mouse_pos.x - self.initial_mouse_position.x
+                    self.state.drag_deltas[i].y = cur_mouse_pos.y - self.initial_mouse_position.y
+        else:
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.dragged[i] = self.state.dragging[i]
+                self.state.dragging[i] = False
+
+        if self.state.hovered:
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.clicked[i] = imgui.IsMouseClicked(i, False)
+                self.state.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
+        else:
+            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
+                self.state.clicked[i] = False
+                self.state.double_clicked[i] = False
+
+        run_handlers(self, self._handlers, self.state)
+
 
 """
 Items that enable to insert drawings in other elements
@@ -8893,7 +9203,7 @@ cdef class HorizontalLayout(Layout):
 
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
-        cdef int n_items
+        cdef int n_items = 0
         if self._alignment_mode == alignment.LEFT:
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
@@ -9145,7 +9455,7 @@ cdef class VerticalLayout(Layout):
 
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
-        cdef int n_items
+        cdef int n_items = 0
         if self._alignment_mode == alignment.TOP:
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
@@ -11161,10 +11471,11 @@ cdef class PlotAxisConfig(baseItem):
         clear_obj_vector(self._handlers)
         append_obj_vector(self._handlers, items)
 
-    cdef void after_draw(self, implot.ImAxis axis) noexcept nogil:
+    cdef void after_setup(self, implot.ImAxis axis) noexcept nogil:
         """
-        Update states, etc. after the elements were drawn
+        Update states, etc. after the elements were setup
         """
+        # TODO: return if not enabled ?
         cdef implot.ImPlotRect rect
         if axis <= implot.ImAxis_X3:
             rect = implot.GetPlotLimits(axis, implot.IMPLOT_AUTO)
@@ -11383,16 +11694,36 @@ cdef class PlotLegendConfig(baseItem):
         # No item is created at this point,
         # and thus we don't push fonts, check states, etc.
 
-    cdef void after_draw(self) noexcept nogil:
+    cdef void after_setup(self) noexcept nogil:
         # DPG does update legend location and flags... why ?
         return
 
 
 cdef class Plot(uiItem):
+    """
+    Plot. Can have Plot elements as child.
+
+    By default the axes X1 and Y1 are enabled,
+    but other can be enabled, up to X3 and Y3.
+    For instance:
+    my_plot.X2.enabled = True
+
+    By default, the legend and axes have reserved space.
+    They can have their own handlers that can react to
+    when they are hovered by the mouse or clicked.
+
+    The states of the plot relate to the rendering area (excluding
+    the legend, padding and axes). Thus if you want to react
+    to mouse event inside the plot area (for example implementing
+    clicking an curve), you can do it with using handlers bound
+    to the plot (+ some logic in your callbacks). 
+    """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_plot_element_child = True
         self.state.can_be_clicked = True
+        self.state.can_be_dragged = True
         self.state.can_be_hovered = True
+        self.state.has_content_region = True
         self._X1 = PlotAxisConfig(context)
         self._X2 = PlotAxisConfig(context, enabled=False)
         self._X3 = PlotAxisConfig(context, enabled=False)
@@ -11404,22 +11735,26 @@ cdef class Plot(uiItem):
         self._pan_modifier = 0
         self._fit_button = imgui.ImGuiMouseButton_Left
         self._menu_button = imgui.ImGuiMouseButton_Right
-        self._select_button = imgui.ImGuiMouseButton_Right
-        self._select_mod = 0
-        self._select_cancel_button = imgui.ImGuiMouseButton_Left
         self._override_mod = imgui.ImGuiMod_Ctrl
-        self._query_toggle_mod = imgui.ImGuiMod_Ctrl
-        self._select_horz_mod = imgui.ImGuiMod_Alt
-        self._select_vert_mod = imgui.ImGuiMod_Shift
         self._zoom_mod = 0
         self._zoom_rate = 0.1
-        self._query_enabled = True
         self._query_color = 255*256*256
         self._min_query_rects = 1
         self._max_query_rects = 1
         self._use_local_time = False
         self._use_ISO8601 = False
         self._use_24hour_clock = False
+        # Box select/Query rects. To remove
+        self._select_button = imgui.ImGuiMouseButton_Right
+        self._select_mod = 0
+        self._select_cancel_button = imgui.ImGuiMouseButton_Left
+        self._query_toggle_mod = imgui.ImGuiMod_Ctrl
+        self._select_horz_mod = imgui.ImGuiMod_Alt
+        self._select_vert_mod = imgui.ImGuiMod_Shift
+        self._query_enabled = False # True
+        # Disabling implot query rects. This is better
+        # to have it implemented outside implot.
+        self.flags = implot.ImPlotFlags_NoBoxSelect
 
     @property
     def X1(self):
@@ -11506,6 +11841,19 @@ cdef class Plot(uiItem):
         self._legend = value
 
     @property
+    def content_pos(self):
+        """
+        Readable attribute indicating the top left starting
+        position of the plot content in viewport coordinates.
+
+        The size of the plot content area is available with
+        content_size_avail.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return IntPairFromVec2(self._content_pos)
+
+    @property
     def pan_button(self):
         """
         Button that when held enables to navigate inside the plot
@@ -11580,6 +11928,7 @@ cdef class Plot(uiItem):
             raise ValueError("Invalid button")
         self._menu_button = button
 
+    ''' -> Disabled: query rects should be user implemented
     @property
     def select_button(self):
         """
@@ -11634,6 +11983,7 @@ cdef class Plot(uiItem):
         if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         self._select_cancel_button = button
+    '''
 
     @property
     def override_mod(self):
@@ -11655,6 +12005,7 @@ cdef class Plot(uiItem):
             raise ValueError("override_mod must be a combinaison of modifiers")
         self._override_mod = modifier
 
+    '''
     @property
     def query_toggle_mod(self):
         """
@@ -11714,6 +12065,7 @@ cdef class Plot(uiItem):
         if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
             raise ValueError("select_vert_mod must be a combinaison of modifiers")
         self._select_vert_mod = modifier
+    '''
 
     @property
     def zoom_mod(self):
@@ -11753,6 +12105,7 @@ cdef class Plot(uiItem):
         lock_gil_friendly(m, self.mutex)
         self._zoom_rate = value
 
+    '''
     @property
     def query_enabled(self):
         """
@@ -11816,6 +12169,7 @@ cdef class Plot(uiItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._max_query_rects = value
+    '''
 
     @property
     def use_local_time(self):
@@ -11898,6 +12252,7 @@ cdef class Plot(uiItem):
         if value:
             self.flags |= implot.ImPlotFlags_NoMenus
 
+    '''
     @property
     def no_box_select(self):
         """
@@ -11915,6 +12270,7 @@ cdef class Plot(uiItem):
         self.flags &= ~implot.ImPlotFlags_NoBoxSelect
         if value:
             self.flags |= implot.ImPlotFlags_NoBoxSelect
+    '''
 
     @property
     def no_mouse_pos(self):
@@ -12026,6 +12382,8 @@ cdef class Plot(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef int i
+        cdef imgui.ImVec2 rect_size
+        cdef bint visible
         implot.GetStyle().UseLocalTime = self._use_local_time
         implot.GetStyle().UseISO8601 = self._use_ISO8601
         implot.GetStyle().Use24HourClock = self._use_24hour_clock
@@ -12052,9 +12410,17 @@ cdef class Plot(uiItem):
 
         # Check at least one axis of each is enabled ?
 
-        if implot.BeginPlot(self.imgui_label.c_str(),
-                            self.requested_size,
-                            self.flags):
+        visible = implot.BeginPlot(self.imgui_label.c_str(),
+                                   self.requested_size,
+                                   self.flags)
+        # BeginPlot created the imgui Item
+        rect_size = imgui.GetItemRectSize()
+        self.state.resized = rect_size.x != self.state.rect_size.x or \
+                             rect_size.y != self.state.rect_size.y
+        self.state.rect_size = rect_size
+        if visible:
+            self.state.visible = True
+            
             # Setup axes
             self._X1.setup(implot.ImAxis_X1)
             self._X2.setup(implot.ImAxis_X2)
@@ -12065,11 +12431,11 @@ cdef class Plot(uiItem):
 
             # From DPG: workaround for stuck selection
             # Unsure why it should be done here and not above
-            if (imgui.GetIO().KeyMods & self._query_toggle_mod) == imgui.GetIO().KeyMods and \
-                (imgui.IsMouseDown(self._select_button) or imgui.IsMouseReleased(self._select_button)):
-                implot.GetInputMap().OverrideMod = imgui.ImGuiMod_None
+            # -> Not needed because query rects are not implemented with implot
+            #if (imgui.GetIO().KeyMods & self._query_toggle_mod) == imgui.GetIO().KeyMods and \
+            #    (imgui.IsMouseDown(self._select_button) or imgui.IsMouseReleased(self._select_button)):
+            #    implot.GetInputMap().OverrideMod = imgui.ImGuiMod_None
 
-            # TODO: querying
             self._legend.setup()
 
             implot.SetupFinish()
@@ -12077,24 +12443,24 @@ cdef class Plot(uiItem):
             # These states are valid after SetupFinish
             # Update now to have up to date data for handlers of children.
             self.state.hovered = implot.IsPlotHovered()
-            #self.state.selected = implot.IsPlotSelected()
-            #GetPlotSize
-            #GetPlotPos
-            for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.clicked[i] = self.state.hovered and imgui.IsMouseClicked(i, False)
-                self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
-            # TODO: GetPlotPos ? GetPlotSize ?
+            update_current_mouse_states(self.state)
+            self.state.content_region_size = implot.GetPlotSize()
+            self._content_pos = implot.GetPlotPos()
 
-            # TODO: pos ?
+            self._X1.after_setup(implot.ImAxis_X1)
+            self._X2.after_setup(implot.ImAxis_X2)
+            self._X3.after_setup(implot.ImAxis_X3)
+            self._Y1.after_setup(implot.ImAxis_Y1)
+            self._Y2.after_setup(implot.ImAxis_Y2)
+            self._Y3.after_setup(implot.ImAxis_Y3)
+            self._legend.after_setup()
+
+            implot.PushPlotClipRect(0.)
+
             if self.last_plot_element_child is not None:
                 self.last_plot_element_child.draw()
-            self._X1.after_draw(implot.ImAxis_X1)
-            self._X2.after_draw(implot.ImAxis_X2)
-            self._X3.after_draw(implot.ImAxis_X3)
-            self._Y1.after_draw(implot.ImAxis_Y1)
-            self._Y2.after_draw(implot.ImAxis_Y2)
-            self._Y3.after_draw(implot.ImAxis_Y3)
-            self._legend.after_draw()
+
+            implot.PopPlotClipRect()
             implot.EndPlot()
         else:
             self.set_hidden_and_propagate_to_children()
@@ -12111,8 +12477,9 @@ cdef class Plot(uiItem):
         self._Y2.mutex.unlock()
         self._Y3.mutex.unlock()
         self._legend.mutex.unlock()
-    # We don't need to restore the plot config as we
-    # always overwrite it.
+        return False
+        # We don't need to restore the plot config as we
+        # always overwrite it.
 
 
 cdef class plotElement(baseItem):

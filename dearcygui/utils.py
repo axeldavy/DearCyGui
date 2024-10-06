@@ -281,9 +281,12 @@ class ItemInspecter(dcg.Window):
 
     def remove_handlers(self):
         for item in self.inspected_items:
-            handlers = item.handlers
-            handlers = [h for h in handlers if h is not self.item_handler]
-            item.handlers = handlers
+            try:
+                handlers = item.handlers
+                handlers = [h for h in handlers if h is not self.item_handler]
+                item.handlers = handlers
+            except AttributeError:
+                pass
         self.inspected_items = []
 
     def setup_dragging_mouse_cursor(self):

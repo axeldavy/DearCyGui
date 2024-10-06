@@ -8,6 +8,7 @@
 - Contrary to DPG which had a global lock, every item has its own lock.
 - And item can be created without any parent, and be attached later.
 - A lot of states that were not meaningful and were sometimes misleading were removed or raise an error when not valid. For instance Drawing items do not have an 'ok' or a 'visible' state as in practice they were always True no matter what.
+- A lot of states were not correctly updated, and special care has been done to properly update them. You can trust the value of the states much more.
 
 # Viewport
 - wait_for_input is now more useful as wake() enables to force rendering
@@ -50,11 +51,14 @@ Layouts replace Groups.
 ## Features that DearCyGui does not support yet
 - Tables
 - Drag rects/lines
-- query plots
+- fonts, colormaps
 - some types of plots
 - Child windows
+- Colormaps
+- DragNDrop. Not 100% sure yet it will be supported.
 
 ## Features that DearCyGui does not intend to support
 - Filter sets: Filter sets in DPG allow to give names to items, and have their parent filter which parent should be drawn or not depending on the names given. The reason that DCG will not implement this feature is because first it tries to avoid bloat, and adding a filter field that will almost never be useful is not good for that, second this feature would be much more efficient if implemented on the user side, as the filter will be run every frame, rather than just when needed. Instead the user can store his filters in user_data and manipulate the `show` field to his liking. 
 - Knobs, 3D sliders: May be implemented as utilities, but will not be in core DCG.
+- Plot query rects: This type of feature needs a lot of customization. The new features of DCG enables the user to implement their own query rects. Some helpers will be available as utilities.
 

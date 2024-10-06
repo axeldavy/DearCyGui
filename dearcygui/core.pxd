@@ -463,6 +463,17 @@ cdef class DrawTriangle_(drawingItem):
     cdef int cull_mode
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
+cdef class DrawInvisibleButton(drawingItem):
+    cdef itemState state
+    cdef imgui.ImGuiButtonFlags _button
+    cdef int _draggable
+    cdef vector[PyObject*] _handlers # type baseHandler
+    cdef float[4] _p1
+    cdef float[4] _p2
+    cdef float[4] _p1_backup
+    cdef float[4] _p2_backup
+    cdef imgui.ImVec2 initial_mouse_position
+
 cdef class ViewportDrawList_(baseItem):
     cdef bint _front
     cdef bint _show
@@ -1064,7 +1075,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef itemState state
     cdef vector[PyObject*] _handlers # type baseHandler
     cdef void setup(self, implot.ImAxis) noexcept nogil
-    cdef void after_draw(self, implot.ImAxis) noexcept nogil
+    cdef void after_setup(self, implot.ImAxis) noexcept nogil
     cdef void set_hidden(self) noexcept nogil
 
 cdef class PlotLegendConfig(baseItem):
@@ -1072,7 +1083,7 @@ cdef class PlotLegendConfig(baseItem):
     cdef LegendLocation _location
     cdef implot.ImPlotLegendFlags flags
     cdef void setup(self) noexcept nogil
-    cdef void after_draw(self) noexcept nogil
+    cdef void after_setup(self) noexcept nogil
 
 cdef class Plot(uiItem):
     cdef PlotAxisConfig _X1
@@ -1082,6 +1093,7 @@ cdef class Plot(uiItem):
     cdef PlotAxisConfig _Y2
     cdef PlotAxisConfig _Y3
     cdef PlotLegendConfig _legend
+    cdef imgui.ImVec2 _content_pos
     cdef int _pan_button
     cdef imgui.ImGuiKeyChord _pan_modifier
     cdef int _fit_button

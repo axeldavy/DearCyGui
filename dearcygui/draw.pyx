@@ -835,7 +835,7 @@ cdef class DrawLine(DrawLine_):
     def p2(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self.p1)
+        return list(self.p2)
     @p2.setter
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m
