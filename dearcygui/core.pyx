@@ -3244,6 +3244,37 @@ cdef class DrawTriangle_(drawingItem):
                 drawlist.AddTriangleFilled(ip1, ip2, ip3, self.fill)
             drawlist.AddTriangle(ip1, ip2, ip3, self.color, thickness)
 
+"""
+InvisibleDrawButton: main difference with InvisibleButton
+is that it doesn't use the cursor and doesn't change
+the window maximum content area. In addition it allows
+overlap of InvisibleDrawButtons and considers itself
+in a pressed state as soon as the mouse is down.
+"""
+
+cdef extern from * nogil:
+    """
+    bool ImGui::InvisibleDrawButton(int uuid, const ImVec2& pos, const ImVec2& size,
+                                           ImGuiButtonFlags flags,
+                                           bool *out_hovered, bool *out_held)
+    {
+        ImGuiContext& g = *GImGui;
+        ImGuiWindow* window = GetCurrentWindow();
+        const ImRect bb(pos, pos + size);
+
+        const ImGuiID id = window->GetID(uuid);
+        ImGui::KeepAliveID(id);
+
+        flags |= ImGuiButtonFlags_AllowOverlap | ImGuiButtonFlags_PressedOnClick;
+
+        bool pressed = ButtonBehavior(bb, id, out_hovered, out_held, flags);
+
+        return pressed;
+    }
+    """
+    bint InvisibleDrawButton(int, ImVec2&, ImVec2&, ImGuiButtonFlags, bint *, bint *)
+    
+
 '''
 cdef class DrawInvisibleButton(drawingItem):
     """
