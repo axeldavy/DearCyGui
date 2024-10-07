@@ -31,6 +31,7 @@ Layouts replace Groups.
 - You can create custom handlers with python subclassing. For instance you can have a handler that holds True only if a specific other item is visible, or if a user condition is true, or if the framecount is a multiple of 5, or anything you want.
 - As a result of all the above, you can make it so specific callbacks are only called if very specific conditions are met. This contrasts with DPG, where you had to check the specific conditions in your callback, and these might not be True anymore by the time you handle the callback.
 - You can append handlers to an item that already has handlers.
+- repeat argument for KeyPressHandler
 
 # Callbacks
 - While handlers only accept a single callback (because you can just duplicate your handlers if you need several callbacks to be called), item callbacks accept appending several callbacks.

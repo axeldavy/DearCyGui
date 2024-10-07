@@ -54,7 +54,7 @@ cdef inline void lock_gil_friendly(unique_lock[recursive_mutex] &m,
 cdef class Context:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
-    cdef map[long long, PyObject*] items
+    cdef object items # weakref.WeakValueDictionary
     cdef dict[str, long long] tag_to_uuid
     cdef dict[long long, str] uuid_to_tag
     cdef object threadlocal_data
@@ -90,7 +90,6 @@ cdef class Context:
     cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
     cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
     cdef void register_item(self, baseItem o, long long uuid)
-    cdef void register_item_with_tag(self, baseItem o, long long uuid, str tag)
     cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
     cdef void unregister_item(self, long long uuid)
     cdef baseItem get_registered_item_from_uuid(self, long long uuid)
@@ -146,6 +145,7 @@ cdef class baseItem:
     cdef int external_lock
     cdef Context context
     cdef long long uuid
+    cdef object __weakref__
     cdef object _user_data
     # Attributes set by subclasses
     # to indicate what kind of parent
@@ -246,6 +246,18 @@ cdef struct itemState:
 cdef void update_current_state_as_hidden(itemState& state) noexcept nogil
 cdef void update_current_mouse_states(itemState& state) noexcept nogil
 
+cpdef enum mouse_cursor:
+    CursorNone = -1,
+    CursorArrow = 0,
+    CursorTextInput,         # When hovering over InputText, etc.
+    ResizeAll,         # (Unused by Dear ImGui functions)
+    ResizeNS,          # When hovering over a horizontal border
+    ResizeEW,          # When hovering over a vertical border or a column
+    ResizeNESW,        # When hovering over the bottom-left corner of a window
+    ResizeNWSE,        # When hovering over the bottom-right corner of a window
+    Hand,              # (Unused by Dear ImGui functions. Use for e.g. hyperlinks)
+    NotAllowed
+
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
     cdef mvViewport *viewport
@@ -257,6 +269,7 @@ cdef class Viewport(baseItem):
     cdef baseTheme _theme
     cdef itemState state # Unused. Just for compatibility with handlers
     cdef vector[PyObject*] _handlers # type baseHandler
+    cdef imgui.ImGuiMouseCursor _cursor
     # For timing stats
     cdef long long last_t_before_event_handling
     cdef long long last_t_before_rendering
@@ -466,12 +479,12 @@ cdef class DrawTriangle_(drawingItem):
 cdef class DrawInvisibleButton(drawingItem):
     cdef itemState state
     cdef imgui.ImGuiButtonFlags _button
-    cdef int _draggable
+    cdef int _min_side
+    cdef bint _no_input
+    cdef bint _capture_mouse
     cdef vector[PyObject*] _handlers # type baseHandler
     cdef float[4] _p1
     cdef float[4] _p2
-    cdef float[4] _p1_backup
-    cdef float[4] _p2_backup
     cdef imgui.ImVec2 initial_mouse_position
 
 cdef class ViewportDrawList_(baseItem):
@@ -1171,17 +1184,13 @@ cdef class PlotInfLines(plotElementX):
 cdef class PlotScatter(plotElementXY):
     cdef void draw_element(self) noexcept nogil
 
+cdef class DrawInPlot(plotElement):
+    cdef void draw_element(self) noexcept nogil
+
 """
 cdef class PlotHistogram2D(plotElementXY):
     cdef void draw_element(self) noexcept nogil
 """
-
-cdef class plotDraggable(plotElement):
-    cdef imgui.ImU32 _color
-    cdef bint _show_label
-    cdef void draw(self) noexcept nogil
-    cdef void draw_element(self) noexcept nogil
-
 
 
 """
