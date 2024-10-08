@@ -291,6 +291,7 @@ cdef class Viewport(baseItem):
     cdef imgui.ImVec2 parent_pos
     cdef bint in_plot
     cdef float thickness_multiplier # in plots
+    cdef float size_multiplier # in plots
     cdef bint[<int>implot.ImAxis_COUNT] enabled_axes
     cdef int start_pending_theme_actions # managed outside viewport
     cdef vector[theme_action] pending_theme_actions # managed outside viewport
@@ -1185,7 +1186,7 @@ cdef class PlotScatter(plotElementXY):
     cdef void draw_element(self) noexcept nogil
 
 cdef class DrawInPlot(plotElement):
-    cdef void draw_element(self) noexcept nogil
+    cdef void draw(self) noexcept nogil
 
 """
 cdef class PlotHistogram2D(plotElementXY):

@@ -375,8 +375,9 @@ class DragPoint(dcg.DrawingList):
         self.radius = 4.
         self.color = (0, 255, 0, 255)
         self.visible.color = 0 # Invisible outline
-        self._on_dragging = None
+        self._on_hover = None
         self._on_dragged = None
+        self._on_dragging = None
         self._clamp_inside = False
         self.was_dragging = False
         # We do in a separate function to allow
@@ -409,7 +410,8 @@ class DragPoint(dcg.DrawingList):
             # point with desired screen space size,
             # thus why we set p1 = p2
             self.invisible.min_side = value * 2.
-            self.visible.radius = value # TODO drawList params
+            # Negative value to not rescale
+            self.visible.radius = -value
 
     @property
     def x(self):
@@ -456,7 +458,7 @@ class DragPoint(dcg.DrawingList):
         """
         # We access parent elements
         # It's simpler to lock the toplevel parent in case of doubt.
-        with self.context.viewport.mutex:
+        with self.parents_mutex:
             if self._clamp_inside == bool(value):
                 return
             self._clamp_inside = bool(value)
@@ -469,7 +471,10 @@ class DragPoint(dcg.DrawingList):
             self.axes = plot_element.axes
             plot = plot_element.parent
             if self._clamp_inside:
-                plot.handlers += [self.handler_visible_for_clamping]
+                plot.handlers += [
+                    dcg.VisibleHandler(self.context,
+                                       callback=self.handler_visible_for_clamping)
+                ]
             else:
                 plot.handlers = [h for h in self.parent.handlers if h is not self.handler_visible_for_clamping]
 
@@ -569,7 +574,7 @@ class DragPoint(dcg.DrawingList):
         if _on_hover is not None:
             _on_hover(self, self, None)
 
-    def handler_visible_for_clamping(self, plot : dcg.Plot):
+    def handler_visible_for_clamping(self, handler, plot : dcg.Plot):
         # Every time the plot is visible, we
         # clamp the content if needed
         with plot.mutex: # We must lock the plot first

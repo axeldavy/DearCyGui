@@ -1430,8 +1430,46 @@ cdef class baseItem:
 
     @property
     def mutex(self):
-        """Context manager instance for the item mutex"""
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        """
         return wrap_mutex(self)
+
+    @property
+    def parents_mutex(self):
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        """
+        return wrap_this_and_parents_mutex(self)
 
 class wrap_mutex:
     def __init__(self, target):
@@ -1440,6 +1478,45 @@ class wrap_mutex:
         self.target.lock_mutex(wait=True)
     def __exit__(self, exc_type, exc_value, traceback):
         self.target.unlock_mutex()
+        return False # Do not catch exceptions
+
+class wrap_this_and_parents_mutex:
+    def __init__(self, target):
+        self.target = target
+        self.locked = []
+        self.nlocked = []
+        # TODO: Should we use thread-local here ?
+    def __enter__(self):
+        while True:
+            locked = []
+            # try_lock recursively all parents
+            item = self.target
+            success = True
+            while item is not None:
+                success = item.lock_mutex(wait=False)
+                if not(success):
+                    break
+                locked.append(item)
+                # we have a mutex on item, we can
+                # access its parent field without
+                # worrying it could change
+                item = item.parent
+            if success:
+                self.locked += locked
+                self.nlocked.append(len(locked))
+                return
+            # We failed to lock one of the parent.
+            # We must release our locks and retry
+            for item in locked:
+                item.unlock_mutex()
+            # release gil and give a chance to the
+            # thread retaining the lock to run
+            os.sched_yield()
+    def __exit__(self, exc_type, exc_value, traceback):
+        cdef int N = self.nlocked.pop()
+        cdef int i
+        for i in range(N):
+            self.locked.pop().unlock_mutex()
         return False # Do not catch exceptions
 
 
@@ -2650,8 +2727,9 @@ cdef class DrawArrow_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] tstart
         cdef float[4] tend
@@ -2685,8 +2763,9 @@ cdef class DrawBezierCubic_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p1
         cdef float[4] p2
@@ -2717,8 +2796,9 @@ cdef class DrawBezierQuadratic_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p1
         cdef float[4] p2
@@ -2751,8 +2831,12 @@ cdef class DrawCircle_(drawingItem):
         cdef float thickness = self.thickness
         cdef float radius = self.radius
         if self.context.viewport.in_plot:
-            thickness *= self.context.viewport.thickness_multiplier
-            radius *= self.context.viewport.thickness_multiplier
+            if thickness > 0:
+                thickness *= self.context.viewport.thickness_multiplier
+            if radius > 0:
+                radius *= self.context.viewport.size_multiplier
+        thickness = abs(thickness)
+        radius = abs(radius)
 
         cdef float[4] center
         self.context.viewport.apply_current_transform(center, self.center)
@@ -2803,8 +2887,9 @@ cdef class DrawEllipse_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef vector[imgui.ImVec2] transformed_points
         transformed_points.reserve(self.points.size())
@@ -2909,8 +2994,9 @@ cdef class DrawLine_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p1
         cdef float[4] p2
@@ -2935,8 +3021,9 @@ cdef class DrawPolyline_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p
         cdef imgui.ImVec2 ip1
@@ -2990,8 +3077,9 @@ cdef class DrawPolygon_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p
         cdef imgui.ImVec2 ip
@@ -3050,8 +3138,9 @@ cdef class DrawQuad_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p1
         cdef float[4] p2
@@ -3117,8 +3206,9 @@ cdef class DrawRect_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] pmin
         cdef float[4] pmax
@@ -3207,8 +3297,9 @@ cdef class DrawTriangle_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot:
+        if self.context.viewport.in_plot and thickness > 0:
             thickness *= self.context.viewport.thickness_multiplier
+        thickness = abs(thickness)
 
         cdef float[4] p1
         cdef float[4] p2
@@ -3340,6 +3431,7 @@ cdef class DrawInvisibleButton(drawingItem):
         self.state.can_be_active = True
         self.state.can_be_clicked = True
         self.state.can_be_deactivated = True
+        self.state.can_be_dragged = True
         self.state.can_be_hovered = True
         self.state.has_rect_size = True
         self.state.has_position = True
@@ -3668,11 +3760,12 @@ cdef class DrawInvisibleButton(drawingItem):
         self.state.pos_to_parent.x = self.state.pos_to_viewport.x - self.context.viewport.parent_pos.x
         self.state.pos_to_parent.y = self.state.pos_to_viewport.y - self.context.viewport.parent_pos.y
         cdef bint was_visible = self.state.visible
-        self.state.visible = imgui.IsRectVisible(top_left, bottom_right)
+        self.state.visible = imgui.IsRectVisible(top_left, bottom_right) or self.state.active
         if not(was_visible) and not(self.state.visible):
             # Item is entirely clipped.
             # Do not skip the first time it is clipped,
             # in order to update the relevant states to False.
+            # If the button is active, do not skip anything.
             return
 
         cdef bint mouse_down = False
@@ -3713,6 +3806,7 @@ cdef class DrawInvisibleButton(drawingItem):
                                            implot.IMPLOT_AUTO)
                 cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
                 cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
+                self.initial_mouse_position = cur_mouse_pos
             else:
                 self.initial_mouse_position = imgui.GetMousePos()
         cdef bint dragging = False
@@ -12678,7 +12772,7 @@ cdef class plotElement(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self._axes[0], self._axes[1])
+        return (self._axes[0], self._axes[1])
 
     @axes.setter
     def axes(self, value):
@@ -13850,14 +13944,37 @@ cdef class DrawInPlot(plotElement):
     def __cinit__(self):
         self.can_have_drawing_child = True
 
-    cdef void draw_element(self) noexcept nogil:
+    cdef void draw(self) noexcept nogil:
+        # Render siblings first
+        if self._prev_sibling is not None:
+            (<plotElement>self._prev_sibling).draw()
+
+        # Check the axes are enabled
+        if not(self._show) or \
+           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context.viewport.enabled_axes[self._axes[1]]):
+            return
+
+        # push theme, font
+        self.context.viewport.push_pending_theme_actions(
+            theme_enablers.t_enabled_any,
+            theme_categories.t_plot
+        )
+
+        if self._theme is not None:
+            self._theme.push()
+
+        implot.SetAxes(self._axes[0], self._axes[1])
+
         # Reset current drawInfo
         #self.context.viewport.cullMode = 0 # mvCullMode_None
         self.context.viewport.perspectiveDivide = False
         self.context.viewport.depthClipping = False
         self.context.viewport.has_matrix_transform = False
         self.context.viewport.in_plot = True
-        self.context.viewport.thickness_multiplier = 1. # TODO
+        self.context.viewport.thickness_multiplier = implot.GetStyle().LineWeight
+        self.context.viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
+        self.context.viewport.thickness_multiplier = self.context.viewport.thickness_multiplier * self.context.viewport.size_multiplier
         self.context.viewport.parent_pos = implot.GetPlotPos()
 
         implot.PushPlotClipRect(0.)
@@ -13866,6 +13983,12 @@ cdef class DrawInPlot(plotElement):
             self.last_drawings_child.draw(implot.GetPlotDrawList())
 
         implot.PopPlotClipRect()
+
+        # pop theme, font
+        if self._theme is not None:
+            self._theme.pop()
+
+        self.context.viewport.pop_applied_pending_theme_actions()
 
 
 """
