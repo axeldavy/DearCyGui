@@ -10,6 +10,7 @@ import textwrap
 import sys
 import shutil
 import subprocess
+import numpy as np
 
 wip_version = "0.0.1"
 
@@ -63,6 +64,7 @@ def setup_package():
                     "thirdparty/imnodes",
                     "thirdparty/implot",
                     "thirdparty/gl3w"]
+    include_dirs += [np.get_include()]
 
     cpp_sources = [
         "dearcygui/backends/glfw_gl3_backend.cpp",

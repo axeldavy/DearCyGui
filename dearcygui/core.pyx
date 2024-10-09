@@ -4776,15 +4776,16 @@ cdef class HandlerList(baseHandler):
         cdef bint child_state
         if self._op == handlerListOP.ALL:
             current_state = True
-        while child is not <PyObject*>None:
+        while (<baseHandler>child) is not None:
             child_state = (<baseHandler>child).check_state(item, state)
-            child = <PyObject*>((<baseHandler>child).last_handler_child)
             if not((<baseHandler>child)._enabled):
+                child = <PyObject*>((<baseHandler>child)._prev_sibling)
                 continue
             if self._op == handlerListOP.ALL:
                 current_state = current_state and child_state
             else:
                 current_state = current_state or child_state
+            child = <PyObject*>((<baseHandler>child)._prev_sibling)
         if self._op == handlerListOP.NONE:
             # NONE = not(ANY)
             current_state = not(current_state)
