@@ -691,6 +691,7 @@ cdef extern from "implot.h" namespace "ImPlot" nogil:
     bint BeginPlot(const char*, const char*, const char*, ImVec2&, ImPlotFlags, ImPlotAxisFlags, ImPlotAxisFlags, ImPlotAxisFlags, ImPlotAxisFlags, const char*, const char*)
 
 
-
-
+cdef extern from "implot_internal.h" namespace "ImPlot" nogil:
+    bint BeginItem(const char*, ImPlotFlags, ImPlotCol)
+    void EndItem()
 

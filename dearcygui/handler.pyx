@@ -99,10 +99,10 @@ cdef class ActivatedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_activated):
+        if not(state.cap.can_be_active):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.activated
+        return state.cur.active and not(state.prev.active)
 
 cdef class ActiveHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -110,10 +110,10 @@ cdef class ActiveHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_active):
+        if not(state.cap.can_be_active):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.active
+        return state.cur.active
 
 cdef class ClickedHandler(baseHandler):
     def __cinit__(self):
@@ -149,7 +149,7 @@ cdef class ClickedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_clicked):
+        if not(state.cap.can_be_clicked):
             raise TypeError(f"Cannot bind handler {self} for {item}")
 
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
@@ -159,7 +159,7 @@ cdef class ClickedHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.clicked[i]:
+            if state.cur.clicked[i]:
                 clicked = True
         return clicked
 
@@ -173,7 +173,7 @@ cdef class ClickedHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.clicked[i]:
+            if state.cur.clicked[i]:
                 self.context.queue_callback_arg1int(self._callback, self, item, i)
 
 cdef class DoubleClickedHandler(baseHandler):
@@ -210,7 +210,7 @@ cdef class DoubleClickedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_clicked):
+        if not(state.cap.can_be_clicked):
             raise TypeError(f"Cannot bind handler {self} for {item}")
 
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
@@ -220,7 +220,7 @@ cdef class DoubleClickedHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.double_clicked[i]:
+            if state.cur.double_clicked[i]:
                 clicked = True
         return clicked
 
@@ -234,7 +234,7 @@ cdef class DoubleClickedHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.double_clicked[i]:
+            if state.cur.double_clicked[i]:
                 self.context.queue_callback_arg1int(self._callback, self, item, i)
 
 cdef class DeactivatedHandler(baseHandler):
@@ -243,10 +243,10 @@ cdef class DeactivatedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_deactivated):
+        if not(state.cap.can_be_active):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.deactivated
+        return not(state.cur.active) and state.prev.active
 
 cdef class DeactivatedAfterEditHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -254,10 +254,10 @@ cdef class DeactivatedAfterEditHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_deactivated_after_edited):
+        if not(state.cap.can_be_deactivated_after_edited):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.deactivated_after_edited
+        return state.cur.deactivated_after_edited
 
 cdef class DraggedHandler(baseHandler):
     def __cinit__(self):
@@ -293,7 +293,7 @@ cdef class DraggedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_dragged):
+        if not(state.cap.can_be_dragged):
             raise TypeError(f"Cannot bind handler {self} for {item}")
 
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
@@ -303,7 +303,7 @@ cdef class DraggedHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.dragged[i]:
+            if state.prev.dragging[i] and not(state.cur.dragging[i]):
                 dragged = True
         return dragged
 
@@ -317,12 +317,12 @@ cdef class DraggedHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.dragged[i]:
+            if state.prev.dragging[i] and not(state.cur.dragging[i]):
                 self.context.queue_callback_arg2float(self._callback,
                                                       self,
                                                       item,
-                                                      state.drag_deltas[i].x,
-                                                      state.drag_deltas[i].y)
+                                                      state.prev.drag_deltas[i].x,
+                                                      state.prev.drag_deltas[i].y)
 
 cdef class DraggingHandler(baseHandler):
     def __cinit__(self):
@@ -358,7 +358,7 @@ cdef class DraggingHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_dragged):
+        if not(state.cap.can_be_dragged):
             raise TypeError(f"Cannot bind handler {self} for {item}")
 
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
@@ -368,7 +368,7 @@ cdef class DraggingHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.dragging[i]:
+            if state.cur.dragging[i]:
                 dragging = True
         return dragging
 
@@ -382,12 +382,12 @@ cdef class DraggingHandler(baseHandler):
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
                 continue
-            if state.dragging[i]:
+            if state.cur.dragging[i]:
                 self.context.queue_callback_arg2float(self._callback,
                                                       self,
                                                       item,
-                                                      state.drag_deltas[i].x,
-                                                      state.drag_deltas[i].y)
+                                                      state.cur.drag_deltas[i].x,
+                                                      state.cur.drag_deltas[i].y)
 
 cdef class EditedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -395,10 +395,10 @@ cdef class EditedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_edited):
+        if not(state.cap.can_be_edited):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.edited
+        return state.cur.edited
 
 cdef class FocusHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -406,10 +406,10 @@ cdef class FocusHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_focused):
+        if not(state.cap.can_be_focused):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.focused
+        return state.cur.focused
 
 cdef class HoverHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -417,10 +417,10 @@ cdef class HoverHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_hovered):
+        if not(state.cap.can_be_hovered):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.hovered
+        return state.cur.hovered
 
 cdef class ResizeHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -428,10 +428,11 @@ cdef class ResizeHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.has_rect_size):
+        if not(state.cap.has_rect_size):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.resized
+        return state.cur.rect_size.x != state.prev.rect_size.x or \
+               state.cur.rect_size.y != state.prev.rect_size.y
 
 cdef class ToggledOpenHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
@@ -439,12 +440,12 @@ cdef class ToggledOpenHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
             (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if not(state.can_be_toggled):
+        if not(state.cap.can_be_toggled):
             raise TypeError(f"Cannot bind handler {self} for {item}")
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.toggled
+        return state.cur.open and not(state.prev.open)
 
-cdef class VisibleHandler(baseHandler):
+cdef class RenderedHandler(baseHandler):
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -452,7 +453,7 @@ cdef class VisibleHandler(baseHandler):
             (<baseHandler>self._prev_sibling).check_bind(item, state)
         return
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        return state.visible
+        return state.cur.rendered
 
 cdef class KeyDownHandler(KeyDownHandler_):
     @property

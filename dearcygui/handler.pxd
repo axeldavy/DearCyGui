@@ -65,7 +65,7 @@ cdef class ToggledOpenHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class VisibleHandler(baseHandler):
+cdef class RenderedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 

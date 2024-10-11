@@ -1,5 +1,6 @@
 import dearcygui as dcg
 import numpy as np
+from collections import deque
 
 """
 A set of tools and demos of what can be
@@ -66,6 +67,8 @@ class MetricsWindow(dcg.Window):
             "Presentation": ScrollingBuffer()
         }
         self.times = ScrollingBuffer()
+        self.self_metrics = deque(maxlen=10)
+        self.metrics = deque(maxlen=10)
         self.plots = {}
 
         self.low_framerate_theme = dcg.ThemeColorImPlot(c)
@@ -162,25 +165,62 @@ class MetricsWindow(dcg.Window):
     def log_times(self, watcher, target, watcher_data):
         start_metrics_rendering = watcher_data[0]
         stop_metrics_rendering = watcher_data[1]
+        frame_count = watcher_data[3]
         delta = stop_metrics_rendering - start_metrics_rendering
         # Perform a running average
         #self.metrics_window_rendering_time = \
         #    0.9 * self.metrics_window_rendering_time + \
         #    0.1 * delta
-        self.metrics_window_rendering_time = delta * 1e-9
-        self.update_plot()
+        #self.metrics_window_rendering_time = delta * 1e-9
+        self.self_metrics.append((frame_count, delta * 1e-9, watcher_data))
+        self.log_metrics()
+        self.update_plot(frame_count)
 
-    def update_plot(self):
-        rendering_metrics = self.context.viewport.metrics
-        self.data["Frame"].push(1e3 * rendering_metrics["delta_whole_frame"])
-        self.data["Events"].push(1e3 * rendering_metrics["delta_event_handling"])
-        self.data["Rendering(other)"].push(1e3 * rendering_metrics["delta_rendering"] - self.metrics_window_rendering_time)
-        self.data["Rendering(this)"].push(1e3 * self.metrics_window_rendering_time)
-        self.data["Presentation"].push(1e3 * rendering_metrics["delta_presenting"])
-        self.rendered_vertices = rendering_metrics["rendered_vertices"]
-        self.rendered_indices = rendering_metrics["rendered_indices"]
-        self.rendered_windows = rendering_metrics["rendered_windows"]
-        self.active_windows = rendering_metrics["active_windows"]
+    def log_metrics(self):
+        """
+        The metrics we retrieve might be from a more
+        recent frame than what log_times received last,
+        or we might have run log_times before the metrics
+        were updated. Thus we need to sync.
+        """
+        self.metrics.append(self.context.viewport.metrics)
+
+    def update_plot(self, frame_count):
+        treated_metrics = []
+        treated_self_metrics = []
+        # Treat frames where we have received both infos
+        for rendering_metrics in self.metrics:
+            found = False
+            for self_metric in self.self_metrics:
+                (frame_count, metrics_window_rendering_time, t_check) = self_metric
+                if frame_count == rendering_metrics["frame_count"]:
+                    found = True
+                    break
+            if not(found):
+                continue
+            rendering_metrics["delta_rendering"] = 1e-9 * (rendering_metrics["last_time_after_rendering"] - rendering_metrics["last_time_before_rendering"])
+            if (rendering_metrics["delta_rendering"] - metrics_window_rendering_time) < 0:
+                print(rendering_metrics, t_check, rendering_metrics["delta_rendering"], metrics_window_rendering_time)
+                print(t_check[0] - rendering_metrics["last_time_before_rendering"], \
+                      t_check[1] - t_check[0], \
+                      rendering_metrics["last_time_after_rendering"]  - t_check[1]\
+                )
+            treated_metrics.append(rendering_metrics)
+            treated_self_metrics.append(self_metric)
+            self.data["Frame"].push(1e3 * rendering_metrics["delta_whole_frame"])
+            self.data["Events"].push(1e3 * rendering_metrics["delta_event_handling"])
+            self.data["Rendering(other)"].push(1e3 * (rendering_metrics["delta_rendering"] - metrics_window_rendering_time))
+            self.data["Rendering(this)"].push(1e3 * metrics_window_rendering_time)
+            self.data["Presentation"].push(1e3 * rendering_metrics["delta_presenting"])
+        # Remove treated data
+        for rendering_metrics in treated_metrics:
+            self.metrics.remove(rendering_metrics)
+        for self_metric in treated_self_metrics:
+            self.self_metrics.remove(self_metric)
+        rendered_vertices = rendering_metrics["rendered_vertices"]
+        rendered_indices = rendering_metrics["rendered_indices"]
+        rendered_windows = rendering_metrics["rendered_windows"]
+        active_windows = rendering_metrics["active_windows"]
         current_time = 1e-9*rendering_metrics["last_time_before_rendering"]
         self.times.push(current_time - self.start_time)
         time_average = np.mean(self.data["Frame"].get()[-60:])
@@ -193,8 +233,8 @@ class MetricsWindow(dcg.Window):
             self.main_plot.theme = self.high_framerate_theme
 
         self.text1.value = "Application average %.3f ms/frame (%.1f FPS)" % (time_average, fps_average)
-        self.text2.value = "%d vertices, %d indices (%d triangles)" % (self.rendered_vertices, self.rendered_indices, self.rendered_indices//3)
-        self.text3.value = "%d active windows (%d visible)" % (self.active_windows, self.rendered_windows)
+        self.text2.value = "%d vertices, %d indices (%d triangles)" % (rendered_vertices, rendered_indices, rendered_indices//3)
+        self.text3.value = "%d active windows (%d visible)" % (active_windows, rendered_windows)
         DT1 = current_time - self.start_time
         DT0 = current_time - self.start_time - self.history.value
         self.history_bounds[1] = DT1
@@ -472,7 +512,7 @@ class DragPoint(dcg.DrawingList):
             plot = plot_element.parent
             if self._clamp_inside:
                 plot.handlers += [
-                    dcg.VisibleHandler(self.context,
+                    dcg.RenderedHandler(self.context,
                                        callback=self.handler_visible_for_clamping)
                 ]
             else:

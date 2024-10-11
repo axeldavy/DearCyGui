@@ -53,7 +53,7 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
-    glfwGetWindowPos(viewportData->handle, &viewport->xpos, &viewport->ypos);
+    //glfwGetWindowPos(viewportData->handle, &viewport->xpos, &viewport->ypos);
 
     // Rendering
     ImGui::Render();
@@ -108,7 +108,7 @@ mvProcessEvents(mvViewport* viewport)
 
     viewport->running = !glfwWindowShouldClose(viewportData->handle);
 
-    if (viewport->posDirty)
+    if (viewport->posDirty && 0)
     {
         glfwSetWindowPos(viewportData->handle, viewport->xpos, viewport->ypos);
         viewport->posDirty = false;
@@ -215,7 +215,7 @@ mvShowViewport(mvViewport& viewport,
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     viewportData->handle = glfwCreateWindow(viewport.actualWidth, viewport.actualHeight, viewport.title.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(viewportData->handle, &viewport);
-    glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos);
+    //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos);
     glfwSetWindowSizeLimits(viewportData->handle, (int)viewport.minwidth, (int)viewport.minheight, (int)viewport.maxwidth, (int)viewport.maxheight);
 
     viewport.clientHeight = viewport.actualHeight;

@@ -97,7 +97,7 @@ def setup_package():
     libraries = []
 
     if get_platform() == "Linux":
-        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O2", "-DUNIX", "-DLINUX",\
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
         libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
     elif get_platform() == "OS X":
@@ -144,9 +144,9 @@ def setup_package():
     metadata = dict(
         name='dearcygui',                                      # Required
         version=version_number(),                              # Required
-        author="Jonathan Hoffstadt, Preston Cothren and Axel Davy",       # Optional
+        author="Axel Davy",                                    # Optional
         author_email="jonathanhoffstadt@yahoo.com",            # Optional
-        description='DearCyGui: A simple Python GUI Toolkit',  # Required
+        description='DearCyGui: A simple and customizable Python GUI Toolkit coded in Cython',  # Required
         long_description=long_description,                     # Optional
         long_description_content_type='text/markdown',         # Optional
         url='https://github.com/axeldavy/DearCyGui',          # Optional

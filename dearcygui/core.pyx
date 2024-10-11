@@ -20,6 +20,7 @@ cimport cython
 cimport cython.view
 from cython.operator cimport dereference
 from cpython.ref cimport PyObject, Py_INCREF, Py_DECREF
+from libc.string cimport memset, memcpy
 
 # This file is the only one that is linked to the C++ code
 # Thus it is the only one allowed to make calls to it
@@ -462,7 +463,7 @@ cdef class Context:
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.IsMouseClicked(button, repeat)
 
-    def is_mouse_double_clicked(self, int button, bint repeat=False):
+    def is_mouse_double_clicked(self, int button):
         """did mouse button double-clicked?. Same as get_mouse_clicked_count() == 2."""
         cdef unique_lock[recursive_mutex] m
         if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
@@ -522,7 +523,7 @@ cdef class Context:
         cdef imgui.ImVec2 delta =  imgui.GetMouseDragDelta(button, lock_threshold)
         return (delta.x, delta.y)
 
-    def reset_mouse_drag_delta(self, int button, float lock_threshold=-1.):
+    def reset_mouse_drag_delta(self, int button):
         """Reset to 0 the drag delta for the target button"""
         cdef unique_lock[recursive_mutex] m
         if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
@@ -1318,7 +1319,7 @@ cdef class baseItem:
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
         # Free references
-        #self.context = None # TODO: bound items might have issues with this
+        self.context = None
         # TODO: free item specific references (themes, font, etc)
         self.last_window_child = None
         self.last_widgets_child = None
@@ -1353,7 +1354,7 @@ cdef class baseItem:
         if self._prev_sibling is not None:
             (<baseItem>self._prev_sibling).__delete_and_siblings()
         # Free references
-        #self.context = None
+        self.context = None
         self._parent = None
         self._prev_sibling = None
         self._next_sibling = None
@@ -1571,7 +1572,6 @@ cdef class Viewport(baseItem):
         ensure_correct_im_context(self.context)
         if self.initialized:
             raise RuntimeError("Viewport already initialized")
-            return
         self.viewport = mvCreateViewport(width,
                                          height,
                                          internal_render_callback,
@@ -2048,6 +2048,9 @@ cdef class Viewport(baseItem):
 
         No average is performed. To get FPS, one can
         average delta_whole_frame and invert it.
+
+        frame_count corresponds to the frame number to which
+        the data refers to.
         """
         return {
             "last_time_before_event_handling" : self.last_t_before_event_handling,
@@ -2062,7 +2065,7 @@ cdef class Viewport(baseItem):
             "rendered_indices": imgui.GetIO().MetricsRenderIndices,
             "rendered_windows": imgui.GetIO().MetricsRenderWindows,
             "active_windows": imgui.GetIO().MetricsActiveWindows,
-            "frame_count" : self.frame_count
+            "frame_count" : self.frame_count-1,
         }
 
     def configure(self, **kwargs):
@@ -2130,12 +2133,12 @@ cdef class Viewport(baseItem):
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
-    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil:
+    cdef void apply_current_transform(self, float *dst_p, double[4] src_p) noexcept nogil:
         """
         Used during rendering as helper to convert drawing coordinates to pixel coordinates
         """
         # assumes imgui + viewport mutex are held
-        cdef float[4] transformed_p
+        cdef double[4] transformed_p
         if self.has_matrix_transform:
             transformed_p[0] = self.transform[0][0] * src_p[0] + \
                                self.transform[0][1] * src_p[1] + \
@@ -2168,20 +2171,16 @@ cdef class Viewport(baseItem):
         cdef imgui.ImVec2 plot_transformed
         if self.in_plot:
             plot_transformed = \
-                implot.PlotToPixels(<double>transformed_p[0],
-                                    <double>transformed_p[1],
+                implot.PlotToPixels(transformed_p[0],
+                                    transformed_p[1],
                                     -1,
                                     -1)
-            transformed_p[0] = plot_transformed.x
-            transformed_p[1] = plot_transformed.y
+            dst_p[0] = plot_transformed.x
+            dst_p[1] = plot_transformed.y
         else:
-            # Unsure why the original code doesn't do it in the in_plot path
-            transformed_p[0] += self.parent_pos.x
-            transformed_p[1] += self.parent_pos.y
-        dst_p[0] = transformed_p[0]
-        dst_p[1] = transformed_p[1]
-        dst_p[2] = transformed_p[2]
-        dst_p[3] = transformed_p[3]
+            # When in a plot, PlotToPixel already handles that.
+            dst_p[0] = transformed_p[0] + self.parent_pos.x
+            dst_p[1] = transformed_p[1] + self.parent_pos.y
 
     cdef void push_pending_theme_actions(self,
                                          theme_enablers theme_activation_condition_enabled,
@@ -2514,55 +2513,50 @@ cdef class PlaceHolderParent(baseItem):
 """
 States used by many items
 """
+
+cdef void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil:
+    if handlers.empty():
+        return
+    cdef int i
+    for i in range(<int>handlers.size()):
+        (<baseHandler>(handlers[i])).run_handler(item, state)
+    # Move current state to previous state
+    memcpy(<void*>&state.prev, <void*>&state.cur, sizeof(state.cur))
+
 cdef void update_current_state_as_hidden(itemState& state) noexcept nogil:
     """
     Indicates the object is hidden
     """
-    state.hovered = False
-    state.active = False
-    state.activated = False
-    cdef int i
-    for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-        state.clicked[i] = False
-        state.double_clicked[i] = False
-        state.dragging[i] = False
-        state.dragged[i] = False
-    state.deactivated = False
-    state.deactivated_after_edited = False
-    state.edited = False
-    state.focused = False
-    state.toggled = False
-    state.resized = False
-    state.visible = False
+    cdef bint open = state.cur.open
+    memset(<void*>&state.cur, 0, sizeof(state.cur))
+    # being open/closed is unaffected by being hidden
+    state.cur.open = open
 
 cdef void update_current_mouse_states(itemState& state) noexcept nogil:
     """
-    Helper to fill common states
+    Helper to fill common states. Must be called after the hovered state is updated
     """
     cdef int i
-    if state.can_be_clicked:
-        if state.hovered:
+    if state.cap.can_be_clicked:
+        if state.cur.hovered:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                state.clicked[i] = imgui.IsMouseClicked(i, False)
-                state.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
+                state.cur.clicked[i] = imgui.IsMouseClicked(i, False)
+                state.cur.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                state.clicked[i] = False
-                state.double_clicked[i] = False
+                state.cur.clicked[i] = False
+                state.cur.double_clicked[i] = False
     cdef bint dragging
-    if state.can_be_dragged:
-        if state.hovered:
+    if state.cap.can_be_dragged:
+        if state.cur.hovered:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
                 dragging = imgui.IsMouseDragging(i, -1.)
-                state.dragged[i] = not(dragging) and state.dragging[i]
-                state.dragging[i] = dragging
+                state.cur.dragging[i] = dragging
                 if dragging:
-                    state.drag_deltas[i] = imgui.GetMouseDragDelta(i, -1.)
+                    state.cur.drag_deltas[i] = imgui.GetMouseDragDelta(i, -1.)
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                state.dragged[i] = False
-                state.dragging[i] = False
-
+                state.cur.dragging[i] = False
 
 """
 Drawing items
@@ -2688,10 +2682,10 @@ cdef class DrawArrow_(drawingItem):
     cdef void __compute_tip(self):
         # Copy paste from original code
 
-        cdef float xsi = self.end[0]
-        cdef float xfi = self.start[0]
-        cdef float ysi = self.end[1]
-        cdef float yfi = self.start[1]
+        cdef double xsi = self.end[0]
+        cdef double xfi = self.start[0]
+        cdef double ysi = self.end[1]
+        cdef double yfi = self.start[1]
 
         # length of arrow head
         cdef double xoffset = self.size
@@ -2708,8 +2702,8 @@ cdef class DrawArrow_(drawingItem):
         elif xsi >= xfi and ysi < yfi:
             angle = atan((ysi - yfi) / (xsi - xfi))
 
-        cdef float x1 = <float>(xsi - xoffset * cos(angle))
-        cdef float y1 = <float>(ysi - yoffset * sin(angle))
+        cdef double x1 = <double>(xsi - xoffset * cos(angle))
+        cdef double y1 = <double>(ysi - yoffset * sin(angle))
         self.corner1 = [x1 - 0.5 * self.size * sin(angle),
                         y1 + 0.5 * self.size * cos(angle),
                         0.,
@@ -2731,10 +2725,10 @@ cdef class DrawArrow_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] tstart
-        cdef float[4] tend
-        cdef float[4] tcorner1
-        cdef float[4] tcorner2
+        cdef float[2] tstart
+        cdef float[2] tend
+        cdef float[2] tcorner1
+        cdef float[2] tcorner2
         self.context.viewport.apply_current_transform(tstart, self.start)
         self.context.viewport.apply_current_transform(tend, self.end)
         self.context.viewport.apply_current_transform(tcorner1, self.corner1)
@@ -2767,10 +2761,10 @@ cdef class DrawBezierCubic_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p1
-        cdef float[4] p2
-        cdef float[4] p3
-        cdef float[4] p4
+        cdef float[2] p1
+        cdef float[2] p2
+        cdef float[2] p3
+        cdef float[2] p4
         self.context.viewport.apply_current_transform(p1, self.p1)
         self.context.viewport.apply_current_transform(p2, self.p2)
         self.context.viewport.apply_current_transform(p3, self.p3)
@@ -2800,9 +2794,9 @@ cdef class DrawBezierQuadratic_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p1
-        cdef float[4] p2
-        cdef float[4] p3
+        cdef float[2] p1
+        cdef float[2] p2
+        cdef float[2] p3
         self.context.viewport.apply_current_transform(p1, self.p1)
         self.context.viewport.apply_current_transform(p2, self.p2)
         self.context.viewport.apply_current_transform(p3, self.p3)
@@ -2838,7 +2832,7 @@ cdef class DrawCircle_(drawingItem):
         thickness = abs(thickness)
         radius = abs(radius)
 
-        cdef float[4] center
+        cdef float[2] center
         self.context.viewport.apply_current_transform(center, self.center)
         cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
         if self.fill & imgui.IM_COL32_A_MASK != 0:
@@ -2859,23 +2853,23 @@ cdef class DrawEllipse_(drawingItem):
 
     cdef void __fill_points(self):
         cdef int segments = max(self.segments, 3)
-        cdef float width = self.pmax[0] - self.pmin[0]
-        cdef float height = self.pmax[1] - self.pmin[1]
-        cdef float cx = width / 2. + self.pmin[0]
-        cdef float cy = height / 2. + self.pmin[1]
-        cdef float radian_inc = (M_PI * 2.) / <float>segments
+        cdef double width = self.pmax[0] - self.pmin[0]
+        cdef double height = self.pmax[1] - self.pmin[1]
+        cdef double cx = width / 2. + self.pmin[0]
+        cdef double cy = height / 2. + self.pmin[1]
+        cdef double radian_inc = (M_PI * 2.) / <double>segments
         self.points.clear()
         self.points.reserve(segments+1)
         cdef int i
-        # vector needs float4 rather than float[4]
-        cdef float4 p
+        # vector needs double4 rather than double[4]
+        cdef double4 p
         p.p[2] = self.pmax[2]
         p.p[3] = self.pmax[3]
         width = abs(width)
         height = abs(height)
         for i in range(segments):
-            p.p[0] = cx + cos(<float>i * radian_inc) * width / 2.
-            p.p[1] = cy - sin(<float>i * radian_inc) * height / 2.
+            p.p[0] = cx + cos(<double>i * radian_inc) * width / 2.
+            p.p[1] = cy - sin(<double>i * radian_inc) * height / 2.
             self.points.push_back(p)
         self.points.push_back(self.points[0])
 
@@ -2894,7 +2888,7 @@ cdef class DrawEllipse_(drawingItem):
         cdef vector[imgui.ImVec2] transformed_points
         transformed_points.reserve(self.points.size())
         cdef int i
-        cdef float[4] p
+        cdef float[2] p
         for i in range(<int>self.points.size()):
             self.context.viewport.apply_current_transform(p, self.points[i].p)
             transformed_points.push_back(imgui.ImVec2(p[0], p[1]))
@@ -2925,8 +2919,8 @@ cdef class DrawImage_(drawingItem):
 
         cdef unique_lock[recursive_mutex] m4 = unique_lock[recursive_mutex](self.texture.mutex)
 
-        cdef float[4] pmin
-        cdef float[4] pmax
+        cdef float[2] pmin
+        cdef float[2] pmax
         self.context.viewport.apply_current_transform(pmin, self.pmin)
         self.context.viewport.apply_current_transform(pmax, self.pmax)
         cdef imgui.ImVec2 ipmin = imgui.ImVec2(pmin[0], pmin[1])
@@ -2954,10 +2948,10 @@ cdef class DrawImageQuad_(drawingItem):
 
         cdef unique_lock[recursive_mutex] m4 = unique_lock[recursive_mutex](self.texture.mutex)
 
-        cdef float[4] p1
-        cdef float[4] p2
-        cdef float[4] p3
-        cdef float[4] p4
+        cdef float[2] p1
+        cdef float[2] p2
+        cdef float[2] p3
+        cdef float[2] p4
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip2
         cdef imgui.ImVec2 ip3
@@ -2998,8 +2992,8 @@ cdef class DrawLine_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p1
-        cdef float[4] p2
+        cdef float[2] p1
+        cdef float[2] p2
         self.context.viewport.apply_current_transform(p1, self.p1)
         self.context.viewport.apply_current_transform(p2, self.p2)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
@@ -3025,7 +3019,7 @@ cdef class DrawPolyline_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p
+        cdef float[2] p
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip1_
         cdef imgui.ImVec2 ip2
@@ -3081,7 +3075,7 @@ cdef class DrawPolygon_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p
+        cdef float[2] p
         cdef imgui.ImVec2 ip
         cdef vector[imgui.ImVec2] ipoints
         cdef int i
@@ -3142,10 +3136,10 @@ cdef class DrawQuad_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p1
-        cdef float[4] p2
-        cdef float[4] p3
-        cdef float[4] p4
+        cdef float[2] p1
+        cdef float[2] p2
+        cdef float[2] p3
+        cdef float[2] p4
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip2
         cdef imgui.ImVec2 ip3
@@ -3210,8 +3204,8 @@ cdef class DrawRect_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] pmin
-        cdef float[4] pmax
+        cdef float[2] pmin
+        cdef float[2] pmax
         cdef imgui.ImVec2 ipmin
         cdef imgui.ImVec2 ipmax
         cdef imgui.ImU32 col_up_left = self.color_upper_left
@@ -3270,7 +3264,7 @@ cdef class DrawText_(drawingItem):
         if not(self._show):
             return
 
-        cdef float[4] p
+        cdef float[2] p
 
         self.context.viewport.apply_current_transform(p, self.pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
@@ -3301,9 +3295,9 @@ cdef class DrawTriangle_(drawingItem):
             thickness *= self.context.viewport.thickness_multiplier
         thickness = abs(thickness)
 
-        cdef float[4] p1
-        cdef float[4] p2
-        cdef float[4] p3
+        cdef float[2] p1
+        cdef float[2] p2
+        cdef float[2] p3
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip2
         cdef imgui.ImVec2 ip3
@@ -3427,14 +3421,12 @@ cdef class DrawInvisibleButton(drawingItem):
     """
     def __cinit__(self):
         self._button = 1
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_dragged = True
-        self.state.can_be_hovered = True
-        self.state.has_rect_size = True
-        self.state.has_position = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_rect_size = True
+        self.state.cap.has_position = True
         self._min_side = 0
         self._capture_mouse = True
         self._no_input = False
@@ -3481,7 +3473,7 @@ cdef class DrawInvisibleButton(drawingItem):
     def p1(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[float](self._p1, value)
+        read_point[double](self._p1, value)
 
     @property
     def p2(self):
@@ -3497,7 +3489,7 @@ cdef class DrawInvisibleButton(drawingItem):
     def p2(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[float](self._p2, value)
+        read_point[double](self._p2, value)
 
     @property
     def min_side(self):
@@ -3565,7 +3557,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.activated
+        return self.state.cur.active and not(self.state.prev.active)
 
     @property
     def active(self):
@@ -3574,7 +3566,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.active
+        return self.state.cur.active
 
     @property
     def clicked(self):
@@ -3587,7 +3579,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -3600,7 +3592,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.double_clicked
+        return self.state.cur.double_clicked
 
     @property
     def deactivated(self):
@@ -3609,7 +3601,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.deactivated
+        return self.state.prev.active and not(self.state.cur.active)
 
     @property
     def hovered(self):
@@ -3618,7 +3610,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.hovered
+        return self.state.cur.hovered
 
     @property
     def pos_to_viewport(self):
@@ -3630,7 +3622,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_viewport)
+        return IntPairFromVec2(self.state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -3641,7 +3633,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_window)
+        return IntPairFromVec2(self.state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -3651,7 +3643,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_parent)
+        return IntPairFromVec2(self.state.cur.pos_to_parent)
 
     @property
     def rect_size(self):
@@ -3660,7 +3652,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.rect_size)
+        return IntPairFromVec2(self.state.cur.rect_size)
 
     @property
     def resized(self):
@@ -3669,11 +3661,12 @@ cdef class DrawInvisibleButton(drawingItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.has_rect_size):
+        if not(self.state.cap.has_rect_size):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.resized
+        return self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+               self.state.cur.rect_size.y != self.state.prev.rect_size.y
 
     @property
     def no_input(self):
@@ -3729,8 +3722,8 @@ cdef class DrawInvisibleButton(drawingItem):
             return
 
         # Get button position in screen space
-        cdef float[4] p1
-        cdef float[4] p2
+        cdef float[2] p1
+        cdef float[2] p2
         self.context.viewport.apply_current_transform(p1, self._p1)
         self.context.viewport.apply_current_transform(p2, self._p2)
         cdef imgui.ImVec2 top_left
@@ -3751,17 +3744,15 @@ cdef class DrawInvisibleButton(drawingItem):
             size.y = self._min_side
             bottom_right.y = top_left.y + self._min_side
         # Update rect and position size
-        self.state.resized = size.x != self.state.rect_size.x or \
-                             size.y != self.state.rect_size.y
-        self.state.rect_size = size
-        self.state.pos_to_viewport = top_left
-        self.state.pos_to_window.x = self.state.pos_to_viewport.x - self.context.viewport.window_pos.x
-        self.state.pos_to_window.y = self.state.pos_to_viewport.y - self.context.viewport.window_pos.y
-        self.state.pos_to_parent.x = self.state.pos_to_viewport.x - self.context.viewport.parent_pos.x
-        self.state.pos_to_parent.y = self.state.pos_to_viewport.y - self.context.viewport.parent_pos.y
-        cdef bint was_visible = self.state.visible
-        self.state.visible = imgui.IsRectVisible(top_left, bottom_right) or self.state.active
-        if not(was_visible) and not(self.state.visible):
+        self.state.cur.rect_size = size
+        self.state.cur.pos_to_viewport = top_left
+        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context.viewport.window_pos.x
+        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context.viewport.window_pos.y
+        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context.viewport.parent_pos.x
+        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context.viewport.parent_pos.y
+        cdef bint was_visible = self.state.cur.rendered
+        self.state.cur.rendered = imgui.IsRectVisible(top_left, bottom_right) or self.state.cur.active
+        if not(was_visible) and not(self.state.cur.rendered):
             # Item is entirely clipped.
             # Do not skip the first time it is clipped,
             # in order to update the relevant states to False.
@@ -3794,10 +3785,8 @@ cdef class DrawInvisibleButton(drawingItem):
         else:
             activated = False
         self._capture_mouse = False
-        self.state.deactivated = self.state.active and not(held)
-        self.state.activated = activated
-        self.state.active = activated or held
-        self.state.hovered = hovered
+        self.state.cur.active = activated or held
+        self.state.cur.hovered = hovered
         if activated:
             if self.context.viewport.in_plot:
                 # IMPLOT_AUTO uses current axes
@@ -3811,7 +3800,7 @@ cdef class DrawInvisibleButton(drawingItem):
                 self.initial_mouse_position = imgui.GetMousePos()
         cdef bint dragging = False
         cdef int i
-        if self.state.active:
+        if self.state.cur.active:
             if self.context.viewport.in_plot:
                 cur_mouse_pos_plot = implot.GetPlotMousePos(implot.IMPLOT_AUTO,
                                                             implot.IMPLOT_AUTO)
@@ -3822,24 +3811,22 @@ cdef class DrawInvisibleButton(drawingItem):
             dragging = cur_mouse_pos.x != self.initial_mouse_position.x or \
                        cur_mouse_pos.y != self.initial_mouse_position.y
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.dragging[i] = dragging and imgui.IsMouseDown(i)
-                self.state.dragged[i] = False
+                self.state.cur.dragging[i] = dragging and imgui.IsMouseDown(i)
                 if dragging:
-                    self.state.drag_deltas[i].x = cur_mouse_pos.x - self.initial_mouse_position.x
-                    self.state.drag_deltas[i].y = cur_mouse_pos.y - self.initial_mouse_position.y
+                    self.state.cur.drag_deltas[i].x = cur_mouse_pos.x - self.initial_mouse_position.x
+                    self.state.cur.drag_deltas[i].y = cur_mouse_pos.y - self.initial_mouse_position.y
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.dragged[i] = self.state.dragging[i]
-                self.state.dragging[i] = False
+                self.state.cur.dragging[i] = False
 
-        if self.state.hovered:
+        if self.state.cur.hovered:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.clicked[i] = imgui.IsMouseClicked(i, False)
-                self.state.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
+                self.state.cur.clicked[i] = imgui.IsMouseClicked(i, False)
+                self.state.cur.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.clicked[i] = False
-                self.state.double_clicked[i] = False
+                self.state.cur.clicked[i] = False
+                self.state.cur.double_clicked[i] = False
 
         run_handlers(self, self._handlers, self.state)
 
@@ -3881,11 +3868,10 @@ cdef class DrawInWindow(uiItem):
     """
     def __cinit__(self):
         self.can_have_drawing_child = True
-        self.state.can_be_clicked = True
-        self.state.can_be_hovered = True
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.has_rect_size = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
 
     cdef bint draw_item(self) noexcept nogil:
         # negative width is used to indicate UI alignment
@@ -3894,7 +3880,7 @@ cdef class DrawInWindow(uiItem):
             clip_width = imgui.CalcItemWidth()
         cdef float clip_height = self.requested_size.y
         if clip_height <= 0 or clip_width == 0:
-            self.set_hidden_and_propagate_to_children() # won't propagate though
+            self.set_hidden_and_propagate_to_children(False) # won't propagate though
             return False
         cdef imgui.ImDrawList* drawlist = imgui.GetWindowDrawList()
 
@@ -3932,20 +3918,6 @@ cdef class DrawInWindow(uiItem):
         self.update_current_state()
         return active
 
-        # TODO:
-        """
-
-	    if (ImGui::IsItemHovered())
-	    {
-		    ImVec2 mousepos = ImGui::GetMousePos();
-	    	GContext->input.mouseDrawingPos.x = (int)(mousepos.x - _startx);
-    		GContext->input.mouseDrawingPos.y = (int)(mousepos.y - _starty);
-	    }
-        -> This is very weird. Seems to be used by get_drawing_mouse_pos and
-        set only here. But it is not set for the other drawlist
-        elements when they are hovered...
-        """
-        
 
 cdef class ViewportDrawList_(baseItem):
     def __cinit__(self):
@@ -4892,7 +4864,7 @@ cdef class uiItem(baseItem):
         #self.location = -1
         # next frame triggers
         self.focus_update_requested = False
-        self.show_update_requested = False
+        self.show_update_requested = True
         self.size_update_requested = True
         self.pos_update_requested = False
         self.enabled_update_requested = False
@@ -4907,8 +4879,8 @@ cdef class uiItem(baseItem):
         self.theme_condition_category = theme_categories.t_any
         self.can_have_sibling = True
         self.element_child_category = child_type.cat_widget
-        self.state.has_position = True # ALL widgets have position
-        self.state.has_rect_size = True # ALL items have a rectangle size
+        self.state.cap.has_position = True # ALL widgets have position
+        self.state.cap.has_rect_size = True # ALL items have a rectangle size
         self._pos_policy = [positioning.DEFAULT, positioning.DEFAULT]
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.tracked = False
@@ -4928,7 +4900,7 @@ cdef class uiItem(baseItem):
             pos = kwargs.pop("pos")
             if pos is not None and len(pos) == 2:
                 self.pos_to_window = pos
-                self.state.pos_to_viewport = self.state.pos_to_window # for windows TODO move to own configure
+                self.state.cur.pos_to_viewport = self.state.cur.pos_to_window # for windows TODO move to own configure
         if 'callback' in kwargs:
             self.callbacks = kwargs.pop("callback")
         return super().configure(**kwargs)
@@ -4937,55 +4909,43 @@ cdef class uiItem(baseItem):
         """
         Updates the state of the last imgui object.
         """
-        if self.state.can_be_hovered:
-            self.state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
-        if self.state.can_be_active:
-            self.state.active = imgui.IsItemActive()
-        if self.state.can_be_activated:
-            self.state.activated = imgui.IsItemActivated()
-        if self.state.can_be_clicked or self.state.can_be_dragged:
+        if self.state.cap.can_be_hovered:
+            self.state.cur.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        if self.state.cap.can_be_active:
+            self.state.cur.active = imgui.IsItemActive()
+        if self.state.cap.can_be_clicked or self.state.cap.can_be_dragged:
             update_current_mouse_states(self.state)
-        if self.state.can_be_deactivated:
-            self.state.deactivated = imgui.IsItemDeactivated()
-        if self.state.can_be_deactivated_after_edited:
-            self.state.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
-        if self.state.can_be_edited:
-            self.state.edited = imgui.IsItemEdited()
-        if self.state.can_be_focused:
-            self.state.focused = imgui.IsItemFocused()
-        if self.state.can_be_toggled:
-            self.state.toggled = imgui.IsItemToggledOpen()
-        # TODO: assert that GetItemRectMin is indeed the cursor pos before drawing
-        cdef imgui.ImVec2 rect_size
-        if self.state.has_rect_size:
-            rect_size = imgui.GetItemRectSize()
-            self.state.resized = rect_size.x != self.state.rect_size.x or \
-                                 rect_size.y != self.state.rect_size.y
-            self.state.rect_size = rect_size
-        self.state.visible = imgui.IsItemVisible()
-        if not(self.state.visible):
-            self.propagate_hidden_state_to_children()
+        if self.state.cap.can_be_deactivated_after_edited:
+            self.state.cur.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
+        if self.state.cap.can_be_edited:
+            self.state.cur.edited = imgui.IsItemEdited()
+        if self.state.cap.can_be_focused:
+            self.state.cur.focused = imgui.IsItemFocused()
+        if self.state.cap.can_be_toggled:
+            if imgui.IsItemToggledOpen():
+                self.state.cur.open = True
+        if self.state.cap.has_rect_size:
+            self.state.cur.rect_size = imgui.GetItemRectSize()
+        self.state.cur.rendered = imgui.IsItemVisible()
+        #if not(self.state.cur.rendered):
+        #    self.propagate_hidden_state_to_children()
 
     cdef void update_current_state_subset(self) noexcept nogil:
         """
         Helper for items that manage themselves the active,
-        activated, edited, etc states
+        edited, etc states
         """
-        if self.state.can_be_hovered:
-            self.state.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
-        if self.state.can_be_focused:
-            self.state.focused = imgui.IsItemFocused()
-        if self.state.can_be_clicked or self.state.can_be_dragged:
+        if self.state.cap.can_be_hovered:
+            self.state.cur.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        if self.state.cap.can_be_focused:
+            self.state.cur.focused = imgui.IsItemFocused()
+        if self.state.cap.can_be_clicked or self.state.cap.can_be_dragged:
             update_current_mouse_states(self.state)
-        cdef imgui.ImVec2 rect_size
-        if self.state.has_rect_size:
-            rect_size = imgui.GetItemRectSize()
-            self.state.resized = rect_size.x != self.state.rect_size.x or \
-                                 rect_size.y != self.state.rect_size.y
-            self.state.rect_size = rect_size
-        self.state.visible = imgui.IsItemVisible()
-        if not(self.state.visible):
-            self.propagate_hidden_state_to_children()
+        if self.state.cap.has_rect_size:
+            self.state.cur.rect_size = imgui.GetItemRectSize()
+        self.state.cur.rendered = imgui.IsItemVisible()
+        #if not(self.state.cur.rendered):
+        #    self.propagate_hidden_state_to_children()
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil:
         """
@@ -4993,6 +4953,9 @@ cdef class uiItem(baseItem):
         Propagate the hidden state to children
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(self.state.cur.rendered):
+            # Skip propagating if we were already not visible
+            return
         if self.last_widgets_child is not None:
             self.last_widgets_child.set_hidden_and_propagate_to_siblings()
 
@@ -5005,19 +4968,25 @@ cdef class uiItem(baseItem):
             self.last_widgets_child.set_hidden_and_propagate_to_siblings()
         if self._prev_sibling is not None:
             (<uiItem>self._prev_sibling).set_hidden_and_propagate_to_siblings()
+        # Skip handlers if we were already not visible
         update_current_state_as_hidden(self.state)
+        run_handlers(self, self._handlers, self.state)
 
-    cdef void set_hidden_and_propagate_to_children(self) noexcept nogil:
+    cdef void set_hidden_and_propagate_to_children(self, bint call_handlers) noexcept nogil:
         """
         We are hidden. Propagate to children if the state changed
+        The first call doesn't call the handlers because usually this is done outside
+        this function
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if not(self.state.visible):
+        if not(self.state.cur.rendered):
             # Skip propagating if we were already not visible
             return
         if self.last_widgets_child is not None:
-            self.last_widgets_child.set_hidden_and_propagate_to_children()
+            self.last_widgets_child.set_hidden_and_propagate_to_children(True)
         update_current_state_as_hidden(self.state)
+        if call_handlers:
+            run_handlers(self, self._handlers, self.state)
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
 
@@ -5028,11 +4997,11 @@ cdef class uiItem(baseItem):
         For example for a button, it is when pressed. For tabs
         it is when selected, etc.
         """
-        if not(self.state.can_be_active):
+        if not(self.state.cap.can_be_active):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.active
+        return self.state.cur.active
 
     @property
     def activated(self):
@@ -5041,11 +5010,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_activated):
+        if not(self.state.cap.can_be_active):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.activated
+        return self.state.cur.active and not(self.state.prev.active)
 
     @property
     def clicked(self):
@@ -5056,11 +5025,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_clicked):
+        if not(self.state.cap.can_be_clicked):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -5071,11 +5040,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_clicked):
+        if not(self.state.cap.can_be_clicked):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.double_clicked
+        return self.state.cur.double_clicked
 
     @property
     def deactivated(self):
@@ -5084,11 +5053,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_deactivated):
+        if not(self.state.cap.can_be_active):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.deactivated
+        return not(self.state.cur.active) and self.state.prev.active
 
     @property
     def deactivated_after_edited(self):
@@ -5098,11 +5067,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_deactivated_after_edited):
+        if not(self.state.cap.can_be_deactivated_after_edited):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.deactivated_after_edited
+        return self.state.cur.deactivated_after_edited
 
     @property
     def edited(self):
@@ -5111,11 +5080,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_edited):
+        if not(self.state.cap.can_be_edited):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.edited
+        return self.state.cur.edited
 
     @property
     def focused(self):
@@ -5124,11 +5093,11 @@ cdef class uiItem(baseItem):
         For windows it means the window is at the top,
         while for items it could mean the keyboard inputs are redirected to it.
         """
-        if not(self.state.can_be_focused):
+        if not(self.state.cap.can_be_focused):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.focused
+        return self.state.cur.focused
 
     @focused.setter
     def focused(self, bint value):
@@ -5137,11 +5106,11 @@ cdef class uiItem(baseItem):
         For windows it means the window is at the top,
         while for items it could mean the keyboard inputs are redirected to it.
         """
-        if not(self.state.can_be_focused):
+        if not(self.state.cap.can_be_focused):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.state.focused = value
+        self.state.cur.focused = value
         self.focus_update_requested = True
 
     @property
@@ -5151,11 +5120,11 @@ cdef class uiItem(baseItem):
         Only one element is hovered at a time, thus
         subitems/subwindows take priority over their parent.
         """
-        if not(self.state.can_be_hovered):
+        if not(self.state.cap.can_be_hovered):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.hovered
+        return self.state.cur.hovered
 
     @property
     def resized(self):
@@ -5164,11 +5133,12 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.has_rect_size):
+        if not(self.state.cap.has_rect_size):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.resized
+        return self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+               self.state.cur.rect_size.y != self.state.prev.rect_size.y
 
     @property
     def toggled(self):
@@ -5177,11 +5147,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.can_be_toggled):
+        if not(self.state.cap.can_be_toggled):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.toggled
+        return self.state.cur.open and not(self.state.prev.open)
 
     @property
     def visible(self):
@@ -5192,7 +5162,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.visible
+        return self.state.cur.rendered
 
     @property
     def callbacks(self):
@@ -5341,10 +5311,10 @@ cdef class uiItem(baseItem):
     def show(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
+        if self._show == value:
+            return
         self.show_update_requested = True
         self._show = value
-        if not(self._show):
-            self.set_hidden_and_propagate_to_children()
 
     @property
     def handlers(self):
@@ -5428,7 +5398,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_viewport)
+        return IntPairFromVec2(self.state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -5453,7 +5423,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_window)
+        return IntPairFromVec2(self.state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -5478,7 +5448,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_parent)
+        return IntPairFromVec2(self.state.cur.pos_to_parent)
 
     @property
     def pos_to_default(self):
@@ -5499,7 +5469,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.pos_to_default)
+        return IntPairFromVec2(self.state.cur.pos_to_default)
 
     @property
     def rect_size(self):
@@ -5514,11 +5484,11 @@ cdef class uiItem(baseItem):
         Not the rect_size refers to the size within the parent
         window. If a popup menu is opened, it is not included.
         """
-        if not(self.state.has_rect_size):
+        if not(self.state.cap.has_rect_size):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.rect_size)
+        return IntPairFromVec2(self.state.cur.rect_size)
 
     @property
     def content_region_avail(self):
@@ -5532,11 +5502,11 @@ cdef class uiItem(baseItem):
         be scrolled are not accounted). Basically the item size
         minus the margins and borders.
         """
-        if not(self.state.has_content_region):
+        if not(self.state.cap.has_content_region):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.content_region_size)
+        return IntPairFromVec2(self.state.cur.content_region_size)
 
     ### Positioning and size requests
 
@@ -5686,10 +5656,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.pos_to_viewport.x = x
+            self.state.cur.pos_to_viewport.x = x
             self._pos_policy[0] = positioning.REL_VIEWPORT
         if y is not None:
-            self.state.pos_to_viewport.y = y
+            self.state.cur.pos_to_viewport.y = y
             self._pos_policy[1] = positioning.REL_VIEWPORT
         self.pos_update_requested = True # TODO remove ?
 
@@ -5701,10 +5671,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.pos_to_window.x = x
+            self.state.cur.pos_to_window.x = x
             self._pos_policy[0] = positioning.REL_WINDOW
         if y is not None:
-            self.state.pos_to_window.y = y
+            self.state.cur.pos_to_window.y = y
             self._pos_policy[1] = positioning.REL_WINDOW
         self.pos_update_requested = True
 
@@ -5716,10 +5686,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.pos_to_parent.x = x
+            self.state.cur.pos_to_parent.x = x
             self._pos_policy[0] = positioning.REL_PARENT
         if y is not None:
-            self.state.pos_to_parent.y = y
+            self.state.cur.pos_to_parent.y = y
             self._pos_policy[1] = positioning.REL_PARENT
         self.pos_update_requested = True
 
@@ -5731,10 +5701,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.pos_to_default.x = x
+            self.state.cur.pos_to_default.x = x
             self._pos_policy[0] = positioning.REL_DEFAULT
         if y is not None:
-            self.state.pos_to_default.y = y
+            self.state.cur.pos_to_default.y = y
             self._pos_policy[1] = positioning.REL_DEFAULT
         self.pos_update_requested = True
 
@@ -5767,9 +5737,9 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         self.requested_size.y = <float>value
         if value <= 0:
-            self.state.rect_size.y = 0.
+            self.state.cur.rect_size.y = 0.
         else:
-            self.state.rect_size.y = <float>value
+            self.state.cur.rect_size.y = <float>value
         self.size_update_requested = True
 
     @width.setter
@@ -5778,9 +5748,9 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         self.requested_size.x = <float>value
         if value <= 0:
-            self.state.rect_size.x = 0.
+            self.state.cur.rect_size.x = 0.
         else:
-            self.state.rect_size.x = <float>value
+            self.state.cur.rect_size.x = <float>value
         self.size_update_requested = True
 
     @indent.setter
@@ -5802,12 +5772,12 @@ cdef class uiItem(baseItem):
 
         if not(self._show):
             if self.show_update_requested:
-                self.set_hidden_and_propagate_to_children()
+                self.set_hidden_and_propagate_to_children(True)
                 self.show_update_requested = False
             return
 
         if self.focus_update_requested:
-            if self.state.focused:
+            if self.state.cur.focused:
                 imgui.SetKeyboardFocusHere(0)
             self.focus_update_requested = False
 
@@ -5829,35 +5799,35 @@ cdef class uiItem(baseItem):
         cdef imgui.ImVec2 pos = cursor_pos_backup
 
         if policy[0] == positioning.REL_DEFAULT:
-            pos.x += self.state.pos_to_default.x
+            pos.x += self.state.cur.pos_to_default.x
         elif policy[0] == positioning.REL_PARENT:
-            pos.x = self.context.viewport.parent_pos.x + self.state.pos_to_parent.x
+            pos.x = self.context.viewport.parent_pos.x + self.state.cur.pos_to_parent.x
         elif policy[0] == positioning.REL_WINDOW:
-            pos.x = self.context.viewport.window_pos.x + self.state.pos_to_window.x
+            pos.x = self.context.viewport.window_pos.x + self.state.cur.pos_to_window.x
         elif policy[0] == positioning.REL_VIEWPORT:
-            pos.x = self.state.pos_to_viewport.x
+            pos.x = self.state.cur.pos_to_viewport.x
         # else: DEFAULT
 
         if policy[1] == positioning.REL_DEFAULT:
-            pos.y += self.state.pos_to_default.y
+            pos.y += self.state.cur.pos_to_default.y
         elif policy[1] == positioning.REL_PARENT:
-            pos.y = self.context.viewport.parent_pos.y + self.state.pos_to_parent.y
+            pos.y = self.context.viewport.parent_pos.y + self.state.cur.pos_to_parent.y
         elif policy[1] == positioning.REL_WINDOW:
-            pos.y = self.context.viewport.window_pos.y + self.state.pos_to_window.y
+            pos.y = self.context.viewport.window_pos.y + self.state.cur.pos_to_window.y
         elif policy[1] == positioning.REL_VIEWPORT:
-            pos.y = self.state.pos_to_viewport.y
+            pos.y = self.state.cur.pos_to_viewport.y
         # else: DEFAULT
 
         imgui.SetCursorScreenPos(pos)
 
         # Retrieve current positions
-        self.state.pos_to_viewport = imgui.GetCursorScreenPos()
-        self.state.pos_to_window.x = self.state.pos_to_viewport.x - self.context.viewport.window_pos.x
-        self.state.pos_to_window.y = self.state.pos_to_viewport.y - self.context.viewport.window_pos.y
-        self.state.pos_to_parent.x = self.state.pos_to_viewport.x - self.context.viewport.parent_pos.x
-        self.state.pos_to_parent.y = self.state.pos_to_viewport.y - self.context.viewport.parent_pos.y
-        self.state.pos_to_default.x = self.state.pos_to_viewport.x - cursor_pos_backup.x 
-        self.state.pos_to_default.y = self.state.pos_to_viewport.y - cursor_pos_backup.y
+        self.state.cur.pos_to_viewport = imgui.GetCursorScreenPos()
+        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context.viewport.window_pos.x
+        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context.viewport.window_pos.y
+        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context.viewport.parent_pos.x
+        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context.viewport.parent_pos.y
+        self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
+        self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
 
         # handle fonts
         """
@@ -5939,13 +5909,11 @@ cdef class SimplePlot(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_simpleplot
         self._value = <SharedValue>(SharedFloatVect.__new__(SharedFloatVect, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._scale_min = 0.
         self._scale_max = 0.
         self.histogram = False
@@ -6078,13 +6046,11 @@ cdef class Button(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_button
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._direction = imgui.ImGuiDir_Up
         self._small = False
         self._arrow = False
@@ -6167,7 +6133,7 @@ cdef class Button(uiItem):
                                      self.requested_size)
         imgui.PopItemFlag()
         self.update_current_state()
-        SharedBool.set(<SharedBool>self._value, self.state.active) # Unsure. Not in original
+        SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
         return activated
 
 
@@ -6175,15 +6141,14 @@ cdef class Combo(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_combo
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self.flags = imgui.ImGuiComboFlags_HeightRegular
 
     @property
@@ -6337,9 +6302,7 @@ cdef class Combo(uiItem):
         # later. Looking at ImGui code there seems to be two items. One
         # for the combo, and one for the popup that opens. The edited flag
         # is not set, looking at imgui demo so we have to handle it manually.
-        self.state.activated = not(self.state.active) and open
-        self.state.deactivated = self.state.active and not(open)
-        self.state.active = open
+        self.state.cur.open = open
         self.update_current_state_subset()
 
         cdef bool pressed = False
@@ -6374,8 +6337,8 @@ cdef class Combo(uiItem):
             imgui.PopID()
             imgui.EndCombo()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
-        self.state.edited = changed
-        self.state.deactivated_after_edited = self.state.deactivated and changed
+        self.state.cur.edited = changed
+        self.state.cur.deactivated_after_edited = self.state.prev.active and changed and not(self.state.cur.active)
         return pressed
 
 
@@ -6383,12 +6346,10 @@ cdef class Checkbox(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_checkbox
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self.can_be_disabled = True
         self.theme_condition_enabled = theme_enablers.t_enabled_True
         
@@ -6415,12 +6376,12 @@ cdef class Slider(uiItem):
         self._max = 100.
         self._vertical = False
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self.state.can_be_active = True # unsure
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True # unsure
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self.can_be_disabled = True
         self.theme_condition_enabled = theme_enablers.t_enabled_True
 
@@ -6856,15 +6817,13 @@ cdef class ListBox(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_listbox
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._num_items_shown_when_open = -1
 
     @property
@@ -6936,12 +6895,9 @@ cdef class ListBox(uiItem):
         # later. Looking at ImGui code there seems to be two items. One
         # for the combo, and one for the popup that opens. The edited flag
         # is not set, looking at imgui demo so we have to handle it manually.
-        self.state.activated = not(self.state.active) and open
-        self.state.deactivated = self.state.active and not(open)
-        self.state.active = open
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_edited = True
+        self.state.cur.active = open # TODO move to toggled ?
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
         self.update_current_state_subset()
 
         cdef bool pressed = False
@@ -6979,8 +6935,8 @@ cdef class ListBox(uiItem):
             imgui.PopID()
             imgui.EndListBox()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
-        self.state.edited = changed
-        self.state.deactivated_after_edited = self.state.deactivated and changed
+        self.state.cur.edited = changed
+        #self.state.cur.deactivated_after_edited = self.state.cur.deactivated and changed -> TODO Unsure. Isn't it rather focus loss ?
         return pressed
 
 
@@ -6988,15 +6944,13 @@ cdef class RadioButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_radiobutton
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._horizontal = False
 
     @property
@@ -7081,15 +7035,13 @@ cdef class InputText(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_inputtext
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._multiline = False
         self._max_characters = 1024
         self.flags = imgui.ImGuiInputTextFlags_None
@@ -7445,11 +7397,9 @@ cdef class InputText(uiItem):
             SharedStr.set(<SharedStr>self._value, current_value)
         if not(self._enabled):
             changed = False
-            self.state.edited = False
-            self.state.deactivated_after_edited = False
-            self.state.activated = False
-            self.state.active = False
-            self.state.deactivated = False
+            self.state.cur.edited = False
+            self.state.cur.deactivated_after_edited = False
+            self.state.cur.active = False
         return changed
 
 ctypedef fused clamp_types:
@@ -7488,12 +7438,12 @@ cdef class InputValue(uiItem):
         self._step_fast = 1.
         self.flags = imgui.ImGuiInputTextFlags_None
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self.state.can_be_active = True # unsure
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True # unsure
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self.can_be_disabled = True
         self.theme_condition_enabled = theme_enablers.t_enabled_True
 
@@ -8044,11 +7994,11 @@ cdef class Text(uiItem):
         self._bullet = False
         self._show_label = False
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.can_be_active = True # unsure
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True # unsure
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self.theme_condition_enabled = theme_enablers.t_enabled_True
 
     @property
@@ -8177,15 +8127,13 @@ cdef class Selectable(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_selectable
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_dragged = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self.flags = imgui.ImGuiSelectableFlags_None
 
     @property
@@ -8276,14 +8224,12 @@ cdef class MenuItem(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_menuitem
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._check = False
 
     @property
@@ -8331,10 +8277,10 @@ cdef class ProgressBar(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_progressbar
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     @property
     def overlay(self):
@@ -8365,10 +8311,10 @@ cdef class ProgressBar(uiItem):
 cdef class Image(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_image
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._border_color = 0
         self._color_multiplier = 4294967295
 
@@ -8445,11 +8391,10 @@ cdef class ImageButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_imagebutton
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_activated = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._background_color = 0
         self._color_multiplier = 4294967295
         self._frame_padding = -1
@@ -8542,7 +8487,7 @@ cdef class ImageButton(uiItem):
 
 cdef class Separator(uiItem):
     def __cinit__(self):
-        self.state.has_rect_size = False
+        self.state.cap.has_rect_size = False
     # TODO: is label override really needed ?
     @property
     def label(self):
@@ -8575,7 +8520,7 @@ cdef class Separator(uiItem):
 
 cdef class Spacer(uiItem): # TODO: disable all states
     def __cinit__(self):
-        self.state.has_rect_size = False
+        self.state.cap.has_rect_size = False
     cdef bint draw_item(self) noexcept nogil:
         if self.requested_size.x == 0 and \
            self.requested_size.y == 0:
@@ -8591,11 +8536,10 @@ cdef class MenuBar(uiItem):
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_menubar
         self.theme_condition_category = theme_categories.t_menubar
-        self.state.can_be_clicked = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_activated = True
-        self.state.has_content_region = True # TODO
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_content_region = True # TODO
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint menu_allowed
@@ -8623,8 +8567,8 @@ cdef class MenuBar(uiItem):
         else:
             # We should hit this only if window is invisible
             # or has no menu bar
-            self.set_hidden_and_propagate_to_children()
-        return self.state.activated
+            self.set_hidden_and_propagate_to_children(False)
+        return self.state.cur.active and not(self.state.prev.active)
 
 
 cdef class Menu(uiItem):
@@ -8633,13 +8577,11 @@ cdef class Menu(uiItem):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.theme_condition_category = theme_categories.t_menu
-        self.state.can_be_clicked = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_deactivated = True
-        self.state.has_rect_size = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint menu_open = imgui.BeginMenu(self.imgui_label.c_str(),
@@ -8647,10 +8589,10 @@ cdef class Menu(uiItem):
         self.update_current_state()
         cdef imgui.ImVec2 pos_w, pos_p
         if menu_open:
-            self.state.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self.state.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self.state.rect_size.x = imgui.GetWindowWidth()
-            self.state.rect_size.y = imgui.GetWindowHeight()
+            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self.state.cur.rect_size.x = imgui.GetWindowWidth()
+            self.state.cur.rect_size.y = imgui.GetWindowHeight()
             if self.last_widgets_child is not None:
                 # We are in a separate window
                 pos_w = imgui.GetCursorScreenPos()
@@ -8664,16 +8606,16 @@ cdef class Menu(uiItem):
         else:
             self.propagate_hidden_state_to_children()
         SharedBool.set(<SharedBool>self._value, menu_open)
-        return self.state.activated
+        return self.state.cur.active and not(self.state.prev.active)
 
 cdef class Tooltip(uiItem):
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
         self.theme_condition_category = theme_categories.t_tooltip
-        self.state.can_be_active = True
-        self.state.has_position = False
-        self.state.has_rect_size = False
+        self.state.cap.can_be_active = True # TODO unsure. Maybe use open instead ?
+        self.state.cap.has_position = False
+        self.state.cap.has_rect_size = False
         self._delay = 0.
         self._hide_on_activity = False
         self._target = None
@@ -8710,7 +8652,7 @@ cdef class Tooltip(uiItem):
             self.target_state = &(<plotElement>target).state
         else:
             success = False
-        if not(self.target_state.can_be_hovered) or not(success):
+        if not(self.target_state.cap.can_be_hovered) or not(success):
             raise TypeError(f"Unsupported target instance {target}")
         self._target = target
 
@@ -8779,7 +8721,7 @@ cdef class Tooltip(uiItem):
                 else:
                     display_condition = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
             else:
-                display_condition = self.target_state.hovered
+                display_condition = self.target_state.cur.hovered
         else:
             display_condition = self.secondary_handler.check_state(self._target, dereference(self.target_state))
 
@@ -8787,7 +8729,7 @@ cdef class Tooltip(uiItem):
            imgui.GetIO().MouseDelta.y != 0.:
             display_condition = False
 
-        cdef bint was_visible = self.state.visible
+        cdef bint was_visible = self.state.cur.rendered
         cdef imgui.ImVec2 pos_w, pos_p
         if display_condition and imgui.BeginTooltip():
             if self.last_widgets_child is not None:
@@ -8802,23 +8744,21 @@ cdef class Tooltip(uiItem):
             imgui.EndTooltip()
             self.update_current_state()
         else:
-            self.set_hidden_and_propagate_to_children()
+            self.set_hidden_and_propagate_to_children(False)
             # NOTE: we could also set the rects. DPG does it.
-        return self.state.visible and not(was_visible)
+        return self.state.cur.rendered and not(was_visible)
 
 cdef class TabButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = theme_categories.t_tabbutton
         self.element_child_category = child_type.cat_tab
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self.flags = imgui.ImGuiTabItemFlags_None
 
     @property
@@ -8898,7 +8838,7 @@ cdef class TabButton(uiItem):
         cdef bint pressed = imgui.TabItemButton(self.imgui_label.c_str(),
                                                 self.flags)
         self.update_current_state()
-        #SharedBool.set(<SharedBool>self._value, self.state.active) # Unsure. Not in original
+        #SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
         return pressed
 
 
@@ -8908,13 +8848,11 @@ cdef class Tab(uiItem):
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_tab
         self.theme_condition_category = theme_categories.t_tab
-        self.state.can_be_clicked = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_deactivated = True
-        self.state.has_rect_size = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
         self._closable = False
         self.flags = imgui.ImGuiTabItemFlags_None
 
@@ -9031,7 +8969,7 @@ cdef class Tab(uiItem):
         else:
             self.propagate_hidden_state_to_children()
         SharedBool.set(<SharedBool>self._value, menu_open)
-        return self.state.activated
+        return self.state.cur.active and not(self.state.prev.active)
 
 
 cdef class TabBar(uiItem):
@@ -9039,13 +8977,11 @@ cdef class TabBar(uiItem):
         #self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_tab_child = True
         self.theme_condition_category = theme_categories.t_tabbar
-        self.state.can_be_clicked = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_activated = True
-        self.state.can_be_active = True
-        self.state.can_be_deactivated = True
-        self.state.has_rect_size = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
         self.flags = imgui.ImGuiTabBarFlags_None
 
     @property
@@ -9221,7 +9157,7 @@ cdef class TabBar(uiItem):
             self.propagate_hidden_state_to_children()
         imgui.EndGroup()
         imgui.PopID()
-        return self.state.activated
+        return self.state.cur.active and not(self.state.prev.active)
 
 
 cdef class Layout(uiItem):
@@ -9256,16 +9192,14 @@ cdef class Layout(uiItem):
     """
     def __cinit__(self):
         self.can_have_widget_child = True
-        self.state.can_be_active = True
-        self.state.can_be_activated = True
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_deactivated_after_edited = True
-        self.state.can_be_edited = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_toggled = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self.theme_condition_category = theme_categories.t_layout
         self.prev_content_area.x = 0
         self.prev_content_area.y = 0
@@ -9296,7 +9230,7 @@ cdef class Layout(uiItem):
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
-            #self.set_hidden_and_propagate_to_children()
+            #self.set_hidden_and_propagate_to_children(False)
             return False
         cdef bint changed = self.check_change()
         imgui.PushID(self.uuid)
@@ -9411,10 +9345,10 @@ cdef class HorizontalLayout(Layout):
         n_items = 0
         cdef PyObject *child = <PyObject*>self.last_widgets_child
         while (<uiItem>child) is not None:
-            size += (<uiItem>child).state.rect_size.x
+            size += (<uiItem>child).state.cur.rect_size.x
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).state.rect_size.x == 0:
+            if (<uiItem>child).state.cur.rect_size.x == 0:
                 # Will need to recompute layout after the size is computed
                 self.force_update = True
         return size
@@ -9443,17 +9377,17 @@ cdef class HorizontalLayout(Layout):
             while (<uiItem>child) is not None:
                 (<uiItem>child)._pos_policy[0] = positioning.REL_DEFAULT
                 if ((<uiItem>child)._prev_sibling) is not None:
-                    (<uiItem>child).state.pos_to_default.x = self._spacing
+                    (<uiItem>child).state.cur.pos_to_default.x = self._spacing
                 else:
-                    (<uiItem>child).state.pos_to_default.x = 0.
+                    (<uiItem>child).state.cur.pos_to_default.x = 0.
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.RIGHT:
             pos_end = available_width
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 # Position at which to render to end at pos_end
-                target_pos = pos_end - (<uiItem>child).state.rect_size.x
-                (<uiItem>child).state.pos_to_parent.x = target_pos
+                target_pos = pos_end - (<uiItem>child).state.cur.rect_size.x
+                (<uiItem>child).state.cur.pos_to_parent.x = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.CENTER:
@@ -9465,8 +9399,8 @@ cdef class HorizontalLayout(Layout):
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 # Position at which to render to end at size
-                target_pos = pos_end - (<uiItem>child).state.rect_size.x
-                (<uiItem>child).state.pos_to_parent.x = target_pos
+                target_pos = pos_end - (<uiItem>child).state.cur.rect_size.x
+                (<uiItem>child).state.cur.pos_to_parent.x = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.JUSTIFIED:
@@ -9482,8 +9416,8 @@ cdef class HorizontalLayout(Layout):
                 rem += spacing
                 child = <PyObject*>self.last_widgets_child
                 while (<uiItem>child) is not None:
-                    target_pos = pos_end - (<uiItem>child).state.rect_size.x
-                    (<uiItem>child).state.pos_to_parent.x = target_pos
+                    target_pos = pos_end - (<uiItem>child).state.cur.rect_size.x
+                    (<uiItem>child).state.cur.pos_to_parent.x = target_pos
                     pos_end = target_pos
                     pos_end -= rem
                     # Use rem for the last item, then spacing
@@ -9509,7 +9443,7 @@ cdef class HorizontalLayout(Layout):
                     else:
                         pos_start += available_width
 
-                (<uiItem>child).state.pos_to_parent.x = pos_start
+                (<uiItem>child).state.cur.pos_to_parent.x = pos_start
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
                 n_items += 1
 
@@ -9538,7 +9472,7 @@ cdef class HorizontalLayout(Layout):
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
-            # self.set_hidden_and_propagate_to_children()
+            # self.set_hidden_and_propagate_to_children(False)
             return False
         cdef bint changed = self.check_change()
         changed = True
@@ -9662,10 +9596,10 @@ cdef class VerticalLayout(Layout):
         n_items = 0
         cdef PyObject *child = <PyObject*>self.last_widgets_child
         while (<uiItem>child) is not None:
-            size += (<uiItem>child).state.rect_size.y
+            size += (<uiItem>child).state.cur.rect_size.y
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).state.rect_size.y == 0:
+            if (<uiItem>child).state.cur.rect_size.y == 0:
                 # Will need to recompute layout after the size is computed
                 self.force_update = True
         return size
@@ -9695,17 +9629,17 @@ cdef class VerticalLayout(Layout):
             while (<uiItem>child) is not None:
                 (<uiItem>child)._pos_policy[1] = positioning.REL_DEFAULT
                 if ((<uiItem>child)._prev_sibling) is not None:
-                    (<uiItem>child).state.pos_to_default.y = self._spacing
+                    (<uiItem>child).state.cur.pos_to_default.y = self._spacing
                 else:
-                    (<uiItem>child).state.pos_to_default.y = 0.
+                    (<uiItem>child).state.cur.pos_to_default.y = 0.
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.RIGHT:
             pos_end = available_height
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 # Position at which to render to end at pos_end
-                target_pos = pos_end - (<uiItem>child).state.rect_size.y
-                (<uiItem>child).state.pos_to_parent.y = target_pos
+                target_pos = pos_end - (<uiItem>child).state.cur.rect_size.y
+                (<uiItem>child).state.cur.pos_to_parent.y = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.CENTER:
@@ -9717,8 +9651,8 @@ cdef class VerticalLayout(Layout):
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 # Position at which to render to end at size
-                target_pos = pos_end - (<uiItem>child).state.rect_size.y
-                (<uiItem>child).state.pos_to_parent.y = target_pos
+                target_pos = pos_end - (<uiItem>child).state.cur.rect_size.y
+                (<uiItem>child).state.cur.pos_to_parent.y = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.JUSTIFIED:
@@ -9734,8 +9668,8 @@ cdef class VerticalLayout(Layout):
                 rem += spacing
                 child = <PyObject*>self.last_widgets_child
                 while (<uiItem>child) is not None:
-                    target_pos = pos_end - (<uiItem>child).state.rect_size.y
-                    (<uiItem>child).state.pos_to_parent.y = target_pos
+                    target_pos = pos_end - (<uiItem>child).state.cur.rect_size.y
+                    (<uiItem>child).state.cur.pos_to_parent.y = target_pos
                     pos_end = target_pos
                     pos_end -= rem
                     # Use rem for the last item, then spacing
@@ -9761,7 +9695,7 @@ cdef class VerticalLayout(Layout):
                     else:
                         pos_start += available_height
 
-                (<uiItem>child).state.pos_to_parent.y = pos_start
+                (<uiItem>child).state.cur.pos_to_parent.y = pos_start
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
                 n_items += 1
 
@@ -9790,7 +9724,7 @@ cdef class VerticalLayout(Layout):
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
-            # self.set_hidden_and_propagate_to_children()
+            # self.set_hidden_and_propagate_to_children(False)
             return False
         cdef bint changed = self.check_change()
         changed = True
@@ -9819,14 +9753,12 @@ cdef class TreeNode(uiItem):
     def __cinit__(self):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self.state.can_be_active = True
-        self.state.can_be_activated = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_toggled = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self._selectable = False
         self.flags = imgui.ImGuiTreeNodeFlags_None
         self.theme_condition_category = theme_categories.t_treenode
@@ -9982,14 +9914,16 @@ cdef class TreeNode(uiItem):
             flags |= imgui.ImGuiTreeNodeFlags_Selected
 
         imgui.SetNextItemOpen(was_open, imgui.ImGuiCond_Always)
+        self.state.cur.open = was_open
         cdef bint open_and_visible = imgui.TreeNodeEx(self.imgui_label.c_str(),
                                                       flags)
         self.update_current_state()
-        if self.state.toggled:
-            SharedBool.set(<SharedBool>self._value, open_and_visible)
-            if not(open_and_visible):
-                self.state.toggled = False
-                self.propagate_hidden_state_to_children()
+        if self.state.cur.open and not(was_open):
+            SharedBool.set(<SharedBool>self._value, True)
+        elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
+            SharedBool.set(<SharedBool>self._value, False)
+            self.state.cur.open = False
+            self.propagate_hidden_state_to_children()
         cdef imgui.ImVec2 pos_p
         if open_and_visible:
             if self.last_widgets_child is not None:
@@ -10006,14 +9940,12 @@ cdef class CollapsingHeader(uiItem):
     def __cinit__(self):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self.state.can_be_active = True
-        self.state.can_be_activated = True
-        self.state.can_be_clicked = True
-        self.state.can_be_deactivated = True
-        self.state.can_be_dragged = True
-        self.state.can_be_focused = True
-        self.state.can_be_hovered = True
-        self.state.can_be_toggled = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self._closable = False
         self.flags = imgui.ImGuiTreeNodeFlags_None
         self.theme_condition_category = theme_categories.t_collapsingheader
@@ -10113,6 +10045,7 @@ cdef class CollapsingHeader(uiItem):
             flags |= imgui.ImGuiTreeNodeFlags_Selected
 
         imgui.SetNextItemOpen(was_open, imgui.ImGuiCond_Always)
+        self.state.cur.open = was_open
         cdef bint open_and_visible = \
             imgui.CollapsingHeader(self.imgui_label.c_str(),
                                    &self._show if self._closable else NULL,
@@ -10120,11 +10053,12 @@ cdef class CollapsingHeader(uiItem):
         if not(self._show):
             self.show_update_requested = True
         self.update_current_state()
-        if self.state.toggled:
-            SharedBool.set(<SharedBool>self._value, open_and_visible)
-            if not(open_and_visible):
-                self.state.toggled = False
-                self.propagate_hidden_state_to_children()
+        if self.state.cur.open and not(was_open):
+            SharedBool.set(<SharedBool>self._value, True)
+        elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
+            SharedBool.set(<SharedBool>self._value, False)
+            self.state.cur.open = False
+            self.propagate_hidden_state_to_children()
         cdef imgui.ImVec2 pos_p
         if open_and_visible:
             if self.last_widgets_child is not None:
@@ -10170,8 +10104,8 @@ cdef class TimeWatcher(uiItem):
     GPU data, etc), not to GPU rendering time.
     """
     def __cinit__(self):
-        self.state.has_position = False
-        self.state.has_rect_size = False
+        self.state.cap.has_position = False
+        self.state.cap.has_rect_size = False
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -10198,7 +10132,7 @@ cdef class Window(uiItem):
         self.modal = False
         self.popup = False
         self.has_close_button = True
-        self.collapsed = False
+        self.state.cur.open = True
         self.collapse_update_requested = False
         self.no_open_over_existing_popup = True
         self.on_close_callback = None
@@ -10217,16 +10151,16 @@ cdef class Window(uiItem):
         # backup states when we set/unset primary
         #self.backup_window_flags = imgui.ImGuiWindowFlags_None
         #self.backup_pos = self.position
-        #self.backup_rect_size = self.state.rect_size
+        #self.backup_rect_size = self.state.cur.rect_size
         # Type info
         self.can_have_widget_child = True
         self.can_have_drawing_child = True
         self.can_have_menubar_child = True
         self.can_have_payload_child = True
         self.element_child_category = child_type.cat_window
-        self.state.can_be_hovered = True
-        self.state.can_be_focused = True
-        self.state.has_content_region = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.has_content_region = True
 
     @property
     def no_title_bar(self):
@@ -10640,13 +10574,13 @@ cdef class Window(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.collapsed 
+        return not(self.state.cur.open)
 
     @collapsed.setter
     def collapsed(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.collapsed = value
+        self.state.cur.open = not(value)
         self.collapse_update_requested = True
 
     @property
@@ -10700,8 +10634,8 @@ cdef class Window(uiItem):
         if value:
             # backup previous state
             self.backup_window_flags = self.window_flags
-            self.backup_pos = self.state.pos_to_viewport
-            self.backup_rect_size = self.state.rect_size
+            self.backup_pos = self.state.cur.pos_to_viewport
+            self.backup_rect_size = self.state.cur.rect_size
             # Make primary
             self.window_flags = \
                 imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
@@ -10709,8 +10643,8 @@ cdef class Window(uiItem):
 			    imgui.ImGuiWindowFlags_NoResize | \
                 imgui.ImGuiWindowFlags_NoCollapse | \
                 imgui.ImGuiWindowFlags_NoTitleBar
-            self.state.pos_to_viewport.x = 0
-            self.state.pos_to_viewport.y = 0
+            self.state.cur.pos_to_viewport.x = 0
+            self.state.cur.pos_to_viewport.y = 0
             self.requested_size.x = 0
             self.requested_size.y = 0
             self.pos_update_requested = True
@@ -10718,7 +10652,7 @@ cdef class Window(uiItem):
         else:
             # Restore previous state
             self.window_flags = self.backup_window_flags
-            self.state.pos_to_viewport = self.backup_pos
+            self.state.cur.pos_to_viewport = self.backup_pos
             self.requested_size = self.backup_rect_size
             # Tell imgui to update the window shape
             self.pos_update_requested = True
@@ -10730,7 +10664,7 @@ cdef class Window(uiItem):
         while w is not None:
             with nogil:
                 w.mutex.lock()
-            w.state.focused = True
+            w.state.cur.focused = True
             w.focus_update_requested = True
             next = w._prev_sibling
             w.mutex.unlock()
@@ -10776,17 +10710,17 @@ cdef class Window(uiItem):
 
         if not(self._show):
             if self.show_update_requested:
-                self.set_hidden_and_propagate_to_children()
+                self.set_hidden_and_propagate_to_children(False)
                 self.show_update_requested = False
             return
 
         if self.focus_update_requested:
-            if self.state.focused:
+            if self.state.cur.focused:
                 imgui.SetNextWindowFocus()
             self.focus_update_requested = False
 
         if self.pos_update_requested:
-            imgui.SetNextWindowPos(self.state.pos_to_viewport, <imgui.ImGuiCond>0)
+            imgui.SetNextWindowPos(self.state.cur.pos_to_viewport, <imgui.ImGuiCond>0)
             self.pos_update_requested = False
 
         if self.size_update_requested:
@@ -10795,7 +10729,7 @@ cdef class Window(uiItem):
             self.size_update_requested = False
 
         if self.collapse_update_requested:
-            imgui.SetNextWindowCollapsed(self.collapsed, <imgui.ImGuiCond>0)
+            imgui.SetNextWindowCollapsed(not(self.state.cur.open), <imgui.ImGuiCond>0)
             self.collapse_update_requested = False
 
         imgui.SetNextWindowSizeConstraints(self.min_size, self.max_size)
@@ -10870,7 +10804,7 @@ cdef class Window(uiItem):
 
         if visible:
             # Retrieve the full region size before the cursor is moved.
-            self.state.content_region_size = imgui.GetContentRegionAvail()
+            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             # Draw the window content
             self.context.viewport.window_pos = imgui.GetCursorScreenPos()
             self.context.viewport.parent_pos = self.context.viewport.window_pos # should we restore after ? TODO
@@ -10895,26 +10829,20 @@ cdef class Window(uiItem):
         cdef imgui.ImVec2 rect_size
         if visible:
             # Set current states
-            self.state.visible = True
-            self.state.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self.state.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self.state.cur.rendered = True
+            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
             rect_size = imgui.GetWindowSize()
-            self.state.resized = rect_size.x != self.state.rect_size.x or \
-                                 rect_size.y != self.state.rect_size.y
-            # TODO: investigate why width and height could be != state.rect_size
-            if (rect_size.x != self.requested_size.x or rect_size.y != self.requested_size.y):
-                self.requested_size = rect_size
-                self.resized = True
-            self.state.rect_size = rect_size
+            self.requested_size = rect_size
+            self.state.cur.rect_size = rect_size
             self.last_frame_update = self.context.viewport.frame_count
-            self.state.pos_to_viewport = imgui.GetWindowPos()
-            self.state.pos_to_parent = self.state.pos_to_viewport
+            self.state.cur.pos_to_viewport = imgui.GetWindowPos()
+            self.state.cur.pos_to_parent = self.state.cur.pos_to_viewport
         else:
             # Window is hidden or closed
-            self.set_hidden_and_propagate_to_children()
+            self.set_hidden_and_propagate_to_children(False)
 
-        self.collapsed = imgui.IsWindowCollapsed()
-        self.state.toggled = imgui.IsWindowAppearing() # Original code used Collapsed
+        self.state.cur.open = not(imgui.IsWindowCollapsed())
         self.scroll_x = imgui.GetScrollX()
         self.scroll_y = imgui.GetScrollY()
 
@@ -11150,8 +11078,8 @@ Plots
 # BaseItem that has has no parent/child nor sibling
 cdef class PlotAxisConfig(baseItem):
     def __cinit__(self):
-        self.state.can_be_hovered = True
-        self.state.can_be_clicked = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
         self._enabled = True
         self._scale = AxisScale.linear
         self._tick_format = b""
@@ -11595,14 +11523,14 @@ cdef class PlotAxisConfig(baseItem):
         Apply the config to the target axis during plot
         setup
         """
-        self.state.hovered = False
-        self.state.visible = False
+        self.state.cur.hovered = False
+        self.state.cur.rendered = False
 
         if self._enabled == False:
             self.context.viewport.enabled_axes[axis] = False
             return
         self.context.viewport.enabled_axes[axis] = True
-        self.state.visible = True
+        self.state.cur.rendered = True
         # TODO label
         implot.SetupAxis(axis, NULL, self.flags)
         # we test the frame count to correctly support the
@@ -11638,7 +11566,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.hovered
+        return self.state.cur.hovered
 
     @property
     def clicked(self):
@@ -11651,7 +11579,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def mouse_coord(self):
@@ -11727,26 +11655,43 @@ cdef class PlotAxisConfig(baseItem):
         cdef bint hovered = implot.IsAxisHovered(axis)
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self.state.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
-            self.state.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
-        cdef bint backup_hovered = self.state.hovered
-        self.state.hovered = hovered
-        run_handlers(self, self._handlers, self.state)
-        if not(backup_hovered) or self.state.hovered:
+            self.state.cur.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
+            self.state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
+        cdef bint backup_hovered = self.state.cur.hovered
+        self.state.cur.hovered = hovered
+        run_handlers(self, self._handlers, self.state) # TODO FIX multiple configs tied
+        if not(backup_hovered) or self.state.cur.hovered:
             return
         # Restore correct states
         # We do it here and not above to trigger the handlers only once
-        self.state.hovered |= backup_hovered
+        self.state.cur.hovered |= backup_hovered
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self.state.clicked[i] = self.state.hovered and imgui.IsMouseClicked(i, False)
-            self.state.double_clicked[i] = self.state.hovered and imgui.IsMouseDoubleClicked(i)
+            self.state.cur.clicked[i] = self.state.cur.hovered and imgui.IsMouseClicked(i, False)
+            self.state.cur.double_clicked[i] = self.state.cur.hovered and imgui.IsMouseDoubleClicked(i)
 
     cdef void set_hidden(self) noexcept nogil:
-        self.state.hovered = False
+        self.state.cur.hovered = False
+        self.state.cur.rendered = False
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self.state.clicked[i] = False
-            self.state.double_clicked[i] = False
+            self.state.cur.clicked[i] = False
+            self.state.cur.double_clicked[i] = False
+        run_handlers(self, self._handlers, self.state)
+
+cdef extern from * nogil:
+    """
+    ImPlotLocation GetLegendConfig(ImPlotLegendFlags &flags)
+    {
+        flags = ImPlot::GetCurrentContext()->CurrentPlot->Items.Legend.Flags;
+        return ImPlot::GetCurrentContext()->CurrentPlot->Items.Legend.Location;
+    }
+    ImPlotFlags GetPlotConfig()
+    {
+        return ImPlot::GetCurrentContext()->CurrentPlot->Flags;
+    }
+    """
+    implot.ImPlotLocation GetLegendConfig(implot.ImPlotLegendFlags&)
+    implot.ImPlotFlags GetPlotConfig()
 
 cdef class PlotLegendConfig(baseItem):
     def __cinit__(self):
@@ -11930,8 +11875,9 @@ cdef class PlotLegendConfig(baseItem):
         # and thus we don't push fonts, check states, etc.
 
     cdef void after_setup(self) noexcept nogil:
-        # DPG does update legend location and flags... why ?
-        return
+        # The user can interact with legend configuration
+        # with the mouse
+        self._location = <LegendLocation>GetLegendConfig(self.flags)
 
 
 cdef class Plot(uiItem):
@@ -11955,10 +11901,10 @@ cdef class Plot(uiItem):
     """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_plot_element_child = True
-        self.state.can_be_clicked = True
-        self.state.can_be_dragged = True
-        self.state.can_be_hovered = True
-        self.state.has_content_region = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_content_region = True
         self._X1 = PlotAxisConfig(context)
         self._X2 = PlotAxisConfig(context, enabled=False)
         self._X3 = PlotAxisConfig(context, enabled=False)
@@ -12660,12 +12606,9 @@ cdef class Plot(uiItem):
                                    self.requested_size,
                                    self.flags)
         # BeginPlot created the imgui Item
-        rect_size = imgui.GetItemRectSize()
-        self.state.resized = rect_size.x != self.state.rect_size.x or \
-                             rect_size.y != self.state.rect_size.y
-        self.state.rect_size = rect_size
+        self.state.cur.rect_size = imgui.GetItemRectSize()
         if visible:
-            self.state.visible = True
+            self.state.cur.rendered = True
             
             # Setup axes
             self._X1.setup(implot.ImAxis_X1)
@@ -12688,9 +12631,9 @@ cdef class Plot(uiItem):
 
             # These states are valid after SetupFinish
             # Update now to have up to date data for handlers of children.
-            self.state.hovered = implot.IsPlotHovered()
+            self.state.cur.hovered = implot.IsPlotHovered()
             update_current_mouse_states(self.state)
-            self.state.content_region_size = implot.GetPlotSize()
+            self.state.cur.content_region_size = implot.GetPlotSize()
             self._content_pos = implot.GetPlotPos()
 
             self._X1.after_setup(implot.ImAxis_X1)
@@ -12707,9 +12650,12 @@ cdef class Plot(uiItem):
                 self.last_plot_element_child.draw()
 
             implot.PopPlotClipRect()
+            # The user can interact with the plot
+            # configuration with the mouse
+            self.flags = GetPlotConfig()
             implot.EndPlot()
-        else:
-            self.set_hidden_and_propagate_to_children()
+        elif self.state.cur.rendered:
+            self.set_hidden_and_propagate_to_children(False) # TODO: propagate to plotElement
             self._X1.set_hidden()
             self._X2.set_hidden()
             self._X3.set_hidden()
@@ -12735,10 +12681,8 @@ cdef class plotElement(baseItem):
     def __cinit__(self):
         self.imgui_label = b'###%ld'% self.uuid
         self.user_label = ""
-        self.state.can_be_hovered = True
         self.flags = implot.ImPlotItemFlags_None
         self.can_have_sibling = True
-        self.can_have_widget_child = True
         self.element_child_category = child_type.cat_plot_element
         self._show = True
         self._axes = [implot.ImAxis_X1, implot.ImAxis_Y1]
@@ -12848,9 +12792,11 @@ cdef class plotElementWithLegend(plotElement):
     popup entry that gets shown on a right click (by default).
     """
     def __cinit__(self):
-        self.state.can_be_hovered = True # The legend only
+        self.state.cap.can_be_hovered = True # The legend only
         self._legend_button = imgui.ImGuiMouseButton_Right
         self._legend = True
+        self.state.cap.can_be_hovered = True
+        self.can_have_widget_child = True
 
     def __dealloc__(self):
         clear_obj_vector(self._handlers)
@@ -12960,7 +12906,7 @@ cdef class plotElementWithLegend(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.hovered
+        return self.state.cur.hovered
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -12973,8 +12919,8 @@ cdef class plotElementWithLegend(plotElement):
         if not(self._show) or \
            not(self.context.viewport.enabled_axes[self._axes[0]]) or \
            not(self.context.viewport.enabled_axes[self._axes[1]]):
-            self.state.visible = False
-            self.state.hovered = False
+            self.state.cur.rendered = False
+            self.state.cur.hovered = False
             if self.last_widgets_child is not None:
                 self.last_widgets_child.set_hidden_and_propagate_to_siblings()
             return
@@ -12991,8 +12937,8 @@ cdef class plotElementWithLegend(plotElement):
         implot.SetAxes(self._axes[0], self._axes[1])
         self.draw_element()
 
-        self.state.visible = True
-        self.state.hovered = False
+        self.state.cur.rendered = True
+        self.state.cur.hovered = False
         cdef imgui.ImVec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
@@ -13012,7 +12958,7 @@ cdef class plotElementWithLegend(plotElement):
                         self.context.viewport.window_pos = pos_w
                         self.context.viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
-            self.state.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
+            self.state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
 
 
         # pop theme, font
@@ -13748,9 +13694,9 @@ cdef class plotDraggable(plotElement):
     Base class for plot draggable elements.
     """
     def __cinit__(self):
-        self.state.can_be_hovered = True
-        self.state.can_be_clicked = True
-        self.state.can_be_active = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_active = True
         self.flags = implot.ImPlotDragToolFlags_None
 
     def __dealloc__(self):
@@ -13854,7 +13800,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.active
+        return self.state.cur.active
 
     @property
     def clicked(self):
@@ -13867,7 +13813,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -13880,7 +13826,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.double_clicked
+        return self.state.cur.double_clicked
 
     @property
     def hovered(self):
@@ -13889,7 +13835,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.hovered
+        return self.state.cur.hovered
 
     cdef void draw(self) noexcept nogil:
         cdef int i
@@ -13903,11 +13849,11 @@ cdef class plotDraggable(plotElement):
         if not(self._show) or \
            not(self.context.viewport.enabled_axes[self._axes[0]]) or \
            not(self.context.viewport.enabled_axes[self._axes[1]]):
-            self.state.hovered = False
-            self.state.visible = False
+            self.state.cur.hovered = False
+            self.state.cur.rendered = False
             for i in range(imgui.ImGuiMouseButton_COUNT):
-                self.state.clicked[i] = False
-                self.state.double_clicked[i] = False
+                self.state.cur.clicked[i] = False
+                self.state.cur.double_clicked[i] = False
             if self.last_widgets_child is not None:
                 self.last_widgets_child.set_hidden_and_propagate_to_siblings()
             return
@@ -13922,7 +13868,7 @@ cdef class plotDraggable(plotElement):
             self._theme.push()
 
         implot.SetAxes(self._axes[0], self._axes[1])
-        self.state.visible = True
+        self.state.cur.rendered = True
         self.draw_element()
 
         # pop theme, font
@@ -13937,13 +13883,16 @@ cdef class plotDraggable(plotElement):
         return
 '''
 
-cdef class DrawInPlot(plotElement):
+cdef class DrawInPlot(plotElementWithLegend):
     """
     A plot element that enables to insert Draw* items
     inside a plot in plot coordinates.
+
+    defaults to no_legend = True
     """
     def __cinit__(self):
         self.can_have_drawing_child = True
+        self._legend = False
 
     cdef void draw(self) noexcept nogil:
         # Render siblings first
@@ -13954,6 +13903,10 @@ cdef class DrawInPlot(plotElement):
         if not(self._show) or \
            not(self.context.viewport.enabled_axes[self._axes[0]]) or \
            not(self.context.viewport.enabled_axes[self._axes[1]]):
+            self.state.cur.rendered = False
+            self.state.cur.hovered = False
+            if self.last_widgets_child is not None:
+                self.last_widgets_child.set_hidden_and_propagate_to_siblings()
             return
 
         # push theme, font
@@ -13978,18 +13931,52 @@ cdef class DrawInPlot(plotElement):
         self.context.viewport.thickness_multiplier = self.context.viewport.thickness_multiplier * self.context.viewport.size_multiplier
         self.context.viewport.parent_pos = implot.GetPlotPos()
 
-        implot.PushPlotClipRect(0.)
+        cdef bint render = True
 
-        if self.last_drawings_child is not None:
-            self.last_drawings_child.draw(implot.GetPlotDrawList())
+        if self._legend:
+            render = implot.BeginItem(self.imgui_label.c_str(), self.flags, -1)
+        else:
+            implot.PushPlotClipRect(0.)
 
-        implot.PopPlotClipRect()
+        if render:
+            if self.last_drawings_child is not None:
+                self.last_drawings_child.draw(implot.GetPlotDrawList())
+
+            if self._legend:
+                implot.EndItem()
+            else:
+                implot.PopPlotClipRect()
+
+        self.state.cur.rendered = True
+        self.state.cur.hovered = False
+        cdef imgui.ImVec2 pos_w, pos_p
+        if self._legend:
+            # Popup that gets opened with a click on the entry
+            # We don't open it if it will be empty as it will
+            # display a small rect with nothing in it. It's surely
+            # better to not display anything in this case.
+            if self.last_widgets_child is not None:
+                if implot.BeginLegendPopup(self.imgui_label.c_str(),
+                                           self._legend_button):
+                    if self.last_widgets_child is not None:
+                        # sub-window
+                        pos_w = imgui.GetCursorScreenPos()
+                        pos_p = pos_w
+                        swap(pos_w, self.context.viewport.window_pos)
+                        swap(pos_p, self.context.viewport.parent_pos)
+                        self.last_widgets_child.draw()
+                        self.context.viewport.window_pos = pos_w
+                        self.context.viewport.parent_pos = pos_p
+                    implot.EndLegendPopup()
+            self.state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
 
         # pop theme, font
         if self._theme is not None:
             self._theme.pop()
 
         self.context.viewport.pop_applied_pending_theme_actions()
+
+        run_handlers(self, self._handlers, self.state)
 
 
 """

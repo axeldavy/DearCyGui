@@ -1,4 +1,4 @@
-from dearcygui.wrapper cimport imgui, implot, imnodes, float4
+from dearcygui.wrapper cimport imgui, implot, imnodes, double4
 from dearcygui.backends.backend cimport mvViewport, mvGraphics
 from libc.time cimport tm
 from libcpp.string cimport string
@@ -204,12 +204,9 @@ cdef enum child_type:
     cat_widget
     cat_window
 
-
-cdef struct itemState:
-    bint can_be_activated
+cdef struct itemStateCapabilities:
     bint can_be_active
     bint can_be_clicked
-    bint can_be_deactivated
     bint can_be_deactivated_after_edited
     bint can_be_dragged
     bint can_be_edited
@@ -219,32 +216,35 @@ cdef struct itemState:
     bint has_position
     bint has_rect_size
     bint has_content_region
-    bint hovered
-    bint active
-    bint focused
+
+cdef struct itemStateValues:
+    bint hovered  # Mouse is over the item + overlap rules of mouse ownership
+    bint active # Item is 'active': mouse pressed, editing field, etc.
+    bint focused # Item has focus
     bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
     bint[<int>imgui.ImGuiMouseButton_COUNT] double_clicked
     bint[<int>imgui.ImGuiMouseButton_COUNT] dragging
-    bint[<int>imgui.ImGuiMouseButton_COUNT] dragged
-    imgui.ImVec2[<int>imgui.ImGuiMouseButton_COUNT] drag_deltas # only valid when dragging or dragged
+    imgui.ImVec2[<int>imgui.ImGuiMouseButton_COUNT] drag_deltas # only valid when dragging
     bint edited
-    bint activated
-    bint deactivated
     bint deactivated_after_edited
-    bint toggled
-    bint resized
+    bint open
     imgui.ImVec2 pos_to_viewport
     imgui.ImVec2 pos_to_window
     imgui.ImVec2 pos_to_parent
     imgui.ImVec2 pos_to_default
     imgui.ImVec2 rect_size
     imgui.ImVec2 content_region_size
-    # Indicates if the item was rendered or not
-    # not clipped, no optimization because hidden.
-    bint visible
+    # No optimization due to parent menu not open or clipped
+    bint rendered
 
-cdef void update_current_state_as_hidden(itemState& state) noexcept nogil
-cdef void update_current_mouse_states(itemState& state) noexcept nogil
+cdef struct itemState:
+    itemStateCapabilities cap
+    itemStateValues prev
+    itemStateValues cur
+
+cdef void update_current_state_as_hidden(itemState&) noexcept nogil
+cdef void update_current_mouse_states(itemState&) noexcept nogil
+
 
 cpdef enum mouse_cursor:
     CursorNone = -1,
@@ -275,18 +275,18 @@ cdef class Viewport(baseItem):
     cdef long long last_t_before_rendering
     cdef long long last_t_after_rendering
     cdef long long last_t_after_swapping
-    cdef float delta_event_handling
-    cdef float delta_rendering
-    cdef float delta_swapping
-    cdef float delta_frame
+    cdef double delta_event_handling
+    cdef double delta_rendering
+    cdef double delta_swapping
+    cdef double delta_frame
     cdef int frame_count # frame count
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
     cdef bint perspectiveDivide
     cdef bint depthClipping
-    cdef float[6] clipViewport
+    cdef double[6] clipViewport
     cdef bint has_matrix_transform
-    cdef float[4][4] transform
+    cdef double[4][4] transform
     cdef imgui.ImVec2 window_pos
     cdef imgui.ImVec2 parent_pos
     cdef bint in_plot
@@ -305,7 +305,7 @@ cdef class Viewport(baseItem):
     cdef void __on_resize(self, int width, int height)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
-    cdef void apply_current_transform(self, float *dst_p, float[4] src_p) noexcept nogil
+    cdef void apply_current_transform(self, float *dst_p, double[4] src_p) noexcept nogil
     cdef void push_pending_theme_actions(self, theme_enablers, theme_categories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
@@ -333,19 +333,19 @@ cdef class DrawLayer_(drawingItem):
     cdef long _cull_mode
     cdef bint _perspective_divide
     cdef bint _depth_clipping
-    cdef float[6] clip_viewport
+    cdef double[6] clip_viewport
     cdef bint has_matrix_transform
-    cdef float[4][4] _transform
+    cdef double[4][4] _transform
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 # Draw Node ? Seems to be exactly like Drawlayer, but with only
 # the matrix settable (via apply_transform). -> merge to drawlayer
 
 cdef class DrawArrow_(drawingItem):
-    cdef float[4] start
-    cdef float[4] end
-    cdef float[4] corner1
-    cdef float[4] corner2
+    cdef double[4] start
+    cdef double[4] end
+    cdef double[4] corner1
+    cdef double[4] corner2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef float size
@@ -353,26 +353,26 @@ cdef class DrawArrow_(drawingItem):
     cdef void __compute_tip(self)
 
 cdef class DrawBezierCubic_(drawingItem):
-    cdef float[4] p1
-    cdef float[4] p2
-    cdef float[4] p3
-    cdef float[4] p4
+    cdef double[4] p1
+    cdef double[4] p2
+    cdef double[4] p3
+    cdef double[4] p4
     cdef imgui.ImU32 color
     cdef float thickness
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawBezierQuadratic_(drawingItem):
-    cdef float[4] p1
-    cdef float[4] p2
-    cdef float[4] p3
+    cdef double[4] p1
+    cdef double[4] p2
+    cdef double[4] p3
     cdef imgui.ImU32 color
     cdef float thickness
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawCircle_(drawingItem):
-    cdef float[4] center
+    cdef double[4] center
     cdef float radius
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
@@ -381,30 +381,30 @@ cdef class DrawCircle_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawEllipse_(drawingItem):
-    cdef float[4] pmin
-    cdef float[4] pmax
+    cdef double[4] pmin
+    cdef double[4] pmax
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
     cdef int segments
-    cdef vector[float4] points
+    cdef vector[double4] points
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawImage_(drawingItem):
-    cdef float[4] pmin
-    cdef float[4] pmax
+    cdef double[4] pmin
+    cdef double[4] pmax
     cdef float[4] uv
     cdef imgui.ImU32 color_multiplier
     cdef Texture texture
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawImageQuad_(drawingItem):
-    cdef float[4] p1
-    cdef float[4] p2
-    cdef float[4] p3
-    cdef float[4] p4
-    cdef float[4] pmax
+    cdef double[4] p1
+    cdef double[4] p2
+    cdef double[4] p3
+    cdef double[4] p4
+    cdef double[4] pmax
     cdef float[4] uv1
     cdef float[4] uv2
     cdef float[4] uv3
@@ -414,8 +414,8 @@ cdef class DrawImageQuad_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawLine_(drawingItem):
-    cdef float[4] p1
-    cdef float[4] p2
+    cdef double[4] p1
+    cdef double[4] p2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
@@ -424,31 +424,31 @@ cdef class DrawPolyline_(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
-    cdef vector[float4] points
+    cdef vector[double4] points
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawPolygon_(drawingItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
-    cdef vector[float4] points
+    cdef vector[double4] points
     cdef int[:,:] triangulation_indices
     cdef void __triangulate(self)
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawQuad_(drawingItem):
-    cdef float[4] p1
-    cdef float[4] p2
-    cdef float[4] p3
-    cdef float[4] p4
+    cdef double[4] p1
+    cdef double[4] p2
+    cdef double[4] p3
+    cdef double[4] p4
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawRect_(drawingItem):
-    cdef float[4] pmin
-    cdef float[4] pmax
+    cdef double[4] pmin
+    cdef double[4] pmax
     cdef imgui.ImU32 color
     cdef imgui.ImU32 color_upper_left
     cdef imgui.ImU32 color_upper_right
@@ -461,16 +461,16 @@ cdef class DrawRect_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawText_(drawingItem):
-    cdef float[4] pos
+    cdef double[4] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawTriangle_(drawingItem):
-    cdef float[4] p1
-    cdef float[4] p2
-    cdef float[4] p3
+    cdef double[4] p1
+    cdef double[4] p2
+    cdef double[4] p3
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -484,8 +484,8 @@ cdef class DrawInvisibleButton(drawingItem):
     cdef bint _no_input
     cdef bint _capture_mouse
     cdef vector[PyObject*] _handlers # type baseHandler
-    cdef float[4] _p1
-    cdef float[4] _p2
+    cdef double[4] _p1
+    cdef double[4] _p2
     cdef imgui.ImVec2 initial_mouse_position
 
 cdef class ViewportDrawList_(baseItem):
@@ -592,12 +592,7 @@ cdef class baseHandler(baseItem):
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
     cdef void run_callback(self, baseItem) noexcept nogil
 
-cdef inline void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil:
-    if handlers.empty():
-        return
-    cdef int i
-    for i in range(<int>handlers.size()):
-        (<baseHandler>(handlers[i])).run_handler(item, state)
+cdef void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil
 
 cpdef enum handlerListOP:
     ALL,
@@ -701,7 +696,7 @@ cdef class uiItem(baseItem):
 
     cdef void propagate_hidden_state_to_children(self) noexcept nogil
     cdef void set_hidden_and_propagate_to_siblings(self) noexcept nogil
-    cdef void set_hidden_and_propagate_to_children(self) noexcept nogil
+    cdef void set_hidden_and_propagate_to_children(self, bint) noexcept nogil
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_subset(self) noexcept nogil
     cdef void draw(self) noexcept nogil
@@ -928,7 +923,6 @@ cdef class Window(uiItem):
     cdef bint no_bring_to_front_on_focus
     cdef bint has_close_button
     cdef bint no_background
-    cdef bint collapsed
     cdef bint no_open_over_existing_popup
     cdef Callback on_close_callback
     cdef imgui.ImVec2 min_size
@@ -1185,7 +1179,7 @@ cdef class PlotInfLines(plotElementX):
 cdef class PlotScatter(plotElementXY):
     cdef void draw_element(self) noexcept nogil
 
-cdef class DrawInPlot(plotElement):
+cdef class DrawInPlot(plotElementWithLegend):
     cdef void draw(self) noexcept nogil
 
 """

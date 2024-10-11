@@ -3718,7 +3718,7 @@ def item_visible_handler(*, label: str =None, user_data: Any =None, callback: Ca
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.VisibleHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    return dcg.RenderedHandler(DCG_CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key down handler.
