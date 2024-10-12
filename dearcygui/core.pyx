@@ -8650,6 +8650,8 @@ cdef class Tooltip(uiItem):
             self.target_state = &(<PlotAxisConfig>target).state
         elif isinstance(target, plotElement):
             self.target_state = &(<plotElement>target).state
+        elif isinstance(target, DrawInvisibleButton):
+            self.target_state = &(<DrawInvisibleButton>target).state
         else:
             success = False
         if not(self.target_state.cap.can_be_hovered) or not(success):
