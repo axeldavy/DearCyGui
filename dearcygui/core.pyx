@@ -3033,6 +3033,7 @@ cdef class DrawPolyline_(drawingItem):
             self.context.viewport.apply_current_transform(p, self.points[i].p)
             ip2 = imgui.ImVec2(p[0], p[1])
             drawlist.AddLine(ip1, ip2, self.color, thickness)
+            ip1 = ip2
         if self.closed and self.points.size() > 2:
             drawlist.AddLine(ip1_, ip2, self.color, thickness)
 
