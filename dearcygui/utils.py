@@ -7,6 +7,48 @@ A set of tools and demos of what can be
 done with DCG
 """
 
+class TemporaryTooltip(dcg.Tooltip):
+    """
+    A tooltip that deletes itself when its
+    showing condition is not met anymore.
+
+    The handler passed as argument
+    should be a new handler instance that will
+    be checked for the condition. It should hold
+    True as long as the item should be shown.
+    """
+    def __init__(self, context, **kwargs):
+        super().__init__(context, **kwargs)
+        self.handlers += [dcg.LostRenderHandler(context, callback=self.destroy_tooltip)]
+        # In order to properly delete the item if the
+        # condition is not True the first frame,
+        # Add a handler to the viewport to check this rare
+        # case.
+        not_rendered = dcg.OtherItemHandler(context, target=self, op=dcg.handlerListOP.NONE, callback=self.destroy_tooltip)
+        with not_rendered:
+            dcg.RenderHandler(context, callback=self.cleanup_handlers)
+        self.viewport_handler = not_rendered
+        # += is not atomic. The mutex is to be thread safe, in case
+        # another thread manipulates the handlers
+        with context.viewport.mutex:
+            context.viewport.handlers += [self.viewport_handler]
+
+    def cleanup_handlers(self):
+        # Remove the handlers we attached for just one frame
+        with self.context.viewport.mutex:
+            self.context.viewport.handlers = [
+                h for h in self.context.viewport.handlers\
+                if h is not self.viewport_handler
+            ]
+
+    def destroy_tooltip(self):
+        if self.context is None:
+            return # Already deleted
+        self.cleanup_handlers()
+        # self.parent = None would work too but would wait GC.
+        self.delete_item()
+
+
 class ScrollingBuffer:
     """
     A scrolling buffer with a large memory backing.
@@ -156,8 +198,6 @@ class MetricsWindow(dcg.Window):
         # not measure the window itself, but it should
         # be small.
         dcg.TimeWatcher(context, parent=self, callback=self.log_times)
-        # Attach to the viewport
-        self.parent = context.viewport
         self.metrics_window_rendering_time = 0
         self.start_time = 1e-9*self.context.viewport.metrics["last_time_before_rendering"]
         self.rendering_metrics = self.context.viewport.metrics
@@ -252,7 +292,6 @@ class MetricsWindow(dcg.Window):
 def get_children_recursive(item):
     result = [item]
     children = item.children
-    result += children
     for c in children:
         result += get_children_recursive(c)
     return result
@@ -273,7 +312,7 @@ class ItemInspecter(dcg.Window):
 
         self.item_handler = dcg.HandlerList(C)
         with self.item_handler:
-            dcg.HoverHandler(C, callback=self.handle_item_hovered)
+            dcg.GotHoverHandler(C, callback=self.handle_item_hovered)
             # If an item is hovered and the Alt key is pressed,
             # handle dragging an item.
             with dcg.ConditionalHandler(C):
@@ -297,14 +336,9 @@ class ItemInspecter(dcg.Window):
             dcg.KeyReleaseHandler(C,
                                   key=dcg.constants.mvKey_LAlt,
                                   callback=self.restore_mouse_cursor)
-            dcg.MouseMoveHandler(C,
-                                 callback=self.clean_tooltips)
         C.viewport.handlers += [self.global_handler]
         self.dragging_item = None
         self.dragging_item_original_pos = None
-        self.items_with_tooltips = set()
-        # Attach to the viewport
-        self.parent = context.viewport
 
     def setup_handlers(self):
         if len(self.inspected_items) > 0:
@@ -355,19 +389,16 @@ class ItemInspecter(dcg.Window):
         self.restore_mouse_cursor()
 
     def handle_item_hovered(self, handler, item):
-        if item in self.items_with_tooltips:
-            return
-        self.items_with_tooltips.add(item)
         item_states = dir(item)
         C = self.context
         # Attach the tooltip to our window.
         # This is to not perturb the item states
         # and child tree.
-        default_item = item.__class__(C)
+        default_item = item.__class__(C, attach=False)
         ignore_list = [
             "shareable_value",
         ]
-        with dcg.Tooltip(C, parent=self, target=item) as t:
+        with TemporaryTooltip(C, target=item, parent=self):
             dcg.Text(C).value = f"{item}:"
             with dcg.HorizontalLayout(C, indent=-1, theme=dcg.ThemeStyleImGui(C, ItemSpacing=(40., -3.))):
                 left = dcg.VerticalLayout(C)
@@ -383,9 +414,12 @@ class ItemInspecter(dcg.Window):
                         if state == "handlers":
                             # remove ourselves
                             value = [v for v in value if v is not self.item_handler]
-                        if value == getattr(default_item, state):
-                            # ignore non defaults
-                            continue
+                        try:
+                            if value == getattr(default_item, state):
+                                # ignore non defaults
+                                continue
+                        except Exception: # Not all states can be compared
+                            pass
                         if state in ignore_list:
                             continue
                     except AttributeError:
@@ -396,13 +430,6 @@ class ItemInspecter(dcg.Window):
                         dcg.Text(C, value=f"{state}:")
                     with right:
                         dcg.Text(C, value=value)
-
-    def clean_tooltips(self):
-        for c in self.children:
-            if isinstance(c, dcg.Tooltip):
-                if not(c.visible) and c.target in self.items_with_tooltips:
-                    self.items_with_tooltips.remove(c.target)
-                    c.delete_item()
 
 
 class DragPoint(dcg.DrawingList):
@@ -512,7 +539,7 @@ class DragPoint(dcg.DrawingList):
             plot = plot_element.parent
             if self._clamp_inside:
                 plot.handlers += [
-                    dcg.RenderedHandler(self.context,
+                    dcg.RenderHandler(self.context,
                                        callback=self.handler_visible_for_clamping)
                 ]
             else:

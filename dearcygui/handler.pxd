@@ -5,6 +5,29 @@ cdef class CustomHandler(baseHandler):
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
+cpdef enum handlerListOP:
+    ALL,
+    ANY,
+    NONE
+
+cdef class HandlerList(baseHandler):
+    cdef handlerListOP _op
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class ConditionalHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
+cdef class OtherItemHandler(HandlerList):
+    cdef baseItem _target
+    cdef itemState *target_state
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
 cdef class ActivatedHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
@@ -53,7 +76,23 @@ cdef class FocusHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
+cdef class GotFocusHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class LostFocusHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
 cdef class HoverHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class GotHoverHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class LostHoverHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
@@ -65,7 +104,27 @@ cdef class ToggledOpenHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
-cdef class RenderedHandler(baseHandler):
+cdef class ToggledCloseHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class OpenHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class CloseOpenHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class RenderHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class GotRenderHandler(baseHandler):
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+
+cdef class LostRenderHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 

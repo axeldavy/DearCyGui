@@ -594,22 +594,6 @@ cdef class baseHandler(baseItem):
 
 cdef void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil
 
-cpdef enum handlerListOP:
-    ALL,
-    ANY,
-    NONE
-
-cdef class HandlerList(baseHandler):
-    cdef handlerListOP _op
-    cdef void check_bind(self, baseItem, itemState&)
-    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
-
-cdef class ConditionalHandler(baseHandler):
-    cdef void check_bind(self, baseItem, itemState&)
-    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
-
 cdef class KeyDownHandler_(baseHandler):
     cdef int _key
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil

@@ -674,6 +674,8 @@ cdef class baseItem:
             else:
                 if parent is None:
                     parent = self.context.fetch_parent_queue_back()
+                    if parent is None:
+                        parent = self.context.viewport
                 else:
                     # parent manually set. Do not ignore failure
                     ignore_if_fail = False
@@ -4698,158 +4700,6 @@ cdef class baseHandler(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.context.queue_callback_arg1obj(self._callback, self, item, item)
 
-cdef class HandlerList(baseHandler):
-    """
-    A list of handlers in order to attach several
-    handlers to an item.
-    In addition if you attach a callback to this handler,
-    it will be issued if ALL or ANY of the children handler
-    states are met. NONE is also possible.
-    Note however that the handlers are not checked if an item
-    is not rendered. This corresponds to the visible state.
-    """
-    def __cinit__(self):
-        self.can_have_handler_child = True
-        self._op = handlerListOP.ANY
-
-    @property
-    def op(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._op
-
-    @op.setter
-    def op(self, handlerListOP value):
-        if value not in [handlerListOP.ALL, handlerListOP.ANY, handlerListOP.NONE]:
-            raise ValueError("Unknown op")
-        self._op = value
-
-    cdef void check_bind(self, baseItem item, itemState &state):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if self.last_handler_child is not None:
-            (<baseHandler>self.last_handler_child).check_bind(item, state)
-
-    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        """
-        Returns whether the target state it True.
-        Is called by the default implementation of run_handler,
-        which will call the default callback in this case.
-        Classes that might issue non-standard callbacks should
-        override run_handler in addition to check_state.
-        """
-        if self.last_handler_child is None:
-            return False
-        self.last_handler_child.lock_and_previous_siblings()
-        # We use PyObject to avoid refcounting and thus the gil
-        cdef PyObject* child = <PyObject*>self.last_handler_child
-        cdef bint current_state = False
-        cdef bint child_state
-        if self._op == handlerListOP.ALL:
-            current_state = True
-        while (<baseHandler>child) is not None:
-            child_state = (<baseHandler>child).check_state(item, state)
-            if not((<baseHandler>child)._enabled):
-                child = <PyObject*>((<baseHandler>child)._prev_sibling)
-                continue
-            if self._op == handlerListOP.ALL:
-                current_state = current_state and child_state
-            else:
-                current_state = current_state or child_state
-            child = <PyObject*>((<baseHandler>child)._prev_sibling)
-        if self._op == handlerListOP.NONE:
-            # NONE = not(ANY)
-            current_state = not(current_state)
-        self.last_handler_child.unlock_and_previous_siblings()
-        return current_state
-
-    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
-        if not(self._enabled):
-            return
-        if self.last_handler_child is not None:
-            (<baseHandler>self.last_handler_child).run_handler(item, state)
-        if self._callback is not None:
-            if self.check_state(item, state):
-                self.run_callback(item)
-
-cdef class ConditionalHandler(baseHandler):
-    """
-    A handler that runs the handler of his FIRST handler
-    child if the other ones have their condition checked.
-
-    For example this is useful to combine conditions. For example
-    detecting clicks when a key is pressed. The interest
-    of using this handler, rather than handling it yourself, is
-    that if the callback queue is laggy the condition might not
-    hold true anymore by the time you process the handler.
-    In this case this handler enables to test right away
-    the intended conditions.
-
-    Note that handlers that get their condition checked do
-    not call their callbacks.
-    """
-    def __cinit__(self):
-        self.can_have_handler_child = True
-
-    cdef void check_bind(self, baseItem item, itemState &state):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).check_bind(item, state)
-        if self.last_handler_child is not None:
-            (<baseHandler>self.last_handler_child).check_bind(item, state)
-
-    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
-        """
-        Behaves like handlerListOP.ALL
-        """
-        if self.last_handler_child is None:
-            return False
-        self.last_handler_child.lock_and_previous_siblings()
-        # We use PyObject to avoid refcounting and thus the gil
-        cdef PyObject* child = <PyObject*>self.last_handler_child
-        cdef bint current_state = True
-        cdef bint child_state
-        while child is not <PyObject*>None:
-            child_state = (<baseHandler>child).check_state(item, state)
-            child = <PyObject*>((<baseHandler>child).last_handler_child)
-            if not((<baseHandler>child)._enabled):
-                continue
-            current_state = current_state and child_state
-        self.last_handler_child.unlock_and_previous_siblings()
-        return current_state
-
-    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
-        if not(self._enabled):
-            return
-        if self.last_handler_child is None:
-            return
-        self.last_handler_child.lock_and_previous_siblings()
-        # Retrieve the first child and combine the states of the previous ones
-        cdef bint condition_held = True
-        cdef PyObject* child = <PyObject*>self.last_handler_child
-        cdef bint child_state
-        # Note: we already have tested there is at least one child
-        while ((<baseHandler>child).last_handler_child) is not None:
-            child_state = (<baseHandler>child).check_state(item, state)
-            child = <PyObject*>((<baseHandler>child).last_handler_child)
-            if not((<baseHandler>child)._enabled):
-                continue
-            condition_held = condition_held and child_state
-        if condition_held:
-            (<baseHandler>child).run_handler(item, state)
-        self.last_handler_child.unlock_and_previous_siblings()
-        if self._callback is not None:
-            if self.check_state(item, state):
-                self.run_callback(item)
 
 cdef inline object IntPairFromVec2(imgui.ImVec2 v):
     return (<int>v.x, <int>v.y)
@@ -8637,7 +8487,7 @@ cdef class Tooltip(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._delay
+        return self._target
 
     @target.setter
     def target(self, baseItem target):
