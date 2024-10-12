@@ -19,14 +19,9 @@ class TemporaryTooltip(dcg.Tooltip):
     """
     def __init__(self, context, **kwargs):
         super().__init__(context, **kwargs)
-        self.handlers += [dcg.LostRenderHandler(context, callback=self.destroy_tooltip)]
-        # In order to properly delete the item if the
-        # condition is not True the first frame,
-        # Add a handler to the viewport to check this rare
-        # case.
         not_rendered = dcg.OtherItemHandler(context, target=self, op=dcg.handlerListOP.NONE, callback=self.destroy_tooltip)
         with not_rendered:
-            dcg.RenderHandler(context, callback=self.cleanup_handlers)
+            dcg.RenderHandler(context)
         self.viewport_handler = not_rendered
         # += is not atomic. The mutex is to be thread safe, in case
         # another thread manipulates the handlers
@@ -34,7 +29,7 @@ class TemporaryTooltip(dcg.Tooltip):
             context.viewport.handlers += [self.viewport_handler]
 
     def cleanup_handlers(self):
-        # Remove the handlers we attached for just one frame
+        # Remove the handlers we attached
         with self.context.viewport.mutex:
             self.context.viewport.handlers = [
                 h for h in self.context.viewport.handlers\
