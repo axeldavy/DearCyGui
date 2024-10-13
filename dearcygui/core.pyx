@@ -1855,7 +1855,7 @@ cdef class Viewport(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._cursor
+        return <mouse_cursor>self._cursor
 
     @cursor.setter
     def cursor(self, int value):
@@ -13897,6 +13897,10 @@ cdef void imnodes_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
 
 cdef void imnodes_PopStyleVar(int count) noexcept nogil:
     imnodes.PopStyleVar(count)
+
+cdef void imgui_SetMouseCursor(int cursor) noexcept nogil:
+    # Applies only for this frame. Is reset the next frame
+    imgui.SetMouseCursor(<imgui.ImGuiMouseCursor>cursor)
 
 def color_as_int(val):
     cdef imgui.ImU32 color = parse_color(val)

@@ -1195,6 +1195,7 @@ cdef void implot_PopStyleVar(int count) noexcept nogil
 cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil
 cdef void imnodes_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
 cdef void imnodes_PopStyleVar(int count) noexcept nogil
+cdef void imgui_SetMouseCursor(int) noexcept nogil
 
 ctypedef fused point_type:
     int

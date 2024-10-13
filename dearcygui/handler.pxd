@@ -128,6 +128,12 @@ cdef class LostRenderHandler(baseHandler):
     cdef void check_bind(self, baseItem, itemState&)
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
 
+cdef class MouseCursorHandler(baseHandler):
+    cdef int _mouse_cursor
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
 cdef class KeyDownHandler(KeyDownHandler_):
     pass
 

@@ -146,6 +146,7 @@ cdef class HandlerList(baseHandler):
         handlerListOP that defines which condition
         is required to trigger the callback of this
         handler.
+        Default is ALL
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -930,6 +931,59 @@ cdef class LostRenderHandler(baseHandler):
         return
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return not(state.cur.rendered) and state.prev.rendered
+
+cdef class MouseCursorHandler(baseHandler):
+    """
+    Since the mouse cursor is reset every frame,
+    this handler is used to set the cursor automatically
+    the frames where this handler is run.
+    Typical usage would be in a ConditionalHandler,
+    combined with a HoverHandler.
+    """
+    def __cinit__(self):
+        self._mouse_cursor = mouse_cursor.CursorArrow
+
+    @property
+    def cursor(self):
+        """
+        Change the mouse cursor to one of mouse_cursor,
+        but only for the frames where this handler
+        is run.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return <mouse_cursor>self._mouse_cursor
+
+    @cursor.setter
+    def cursor(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < imgui.ImGuiMouseCursor_None or \
+           value >= imgui.ImGuiMouseCursor_COUNT:
+            raise ValueError("Invalid cursor type {value}")
+        self._mouse_cursor = value
+
+    cdef void check_bind(self, baseItem item, itemState &state):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
+        if self.last_handler_child is not None:
+            (<baseHandler>self.last_handler_child).check_bind(item, state)
+
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        return True
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
+        if not(self._enabled):
+            return
+        imgui_SetMouseCursor(self._mouse_cursor)
+        if self._callback is not None:
+            if self.check_state(item, state):
+                self.run_callback(item)
 
 cdef class KeyDownHandler(KeyDownHandler_):
     @property
