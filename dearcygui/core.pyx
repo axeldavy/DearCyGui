@@ -243,6 +243,7 @@ cdef class Context:
         if o.can_have_drawing_child or \
            o.can_have_handler_child or \
            o.can_have_menubar_child or \
+           o.can_have_plot_element_child or \
            o.can_have_payload_child or \
            o.can_have_tab_child or \
            o.can_have_theme_child or \
@@ -934,6 +935,16 @@ cdef class baseItem:
 
     def __enter__(self):
         # Mutexes not needed
+        if not(self.can_have_drawing_child or \
+           self.can_have_handler_child or \
+           self.can_have_menubar_child or \
+           self.can_have_plot_element_child or \
+           self.can_have_payload_child or \
+           self.can_have_tab_child or \
+           self.can_have_theme_child or \
+           self.can_have_widget_child or \
+           self.can_have_window_child):
+            print("Warning: {self} cannot have children but is pushed as container")
         self.context.push_next_parent(self)
         return self
 

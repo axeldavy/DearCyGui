@@ -318,20 +318,11 @@ class ItemInspecter(dcg.Window):
                 dcg.KeyDownHandler(C, key=dcg.constants.mvKey_LAlt) # TODO: modifiers
             # If a compatible item is hovered and the ALT key is set,
             # change the cursor to show we can drag
-            with dcg.HandlerList(C,
-                                 op=dcg.handlerListOP.ALL,
-                                 callback=self.setup_dragging_mouse_cursor):
+            with dcg.ConditionalHandler(C):
+                dcg.MouseCursorHandler(C, cursor=dcg.mouse_cursor.Hand)
                 dcg.HoverHandler(C)
                 dcg.KeyDownHandler(C, key=dcg.constants.mvKey_LAlt)
 
-        # If the alt key is unpressed, restore the cursor in case
-        # it wasn't done already
-        self.global_handler = dcg.HandlerList(C)
-        with self.global_handler:
-            dcg.KeyReleaseHandler(C,
-                                  key=dcg.constants.mvKey_LAlt,
-                                  callback=self.restore_mouse_cursor)
-        C.viewport.handlers += [self.global_handler]
         self.dragging_item = None
         self.dragging_item_original_pos = None
 
@@ -358,14 +349,6 @@ class ItemInspecter(dcg.Window):
                 pass
         self.inspected_items = []
 
-    def setup_dragging_mouse_cursor(self):
-        return
-        #self.context.set_cursor(self, dcg.cursors.ARROWS_NWSE)
-
-    def restore_mouse_cursor(self):
-        return
-        #self.context.set_cursor(self, dcg.cursors.NORMAL)
-
     def handle_item_dragging(self, handler, item, drag_deltas):
         # Just to be safe. Might not be needed
         if item is not self.dragging_item and self.dragging_item is not None:
@@ -373,7 +356,6 @@ class ItemInspecter(dcg.Window):
         if self.dragging_item is None:
             self.dragging_item = item
             self.dragging_item_original_pos = item.pos_to_parent
-            self.setup_dragging_mouse_cursor()
         item.pos_to_parent = [
             self.dragging_item_original_pos[0] + drag_deltas[0],
             self.dragging_item_original_pos[1] + drag_deltas[1]
@@ -381,7 +363,6 @@ class ItemInspecter(dcg.Window):
 
     def handle_item_dragged(self, handler, item):
         self.dragging_item = None
-        self.restore_mouse_cursor()
 
     def handle_item_hovered(self, handler, item):
         item_states = dir(item)
@@ -452,10 +433,15 @@ class DragPoint(dcg.DrawingList):
         # Note: Since this is done before configure,
         # we are not in the parent tree yet
         # and do not need the mutex
+        set_cursor_on_hover = dcg.ConditionalHandler(self.context)
+        with set_cursor_on_hover:
+            dcg.MouseCursorHandler(self.context, cursor=dcg.mouse_cursor.ResizeAll)
+            dcg.HoverHandler(self.context)
         self.invisible.handlers += [
             dcg.HoverHandler(self.context, callback=self.handler_hover),
             dcg.DraggingHandler(self.context, callback=self.handler_dragging),
             dcg.DraggedHandler(self.context, callback=self.handler_dragged),
+            set_cursor_on_hover
         ]
 
     @property
@@ -604,7 +590,6 @@ class DragPoint(dcg.DrawingList):
         # During the dragging we might not hover anymore the button
         # Note: we must not lock our mutex before we access viewport
         # attributes
-        self.context.viewport.cursor = dcg.mouse_cursor.Hand
         with self.mutex:
             # backup coordinates before dragging
             if not(self.was_dragging):
@@ -630,7 +615,6 @@ class DragPoint(dcg.DrawingList):
             _on_dragged(self, self, (self.x, self.y))
 
     def handler_hover(self):
-        self.context.viewport.cursor = dcg.mouse_cursor.Hand
         with self.mutex:
             _on_hover = self._on_hover
         if _on_hover is not None:

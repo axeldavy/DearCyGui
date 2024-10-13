@@ -198,6 +198,8 @@ cdef class ConditionalHandler(baseHandler):
     Note that handlers that get their condition checked do
     not call their callbacks.
     """
+    def __cinit__(self):
+        self.can_have_handler_child = True
 
     cdef void check_bind(self, baseItem item, itemState &state):
         cdef unique_lock[recursive_mutex] m
@@ -217,7 +219,7 @@ cdef class ConditionalHandler(baseHandler):
         cdef bint child_state
         while child is not <PyObject*>None:
             child_state = (<baseHandler>child).check_state(item, state)
-            child = <PyObject*>((<baseHandler>child).last_handler_child)
+            child = <PyObject*>((<baseHandler>child)._prev_sibling)
             if not((<baseHandler>child)._enabled):
                 continue
             current_state = current_state and child_state
@@ -238,9 +240,9 @@ cdef class ConditionalHandler(baseHandler):
         cdef PyObject* child = <PyObject*>self.last_handler_child
         cdef bint child_state
         # Note: we already have tested there is at least one child
-        while ((<baseHandler>child).last_handler_child) is not None:
+        while ((<baseHandler>child)._prev_sibling) is not None:
             child_state = (<baseHandler>child).check_state(item, state)
-            child = <PyObject*>((<baseHandler>child).last_handler_child)
+            child = <PyObject*>((<baseHandler>child)._prev_sibling)
             if not((<baseHandler>child)._enabled):
                 continue
             condition_held = condition_held and child_state
