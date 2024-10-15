@@ -65,6 +65,7 @@ def setup_package():
                     "thirdparty/implot",
                     "thirdparty/gl3w"]
     include_dirs += [np.get_include()]
+    include_dirs += ["/usr/include/freetype2/"] # TODO
 
     cpp_sources = [
         "dearcygui/backends/glfw_gl3_backend.cpp",
@@ -81,6 +82,7 @@ def setup_package():
         "thirdparty/imgui/imgui_tables.cpp",
         "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
         "thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
+        "thirdparty/imgui/misc/freetype/imgui_freetype.cpp",
         "thirdparty/gl3w/GL/gl3w.c"
     ]
 
@@ -93,11 +95,11 @@ def setup_package():
                     "-DIMGUI_IMPL_OPENGL_LOADER_GL3W",
                     "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",
                     "-DMV_SANDBOX_VERSION=\"master\""]
-    linking_args = []
-    libraries = []
+    linking_args = ['-O0']
+    libraries = ['freetype']
 
     if get_platform() == "Linux":
-        compile_args += ["-DNDEBUG", "-fwrapv", "-O2", "-DUNIX", "-DLINUX",\
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O0", "-DUNIX", "-DLINUX",\
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
         libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
     elif get_platform() == "OS X":
@@ -174,10 +176,10 @@ def setup_package():
                 'Topic :: Software Development :: Libraries :: Python Modules',
             ],
         packages=['dearcygui'],
-        ext_modules = cythonize(extensions, language_level=3)
+        ext_modules = cythonize(extensions, compiler_directives={'language_level' : "3"}, nthreads=4)
     )
     metadata["package_data"] = {}
-    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi']
+    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi', '*ttf']
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')

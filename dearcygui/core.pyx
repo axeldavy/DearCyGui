@@ -11,7 +11,7 @@
 #cython: infer_types=False
 #cython: initializedcheck=False
 #cython: c_line_in_traceback=False
-#distutils: language = c++
+#distutils: language=c++
 
 from libcpp cimport bool
 import traceback
@@ -61,6 +61,26 @@ cdef inline void append_obj_vector(vector[PyObject *] &items, item_list):
     for item in item_list:
         Py_INCREF(item)
         items.push_back(<PyObject*>item)
+
+cdef void lock_gil_friendly_block(unique_lock[recursive_mutex] &m) noexcept:
+    """
+    Same as lock_gil_friendly, but blocks until the job is done.
+    We inline the fast path, but not this one as it generates
+    more code.
+    """
+    # Release the gil to enable python processes eventually
+    # holding the lock to run and release it.
+    # Block until we get the lock
+    cdef bint locked = False
+    while not(locked):
+        with nogil:
+            # Block until the mutex is released
+            m.lock()
+            # Unlock to prevent deadlock if another
+            # thread holding the gil requires m
+            # somehow
+            m.unlock()
+        locked = m.try_lock()
 
 
 cdef void internal_resize_callback(void *object, int a, int b) noexcept nogil:
@@ -649,8 +669,6 @@ cdef class baseItem:
         self.element_child_category = -1
 
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         # Legacy DPG support: automatic attachement
         should_attach = kwargs.pop("attach", None)
         cdef bint ignore_if_fail = False
@@ -928,6 +946,11 @@ cdef class baseItem:
         for child in value:
             if not(isinstance(child, baseItem)):
                 raise TypeError(f"{child} is not a compatible item instance")
+            # Note: it is fine here to hold the mutex to item_m
+            # and call attach_parent, as item_m is the target
+            # parent.
+            # It is also fine to retain the lock to child_m
+            # as it has no parent
             lock_gil_friendly(child_m, (<baseItem>child).mutex)
             if (<baseItem>child)._parent is not None:
                 raise ValueError(f"{child} already has a parent")
@@ -1204,6 +1227,7 @@ cdef class baseItem:
         # We are going to change the tree structure, we must lock
         # the parent mutex first and foremost
         cdef unique_lock[recursive_mutex] parent_m
+        cdef unique_lock[recursive_mutex] sibling_m
         self.lock_parent_and_item_mutex(parent_m, m)
         # Use unique lock for the mutexes to
         # simplify handling (parent will change)
@@ -1213,15 +1237,13 @@ cdef class baseItem:
 
         # Remove this item from the list of siblings
         if self._prev_sibling is not None:
-            with nogil:
-                self._prev_sibling.mutex.lock()
+            lock_gil_friendly(sibling_m, self._prev_sibling.mutex)
             self._prev_sibling._next_sibling = self._next_sibling
-            self._prev_sibling.mutex.unlock()
+            sibling_m.unlock()
         if self._next_sibling is not None:
-            with nogil:
-                self._next_sibling.mutex.lock()
+            lock_gil_friendly(sibling_m, self._next_sibling.mutex)
             self._next_sibling._prev_sibling = self._prev_sibling
-            self._next_sibling.mutex.unlock()
+            sibling_m.unlock()
         else:
             # No next sibling. We might be referenced in the
             # parent
@@ -1271,6 +1293,7 @@ cdef class baseItem:
         will be freed immediately.
         """
         cdef unique_lock[recursive_mutex] m0
+        cdef unique_lock[recursive_mutex] sibling_m
         # In the case of manipulating the theme tree,
         # block all rendering. This is because with the
         # push/pop system, removing/adding items during
@@ -1288,15 +1311,13 @@ cdef class baseItem:
 
         # Remove this item from the list of elements
         if self._prev_sibling is not None:
-            with nogil:
-                self._prev_sibling.mutex.lock()
+            lock_gil_friendly(sibling_m, self._prev_sibling.mutex)
             self._prev_sibling._next_sibling = self._next_sibling
-            self._prev_sibling.mutex.unlock()
+            sibling_m.unlock()
         if self._next_sibling is not None:
-            with nogil:
-                self._next_sibling.mutex.lock()
+            lock_gil_friendly(sibling_m, self._next_sibling.mutex)
             self._next_sibling._prev_sibling = self._prev_sibling
-            self._next_sibling.mutex.unlock()
+            sibling_m.unlock()
         else:
             # No next sibling. We might be referenced in the
             # parent
@@ -1421,8 +1442,15 @@ cdef class baseItem:
         if not(locked) and not(wait):
             return False
         if not(locked) and wait:
-            with nogil:
-                self.mutex.lock()
+            while not(locked):
+                with nogil:
+                    # Wait the one holding the lock is done
+                    # with it
+                    self.mutex.lock()
+                    # Unlock because we do not want to
+                    # deadlock when acquiring the gil
+                    self.mutex.unlock()
+                locked = self.mutex.try_lock()
         self.external_lock += 1
         return True
 
@@ -1591,6 +1619,13 @@ cdef class Viewport(baseItem):
                                          internal_resize_callback,
                                          internal_close_callback,
                                          <void*>self)
+        if self.viewport == NULL:
+            raise RuntimeError("Failed to create the viewport")
+        cdef FontTexture default_font_texture = FontTexture(self.context)
+        path = os.path.join(os.path.dirname(__file__), 'ProggyClean.ttf')
+        default_font_texture.add_font_file(path)
+        default_font_texture.build()
+        self._font = default_font_texture[0]
         self.initialized = True
 
     cdef void __check_initialized(self):
@@ -1878,6 +1913,21 @@ cdef class Viewport(baseItem):
         self._cursor = value
 
     @property
+    def font(self):
+        """
+        Writable attribute: global font
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._font
+
+    @font.setter
+    def font(self, Font value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._font = value
+
+    @property
     def theme(self):
         """
         Writable attribute: global theme
@@ -2118,6 +2168,8 @@ cdef class Viewport(baseItem):
         # Initialize drawing state
         imgui.SetMouseCursor(self._cursor)
         self._cursor = imgui.ImGuiMouseCursor_Arrow
+        if self._font is not None:
+            self._font.push()
         if self._theme is not None: # maybe apply in render_frame instead ?
             self._theme.push()
         #self.cullMode = 0
@@ -2142,6 +2194,8 @@ cdef class Viewport(baseItem):
             self.last_menubar_child.draw()
         if self._theme is not None:
             self._theme.pop()
+        if self._font is not None:
+            self._font.pop()
         run_handlers(self, self._handlers, self.state)
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
@@ -2359,7 +2413,7 @@ cdef class Viewport(baseItem):
             backend_m.lock()
             mvPresent(self.viewport)
             backend_m.unlock()
-            self_m.lock()
+        lock_gil_friendly(self_m, self.mutex)
         cdef long long current_time = ctime.monotonic_ns()
         self.delta_frame = 1e-9 * <float>(current_time - self.last_t_after_swapping)
         self.last_t_after_swapping = current_time
@@ -2421,11 +2475,13 @@ cdef class Viewport(baseItem):
         cdef unique_lock[recursive_mutex] m2
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex)
+        self.viewport.activity.store(True)
         mvWakeRendering(dereference(self.viewport))
 
     cdef void cwake(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
+        self.viewport.activity.store(True)
         mvWakeRendering(dereference(self.viewport))
 
 
@@ -2927,10 +2983,13 @@ cdef class DrawImage_(drawingItem):
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(drawlist)
-        if not(self._show) or self.texture is None:
+        if not(self._show):
             return
-
-        cdef unique_lock[recursive_mutex] m4 = unique_lock[recursive_mutex](self.texture.mutex)
+        if self.texture is None:
+            return
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.texture.mutex)
+        if self.texture.allocated_texture == NULL:
+            return
 
         cdef float[2] pmin
         cdef float[2] pmax
@@ -2956,10 +3015,13 @@ cdef class DrawImageQuad_(drawingItem):
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self.draw_prev_siblings(drawlist)
-        if not(self._show) or self.texture is None:
+        if not(self._show):
             return
-
-        cdef unique_lock[recursive_mutex] m4 = unique_lock[recursive_mutex](self.texture.mutex)
+        if self.texture is None:
+            return
+        cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.texture.mutex)
+        if self.texture.allocated_texture == NULL:
+            return
 
         cdef float[2] p1
         cdef float[2] p2
@@ -8231,6 +8293,9 @@ cdef class Image(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         if self._texture is None:
             return False
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self._texture.mutex)
+        if self._texture.allocated_texture == NULL:
+            return False
         cdef imgui.ImVec2 size = self.requested_size
         if size.x == 0.:
             size.x = self._texture._width
@@ -8321,6 +8386,9 @@ cdef class ImageButton(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         if self._texture is None:
+            return False
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self._texture.mutex)
+        if self._texture.allocated_texture == NULL:
             return False
         cdef imgui.ImVec2 size = self.requested_size
         if size.x == 0.:
@@ -10486,6 +10554,7 @@ cdef class Window(uiItem):
     def primary(self, bint value):
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
+        cdef unique_lock[recursive_mutex] m3
         # If window has a parent, it is the viewport
         lock_gil_friendly(m, self.context.viewport.mutex)
         lock_gil_friendly(m2, self.mutex)
@@ -10526,12 +10595,10 @@ cdef class Window(uiItem):
         cdef Window w = self.context.viewport.last_window_child
         cdef Window next = None
         while w is not None:
-            with nogil:
-                w.mutex.lock()
+            lock_gil_friendly(m3, w.mutex)
             w.state.cur.focused = True
             w.focus_update_requested = True
             next = w._prev_sibling
-            w.mutex.unlock()
             # TODO: previous code did restore previous states on each window. Figure out why
             w = next
 
@@ -10776,16 +10843,14 @@ cdef class Texture(baseItem):
         self.filtering_mode = 0
 
     def __delalloc__(self):
+        cdef unique_lock[recursive_mutex] imgui_m
         # Note: textures might be referenced during imgui rendering.
         # Thus we must wait there is no rendering to free a texture.
         if self.allocated_texture != NULL:
-            if not(self.context.imgui_mutex.try_lock()):
-                with nogil: # rendering can take some time so avoid holding the gil
-                    self.context.imgui_mutex.lock()
-            mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
+            lock_gil_friendly(imgui_m, self.context.imgui_mutex)
+            mvMakeUploadContextCurrent(dereference(self.context.viewport.viewport))
             mvFreeTexture(self.allocated_texture)
-            mvReleaseRenderingContext(dereference(self.context.viewport.viewport))
-            self.context.imgui_mutex.unlock()
+            mvReleaseUploadContext(dereference(self.context.viewport.viewport))
 
     def configure(self, *args, **kwargs):
         if len(args) == 1:
@@ -10797,6 +10862,11 @@ cdef class Texture(baseItem):
 
     @property
     def hint_dynamic(self):
+        """
+        Hint for texture placement that
+        the texture will be updated very
+        frequently.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._hint_dynamic
@@ -10807,6 +10877,11 @@ cdef class Texture(baseItem):
         self._hint_dynamic = value
     @property
     def nearest_neighbor_upsampling(self):
+        """
+        Whether to use nearest neighbor interpolation
+        instead of bilinear interpolation when upscaling
+        the texture. Must be set before set_value.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return True if self.filtering_mode == 1 else 0
@@ -10817,23 +10892,48 @@ cdef class Texture(baseItem):
         self.filtering_mode = 1 if value else 0
     @property
     def width(self):
+        """ Width of the current texture content """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._width
     @property
     def height(self):
+        """ Height of the current texture content """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._height
     @property
     def num_chans(self):
+        """ Number of channels of the current texture content """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._num_chans
 
     def set_value(self, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
+        """
+        Pass an array as texture data.
+        The currently native formats are:
+        - data type: uint8 or float32.
+            Anything else will be converted to float32
+        - number of channels: 1 (R), 2 (RG), 3 (RGB), 4 (RGBA)
+
+        In the case of single channel textures, during rendering, R is
+        duplicated on G and B, thus the texture is displayed as gray,
+        not red.
+
+        If set_value is called on a texture which already
+        has content, the previous allocation will be reused
+        if the size, type and number of channels is identical.
+
+        The data is uploaded right away during set_value,
+        thus the call is not instantaneous.
+        The data can be discarded after set_value.
+
+        If you change the data of a texture, you don't
+        need to bind it again to the objects it is
+        bound. The objects will automatically take
+        the updated texture.
+        """
         self.set_content(np.ascontiguousarray(value))
 
     cdef void set_content(self, cnp.ndarray content):
@@ -10845,6 +10945,8 @@ cdef class Texture(baseItem):
         lock_gil_friendly(m2, self.mutex)
         if content.ndim > 3 or content.ndim == 0:
             raise ValueError("Invalid number of texture dimensions")
+        if self.readonly: # set for fonts
+            raise ValueError("Target texture is read-only")
         cdef int height = 1
         cdef int width = 1
         cdef int num_chans = 1
@@ -10863,6 +10965,7 @@ cdef class Texture(baseItem):
             content = np.ascontiguousarray(content, dtype=np.float32)
 
         cdef bint reuse = self.allocated_texture != NULL
+        cdef bint success
         reuse = reuse and (self._width != width or self._height != height or self._num_chans != num_chans)
         cdef unsigned buffer_type = 1 if content.dtype == np.uint8 else 0
         with nogil:
@@ -10875,16 +10978,16 @@ cdef class Texture(baseItem):
                     # rendering can take some time, fortunately we avoid holding the gil
                     self.context.imgui_mutex.lock()
                     m2.lock()
-                mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
+                mvMakeUploadContextCurrent(dereference(self.context.viewport.viewport))
                 mvFreeTexture(self.allocated_texture)
                 self.context.imgui_mutex.unlock()
                 self.allocated_texture = NULL
             else:
-                mvMakeRenderingContextCurrent(dereference(self.context.viewport.viewport))
+                mvMakeUploadContextCurrent(dereference(self.context.viewport.viewport))
 
             # Note we don't need the imgui mutex to create or upload textures.
             # In the case of GL, as only one thread can access GL data at a single
-            # time, MakeRenderingContextCurrent and ReleaseRenderingContext enable
+            # time, MakeUploadContextCurrent and ReleaseUploadContext enable
             # to upload/create textures from various threads. They hold a mutex.
             # That mutex is held in the relevant parts of frame rendering.
 
@@ -10896,11 +10999,181 @@ cdef class Texture(baseItem):
                 self.dynamic = self._hint_dynamic
                 self.allocated_texture = mvAllocateTexture(width, height, num_chans, self.dynamic, buffer_type, self.filtering_mode)
 
-            if self.dynamic:
-                mvUpdateDynamicTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
-            else:
-                mvUpdateStaticTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
-            mvReleaseRenderingContext(dereference(self.context.viewport.viewport))
+            success = self.allocated_texture != NULL
+            if success:
+                if self.dynamic:
+                    success = mvUpdateDynamicTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
+                else:
+                    success = mvUpdateStaticTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
+            mvReleaseUploadContext(dereference(self.context.viewport.viewport))
+            m.unlock()
+            m2.unlock() # Release before we get gil again
+        if not(success):
+            raise MemoryError("Failed to upload target texture")
+
+def get_system_fonts():
+    """
+    Returns a list of available fonts
+    """
+    fonts_filename = []
+    try:
+        from find_system_fonts_filename import get_system_fonts_filename, FindSystemFontsFilenameException
+        fonts_filename = get_system_fonts_filename()
+    except FindSystemFontsFilenameException:
+        # Deal with the exception
+        pass
+    return fonts_filename
+
+cdef class Font(baseItem):
+    def __cinit__(self, context, *args, **kwargs):
+        self.can_have_sibling = False
+        self.font = NULL
+        self.container = None
+
+    @property
+    def texture(self):
+        return self.container
+
+    @property
+    def size(self):
+        """Readonly attribute: native height of characters"""
+        if self.font == NULL:
+            raise ValueError("Uninitialized font")
+        return self.font.FontSize
+
+    @property
+    def scale(self):
+        """Writable attribute: multiplicative factor to scale the font when used"""
+        if self.font == NULL:
+            raise ValueError("Uninitialized font")
+        return self.font.Scale
+
+    @scale.setter
+    def scale(self, float value):
+        if self.font == NULL:
+            raise ValueError("Uninitialized font")
+        if value <= 0.:
+            raise ValueError(f"Invalid scale {value}")
+        self.font.Scale = value
+
+    cdef void push(self) noexcept nogil:
+        if self.font == NULL:
+            return
+        imgui.PushFont(self.font)
+
+    cdef void pop(self) noexcept nogil:
+        if self.font == NULL:
+            return
+        imgui.PopFont()
+
+cdef class FontTexture(baseItem):
+    """
+    Packs one or several fonts into
+    a texture for internal use by ImGui.
+    """
+    def __cinit__(self, context, *args, **kwargs):
+        self._built = False
+        self.can_have_sibling = False
+        self.atlas = imgui.ImFontAtlas()
+        self._texture = Texture(context)
+        self.fonts = []
+
+    def __delalloc__(self):
+        self.atlas.Clear() # Unsure if needed
+
+    def add_font_file(self,
+                      str path,
+                      float size=13.,
+                      int index_in_file=0,
+                      float density_scale=1.,
+                      bint subpixel=True):
+        """
+        Prepare the target font file to be added to the FontTexture
+        """
+        if self._built:
+            raise ValueError("Cannot add Font to built FontTexture")
+        if not(os.path.exists(path)):
+            raise ValueError(f"File {path} does not exist")
+        if size <= 0. or density_scale <= 0.:
+            raise ValueError("Invalid texture size")
+        cdef imgui.ImFontConfig config = imgui.ImFontConfig()
+        config.OversampleH = 3 if subpixel else 1
+        config.OversampleV = 3 if subpixel else 1
+        if not(subpixel):
+            config.PixelSnapH = True
+        config.SizePixels = size
+        config.RasterizerDensity = density_scale
+        config.FontNo = index_in_file
+        cdef string path_string = bytes(path, 'utf-8')
+        cdef imgui.ImFont *font = \
+            self.atlas.AddFontFromFileTTF(path_string.c_str(), size,
+		                                  &config, NULL)
+        if font == NULL:
+            raise ValueError(f"Failed to load target Font file {path}")
+        cdef Font font_object = Font(self.context)
+        font_object.container = self
+        font_object.font = font
+        self.fonts.append(font_object)
+
+    @property
+    def built(self):
+        return self._built
+
+    @property
+    def texture(self):
+        """
+        Readonly texture containing the font data.
+        build() must be called first
+        """
+        if not(self._built):
+            raise ValueError("Texture not yet built")
+        return self._texture
+
+    def __len__(self):
+        if not(self._built):
+            return 0
+        return <int>self.atlas.Fonts.size()
+
+    def __getitem__(self, index):
+        if not(self._built):
+            raise ValueError("Texture not yet built")
+        if index < 0 or index >= <int>self.atlas.Fonts.size():
+            raise IndexError("Outside range")
+        return self.fonts[index]
+
+    def build(self):
+        """
+        Packs all the fonts appended with add_font_file
+        into a readonly texture. 
+        """
+        if self._built:
+            return
+        if self.atlas.Fonts.Size == 0:
+            raise ValueError("You must add fonts first")
+        # build
+        if not(self.atlas.Build()):
+            raise RuntimeError("Failed to build target texture data")
+        # Retrieve the target buffer
+        cdef unsigned char *data = NULL
+        cdef int width, height, bpp
+        if self.atlas.TexPixelsUseColors:
+            self.atlas.GetTexDataAsRGBA32(&data, &width, &height, &bpp)
+        else:
+            self.atlas.GetTexDataAsAlpha8(&data, &width, &height, &bpp)
+
+        # Upload texture
+        cdef cython.view.array data_array = cython.view.array(shape=(height, width, bpp), itemsize=1, format='B', mode='c', allocate_buffer=False)
+        data_array.data = <char*>data
+        self._texture.filtering_mode = 2 # 111A bilinear
+        self._texture.set_value(np.asarray(data_array, dtype=np.uint8))
+        assert(self._texture.allocated_texture != NULL)
+        self._texture.readonly = True
+        self.atlas.SetTexID(self._texture.allocated_texture)
+
+        # Release temporary CPU memory
+        self.atlas.ClearInputData()
+        self._built = True
+
 
 cdef class baseTheme(baseItem):
     """

@@ -37,19 +37,19 @@ Thread safety:
   item/parent mutex. During rendering, the mutex is held.
 """
 
+cdef void lock_gil_friendly_block(unique_lock[recursive_mutex] &m) noexcept
+
 cdef inline void lock_gil_friendly(unique_lock[recursive_mutex] &m,
                                    recursive_mutex &mutex) noexcept:
     """
     Must be called to lock our mutexes whenever we hold the gil
     """
     m = unique_lock[recursive_mutex](mutex, defer_lock_t())
+    # Fast path which will be hit almost always
     if m.try_lock():
         return
-    # Release the gil to enable python processes eventually
-    # holding the lock to run and release it.
-    # Block until we get the lock
-    with nogil:
-        m.lock()
+    # Slow path
+    lock_gil_friendly_block(m)
 
 cdef class Context:
     cdef recursive_mutex mutex
@@ -266,6 +266,7 @@ cdef class Viewport(baseItem):
     cdef bint graphics_initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback
+    cdef Font _font
     cdef baseTheme _theme
     cdef itemState state # Unused. Just for compatibility with handlers
     cdef vector[PyObject*] _handlers # type baseHandler
@@ -465,6 +466,7 @@ cdef class DrawText_(drawingItem):
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
+    cdef Font _font
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawTriangle_(drawingItem):
@@ -673,6 +675,7 @@ cdef class uiItem(baseItem):
     #cdef bint tracked
     cdef Callback dragCallback
     cdef Callback dropCallback
+    cdef Font _font
     cdef vector[PyObject*] _handlers # type baseHandler
     cdef baseTheme _theme
     cdef vector[PyObject*] _callbacks # type Callback
@@ -936,7 +939,24 @@ cdef class Texture(baseItem):
     cdef int _height
     cdef int _num_chans
     cdef int filtering_mode
+    cdef bint readonly
     cdef void set_content(self, cnp.ndarray content)
+
+cdef class Font(baseItem):
+    cdef imgui.ImFont *font
+    cdef FontTexture container
+    cdef void push(self) noexcept nogil
+    cdef void pop(self) noexcept nogil
+
+cdef class FontTexture(baseItem):
+    """
+    Packs one or several fonts into
+    a texture for internal use by ImGui.
+    """
+    cdef imgui.ImFontAtlas atlas
+    cdef Texture _texture
+    cdef bint _built
+    cdef list fonts
 
 cdef enum theme_types:
     t_color,

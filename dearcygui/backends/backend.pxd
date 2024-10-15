@@ -1,3 +1,4 @@
+from libcpp.atomic cimport atomic
 from libcpp.string cimport string
 
 cdef extern from "backend.h" nogil:
@@ -11,27 +12,28 @@ cdef extern from "backend.h" nogil:
     #unsigned int ConvertToUnsignedInt(const mvColor& color)
 
     cdef struct mvViewport:
-        char running
-        char shown
-        char resized
+        bint running
+        bint shown
+        bint resized
 
         string title
         string small_icon
         string large_icon
         mvColor clearColor
 
-        char titleDirty
-        char modesDirty
-        char vsync
-        char resizable
-        char alwaysOnTop
-        char decorated
-        char fullScreen
-        char disableClose
-        char waitForEvents
+        bint titleDirty
+        bint modesDirty
+        bint vsync
+        bint resizable
+        bint alwaysOnTop
+        bint decorated
+        bint fullScreen
+        bint disableClose
+        bint waitForEvents
+        atomic[bint] activity
 
-        char sizeDirty
-        char posDirty
+        bint sizeDirty
+        bint posDirty
         unsigned width
         unsigned height
         unsigned minwidth
@@ -76,8 +78,8 @@ cdef extern from "backend.h" nogil:
     void        mvPresent(mvViewport* viewport)
     void        mvToggleFullScreen(mvViewport& viewport)
     void        mvWakeRendering(mvViewport& viewport)
-    void        mvMakeRenderingContextCurrent(mvViewport& viewport)
-    void        mvReleaseRenderingContext(mvViewport& viewport)
+    void        mvMakeUploadContextCurrent(mvViewport& viewport)
+    void        mvReleaseUploadContext(mvViewport& viewport)
 
     void* mvAllocateTexture(unsigned width,
                             unsigned height,
@@ -87,13 +89,13 @@ cdef extern from "backend.h" nogil:
                             unsigned filtering_mode)
     void mvFreeTexture(void* texture)
 
-    void mvUpdateDynamicTexture(void* texture,
+    bint mvUpdateDynamicTexture(void* texture,
                                 unsigned width,
                                 unsigned height,
                                 unsigned num_chans,
                                 unsigned type,
                                 void* data)
-    void mvUpdateStaticTexture(void* texture,
+    bint mvUpdateStaticTexture(void* texture,
                                unsigned width,
                                unsigned height,
                                unsigned num_chans,

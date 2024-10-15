@@ -1,3 +1,4 @@
+#include <atomic>
 #include <vector>
 #include <string>
 
@@ -75,12 +76,11 @@ struct mvViewport
     bool fullScreen  = false;
 	bool disableClose = false;
 	bool waitForEvents = false;
+	std::atomic<bool> activity = std::atomic<bool>(true);
 
 	// position/size
 	bool  sizeDirty    = false;
 	bool  posDirty     = false;
-	unsigned width        = 0;
-	unsigned height       = 0;
 	unsigned minwidth     = 250;
 	unsigned minheight    = 250;
 	unsigned maxwidth     = 10000;
@@ -133,11 +133,11 @@ void        mvRenderFrame(mvViewport& viewport,
 void		mvPresent(mvViewport* viewport);
 void        mvToggleFullScreen(mvViewport& viewport);
 void        mvWakeRendering(mvViewport& viewport);
-void        mvMakeRenderingContextCurrent(mvViewport& viewport);
-void        mvReleaseRenderingContext(mvViewport& viewport);
+void        mvMakeUploadContextCurrent(mvViewport& viewport);
+void        mvReleaseUploadContext(mvViewport& viewport);
 
 void* mvAllocateTexture(unsigned width, unsigned height, unsigned num_chans, unsigned dynamic, unsigned type, unsigned filtering_mode);
 void mvFreeTexture(void* texture);
 
-void mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data);
-void mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data);
+bool mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data);
+bool mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data);

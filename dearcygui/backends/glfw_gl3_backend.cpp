@@ -19,7 +19,9 @@
 struct mvViewportData
 {
     GLFWwindow* handle = nullptr;
-    std::mutex gl_context;
+    GLFWwindow* secondary_handle = nullptr;
+    std::mutex primary_gl_context;
+    std::mutex secondary_gl_context;
 };
 
 mvGraphics
@@ -28,11 +30,11 @@ setup_graphics(mvViewport& viewport)
     mvGraphics graphics{};
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     const char* glsl_version = "#version 130";
-    viewportData->gl_context.lock();
+    viewportData->primary_gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
     ImGui_ImplOpenGL3_Init(glsl_version);
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->primary_gl_context.unlock();
     return graphics;
 }
 
@@ -58,7 +60,7 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
     // Rendering
     ImGui::Render();
     int display_w, display_h;
-    viewportData->gl_context.lock();
+    viewportData->primary_gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
     glfwGetFramebufferSize(viewportData->handle, &display_w, &display_h);
 
@@ -68,17 +70,17 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->primary_gl_context.unlock();
 }
 
 void mvPresent(mvViewport* viewport)
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
-    viewportData->gl_context.lock();
+    viewportData->primary_gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
     glfwSwapBuffers(viewportData->handle);
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->primary_gl_context.unlock();
 }
 
 static void handle_window_resize(GLFWwindow *window, int width, int height)
@@ -93,6 +95,56 @@ static void handle_window_close(GLFWwindow *window)
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
     viewport->on_close(viewport->callback_data);
+}
+
+
+static void handle_mouse_button(GLFWwindow* window, int button, int action, int mods)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
+static void handle_scroll(GLFWwindow* window, double xoffset, double yoffset)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
+static void handle_key(GLFWwindow* window, int keycode, int scancode, int action, int mods)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
+static void handle_focus(GLFWwindow* window, int focused)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
+static void handle_cursor_pos(GLFWwindow* window, double x, double y)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
+static void handle_cursor_enter(GLFWwindow* window, int entered)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
+static void handle_char(GLFWwindow* window, unsigned int c)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
 }
 
 static void
@@ -142,9 +194,10 @@ mvProcessEvents(mvViewport* viewport)
     // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 
     if (viewport->waitForEvents || glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
-        glfwWaitEvents();
-    else
-        glfwPollEvents();
+        while (!viewport->activity.load())
+            glfwWaitEventsTimeout(0.001);
+        viewport->activity.store(false);
+    glfwPollEvents();
 }
 
  mvViewport*
@@ -155,14 +208,31 @@ mvCreateViewport(unsigned width,
 		         on_close_fun on_close,
 				 void *callback_data)
 {
+    // Setup window
+    glfwSetErrorCallback(glfw_error_callback);
+    if (glfwInit() != GLFW_TRUE)
+        return nullptr;
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    /* The secondary handle enables multithreading and
+     * Starting uploading textures right away*/
+    auto secondary_handle = glfwCreateWindow(640, 480, "", NULL, NULL);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    if (secondary_handle == nullptr)
+        return nullptr;
+    glfwMakeContextCurrent(secondary_handle);
+    if (gl3wInit() != GL3W_OK)
+        return nullptr;
+    glfwMakeContextCurrent(NULL);
     mvViewport* viewport = new mvViewport();
-    viewport->width = width;
-    viewport->height = height;
+    viewport->actualWidth = viewport->clientWidth = width;
+    viewport->actualHeight = viewport->clientHeight = height;
     viewport->render = render;
     viewport->on_resize = on_resize;
     viewport->on_close = on_close;
     viewport->callback_data = callback_data;
     viewport->platformSpecifics = new mvViewportData();
+    auto viewportData = (mvViewportData*)viewport->platformSpecifics;
+    viewportData->secondary_handle = secondary_handle;
     return viewport;
 }
 
@@ -172,14 +242,15 @@ mvCleanupViewport(mvViewport& viewport)
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
     // Cleanup
-    viewportData->gl_context.lock();
+    viewportData->primary_gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
     ImGui_ImplOpenGL3_Shutdown();
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->primary_gl_context.unlock();
     ImGui_ImplGlfw_Shutdown();
 
     glfwDestroyWindow(viewportData->handle);
+    glfwDestroyWindow(viewportData->secondary_handle);
     glfwTerminate();
 
     delete viewportData;
@@ -192,10 +263,6 @@ mvShowViewport(mvViewport& viewport,
                bool maximized)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-
-    // Setup window
-    glfwSetErrorCallback(glfw_error_callback);
-    glfwInit();
 
     if (!viewport.resizable)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -213,7 +280,9 @@ mvShowViewport(mvViewport& viewport,
     // const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    viewportData->handle = glfwCreateWindow(viewport.actualWidth, viewport.actualHeight, viewport.title.c_str(), nullptr, nullptr);
+    viewportData->secondary_gl_context.lock();
+    viewportData->handle = glfwCreateWindow(viewport.actualWidth, viewport.actualHeight, viewport.title.c_str(), nullptr, viewportData->secondary_handle);
+    viewportData->secondary_gl_context.unlock();
     glfwSetWindowUserPointer(viewportData->handle, &viewport);
     //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos);
     glfwSetWindowSizeLimits(viewportData->handle, (int)viewport.minwidth, (int)viewport.minheight, (int)viewport.maxwidth, (int)viewport.maxheight);
@@ -249,21 +318,27 @@ mvShowViewport(mvViewport& viewport,
     */
 
     // A single thread can use a context at a time
-    viewportData->gl_context.lock();
+    viewportData->primary_gl_context.lock();
 
     glfwMakeContextCurrent(viewportData->handle);
-    gl3wInit();
-
-    // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(viewportData->handle, true);
-        
 
     glfwSetWindowSizeCallback(viewportData->handle,
                               handle_window_resize);
     glfwSetWindowCloseCallback(viewportData->handle,
                                handle_window_close);
+    glfwSetCharCallback(viewportData->handle, handle_char);
+    glfwSetCursorEnterCallback(viewportData->handle, handle_cursor_enter);
+    glfwSetCursorPosCallback(viewportData->handle, handle_cursor_pos);
+    glfwSetWindowFocusCallback(viewportData->handle, handle_focus);
+    glfwSetKeyCallback(viewportData->handle, handle_key);
+    glfwSetMouseButtonCallback(viewportData->handle, handle_mouse_button);
+    glfwSetScrollCallback(viewportData->handle, handle_scroll);
+
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(viewportData->handle, true);
+
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->primary_gl_context.unlock();
 }
     
 void
@@ -294,21 +369,13 @@ mvRenderFrame(mvViewport& viewport,
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     (void)viewportData;
 
-    viewportData->gl_context.lock();
+    viewportData->primary_gl_context.lock();
     glfwMakeContextCurrent(viewportData->handle);
-
-    /*if (mvToolManager::GetFontManager().isInvalid())
-    {
-        mvToolManager::GetFontManager().rebuildAtlas();
-        ImGui_ImplOpenGL3_DestroyDeviceObjects();
-        mvToolManager::GetFontManager().updateAtlas();
-    }
-    */
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->primary_gl_context.unlock();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
@@ -359,26 +426,19 @@ void mvWakeRendering(mvViewport& viewport)
     glfwPostEmptyEvent();
 }
 
-void mvMakeRenderingContextCurrent(mvViewport& viewport)
+void mvMakeUploadContextCurrent(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    /* TODO 
-     * Find a way to avoid being stuck on vsync (swapBuffers needs the
-       context to be current).
-       Maybe shared context:
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        GLFWwindow* sharedWindow = glfwCreateWindow(1, 1, "", NULL, window);
-        But probably needs some extra care for GL init
-    */
-    viewportData->gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
+    viewportData->secondary_gl_context.lock();
+    glfwMakeContextCurrent(viewportData->secondary_handle);
 }
 
-void mvReleaseRenderingContext(mvViewport& viewport)
+void mvReleaseUploadContext(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
+    glFlush();
     glfwMakeContextCurrent(NULL);
-    viewportData->gl_context.unlock();
+    viewportData->secondary_gl_context.unlock();
 }
 
 static std::unordered_map<GLuint, GLuint> PBO_ids;
@@ -391,21 +451,43 @@ void* mvAllocateTexture(unsigned width, unsigned height, unsigned num_chans, uns
     (void)type_size;
 
     glGenTextures(1, &image_texture);
+    if (glGetError() != GL_NO_ERROR) {
+        return NULL;
+    }
     glBindTexture(GL_TEXTURE_2D, image_texture);
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (filtering_mode == 0) ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (filtering_mode == 1) ? GL_NEAREST : GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Required for fonts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Duplicate the first channel on g and b to display as gray
     if (num_chans == 1) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+        if (filtering_mode == 2) {
+            /* Font. Load as 111A */
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
+        } else {
+            /* rrr1 */
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+        }
     }
 
     glGenBuffers(1, &pboid);
+    if (glGetError() != GL_NO_ERROR) {
+        glDeleteTextures(1, &image_texture);
+        return NULL;
+    }
     PBO_ids[image_texture] = pboid;
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboid);
+    if (glGetError() != GL_NO_ERROR) {
+        mvFreeTexture((void*)(size_t)(GLuint)image_texture);
+        return NULL;
+    }
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     return (void*)(size_t)(GLuint)image_texture;
 }
@@ -424,12 +506,13 @@ void mvFreeTexture(void* texture)
     glDeleteTextures(1, &out_srv);
 }
 
-void mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data)
+bool mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data)
 {
     auto textureId = (GLuint)(size_t)texture;
     unsigned gl_format = GL_RGBA;
     unsigned gl_type = GL_FLOAT;
     unsigned type_size = 4;
+    GLubyte* ptr;
 
     switch (num_chans)
     {
@@ -455,30 +538,47 @@ void mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsi
 
     // bind PBO to update pixel values
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO_ids[textureId]);
+    if (glGetError() != GL_NO_ERROR)
+        goto error;
 
     // allocate a new buffer
     glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * num_chans * type_size, 0, GL_STREAM_DRAW);
+    if (glGetError() != GL_NO_ERROR)
+        goto error;
 
     // tequest access to the buffer
-    GLubyte* ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
     if (ptr)
     {
         // update data directly on the mapped buffer
         memcpy(ptr, data, width * height * num_chans * type_size);
 
         glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
-    }
+    } else
+        goto error;
 
     // bind the texture
     glBindTexture(GL_TEXTURE_2D, textureId);
+    if (glGetError() != GL_NO_ERROR)
+        goto error;
 
     // copy pixels from PBO to texture object
     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format, gl_type, NULL);
+    if (glGetError() != GL_NO_ERROR)
+        goto error;
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    if (glGetError() != GL_NO_ERROR)
+        goto error;
+
+    return true;
+error:
+    // We don't free the texture as it might be used
+    // for rendering in another thread, but maybe we should ?
+    return false;
 }
 
-void mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data)
+bool mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data)
 {
-    mvUpdateDynamicTexture(texture, width, height, num_chans, type, data);
+    return mvUpdateDynamicTexture(texture, width, height, num_chans, type, data);
 }
