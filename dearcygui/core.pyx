@@ -1575,9 +1575,6 @@ cdef class Viewport(baseItem):
     """
     def __cinit__(self, context):
         self.resize_callback = None
-        self.initialized = False
-        self.viewport = NULL
-        self.graphics_initialized = False
         self.can_have_window_child = True
         self.can_have_menubar_child = True
         self.can_have_sibling = False
@@ -1587,6 +1584,12 @@ cdef class Viewport(baseItem):
         self.last_t_after_swapping = self.last_t_before_event_handling
         self.frame_count = 0
         self._cursor = imgui.ImGuiMouseCursor_Arrow
+        self.viewport = mvCreateViewport(internal_render_callback,
+                                         internal_resize_callback,
+                                         internal_close_callback,
+                                         <void*>self)
+        if self.viewport == NULL:
+            raise RuntimeError("Failed to create the viewport")
 
     def __dealloc__(self):
         # NOTE: Called BEFORE the context is released.
@@ -1595,7 +1598,7 @@ cdef class Viewport(baseItem):
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex_backend) # To not release while we render a frame
         ensure_correct_im_context(self.context)
-        if self.graphics_initialized:
+        if self.initialized:
             cleanup_graphics(self.graphics)
         if self.viewport != NULL:
             mvCleanupViewport(dereference(self.viewport))
@@ -1603,40 +1606,68 @@ cdef class Viewport(baseItem):
             self.viewport = NULL
         clear_obj_vector(self._handlers)
 
-    cdef initialize(self, unsigned width, unsigned height):
+    def initialize(self, minimized=False, maximized=False, **kwargs):
+        """
+        Initialize the viewport for rendering and show it.
+        Items can already be created and attached to the viewport
+        before this call.
+        Creates the default font and attaches it to the viewport
+        if None is set already. This font is scaled by
+        the current value of viewport.dpi.
+        In addition all the default style spaces are scaled by
+        the current viewport.dpi.
+        The viewport.dpi content is not read after that, and
+        so changes will have no effect.
+        """
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
         cdef unique_lock[recursive_mutex] m3
+        self.configure(**kwargs)
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex)
         lock_gil_friendly(m3, self.mutex_backend)
         ensure_correct_im_context(self.context)
         if self.initialized:
             raise RuntimeError("Viewport already initialized")
-        self.viewport = mvCreateViewport(width,
-                                         height,
-                                         internal_render_callback,
-                                         internal_resize_callback,
-                                         internal_close_callback,
-                                         <void*>self)
-        if self.viewport == NULL:
-            raise RuntimeError("Failed to create the viewport")
-        cdef FontTexture default_font_texture = FontTexture(self.context)
-        path = os.path.join(os.path.dirname(__file__), 'ProggyClean.ttf')
-        default_font_texture.add_font_file(path)
-        default_font_texture.build()
-        self._font = default_font_texture[0]
+        ensure_correct_im_context(self.context)
+        mvShowViewport(dereference(self.viewport),
+                       minimized,
+                       maximized)
+        self.graphics = setup_graphics(dereference(self.viewport))
+        imgui.StyleColorsDark()
+        imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
+        imgui.GetStyle().ScaleAllSizes(self.viewport.dpi)
+        cdef FontTexture default_font_texture
+        if self._font is None:
+            default_font_texture = FontTexture(self.context)
+            path = os.path.join(os.path.dirname(__file__), 'ProggyClean.ttf')
+            default_font_texture.add_font_file(path, size=int(round(13 * self.viewport.dpi)), density_scale=2.)
+            default_font_texture.build()
+            self._font = default_font_texture[0]
         self.initialized = True
+        """
+            # TODO if (GContext->IO.autoSaveIniFile). if (!GContext->IO.iniFile.empty())
+			# io.IniFilename = GContext->IO.iniFile.c_str();
+
+            # TODO if(GContext->IO.kbdNavigation)
+		    # io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+            #if(GContext->IO.docking)
+            # io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+            # io.ConfigDockingWithShift = GContext->IO.dockingShiftOnly;
+        """
 
     cdef void __check_initialized(self):
         if not(self.initialized):
             raise RuntimeError("The viewport must be initialized before being used")
 
+    cdef void __check_not_initialized(self):
+        if self.initialized:
+            raise RuntimeError("The viewport must be not be initialized to set this field")
+
     @property
     def clear_color(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return (self.viewport.clearColor.r,
                 self.viewport.clearColor.g,
                 self.viewport.clearColor.b,
@@ -1647,7 +1678,6 @@ cdef class Viewport(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef int r, g, b, a
-        self.__check_initialized()
         (r, g, b, a) = value
         self.viewport.clearColor = colorFromInts(r, g, b, a)
 
@@ -1655,42 +1685,37 @@ cdef class Viewport(baseItem):
     def small_icon(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return str(self.viewport.small_icon)
 
     @small_icon.setter
     def small_icon(self, str value):
         cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
+        self.__check_not_initialized()
         self.viewport.small_icon = value.encode("utf-8")
 
     @property
     def large_icon(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return str(self.viewport.large_icon)
 
     @large_icon.setter
     def large_icon(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
+        self.__check_not_initialized()
         self.viewport.large_icon = value.encode("utf-8")
 
     @property
     def x_pos(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.xpos
 
     @x_pos.setter
     def x_pos(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.xpos = value
         self.viewport.posDirty = 1
 
@@ -1698,14 +1723,12 @@ cdef class Viewport(baseItem):
     def y_pos(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.ypos
 
     @y_pos.setter
     def y_pos(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.ypos = value
         self.viewport.posDirty = 1
 
@@ -1713,14 +1736,12 @@ cdef class Viewport(baseItem):
     def width(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.actualWidth
 
     @width.setter
     def width(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.actualWidth = value
         self.viewport.sizeDirty = 1
 
@@ -1728,14 +1749,12 @@ cdef class Viewport(baseItem):
     def height(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.actualHeight
 
     @height.setter
     def height(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.actualHeight = value
         self.viewport.sizeDirty = 1
 
@@ -1743,14 +1762,12 @@ cdef class Viewport(baseItem):
     def resizable(self) -> bint:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.resizable
 
     @resizable.setter
     def resizable(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.resizable = value
         self.viewport.modesDirty = 1
 
@@ -1758,84 +1775,97 @@ cdef class Viewport(baseItem):
     def vsync(self) -> bint:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.vsync
 
     @vsync.setter
     def vsync(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.vsync = value
+
+    @property
+    def dpi(self) -> float:
+        """
+        DPI scaling of the main monitor, which
+        will be used to scale all UI elements and fonts.
+        Write to override the value.
+        A value of 1. will disable scaling.
+        Setting the dpi only has an impact if done
+        after initialize()
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.viewport.dpi
+
+    @dpi.setter
+    def dpi(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.__check_not_initialized()
+        self.viewport.dpi = value
 
     @property
     def min_width(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.minwidth
 
     @min_width.setter
     def min_width(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.minwidth = value
+        self.viewport.sizeDirty = True
 
     @property
     def max_width(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.maxwidth
 
     @max_width.setter
     def max_width(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.maxwidth = value
+        self.viewport.sizeDirty = True
 
     @property
     def min_height(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.minheight
 
     @min_height.setter
     def min_height(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.minheight = value
+        self.viewport.sizeDirty = True
 
     @property
     def max_height(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.maxheight
 
     @max_height.setter
     def max_height(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.maxheight = value
+        self.viewport.sizeDirty = True
 
     @property
     def always_on_top(self) -> bint:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.alwaysOnTop
 
     @always_on_top.setter
     def always_on_top(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.alwaysOnTop = value
         self.viewport.modesDirty = 1
 
@@ -1843,14 +1873,12 @@ cdef class Viewport(baseItem):
     def decorated(self) -> bint:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.decorated
 
     @decorated.setter
     def decorated(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.decorated = value
         self.viewport.modesDirty = 1
 
@@ -1946,14 +1974,12 @@ cdef class Viewport(baseItem):
     def title(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return str(self.viewport.title)
 
     @title.setter
     def title(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.title = value.encode("utf-8")
         self.viewport.titleDirty = 1
 
@@ -1961,14 +1987,12 @@ cdef class Viewport(baseItem):
     def disable_close(self) -> bint:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         return self.viewport.disableClose
 
     @disable_close.setter
     def disable_close(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.disableClose = value
         self.viewport.modesDirty = 1
 
@@ -1990,8 +2014,8 @@ cdef class Viewport(baseItem):
         if value and not(self.viewport.fullScreen):
             mvToggleFullScreen(dereference(self.viewport))
         elif not(value) and (self.viewport.fullScreen):
-            print("TODO: fullscreen(false)")
-
+            # Same call
+            mvToggleFullScreen(dereference(self.viewport))
     @property
     def minimized(self):
         cdef unique_lock[recursive_mutex] m
@@ -2058,8 +2082,7 @@ cdef class Viewport(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
-        return self.viewport.shown
+        return self.initialized
 
     @property
     def resize_callback(self):
@@ -2140,7 +2163,6 @@ cdef class Viewport(baseItem):
     cdef void __on_resize(self, int width, int height):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         self.viewport.actualHeight = height
         self.viewport.clientHeight = height
         self.viewport.actualWidth = width
@@ -2157,7 +2179,6 @@ cdef class Viewport(baseItem):
     cdef void __on_close(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_initialized()
         if not(<bint>self.viewport.disableClose):
             self.context.started = False
         self.context.queue_callback_noarg(self._close_callback, self, self)
@@ -2387,7 +2408,6 @@ cdef class Viewport(baseItem):
         cdef unique_lock[recursive_mutex] backend_m = unique_lock[recursive_mutex](self.mutex_backend, defer_lock_t())
         lock_gil_friendly(self_m, self.mutex)
         self.__check_initialized()
-        assert(self.graphics_initialized)
         self.last_t_before_event_handling = ctime.monotonic_ns()
         with nogil:
             backend_m.lock()
@@ -2403,6 +2423,8 @@ cdef class Viewport(baseItem):
             backend_m.lock()
             #self.last_t_before_rendering = ctime.monotonic_ns()
             ensure_correct_im_context(self.context)
+            #imgui.GetMainViewport().DpiScale = self.viewport.dpi
+            #imgui.GetIO().FontGlobalScale = self.viewport.dpi
             mvRenderFrame(dereference(self.viewport),
 			    		  self.graphics)
             #self.last_t_after_rendering = ctime.monotonic_ns()
@@ -2433,35 +2455,6 @@ cdef class Viewport(baseItem):
         assert(self.pending_theme_actions.empty())
         assert(self.applied_theme_actions.empty())
         assert(self.start_pending_theme_actions == 0)
-
-    def show(self, minimized=False, maximized=False):
-        cdef unique_lock[recursive_mutex] m
-        cdef unique_lock[recursive_mutex] m2
-        lock_gil_friendly(m, self.context.imgui_mutex)
-        lock_gil_friendly(m2, self.mutex)
-        cdef imgui.ImGuiStyle* style
-        cdef mvColor* colors
-        self.__check_initialized()
-        ensure_correct_im_context(self.context)
-        mvShowViewport(dereference(self.viewport),
-                       minimized,
-                       maximized)
-        if not(self.graphics_initialized):
-            self.graphics = setup_graphics(dereference(self.viewport))
-            imgui.StyleColorsDark()
-            """
-            imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
-            # TODO if (GContext->IO.autoSaveIniFile). if (!GContext->IO.iniFile.empty())
-			# io.IniFilename = GContext->IO.iniFile.c_str();
-
-            # TODO if(GContext->IO.kbdNavigation)
-		    # io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-            #if(GContext->IO.docking)
-            # io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-            # io.ConfigDockingWithShift = GContext->IO.dockingShiftOnly;
-            """
-            self.graphics_initialized = True
-        self.viewport.shown = 1
 
     def wake(self):
         """

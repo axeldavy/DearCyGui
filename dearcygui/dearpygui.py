@@ -6182,7 +6182,7 @@ def create_viewport(*, title: str ='Dear PyGui', small_icon: str ='', large_icon
     Returns:
         None
     """
-    DCG_CONTEXT.initialize_viewport(title=title, small_icon=small_icon, large_icon=large_icon, width=width, height=height, x_pos=x_pos, y_pos=y_pos, min_width=min_width, max_width=max_width, min_height=min_height, max_height=max_height, resizable=resizable, vsync=vsync, always_on_top=always_on_top, decorated=decorated, clear_color=clear_color, disable_close=disable_close, **kwargs)
+    DCG_CONTEXT.viewport.configure(title=title, small_icon=small_icon, large_icon=large_icon, width=width, height=height, x_pos=x_pos, y_pos=y_pos, min_width=min_width, max_width=max_width, min_height=min_height, max_height=max_height, resizable=resizable, vsync=vsync, always_on_top=always_on_top, decorated=decorated, clear_color=clear_color, disable_close=disable_close, **kwargs)
 
 def delete_item(item : Union[int, str], *, children_only: bool =False, slot: int =-1, **kwargs) -> None:
     """     Deletes an item..
@@ -8011,7 +8011,7 @@ def show_viewport(*, minimized: bool =False, maximized: bool =False, **kwargs) -
 
         kwargs.pop('viewport', None)
 
-    DCG_CONTEXT.viewport.show(minimized=minimized, maximized=maximized)
+    DCG_CONTEXT.viewport.initialize(minimized=minimized, maximized=maximized)
 
 def split_frame(*, delay: int =32, **kwargs) -> None:
     """     Waits one frame.

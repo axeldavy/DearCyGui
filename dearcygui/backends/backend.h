@@ -85,12 +85,13 @@ struct mvViewport
 	unsigned minheight    = 250;
 	unsigned maxwidth     = 10000;
 	unsigned maxheight    = 10000;
-	int actualWidth  = 1280;
+	int actualWidth  = 1280; // frame buffer size
 	int actualHeight = 800;
-	int clientWidth  = 1280;
+	int clientWidth  = 1280; // windows size
 	int clientHeight = 800;
 	int xpos         = 100;
 	int ypos         = 100;
+	float dpi        = 1.;
 
 	render_fun render;
 	on_resize_fun on_resize;
@@ -114,9 +115,7 @@ typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);
 
-mvViewport* mvCreateViewport  (unsigned width,
-							   unsigned height,
-							   render_fun render,
+mvViewport* mvCreateViewport  (render_fun render,
 							   on_resize_fun on_resize,
 							   on_close_fun on_close,
 							   void *callback_data);

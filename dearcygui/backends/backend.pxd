@@ -46,6 +46,7 @@ cdef extern from "backend.h" nogil:
         int clientHeight
         int xpos
         int ypos
+        float dpi
     ctypedef void (*on_resize_fun)(void*, int, int)
     ctypedef void (*on_close_fun)(void*)
     ctypedef void (*render_fun)(void*)
@@ -59,9 +60,7 @@ cdef extern from "backend.h" nogil:
     void cleanup_graphics(mvGraphics&)
     void present(mvGraphics&, mvColor&, bint)
 
-    mvViewport* mvCreateViewport  (unsigned width,
-                                   unsigned height,
-                                   render_fun,
+    mvViewport* mvCreateViewport  (render_fun,
                                    on_resize_fun,
                                    on_close_fun,
                                    void *)

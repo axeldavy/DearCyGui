@@ -83,6 +83,13 @@ void mvPresent(mvViewport* viewport)
     viewportData->primary_gl_context.unlock();
 }
 
+static void handle_refresh_request(GLFWwindow* window)
+{
+    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
+
+    viewport->activity.store(true);
+}
+
 static void handle_window_resize(GLFWwindow *window, int width, int height)
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
@@ -196,14 +203,12 @@ mvProcessEvents(mvViewport* viewport)
     if (viewport->waitForEvents || glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
         while (!viewport->activity.load())
             glfwWaitEventsTimeout(0.001);
-        viewport->activity.store(false);
+    viewport->activity.store(false);
     glfwPollEvents();
 }
 
  mvViewport*
-mvCreateViewport(unsigned width,
-                 unsigned height,
-                 render_fun render,
+mvCreateViewport(render_fun render,
 				 on_resize_fun on_resize,
 		         on_close_fun on_close,
 				 void *callback_data)
@@ -224,8 +229,6 @@ mvCreateViewport(unsigned width,
         return nullptr;
     glfwMakeContextCurrent(NULL);
     mvViewport* viewport = new mvViewport();
-    viewport->actualWidth = viewport->clientWidth = width;
-    viewport->actualHeight = viewport->clientHeight = height;
     viewport->render = render;
     viewport->on_resize = on_resize;
     viewport->on_close = on_close;
@@ -233,6 +236,10 @@ mvCreateViewport(unsigned width,
     viewport->platformSpecifics = new mvViewportData();
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
     viewportData->secondary_handle = secondary_handle;
+    float xscale, yscale;
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+    viewport->dpi = xscale;
     return viewport;
 }
 
@@ -274,6 +281,8 @@ mvShowViewport(mvViewport& viewport,
         glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
     if (!viewport.decorated)
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    // Automated DPI management doesn't look good
+    glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GL_FALSE);
 
     // Create window with graphics context
     // GL 3.0 + GLSL 130
@@ -287,6 +296,7 @@ mvShowViewport(mvViewport& viewport,
     //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos);
     glfwSetWindowSizeLimits(viewportData->handle, (int)viewport.minwidth, (int)viewport.minheight, (int)viewport.maxwidth, (int)viewport.maxheight);
 
+    // This is only True because we set GLFW_SCALE_FRAMEBUFFER to False
     viewport.clientHeight = viewport.actualHeight;
     viewport.clientWidth = viewport.actualWidth;
 
@@ -322,10 +332,13 @@ mvShowViewport(mvViewport& viewport,
 
     glfwMakeContextCurrent(viewportData->handle);
 
+    // Bind them before imgui does his, as it chains them.
     glfwSetWindowSizeCallback(viewportData->handle,
                               handle_window_resize);
     glfwSetWindowCloseCallback(viewportData->handle,
                                handle_window_close);
+    glfwSetWindowRefreshCallback(viewportData->handle,
+                               handle_refresh_request);
     glfwSetCharCallback(viewportData->handle, handle_char);
     glfwSetCursorEnterCallback(viewportData->handle, handle_cursor_enter);
     glfwSetCursorPosCallback(viewportData->handle, handle_cursor_pos);
@@ -423,6 +436,7 @@ mvToggleFullScreen(mvViewport& viewport)
 
 void mvWakeRendering(mvViewport& viewport)
 {
+    viewport.activity.store(true);
     glfwPostEmptyEvent();
 }
 

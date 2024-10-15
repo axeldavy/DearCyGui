@@ -261,9 +261,8 @@ cpdef enum mouse_cursor:
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
     cdef mvViewport *viewport
-    cdef bint initialized
     cdef mvGraphics graphics
-    cdef bint graphics_initialized
+    cdef bint initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback
     cdef Font _font
@@ -301,8 +300,8 @@ cdef class Viewport(baseItem):
     cdef theme_enablers current_theme_activation_condition_enabled
     cdef theme_categories current_theme_activation_condition_category
 
-    cdef initialize(self, unsigned width, unsigned height)
     cdef void __check_initialized(self)
+    cdef void __check_not_initialized(self)
     cdef void __on_resize(self, int width, int height)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
