@@ -11217,6 +11217,32 @@ cdef class baseTheme(baseItem):
 Plots
 """
 
+cdef extern from * nogil:
+    """
+    ImPlotAxisFlags GetAxisConfig(int axis)
+    {
+        return ImPlot::GetCurrentContext()->CurrentPlot->Axes[axis].Flags;
+    }
+    ImPlotLocation GetLegendConfig(ImPlotLegendFlags &flags)
+    {
+        flags = ImPlot::GetCurrentContext()->CurrentPlot->Items.Legend.Flags;
+        return ImPlot::GetCurrentContext()->CurrentPlot->Items.Legend.Location;
+    }
+    ImPlotFlags GetPlotConfig()
+    {
+        return ImPlot::GetCurrentContext()->CurrentPlot->Flags;
+    }
+    bool IsItemHidden(const char* label_id)
+    {
+        ImPlotItem* item = ImPlot::GetItem(label_id);
+        return item != nullptr && !item->Show;
+    }
+    """
+    implot.ImPlotAxisFlags GetAxisConfig(int)
+    implot.ImPlotLocation GetLegendConfig(implot.ImPlotLegendFlags&)
+    implot.ImPlotFlags GetPlotConfig()
+    bint IsItemHidden(const char*)
+
 # BaseItem that has has no parent/child nor sibling
 cdef class PlotAxisConfig(baseItem):
     def __cinit__(self):
@@ -11793,7 +11819,9 @@ cdef class PlotAxisConfig(baseItem):
             self._max = rect.Y.Max
             self._mouse_coord = implot.GetPlotMousePos(implot.IMPLOT_AUTO, axis).y
 
-        # DPG does update flags.. why ?
+        # Take into accounts flags changed by user interactions
+        self.flags = GetAxisConfig(<int>axis)
+
         cdef bint hovered = implot.IsAxisHovered(axis)
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
@@ -11820,20 +11848,6 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.double_clicked[i] = False
         run_handlers(self, self._handlers, self.state)
 
-cdef extern from * nogil:
-    """
-    ImPlotLocation GetLegendConfig(ImPlotLegendFlags &flags)
-    {
-        flags = ImPlot::GetCurrentContext()->CurrentPlot->Items.Legend.Flags;
-        return ImPlot::GetCurrentContext()->CurrentPlot->Items.Legend.Location;
-    }
-    ImPlotFlags GetPlotConfig()
-    {
-        return ImPlot::GetCurrentContext()->CurrentPlot->Flags;
-    }
-    """
-    implot.ImPlotLocation GetLegendConfig(implot.ImPlotLegendFlags&)
-    implot.ImPlotFlags GetPlotConfig()
 
 cdef class PlotLegendConfig(baseItem):
     def __cinit__(self):
@@ -11887,7 +11901,7 @@ cdef class PlotLegendConfig(baseItem):
     def no_buttons(self):
         """
         Writable attribute to prevent legend icons
-        tot function as hide/show buttons
+        to function as hide/show buttons
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -12061,20 +12075,10 @@ cdef class Plot(uiItem):
         self._override_mod = imgui.ImGuiMod_Ctrl
         self._zoom_mod = 0
         self._zoom_rate = 0.1
-        self._query_color = 255*256*256
-        self._min_query_rects = 1
-        self._max_query_rects = 1
         self._use_local_time = False
         self._use_ISO8601 = False
         self._use_24hour_clock = False
         # Box select/Query rects. To remove
-        self._select_button = imgui.ImGuiMouseButton_Right
-        self._select_mod = 0
-        self._select_cancel_button = imgui.ImGuiMouseButton_Left
-        self._query_toggle_mod = imgui.ImGuiMod_Ctrl
-        self._select_horz_mod = imgui.ImGuiMod_Alt
-        self._select_vert_mod = imgui.ImGuiMod_Shift
-        self._query_enabled = False # True
         # Disabling implot query rects. This is better
         # to have it implemented outside implot.
         self.flags = implot.ImPlotFlags_NoBoxSelect
@@ -12262,145 +12266,6 @@ cdef class Plot(uiItem):
             raise ValueError("Invalid button")
         self._menu_button = button
 
-    ''' -> Disabled: query rects should be user implemented
-    @property
-    def select_button(self):
-        """
-        Button that begins box selection when
-        pressed and confirms selection when released
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._select_button
-
-    @select_button.setter
-    def select_button(self, int button):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self._select_button = button
-
-    @property
-    def select_mod(self):
-        """
-        Modifier combination (shift/ctrl/alt/super) that must be
-        pressed for select_button to have effect.
-        Default is no modifier.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._select_mod
-
-    @select_mod.setter
-    def select_mod(self, int modifier):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("select_mod must be a combinaison of modifiers")
-        self._select_mod = modifier
-
-    @property
-    def select_cancel_button(self):
-        """
-        Button that cancels active box selection
-        when pressed; cannot be same as Select
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._select_cancel_button
-
-    @select_cancel_button.setter
-    def select_cancel_button(self, int button):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self._select_cancel_button = button
-    '''
-
-    @property
-    def override_mod(self):
-        """
-        Modifier combination (shift/ctrl/alt/super) that
-        when held, all input is ignored; used to enable
-        axis/plots as DND sources.
-        Default is the Ctrl button
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._override_mod
-
-    @override_mod.setter
-    def override_mod(self, int modifier):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("override_mod must be a combinaison of modifiers")
-        self._override_mod = modifier
-
-    '''
-    @property
-    def query_toggle_mod(self):
-        """
-        Modifier combination (shift/ctrl/alt/super) that
-        when held during selection, adds a query rect;
-        has higher priority than override_mod.
-        Default is the Ctrl button.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._query_toggle_mod
-
-    @query_toggle_mod.setter
-    def query_toggle_mod(self, int modifier):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("query_toggle_mod must be a combinaison of modifiers")
-        self._query_toggle_mod = modifier
-
-    @property
-    def select_horz_mod(self):
-        """
-        Modifier combination (shift/ctrl/alt/super) that
-        expands active box selection horizontally to plot
-        edge when held.
-        Default is the Alt button.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._select_horz_mod
-
-    @select_horz_mod.setter
-    def select_horz_mod(self, int modifier):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("select_horz_mod must be a combinaison of modifiers")
-        self._select_horz_mod = modifier
-
-    @property
-    def select_vert_mod(self):
-        """
-        Modifier combination (shift/ctrl/alt/super) that
-        expands active box selection vertically to plot
-        edge when held.
-        Default is the Shift button.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._select_vert_mod
-
-    @select_vert_mod.setter
-    def select_vert_mod(self, int modifier):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("select_vert_mod must be a combinaison of modifiers")
-        self._select_vert_mod = modifier
-    '''
-
     @property
     def zoom_mod(self):
         """
@@ -12438,72 +12303,6 @@ cdef class Plot(uiItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._zoom_rate = value
-
-    '''
-    @property
-    def query_enabled(self):
-        """
-        Enables query rects when Select is held
-        Default is True
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._query_enabled
-
-    @query_enabled.setter
-    def query_enabled(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._query_enabled = value
-
-    @property
-    def query_color(self):
-        """
-        Color of the query rects.
-        Default is green.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef float[4] color
-        unparse_color(color, self._query_color)
-        return tuple(color)
-
-    @query_color.setter
-    def query_color(self, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._query_color = parse_color(value)
-
-    @property
-    def min_query_rects(self):
-        """
-        Minimum number of query rects that
-        can be active at once.
-        Default is 1.
-        """
-        return self._min_query_rects
-
-    @min_query_rects.setter
-    def min_query_rects(self, int value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._min_query_rects = value
-
-    @property
-    def max_query_rects(self):
-        """
-        Maximum number of query rects that
-        can be active at once.
-        Default is 1.
-        """
-        return self._max_query_rects
-
-    @max_query_rects.setter
-    def max_query_rects(self, int value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._max_query_rects = value
-    '''
 
     @property
     def use_local_time(self):
@@ -12585,26 +12384,6 @@ cdef class Plot(uiItem):
         self.flags &= ~implot.ImPlotFlags_NoMenus
         if value:
             self.flags |= implot.ImPlotFlags_NoMenus
-
-    '''
-    @property
-    def no_box_select(self):
-        """
-        Writable attribute to disable the user interactions
-        to box-select
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoBoxSelect) != 0
-
-    @no_box_select.setter
-    def no_box_select(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoBoxSelect
-        if value:
-            self.flags |= implot.ImPlotFlags_NoBoxSelect
-    '''
 
     @property
     def no_mouse_pos(self):
@@ -12723,16 +12502,11 @@ cdef class Plot(uiItem):
         implot.GetStyle().Use24HourClock = self._use_24hour_clock
         implot.GetInputMap().Pan = self._pan_button
         implot.GetInputMap().Fit = self._fit_button
-        implot.GetInputMap().Select = self._select_button
-        implot.GetInputMap().SelectCancel = self._select_cancel_button
         implot.GetInputMap().Menu = self._menu_button
         implot.GetInputMap().ZoomRate = self._zoom_rate
         implot.GetInputMap().PanMod = self._pan_modifier
-        implot.GetInputMap().SelectMod = self._select_mod
         implot.GetInputMap().ZoomMod = self._zoom_mod
         implot.GetInputMap().OverrideMod = self._override_mod
-        implot.GetInputMap().SelectHorzMod = self._select_horz_mod
-        implot.GetInputMap().SelectVertMod = self._select_vert_mod
 
         self._X1.mutex.lock()
         self._X2.mutex.lock()
@@ -12935,6 +12709,8 @@ cdef class plotElementWithLegend(plotElement):
     """
     def __cinit__(self):
         self.state.cap.can_be_hovered = True # The legend only
+        self._enabled = True
+        self.enabled_dirty = True
         self._legend_button = imgui.ImGuiMouseButton_Right
         self._legend = True
         self.state.cap.can_be_hovered = True
@@ -12980,6 +12756,25 @@ cdef class plotElementWithLegend(plotElement):
         self.flags &= ~implot.ImPlotItemFlags_NoFit
         if value:
             self.flags |= implot.ImPlotItemFlags_NoFit
+
+    @property
+    def enabled(self):
+        """
+        Writable attribute: show/hide
+        the item while still having a toggable
+        entry in the menu.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value != self._enabled:
+            self.enabled_dirty = True
+        self._enabled = value
 
     @property
     def font(self):
@@ -13096,6 +12891,12 @@ cdef class plotElementWithLegend(plotElement):
             self._theme.push()
 
         implot.SetAxes(self._axes[0], self._axes[1])
+
+        if self.enabled_dirty:
+            implot.HideNextItem(not(self._enabled), implot.ImPlotCond_Always)
+            self.enabled_dirty = False
+        else:
+            self._enabled = IsItemHidden(self.imgui_label.c_str())
         self.draw_element()
 
         self.state.cur.rendered = True

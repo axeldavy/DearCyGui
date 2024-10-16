@@ -1109,19 +1109,9 @@ cdef class Plot(uiItem):
     cdef imgui.ImGuiKeyChord _pan_modifier
     cdef int _fit_button
     cdef int _menu_button
-    cdef int _select_button
-    cdef imgui.ImGuiKeyChord _select_mod
-    cdef int _select_cancel_button
     cdef imgui.ImGuiKeyChord _override_mod
-    cdef imgui.ImGuiKeyChord _query_toggle_mod
-    cdef imgui.ImGuiKeyChord _select_horz_mod
-    cdef imgui.ImGuiKeyChord _select_vert_mod
     cdef imgui.ImGuiKeyChord _zoom_mod
     cdef float _zoom_rate
-    cdef bint _query_enabled
-    cdef imgui.ImU32 _query_color
-    cdef int _min_query_rects
-    cdef int _max_query_rects
     cdef bint _use_local_time
     cdef bint _use_ISO8601
     cdef bint _use_24hour_clock
@@ -1143,6 +1133,8 @@ cdef class plotElementWithLegend(plotElement):
     cdef bint _legend
     cdef int _legend_button
     cdef Font _font
+    cdef bint _enabled
+    cdef bint enabled_dirty
     cdef void draw(self) noexcept nogil
     cdef void draw_element(self) noexcept nogil
 
