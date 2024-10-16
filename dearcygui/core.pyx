@@ -1059,6 +1059,11 @@ cdef class baseItem:
         if self.element_child_category == child_type.cat_theme:
             lock_gil_friendly(m0, self.context.viewport.mutex)
 
+        # TODO: binding to a parent a handler attached to an item can
+        # deadlock rendering
+        if self.element_child_category == child_type.cat_handler:
+            lock_gil_friendly(m0, self.context.viewport.mutex)
+
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
         cdef unique_lock[recursive_mutex] m3
