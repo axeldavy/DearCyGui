@@ -133,7 +133,6 @@ cdef class Context:
         self.imgui_context = imgui.CreateContext()
         self.implot_context = implot.CreateContext()
         self.imnodes_context = imnodes.CreateContext()
-        #mvToolManager::GetFontManager()._dirty = true;
 
     def __dealloc__(self):
         self.started = True
@@ -3343,10 +3342,7 @@ cdef class DrawText_(drawingItem):
         self.context.viewport.apply_current_transform(p, self.pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
 
-        # TODO fontptr
-
-        #drawlist.AddText(fontptr, self.size, ip, self.color, self.text.c_str())
-        drawlist.AddText(NULL, 0., ip, self.color, self.text.c_str())
+        drawlist.AddText(self._font.font if self._font is not None else NULL, 0., ip, self.color, self.text.c_str())
 
 
 cdef class DrawTriangle_(drawingItem):
@@ -5145,6 +5141,22 @@ cdef class uiItem(baseItem):
         self._enabled = value
 
     @property
+    def font(self):
+        """
+        Writable attribute: font used for the text rendered
+        of this item and its subitems
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._font
+
+    @font.setter
+    def font(self, Font value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._font = value
+
+    @property
     def label(self):
         """
         Writable attribute: label assigned to the item.
@@ -5752,11 +5764,8 @@ cdef class uiItem(baseItem):
         self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
 
         # handle fonts
-        """
-        if self.font:
-            ImFont* fontptr = static_cast<mvFont*>(item.font.get())->getFontPtr();
-            ImGui::PushFont(fontptr);
-        """
+        if self._font is not None:
+            self._font.push()
 
         # themes
         self.context.viewport.push_pending_theme_actions(
@@ -5775,6 +5784,9 @@ cdef class uiItem(baseItem):
         if self._theme is not None:
             self._theme.pop()
         self.context.viewport.pop_applied_pending_theme_actions()
+
+        if self._font is not None:
+            self._font.pop()
 
         # Advance the cursor only for DEFAULT and REL_DEFAULT
         pos = cursor_pos_backup
@@ -10690,11 +10702,8 @@ cdef class Window(uiItem):
                                     <imgui.ImGuiCond>0)
 
         # handle fonts
-        """
-        if self.font:
-            ImFont* fontptr = static_cast<mvFont*>(item.font.get())->getFontPtr();
-            ImGui::PushFont(fontptr);
-        """
+        if self._font is not None:
+            self._font.push()
 
         # themes
         self.context.viewport.push_pending_theme_actions(
@@ -10777,11 +10786,6 @@ cdef class Window(uiItem):
 
 
         # Post draw
-        """
-        // pop font from stack
-        if (item.font)
-            ImGui::PopFont();
-        """
 
         """
         cdef float titleBarHeight
@@ -10812,6 +10816,9 @@ cdef class Window(uiItem):
         if self._theme is not None:
             self._theme.pop()
         self.context.viewport.pop_applied_pending_theme_actions()
+
+        if self._font is not None:
+            self._font.pop()
 
         cdef bint closed = not(self._show) or (not(visible) and (self.modal or self.popup))
         if closed:
@@ -12975,6 +12982,22 @@ cdef class plotElementWithLegend(plotElement):
             self.flags |= implot.ImPlotItemFlags_NoFit
 
     @property
+    def font(self):
+        """
+        Writable attribute: font used for the text rendered
+        of this item and its subitems
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._font
+
+    @font.setter
+    def font(self, Font value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._font = value
+
+    @property
     def legend_button(self):
         """
         Button that opens the legend entry for
@@ -13061,6 +13084,9 @@ cdef class plotElementWithLegend(plotElement):
             return
 
         # push theme, font
+        if self._font is not None:
+            self._font.push()
+
         self.context.viewport.push_pending_theme_actions(
             theme_enablers.t_enabled_any,
             theme_categories.t_plot
@@ -13101,6 +13127,9 @@ cdef class plotElementWithLegend(plotElement):
             self._theme.pop()
 
         self.context.viewport.pop_applied_pending_theme_actions()
+
+        if self._font is not None:
+            self._font.pop()
 
         run_handlers(self, self._handlers, self.state)
 
@@ -14045,6 +14074,9 @@ cdef class DrawInPlot(plotElementWithLegend):
             return
 
         # push theme, font
+        if self._font is not None:
+            self._font.push()
+
         self.context.viewport.push_pending_theme_actions(
             theme_enablers.t_enabled_any,
             theme_categories.t_plot
@@ -14110,6 +14142,9 @@ cdef class DrawInPlot(plotElementWithLegend):
             self._theme.pop()
 
         self.context.viewport.pop_applied_pending_theme_actions()
+
+        if self._font is not None:
+            self._font.pop()
 
         run_handlers(self, self._handlers, self.state)
 

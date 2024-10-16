@@ -1322,6 +1322,21 @@ cdef class DrawText(DrawText_):
         lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
+    def font(self):
+        """
+        Writable attribute: font used for the text rendered
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._font
+
+    @font.setter
+    def font(self, Font value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._font = value
+
+    @property
     def text(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)

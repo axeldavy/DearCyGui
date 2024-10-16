@@ -1142,6 +1142,7 @@ cdef class plotElement(baseItem):
 cdef class plotElementWithLegend(plotElement):
     cdef bint _legend
     cdef int _legend_button
+    cdef Font _font
     cdef void draw(self) noexcept nogil
     cdef void draw_element(self) noexcept nogil
 
