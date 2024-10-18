@@ -122,7 +122,7 @@ cdef class Context:
     def __cinit__(self):
         self.next_uuid.store(21)
         self.waitOneFrame = False
-        self.started = False
+        self.started = True
         self.uuid_to_tag = dict()
         self.tag_to_uuid = dict()
         self.items = weakref.WeakValueDictionary()
@@ -402,14 +402,6 @@ cdef class Context:
         """
         cdef long long last_uuid = getattr(self.threadlocal_data, 'last_container_uuid', -1)
         return self.get_registered_item_from_uuid(last_uuid)
-
-    def initialize_viewport(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.viewport.initialize(width=kwargs["width"],
-                                 height=kwargs["height"])
-        self.viewport.configure(**kwargs)
-        self.started = True
 
     def is_key_down(self, int key, int keymod=-1):
         """
@@ -2159,8 +2151,6 @@ cdef class Viewport(baseItem):
         }
 
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         for (key, value) in kwargs.items():
             setattr(self, key, value)
 
@@ -2639,12 +2629,6 @@ cdef class drawingItem(baseItem):
         self._show = True
         self.element_child_category = child_type.cat_drawing
         self.can_have_sibling = True
-
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._show = kwargs.pop("show", self._show)
-        super().configure(**kwargs)
 
     @property
     def show(self):
@@ -4811,8 +4795,6 @@ cdef class uiItem(baseItem):
         clear_obj_vector(self._handlers)
 
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         # Map old attribute names (the new names are handled in uiItem)
         if 'pos' in kwargs:
             pos = kwargs.pop("pos")
@@ -5855,8 +5837,6 @@ cdef class SimplePlot(uiItem):
         self.last_frame_autoscale_update = -1
 
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         # Map old attribute names (the new names are handled in uiItem)
         self._scale_min = kwargs.pop("scaleMin", self._scale_min)
         self._scale_max = kwargs.pop("scaleMax", self._scale_max)
@@ -6320,8 +6300,6 @@ cdef class Slider(uiItem):
         self.theme_condition_enabled = theme_enablers.t_enabled_True
 
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         # Since some options cancel each other, one
         # must enable them in a specific order
         if "format" in kwargs:
@@ -7382,8 +7360,6 @@ cdef class InputValue(uiItem):
         self.theme_condition_enabled = theme_enablers.t_enabled_True
 
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         # Since some options cancel each other, one
         # must enable them in a specific order
         if "format" in kwargs:
@@ -11190,8 +11166,6 @@ cdef class baseTheme(baseItem):
         self.can_have_sibling = True
         self.enabled = True
     def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
         self.enabled = kwargs.pop("enabled", self.enabled)
         self.enabled = kwargs.pop("show", self.enabled)
         return super().configure(**kwargs)

@@ -3,12 +3,6 @@ from .core cimport *
 import numpy as np
 
 cdef class ViewportDrawList(ViewportDrawList_):
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._front = kwargs.pop("front", self._front)
-        self._show = kwargs.pop("show", self._show)
-        super().configure(**kwargs)
     @property
     def front(self):
         cdef unique_lock[recursive_mutex] m
@@ -39,16 +33,6 @@ cdef class ViewportDrawList(ViewportDrawList_):
         self._show = value
 
 cdef class DrawLayer(DrawLayer_):
-    def configure(self, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._cull_mode = kwargs.pop("cull_mode", self._cull_mode)
-        self._perspective_divide = kwargs.pop("perspective_divide", self._perspective_divide)
-        self._depth_clipping = kwargs.pop("depth_clipping", self._depth_clipping)
-        if "transform" in kwargs:
-            # call the property setter
-            self.transform = kwargs.pop("transform")
-        super().configure(**kwargs)
     @property
     def perspective_divide(self):
         cdef unique_lock[recursive_mutex] m
@@ -128,21 +112,6 @@ cdef class DrawLayer(DrawLayer_):
         self.has_matrix_transform = True
 
 cdef class DrawArrow(DrawArrow_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if len(args) == 2:
-            read_point[double](self.end, args[0])
-            read_point[double](self.start, args[1])
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawArrow")
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.size = kwargs.pop("size", self.size)
-        super().configure(**kwargs)
-        self.__compute_tip()
-
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m
@@ -202,22 +171,6 @@ cdef class DrawArrow(DrawArrow_):
 
 
 cdef class DrawBezierCubic(DrawBezierCubic_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if len(args) == 4:
-            (p1, p2, p3, p4) = args
-            read_point[double](self.p1, p1)
-            read_point[double](self.p2, p2)
-            read_point[double](self.p3, p3)
-            read_point[double](self.p4, p4)
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawBezierCubic. Expected p1, p2, p3 and p4")
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.segments = kwargs.pop("segments", self.segments)
-        super().configure(**kwargs)
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m
@@ -292,21 +245,6 @@ cdef class DrawBezierCubic(DrawBezierCubic_):
         self.segments = value
 
 cdef class DrawBezierQuadratic(DrawBezierQuadratic_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if len(args) == 3:
-            (p1, p2, p3) = args
-            read_point[double](self.p1, p1)
-            read_point[double](self.p2, p2)
-            read_point[double](self.p3, p3)
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawBezierQuadratic. Expected p1, p2 and p3")
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.segments = kwargs.pop("segments", self.segments)
-        super().configure(**kwargs)
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m
@@ -371,22 +309,6 @@ cdef class DrawBezierQuadratic(DrawBezierQuadratic_):
         self.segments = value
 
 cdef class DrawCircle(DrawCircle_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if len(args) == 2:
-            (center, radius) = args
-            read_point[double](self.center, center)
-            self.radius = radius
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawCircle. Expected center and radius")
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "fill" in kwargs:
-            self.fill = parse_color(kwargs.pop("fill"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.segments = kwargs.pop("segments", self.segments)
-        super().configure(**kwargs)
     @property
     def center(self):
         cdef unique_lock[recursive_mutex] m
@@ -453,33 +375,6 @@ cdef class DrawCircle(DrawCircle_):
         self.segments = value
 
 cdef class DrawEllipse(DrawEllipse_):
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef bint recompute_points = False
-        if len(args) == 2:
-            (pmin, pmax) = args
-            read_point[double](self.pmin, pmin)
-            read_point[double](self.pmax, pmax)
-            recompute_points = True
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawEllipse. Expected pmin and pmax")
-        # pmin/pmax can also be passed as optional arguments
-        if "pmin" in kwargs:
-            read_point[double](self.pmin, kwargs.pop("pmin"))
-            recompute_points = True
-        if "pmax" in kwargs:
-            read_point[double](self.pmax, kwargs.pop("pmax"))
-            recompute_points = True
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "fill" in kwargs:
-            self.fill = parse_color(kwargs.pop("fill"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.segments = kwargs.pop("segments", self.segments)
-        super().configure(**kwargs)
-        if recompute_points:
-            self.__fill_points()
     @property
     def pmin(self):
         cdef unique_lock[recursive_mutex] m
@@ -560,45 +455,6 @@ cdef class DrawEllipse(DrawEllipse_):
 
 
 cdef class DrawImage(DrawImage_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 3:
-            texture = args[0]
-            if texture == 2:#MV_ATLAS_UUID:
-                assert(False) # TODO
-            else:
-                if not(isinstance(texture, Texture)):
-                    raise TypeError("texture input must be a Texture")
-                self.texture = <Texture>texture
-            read_point[double](self.pmin, args[1])
-            read_point[double](self.pmax, args[2])
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawImage. Expected texture, pmin, pmax")
-        if "pmin" in kwargs:
-            read_point[double](self.pmin, kwargs.pop("pmin"))
-        if "pmax" in kwargs:
-            read_point[double](self.pmax, kwargs.pop("pmax"))
-        if "texture_tag" in kwargs:
-            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to Texture reference")
-        if "texture" in kwargs:
-            texture = kwargs.pop("texture")
-            if not(isinstance(texture, Texture)):
-                raise TypeError("texture input must be a Texture")
-            self.texture = <Texture>texture
-        if "uv_max" in kwargs:
-            uv_max = kwargs.pop("uv_max")
-            self.uv[2] = uv_max[0]
-            self.uv[3] = uv_max[1]
-        if "uv_min" in kwargs:
-            uv_min = kwargs.pop("uv_min")
-            self.uv[0] = uv_min[0]
-            self.uv[1] = uv_min[1]
-        if "color" in kwargs:
-            #TODO warn_once()
-            self.color_multiplier = parse_color(kwargs.pop("color"))
-        if "color_multiplier" in kwargs:
-            self.color_multiplier = parse_color(kwargs.pop("color_multiplier"))
-        super().configure(**kwargs)
-
     @property
     def texture(self):
         cdef unique_lock[recursive_mutex] m
@@ -655,51 +511,6 @@ cdef class DrawImage(DrawImage_):
         self.color_multiplier = parse_color(value)
 
 cdef class DrawImageQuad(DrawImageQuad_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 5:
-            texture = args[0]
-            if texture == 2:#MV_ATLAS_UUID:
-                assert(False) # TODO
-            else:
-                if not(isinstance(texture, Texture)):
-                    raise TypeError("texture input must be a Texture")
-                self.texture = <Texture>texture
-            read_point[double](self.p1, args[1])
-            read_point[double](self.p2, args[2])
-            read_point[double](self.p3, args[3])
-            read_point[double](self.p4, args[4])
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawImage. Expected texture, p1, p2, p3, p4")
-        if "p1" in kwargs:
-            read_point[double](self.p1, kwargs.pop("p1"))
-        if "p2" in kwargs:
-            read_point[double](self.p2, kwargs.pop("p2"))
-        if "p3" in kwargs:
-            read_point[double](self.p3, kwargs.pop("p3"))
-        if "p4" in kwargs:
-            read_point[double](self.p4, kwargs.pop("p4"))
-        if "texture_tag" in kwargs:
-            raise ValueError("Invalid use of dctDrawImage. texture_tag must be converted to Texture reference")
-        if "texture" in kwargs:
-            texture = kwargs.pop("texture")
-            if not(isinstance(texture, Texture)):
-                raise TypeError("texture input must be a Texture")
-            self.texture = <Texture>texture
-        if "uv1" in kwargs:
-            read_point[float](self.uv1, kwargs.pop("uv1"))
-        if "uv2" in kwargs:
-            read_point[float](self.uv2, kwargs.pop("uv2"))
-        if "uv3" in kwargs:
-            read_point[float](self.uv3, kwargs.pop("uv3"))
-        if "uv4" in kwargs:
-            read_point[float](self.uv4, kwargs.pop("uv4"))
-        if "color" in kwargs:
-            #TODO warn_once()
-            self.color_multiplier = parse_color(kwargs.pop("color"))
-        if "color_multiplier" in kwargs:
-            self.color_multiplier = parse_color(kwargs.pop("color_multiplier"))
-        super().configure(**kwargs)
-
     @property
     def texture(self):
         cdef unique_lock[recursive_mutex] m
@@ -806,21 +617,6 @@ cdef class DrawImageQuad(DrawImageQuad_):
         self.color_multiplier = parse_color(value)
 
 cdef class DrawLine(DrawLine_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 2:
-            read_point[double](self.p1, args[0])
-            read_point[double](self.p2, args[1])
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawLine. Expected p1, p2")
-        if "p1" in kwargs:
-            read_point[double](self.p1, kwargs.pop("p1"))
-        if "p2" in kwargs:
-            read_point[double](self.p2, kwargs.pop("p2"))
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        super().configure(**kwargs)
-
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m
@@ -854,16 +650,6 @@ cdef class DrawLine(DrawLine_):
         lock_gil_friendly(m, self.mutex)
         self.color = parse_color(value)
     @property
-    def closed(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self.closed
-    @closed.setter
-    def closed(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.closed = value
-    @property
     def thickness(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -875,27 +661,6 @@ cdef class DrawLine(DrawLine_):
         self.thickness = value
 
 cdef class DrawPolyline(DrawPolyline_):
-    def configure(self, *args, **kwargs):
-        points = None
-        if len(args) == 1:
-            points = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawPolyline. Expected list of points")
-        if "points" in kwargs:
-            points = kwargs.pop("points")
-        cdef double4 p
-        cdef int i
-        if not(points is None):
-            self.points.clear()
-            for i in range(len(points)):
-                read_point[double](p.p, points[i])
-                self.points.push_back(p)
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        self.closed = kwargs.pop("closed", self.closed)
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        super().configure(**kwargs)
-
     @property
     def points(self):
         cdef unique_lock[recursive_mutex] m
@@ -950,29 +715,6 @@ cdef class DrawPolyline(DrawPolyline_):
         self.thickness = value
 
 cdef class DrawPolygon(DrawPolygon_):
-    def configure(self, *args, **kwargs):
-        points = None
-        if len(args) == 1:
-            points = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawPolygon. Expected list of points")
-        if "points" in kwargs:
-            points = kwargs.pop("points")
-        cdef double4 p
-        cdef int i
-        if not(points is None):
-            self.points.clear()
-            for i in range(len(points)):
-                read_point[double](p.p, points[i])
-                self.points.push_back(p)
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "fill" in kwargs:
-            self.fill = parse_color(kwargs.pop("fill"))
-        self.closed = kwargs.pop("closed", self.closed)
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        super().configure(**kwargs)
-
     @property
     def points(self):
         cdef unique_lock[recursive_mutex] m
@@ -1031,30 +773,6 @@ cdef class DrawPolygon(DrawPolygon_):
 
 
 cdef class DrawQuad(DrawQuad_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 4:
-            (p1, p2, p3, p4) = args
-            read_point[double](self.p1, p1)
-            read_point[double](self.p2, p2)
-            read_point[double](self.p3, p3)
-            read_point[double](self.p4, p4)
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawQuad. Expected p1, p2, p3 and p4")
-        if "p1" in kwargs:
-            read_point[double](self.p1, kwargs.pop("p1"))
-        if "p2" in kwargs:
-            read_point[double](self.p2, kwargs.pop("p2"))
-        if "p3" in kwargs:
-            read_point[double](self.p3, kwargs.pop("p3"))
-        if "p4" in kwargs:
-            read_point[double](self.p4, kwargs.pop("p4"))
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "fill" in kwargs:
-            self.fill = parse_color(kwargs.pop("fill"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        super().configure(**kwargs)
-
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m
@@ -1131,46 +849,6 @@ cdef class DrawQuad(DrawQuad_):
         self.thickness = value
 
 cdef class DrawRect(DrawRect_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 2:
-            (pmin, pmax) = args
-            read_point[double](self.pmin, pmin)
-            read_point[double](self.pmax, pmax)
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawRect. Expected pmin and pmax")
-        if "pmin" in kwargs:
-            read_point[double](self.pmin, kwargs.pop("pmin"))
-        if "pmax" in kwargs:
-            read_point[double](self.pmax, kwargs.pop("pmax"))
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "fill" in kwargs:
-            self.fill = parse_color(kwargs.pop("fill"))
-        if "color_upper_left" in kwargs:
-            self.color_upper_left = parse_color(kwargs.pop("color_upper_left"))
-        if "color_upper_right" in kwargs:
-            self.color_upper_right = parse_color(kwargs.pop("color_upper_right"))
-        if "color_bottom_left" in kwargs:
-            self.color_bottom_left = parse_color(kwargs.pop("color_bottom_left"))
-        if "color_bottom_right" in kwargs:
-            self.color_bottom_right = parse_color(kwargs.pop("color_bottom_right"))
-        if "corner_colors" in kwargs:
-            if kwargs["corner_colors"] is not None:
-                (color_upper_right, color_upper_left, color_bottom_right, color_bottom_left) = \
-                    kwargs.pop("corner_colors")
-                self.color_upper_left = parse_color(color_upper_left)
-                self.color_upper_right = parse_color(color_upper_right)
-                self.color_bottom_left = parse_color(color_bottom_left)
-                self.color_bottom_right = parse_color(color_bottom_right)
-            else:
-                del kwargs["corner_colors"]
-        self.rounding = kwargs.pop("rounding", self.rounding)
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.multicolor = kwargs.pop("multicolor", self.multicolor)
-        if self.multicolor:
-            self.rounding = 0.
-        super().configure(**kwargs)
-
     @property
     def pmin(self):
         cdef unique_lock[recursive_mutex] m
@@ -1283,22 +961,20 @@ cdef class DrawRect(DrawRect_):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.multicolor = value
+        if self.multicolor: # TODO: move to draw ?
+            self.rounding = 0.
+    @property
+    def rounding(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.rounding
+    @rounding.setter
+    def rounding(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.rounding = value
 
 cdef class DrawText(DrawText_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 1:
-            read_point[double](self.pos, args[0])
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawText. Expected pos")
-        if "pos" in kwargs:
-            read_point[double](self.pos, kwargs.pop("pos"))
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "text" in kwargs:
-            self.text = bytes(str(kwargs.pop("text")), 'utf-8')
-        self.size = kwargs.pop("size", self.size)
-        super().configure(**kwargs)
-
     @property
     def pos(self):
         cdef unique_lock[recursive_mutex] m
@@ -1359,28 +1035,6 @@ cdef class DrawText(DrawText_):
 
 
 cdef class DrawTriangle(DrawTriangle_):
-    def configure(self, *args, **kwargs):
-        if len(args) == 3:
-            (p1, p2, p3) = args
-            read_point[double](self.p1, p1)
-            read_point[double](self.p2, p2)
-            read_point[double](self.p3, p3)
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DrawQuad. Expected p1, p2 and p3")
-        if "p1" in kwargs:
-            read_point[double](self.p1, kwargs.pop("p1"))
-        if "p2" in kwargs:
-            read_point[double](self.p2, kwargs.pop("p2"))
-        if "p3" in kwargs:
-            read_point[double](self.p3, kwargs.pop("p3"))
-        if "color" in kwargs:
-            self.color = parse_color(kwargs.pop("color"))
-        if "fill" in kwargs:
-            self.fill = parse_color(kwargs.pop("fill"))
-        self.thickness = kwargs.pop("thickness", self.thickness)
-        self.cull_mode = kwargs.pop("cull_mode", self.cull_mode)
-        super().configure(**kwargs)
-
     @property
     def p1(self):
         cdef unique_lock[recursive_mutex] m

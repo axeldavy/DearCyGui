@@ -282,7 +282,9 @@ mvShowViewport(mvViewport& viewport,
     if (!viewport.decorated)
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     // Automated DPI management doesn't look good
+    #ifdef GLFW_SCALE_FRAMEBUFFER
     glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GL_FALSE);
+    #endif
 
     // Create window with graphics context
     // GL 3.0 + GLSL 130

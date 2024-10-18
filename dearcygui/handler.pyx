@@ -366,19 +366,6 @@ cdef class ClickedHandler(baseHandler):
     """
     def __cinit__(self):
         self._button = -1
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self._button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to ClickedHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self._button = button
-        super().configure(**kwargs)
     @property
     def button(self):
         """
@@ -437,19 +424,6 @@ cdef class DoubleClickedHandler(baseHandler):
     """
     def __cinit__(self):
         self._button = -1
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self._button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to ClickedHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self._button = button
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
@@ -533,19 +507,6 @@ cdef class DraggedHandler(baseHandler):
     """
     def __cinit__(self):
         self._button = -1
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self._button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DraggedHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self._button = button
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
@@ -606,19 +567,6 @@ cdef class DraggingHandler(baseHandler):
     """
     def __cinit__(self):
         self._button = -1
-    def configure(self, *args, **kwargs):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        button = self._button
-        if len(args) == 1:
-            button = args[0]
-        elif len(args) != 0:
-            raise ValueError("Invalid arguments passed to DraggingHandler. Expected button")
-        button = kwargs.pop("button", button)
-        if button < -1 or button >= imgui.ImGuiMouseButton_COUNT:
-            raise ValueError("Invalid button")
-        self._button = button
-        super().configure(**kwargs)
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m

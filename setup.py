@@ -95,11 +95,11 @@ def setup_package():
                     "-DIMGUI_IMPL_OPENGL_LOADER_GL3W",
                     "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",
                     "-DMV_SANDBOX_VERSION=\"master\""]
-    linking_args = ['-O0']
+    linking_args = ['-O3']
     libraries = ['freetype']
 
     if get_platform() == "Linux":
-        compile_args += ["-DNDEBUG", "-fwrapv", "-O0", "-DUNIX", "-DLINUX",\
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
         libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
     elif get_platform() == "OS X":

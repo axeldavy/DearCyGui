@@ -3508,7 +3508,7 @@ def item_clicked_handler(button : int =-1, *, label: str =None, user_data: Any =
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.ClickedHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    return dcg.ClickedHandler(DCG_CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_deactivated_after_edit_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds a deactivated after edit handler.
@@ -3572,7 +3572,7 @@ def item_double_clicked_handler(button : int =-1, *, label: str =None, user_data
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DoubleClickedHandler(DCG_CONTEXT, button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    return dcg.DoubleClickedHandler(DCG_CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def item_edited_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     Adds an edited handler.
@@ -6269,7 +6269,7 @@ def draw_arrow(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawArrow(DCG_CONTEXT, p1, p2, label=label, user_data=user_data, show=show, color=color, thickness=thickness, size=size, **kwargs)
+    return dcg.DrawArrow(DCG_CONTEXT, p1=p1, p2=p2, label=label, user_data=user_data, show=show, color=color, thickness=thickness, size=size, **kwargs)
 
 def draw_bezier_cubic(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], p3 : Union[List[float], Tuple[float, ...]], p4 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, thickness: float =1.0, segments: int =0, **kwargs) -> Union[int, str]:
     """     Adds a cubic bezier curve.
@@ -6297,7 +6297,7 @@ def draw_bezier_cubic(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[Lis
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawBezierCubic(DCG_CONTEXT, p1, p2, p3, p4, label=label, user_data=user_data, show=show, color=color, thickness=thickness, segments=segments, **kwargs)
+    return dcg.DrawBezierCubic(DCG_CONTEXT, p1=p1, p2=p2, p3=p3, p4=p4, label=label, user_data=user_data, show=show, color=color, thickness=thickness, segments=segments, **kwargs)
 
 def draw_bezier_quadratic(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], p3 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, thickness: float =1.0, segments: int =0, **kwargs) -> Union[int, str]:
     """     Adds a quadratic bezier curve.
@@ -6324,7 +6324,7 @@ def draw_bezier_quadratic(p1 : Union[List[float], Tuple[float, ...]], p2 : Union
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawBezierQuadratic(DCG_CONTEXT, p1, p2, p3, label=label, user_data=user_data, show=show, color=color, thickness=thickness, segments=segments, **kwargs)
+    return dcg.DrawBezierQuadratic(DCG_CONTEXT, p1=p1, p2=p2, p3=p3, label=label, user_data=user_data, show=show, color=color, thickness=thickness, segments=segments, **kwargs)
 
 def draw_circle(center : Union[List[float], Tuple[float, ...]], radius : float, *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, fill: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, segments: int =0, **kwargs) -> Union[int, str]:
     """     Adds a circle
@@ -6351,7 +6351,7 @@ def draw_circle(center : Union[List[float], Tuple[float, ...]], radius : float, 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawCircle(DCG_CONTEXT, center, radius, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, segments=segments, **kwargs)
+    return dcg.DrawCircle(DCG_CONTEXT, center=center, radius=radius, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, segments=segments, **kwargs)
 
 def draw_ellipse(pmin : Union[List[float], Tuple[float, ...]], pmax : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, fill: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, segments: int =32, **kwargs) -> Union[int, str]:
     """     Adds an ellipse.
@@ -6378,7 +6378,7 @@ def draw_ellipse(pmin : Union[List[float], Tuple[float, ...]], pmax : Union[List
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawEllipse(DCG_CONTEXT, pmin, pmax, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, segments=segments, **kwargs)
+    return dcg.DrawEllipse(DCG_CONTEXT, pmin=pmin, pmax=pmax, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, segments=segments, **kwargs)
 
 def draw_image(texture_tag : Union[int, str], pmin : Union[List[float], Tuple[float, ...]], pmax : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, uv_min: Union[List[float], Tuple[float, ...]] =(0.0, 0.0), uv_max: Union[List[float], Tuple[float, ...]] =(1.0, 1.0), color: Union[int, List[int], Tuple[int, ...]] =-1, **kwargs) -> Union[int, str]:
     """     Adds an image (for a drawing).
@@ -6406,7 +6406,7 @@ def draw_image(texture_tag : Union[int, str], pmin : Union[List[float], Tuple[fl
         tag=kwargs['id']
 
     texture = DCG_CONTEXT[texture_tag]
-    return dcg.DrawImage(DCG_CONTEXT, texture, pmin, pmax, label=label, user_data=user_data, show=show, uv_min=uv_min, uv_max=uv_max, color=color, **kwargs)
+    return dcg.DrawImage(DCG_CONTEXT, texture=texture, pmin=pmin, pmax=pmax, label=label, user_data=user_data, show=show, uv_min=uv_min, uv_max=uv_max, color=color, **kwargs)
 
 def draw_image_quad(texture_tag : Union[int, str], p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], p3 : Union[List[float], Tuple[float, ...]], p4 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, uv1: Union[List[float], Tuple[float, ...]] =(0.0, 0.0), uv2: Union[List[float], Tuple[float, ...]] =(1.0, 0.0), uv3: Union[List[float], Tuple[float, ...]] =(1.0, 1.0), uv4: Union[List[float], Tuple[float, ...]] =(0.0, 1.0), color: Union[int, List[int], Tuple[int, ...]] =-1, **kwargs) -> Union[int, str]:
     """     Adds an image (for a drawing).
@@ -6438,7 +6438,7 @@ def draw_image_quad(texture_tag : Union[int, str], p1 : Union[List[float], Tuple
         tag=kwargs['id']
 
     texture = DCG_CONTEXT[texture_tag]
-    return dcg.DrawImageQuad(DCG_CONTEXT, texture, p1, p2, p3, p4, label=label, user_data=user_data, show=show, uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4, color=color, **kwargs)
+    return dcg.DrawImageQuad(DCG_CONTEXT, texture=texture, p1=p1, p2=p2, p3=p3, p4=p4, label=label, user_data=user_data, show=show, uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4, color=color, **kwargs)
 
 def draw_line(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, thickness: float =1.0, **kwargs) -> Union[int, str]:
     """     Adds a line.
@@ -6463,7 +6463,7 @@ def draw_line(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float]
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawLine(DCG_CONTEXT, p1, p2, label=label, user_data=user_data, show=show, color=color, thickness=thickness, **kwargs)
+    return dcg.DrawLine(DCG_CONTEXT, p1=p1, p2=p2, label=label, user_data=user_data, show=show, color=color, thickness=thickness, **kwargs)
 
 def draw_polygon(points : List[List[float]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, fill: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, **kwargs) -> Union[int, str]:
     """     Adds a polygon.
@@ -6488,7 +6488,7 @@ def draw_polygon(points : List[List[float]], *, label: str =None, user_data: Any
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawPolygon(DCG_CONTEXT, points, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, **kwargs)
+    return dcg.DrawPolygon(DCG_CONTEXT, points=points, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, **kwargs)
 
 def draw_polyline(points : List[List[float]], *, label: str =None, user_data: Any =None, show: bool =True, closed: bool =False, color: Union[int, List[int], Tuple[int, ...]] =-1, thickness: float =1.0, **kwargs) -> Union[int, str]:
     """     Adds a polyline.
@@ -6513,7 +6513,7 @@ def draw_polyline(points : List[List[float]], *, label: str =None, user_data: An
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawPolyline(DCG_CONTEXT, points, label=label, user_data=user_data, show=show, closed=closed, color=color, thickness=thickness, **kwargs)
+    return dcg.DrawPolyline(DCG_CONTEXT, points=points, label=label, user_data=user_data, show=show, closed=closed, color=color, thickness=thickness, **kwargs)
 
 def draw_quad(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], p3 : Union[List[float], Tuple[float, ...]], p4 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, fill: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, **kwargs) -> Union[int, str]:
     """     Adds a quad.
@@ -6541,7 +6541,7 @@ def draw_quad(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float]
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawQuad(DCG_CONTEXT, p1, p2, p3, p4, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, **kwargs)
+    return dcg.DrawQuad(DCG_CONTEXT, p1=p1, p2=p2, p3=p3, p4=p4, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, **kwargs)
 
 def draw_rectangle(pmin : Union[List[float], Tuple[float, ...]], pmax : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, fill: Union[int, List[int], Tuple[int, ...]] =0, multicolor: bool =False, rounding: float =0.0, thickness: float =1.0, corner_colors: Any =None, **kwargs) -> Union[int, str]:
     """     Adds a rectangle.
@@ -6586,7 +6586,7 @@ def draw_rectangle(pmin : Union[List[float], Tuple[float, ...]], pmax : Union[Li
     if 'color_bottom_left' in kwargs.keys():
         warnings.warn('color_bottom_left keyword deprecated. Use corner_colors instead.', DeprecationWarning, 2)
 
-    return dcg.DrawRect(DCG_CONTEXT, pmin, pmax, label=label, user_data=user_data, show=show, color=color, fill=fill, multicolor=multicolor, rounding=rounding, thickness=thickness, corner_colors=corner_colors, **kwargs)
+    return dcg.DrawRect(DCG_CONTEXT, pmin=pmin, pmax=pmax, label=label, user_data=user_data, show=show, color=color, fill=fill, multicolor=multicolor, rounding=rounding, thickness=thickness, corner_colors=corner_colors, **kwargs)
 
 def draw_text(pos : Union[List[float], Tuple[float, ...]], text : str, *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, size: float =10.0, **kwargs) -> Union[int, str]:
     """     Adds text (drawlist).
@@ -6611,7 +6611,7 @@ def draw_text(pos : Union[List[float], Tuple[float, ...]], text : str, *, label:
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawText(DCG_CONTEXT, pos, text, label=label, user_data=user_data, show=show, color=color, size=size, **kwargs)
+    return dcg.DrawText(DCG_CONTEXT, pos=pos, text=text, label=label, user_data=user_data, show=show, color=color, size=size, **kwargs)
 
 def draw_triangle(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], p3 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, fill: Union[int, List[int], Tuple[int, ...]] =0, thickness: float =1.0, **kwargs) -> Union[int, str]:
     """     Adds a triangle.
@@ -6638,7 +6638,7 @@ def draw_triangle(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[fl
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawTriangle(DCG_CONTEXT, p1, p2, p3, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, **kwargs)
+    return dcg.DrawTriangle(DCG_CONTEXT, p1=p1, p2=p2, p3=p3, label=label, user_data=user_data, show=show, color=color, fill=fill, thickness=thickness, **kwargs)
 
 def empty_container_stack(**kwargs) -> None:
     """     Emptyes the container stack.
