@@ -576,7 +576,7 @@ cdef class Context:
         lock_gil_friendly(m, self.imgui_mutex)
         imgui.SetClipboardText(value_str.c_str())
 
-
+'''
 cdef class renderer:
     """
     Base class for renderer backends.
@@ -724,7 +724,7 @@ cdef class GLFWrenderer:
     cdef void process_events(self):
         mvProcessEvents
 
-
+'''
 
 cdef class baseItem:
     """
