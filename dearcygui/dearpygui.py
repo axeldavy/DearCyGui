@@ -168,7 +168,9 @@ def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Ri
         item.show = True
     item.parent = DCG_CONTEXT.viewport
     handler = item_clicked_handler(mousebutton, callback=callback)
-    DCG_CONTEXT[parent].handlers += [handler]
+    parent = DCG_CONTEXT[parent]
+    with parent.mutex:
+        parent.handlers += [handler]
     return item
 
 
@@ -2895,7 +2897,8 @@ def handler_registry(*, label: str =None, user_data: Any =None, show: bool =True
 
     item = dcg.HandlerList(DCG_CONTEXT, label=label, user_data=user_data, show=show, attach=False, **kwargs)
     # global handler registries concatenate to each other
-    DCG_CONTEXT.viewport.handlers += [item]
+    with DCG_CONTEXT.viewport.mutex:
+        DCG_CONTEXT.viewport.handlers += [item]
     return item
 
 def heat_series(x : Union[List[float], Tuple[float, ...]], rows : int, cols : int, *, label: str =None, user_data: Any =None, show: bool =True, scale_min: float =0.0, scale_max: float =1.0, bounds_min: Any =(0.0, 0.0), bounds_max: Any =(1.0, 1.0), format: str ='%0.1f', contribute_to_bounds: bool =True, col_major: bool =False, **kwargs) -> Union[int, str]:
