@@ -841,7 +841,7 @@ cdef class baseItem:
                 try:
                     if parent is not None:
                         self.attach_to_parent(parent)
-                except Exception as e:
+                except TypeError as e:
                     if not(ignore_if_fail):
                         raise(e)
         else:
@@ -854,7 +854,6 @@ cdef class baseItem:
             try:
                 setattr(self, key, value)
             except AttributeError as e:
-                print(e)
                 remaining[key] = value
         if len(remaining) > 0:
             print("Unused configure parameters: ", remaining)
@@ -1142,7 +1141,7 @@ cdef class baseItem:
             # Release the gil and give priority to other threads that might
             # hold the lock we want
             os.sched_yield()
-            if not(locked) and self.external_lock:
+            if not(locked) and self.external_lock > 0:
                 raise RuntimeError(
                     "Trying to lock parent mutex while holding a lock. "
                     "If you get this error, this means you are attempting "
@@ -1182,40 +1181,70 @@ cdef class baseItem:
         target must not be None
         """
         cdef baseItem target_parent
+        if self.context is None:
+            raise ValueError("Trying to attach a deleted item")
+
         if not(isinstance(target, baseItem)):
             target_parent = self.context[target]
         else:
             target_parent = <baseItem>target
             if target_parent.context is not self.context:
-                raise ValueError("Cannot attach {self} to {target} as it was not created in the same context") 
-        # We must ensure a single thread attaches at a given time.
-        # __detach_item_and_lock will lock both the item lock
-        # and the parent lock.
-        cdef unique_lock[recursive_mutex] m0
-        # In the case of manipulating the theme tree,
-        # block all rendering. This is because with the
-        # push/pop system, removing/adding items during
-        # rendering cannot work
-        if self.element_child_category == child_type.cat_theme:
-            lock_gil_friendly(m0, self.context.viewport.mutex)
+                raise ValueError(f"Cannot attach {self} to {target} as it was not created in the same context")
 
-        # TODO: binding to a parent a handler attached to an item can
-        # deadlock rendering
-        if self.element_child_category == child_type.cat_handler:
-            lock_gil_friendly(m0, self.context.viewport.mutex)
+        if target_parent is None:
+            raise ValueError("Trying to attach to None")
+        if target_parent.context is None:
+            raise ValueError("Trying to attach to a deleted item")
+
+        if self.external_lock > 0:
+            # Deadlock potential. We would need to unlock the user held mutex,
+            # which could be a solution, but raises its own issues.
+            if target_parent.external_lock == 0:
+                raise PermissionError(f"Cannot attach {self} to {target} as the user holds a lock on {self}, but not {target}")
+            if not(target_parent.mutex.try_lock()):
+                raise PermissionError(f"Cannot attach {self} to {target} as the user holds a lock on {self} and {target}, but not in the same threads")
+            target_parent.mutex.unlock()
+
+        # Check compatibility with the parent before locking the mutex
+        # We do this optimization to avoid locking uselessly when
+        # creating items due to the automated attach feature.
+        cdef bint compatible = False
+        if self.element_child_category == child_type.cat_drawing:
+            if target_parent.can_have_drawing_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_handler:
+            if target_parent.can_have_handler_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_menubar:
+            if target_parent.can_have_menubar_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_plot_element:
+            if target_parent.can_have_plot_element_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_tab:
+            if target_parent.can_have_tab_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_theme:
+            if target_parent.can_have_theme_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_widget:
+            if target_parent.can_have_widget_child:
+                compatible = True
+        elif self.element_child_category == child_type.cat_window:
+            if target_parent.can_have_window_child:
+                compatible = True
+        if not(compatible):
+            raise TypeError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
 
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
         cdef unique_lock[recursive_mutex] m3
+        # We must ensure a single thread attaches at a given time.
+        # __detach_item_and_lock will lock both the item lock
+        # and the parent lock.
         self.__detach_item_and_lock(m)
         # retaining the lock enables to ensure the item is
         # still detached
-
-        if self.context is None:
-            raise ValueError("Trying to attach a deleted item")
-        if target_parent is None:
-            # Shouldn't occur as should be caught by self.context[target]
-            raise RuntimeError("Trying to attach to None")
 
         # Lock target parent mutex
         lock_gil_friendly(m2, target_parent.mutex)
@@ -1296,8 +1325,7 @@ cdef class baseItem:
                 self._parent = target_parent
                 target_parent.last_window_child = <Window>self
                 attached = True
-        if not(attached):
-            raise ValueError("Instance of type {} cannot be attached to {}".format(type(self), type(target_parent)))
+        assert(attached) # because we checked before compatibility
 
     cpdef void attach_before(self, target):
         """
@@ -1305,35 +1333,28 @@ cdef class baseItem:
         but target must not be None
         """
         cdef baseItem target_before
+        if self.context is None:
+            raise ValueError("Trying to attach a deleted item")
+
         if not(isinstance(target, baseItem)):
             target_before = self.context[target]
         else:
             target_before = <baseItem>target
             if target_before.context is not self.context:
-                raise ValueError("Cannot attach {self} to {target} as it was not created in the same context") 
-        # We must ensure a single thread attaches at a given time.
-        # __detach_item_and_lock will lock both the item lock
-        # and the parent lock.
-        cdef unique_lock[recursive_mutex] m0
-        # In the case of manipulating the theme tree,
-        # block all rendering. This is because with the
-        # push/pop system, removing/adding items during
-        # rendering cannot work
-        if self.element_child_category == child_type.cat_theme:
-            lock_gil_friendly(m0, self.context.viewport.mutex)
+                raise ValueError(f"Cannot attach {self} to {target} as it was not created in the same context")
+
+        if target_before is None:
+            raise ValueError("target before cannot be None")
 
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] target_before_m
         cdef unique_lock[recursive_mutex] target_parent_m
+         # We must ensure a single thread attaches at a given time.
+        # __detach_item_and_lock will lock both the item lock
+        # and the parent lock.
         self.__detach_item_and_lock(m)
         # retaining the lock enables to ensure the item is
         # still detached
-
-        if self.context is None:
-            raise ValueError("Trying to attach a deleted item")
-
-        if target_before is None:
-            raise ValueError("target before cannot be None")
 
         # Lock target mutex and its parent mutex
         target_before.lock_parent_and_item_mutex(target_parent_m,
@@ -1341,7 +1362,10 @@ cdef class baseItem:
 
         if target_before._parent is None:
             # We can bind to an unattached parent, but not
-            # to unattached siblings. Could be implemented, but not trivial
+            # to unattached siblings. Could be implemented, but not trivial.
+            # Maybe we could use the viewport mutex instead,
+            # but that defeats the purpose of building items
+            # outside the rendering tree.
             raise ValueError("Trying to attach to an un-attached sibling. Not yet supported")
 
         # Check the elements can indeed be siblings
@@ -1418,12 +1442,6 @@ cdef class baseItem:
         """
         cdef unique_lock[recursive_mutex] m0
         cdef unique_lock[recursive_mutex] m
-        # In the case of manipulating the theme tree,
-        # block all rendering. This is because with the
-        # push/pop system, removing/adding items during
-        # rendering cannot work
-        if self.element_child_category == child_type.cat_theme:
-            lock_gil_friendly(m0, self.context.viewport.mutex)
         self.__detach_item_and_lock(m)
 
     cpdef void delete_item(self):
@@ -1437,14 +1455,7 @@ cdef class baseItem:
         items. As a result, items with no more references
         will be freed immediately.
         """
-        cdef unique_lock[recursive_mutex] m0
         cdef unique_lock[recursive_mutex] sibling_m
-        # In the case of manipulating the theme tree,
-        # block all rendering. This is because with the
-        # push/pop system, removing/adding items during
-        # rendering cannot work
-        if self.element_child_category == child_type.cat_theme:
-            lock_gil_friendly(m0, self.context.viewport.mutex)
 
         cdef unique_lock[recursive_mutex] m
         self.__detach_item_and_lock(m)
