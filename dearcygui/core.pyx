@@ -4931,7 +4931,7 @@ cdef class uiItem(baseItem):
         self.size_update_requested = True
         self.pos_update_requested = False
         self.enabled_update_requested = False
-        self.last_frame_update = 0 # last frame update occured
+        self.last_frame_update = 0 # last frame update occured. TODO remove ?
         # mvAppItemConfig
         #self.filter = b""
         #self.alias = b""
@@ -10163,7 +10163,323 @@ cdef class CollapsingHeader(uiItem):
                 swap(pos_p, self.context.viewport.parent_pos)
                 self.last_widgets_child.draw()
                 self.context.viewport.parent_pos = pos_p
+        return not(was_open) and self.state.cur.open
 
+cdef class ChildWindow(uiItem):
+    def __cinit__(self):
+        self.child_flags = imgui.ImGuiChildFlags_Border | imgui.ImGuiChildFlags_NavFlattened
+        self.window_flags = imgui.ImGuiWindowFlags_NoSavedSettings
+        # TODO scrolling
+        self.can_have_widget_child = True
+        self.can_have_menubar_child = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        #self.state.cap.can_be_toggled = True # maybe ?
+        self.theme_condition_category = theme_categories.t_child
+
+    @property
+    def always_show_vertical_scrollvar(self):
+        """
+        Writable attribute to tell to always show a vertical scrollbar
+        even when the size does not require it
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar) else False
+
+    @always_show_vertical_scrollvar.setter
+    def always_show_vertical_scrollvar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
+
+    @property
+    def always_show_horizontal_scrollvar(self):
+        """
+        Writable attribute to tell to always show a horizontal scrollbar
+        even when the size does not require it (only if horizontal scrollbar
+        are enabled)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar) else False
+
+    @always_show_horizontal_scrollvar.setter
+    def always_show_horizontal_scrollvar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
+
+    @property
+    def no_scrollbar(self):
+        """Writable attribute to indicate the window should have no scrollbar
+           Does not disable scrolling via mouse or keyboard
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoScrollbar) else False
+
+    @no_scrollbar.setter
+    def no_scrollbar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoScrollbar
+
+    @property
+    def horizontal_scrollbar(self):
+        """
+        Writable attribute to enable having an horizontal scrollbar
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return True if (self.window_flags & imgui.ImGuiWindowFlags_HorizontalScrollbar) else False
+
+    @horizontal_scrollbar.setter
+    def horizontal_scrollbar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_HorizontalScrollbar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_HorizontalScrollbar
+
+    @property
+    def menubar(self):
+        """
+        Writable attribute to indicate whether the window has a menu bar.
+
+        There will be menubar if either the user has asked for it,
+        or there is a menubar child.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.last_menubar_child is not None) or (self.window_flags & imgui.ImGuiWindowFlags_MenuBar) != 0
+
+    @menubar.setter
+    def menubar(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_MenuBar
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_MenuBar
+
+    @property
+    def no_scroll_with_mouse(self):
+        """
+        Writable attribute: mouse wheel will be forwarded to the parent
+        unless NoScrollbar is also set.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.window_flags & imgui.ImGuiWindowFlags_NavFlattened) != 0
+
+    @no_scroll_with_mouse.setter
+    def no_scroll_with_mouse(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.window_flags &= ~imgui.ImGuiWindowFlags_NoScrollWithMouse
+        if value:
+            self.window_flags |= imgui.ImGuiWindowFlags_NoScrollWithMouse
+
+    @property
+    def flattened_navigation(self):
+        """
+        Writable attribute: share focus scope, allow gamepad/keyboard
+        navigation to cross over parent border to this child or
+        between sibling child windows.
+        Defaults to True.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_NavFlattened) != 0
+
+    @flattened_navigation.setter
+    def flattened_navigation(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_NavFlattened
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_NavFlattened
+
+    @property
+    def border(self):
+        """
+        Writable attribute: show an outer border and enable WindowPadding.
+        Defaults to True.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_Borders) != 0
+
+    @border.setter
+    def border(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_Borders
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_Borders
+
+    @property
+    def always_auto_resize(self):
+        """
+        Writable attribute: combined with AutoResizeX/AutoResizeY.
+        Always measure size even when child is hidden,
+        Note the item will render its children even if hidden.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_AlwaysAutoResize) != 0
+
+    @always_auto_resize.setter
+    def always_auto_resize(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_AlwaysAutoResize
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_AlwaysAutoResize
+
+    @property
+    def always_use_window_padding(self):
+        """
+        Writable attribute: pad with style WindowPadding even if
+        no border are drawn (no padding by default for non-bordered
+        child windows)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_AlwaysUseWindowPadding) != 0
+
+    @always_use_window_padding.setter
+    def always_use_window_padding(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_AlwaysUseWindowPadding
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_AlwaysUseWindowPadding
+
+    @property
+    def auto_resize_x(self):
+        """
+        Writable attribute: enable auto-resizing width based on the content
+        Set instead width to 0 to use the remaining size of the parent
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_AutoResizeX) != 0
+
+    @auto_resize_x.setter
+    def auto_resize_x(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_AutoResizeX
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_AutoResizeX
+
+    @property
+    def auto_resize_y(self):
+        """
+        Writable attribute: enable auto-resizing height based on the content
+        Set instead height to 0 to use the remaining size of the parent
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_AutoResizeY) != 0
+
+    @auto_resize_y.setter
+    def auto_resize_y(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_AutoResizeY
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_AutoResizeY
+
+    @property
+    def frame_style(self):
+        """
+        Writable attribute: if set, style the child window like a framed item.
+        That is: use FrameBg, FrameRounding, FrameBorderSize, FramePadding
+        instead of ChildBg, ChildRounding, ChildBorderSize, WindowPadding.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_FrameStyle) != 0
+
+    @frame_style.setter
+    def frame_style(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_FrameStyle
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_FrameStyle
+
+    @property
+    def resizable_x(self):
+        """
+        Writable attribute: allow resize from right border (layout direction).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_ResizeX) != 0
+
+    @resizable_x.setter
+    def resizable_x(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_ResizeX
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_ResizeX
+
+    @property
+    def resizable_y(self):
+        """
+        Writable attribute: allow resize from bottom border (layout direction).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.child_flags & imgui.ImGuiChildFlags_ResizeY) != 0
+
+    @resizable_y.setter
+    def resizable_y(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.child_flags &= ~imgui.ImGuiChildFlags_ResizeY
+        if value:
+            self.child_flags |= imgui.ImGuiChildFlags_ResizeY
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef imgui.ImGuiWindowFlags flags = self.window_flags
+        if self.last_menubar_child is not None:
+            flags |= imgui.ImGuiWindowFlags_MenuBar
+        cdef imgui.ImVec2 pos_p
+        if imgui.BeginChild(self.imgui_label.c_str(),
+                            self.requested_size,
+                            self.child_flags,
+                            flags):
+            pos_p = imgui.GetCursorScreenPos()
+            # TODO: since Child windows are ... windows, should we update window_pos ?
+            swap(pos_p, self.context.viewport.parent_pos)
+            if self.last_widgets_child is not None:
+                self.last_widgets_child.draw()
+            if self.last_menubar_child is not None:
+                self.last_menubar_child.draw()
+            self.context.viewport.parent_pos = pos_p
+            self.state.cur.rendered = True
+            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self.requested_size = imgui.GetWindowSize() # TODO: unsure we should do that 
+            self.state.cur.rect_size = imgui.GetWindowSize()
+            # TODO scrolling
+            imgui.EndChild()
+        else:
+            self.set_hidden_and_propagate_to_children(False)
+        return False # maybe True when visible ?
 
 """
 Complex ui items
@@ -10237,7 +10553,7 @@ cdef class Window(uiItem):
         self.min_size = imgui.ImVec2(100., 100.)
         self.max_size = imgui.ImVec2(30000., 30000.)
         self.theme_condition_category = theme_categories.t_window
-        self.scroll_x = 0.
+        self.scroll_x = 0. # TODO
         self.scroll_y = 0.
         self.scroll_x_update_requested = False
         self.scroll_y_update_requested = False
@@ -10447,7 +10763,7 @@ cdef class Window(uiItem):
     @property
     def menubar(self):
         """
-        Readable attribute to indicate whether the window has a menu bar.
+        Writable attribute to indicate whether the window has a menu bar.
 
         There will be menubar if either the user has asked for it,
         or there is a menubar child.
@@ -10458,12 +10774,6 @@ cdef class Window(uiItem):
 
     @menubar.setter
     def menubar(self, bint value):
-        """
-        Readable attribute to indicate whether the window has a menu bar.
-
-        There will be menubar if either the user has asked for it,
-        or there is a menubar child.
-        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.window_flags &= ~imgui.ImGuiWindowFlags_MenuBar
@@ -10928,7 +11238,7 @@ cdef class Window(uiItem):
             rect_size = imgui.GetWindowSize()
             self.requested_size = rect_size
             self.state.cur.rect_size = rect_size
-            self.last_frame_update = self.context.viewport.frame_count
+            self.last_frame_update = self.context.viewport.frame_count # TODO remove ?
             self.state.cur.pos_to_viewport = imgui.GetWindowPos()
             self.state.cur.pos_to_parent = self.state.cur.pos_to_viewport
         else:

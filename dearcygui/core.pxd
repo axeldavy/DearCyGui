@@ -885,6 +885,11 @@ cdef class CollapsingHeader(uiItem):
     cdef bint _closable
     cdef bint draw_item(self) noexcept nogil
 
+cdef class ChildWindow(uiItem):
+    cdef imgui.ImGuiWindowFlags window_flags
+    cdef imgui.ImGuiChildFlags child_flags
+    cdef bint draw_item(self) noexcept nogil
+
 """
 Complex UI elements
 """
@@ -998,6 +1003,7 @@ cpdef enum theme_categories:
     t_layout,
     t_treenode,
     t_collapsingheader,
+    t_child,
     t_window,
     t_plot
 
