@@ -1016,7 +1016,7 @@ cdef class DrawText(DrawText_):
     def text(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return str(self.text)
+        return str(self.text, encoding='utf-8')
     @text.setter
     def text(self, str value):
         cdef unique_lock[recursive_mutex] m

@@ -5653,10 +5653,11 @@ cdef class uiItem(baseItem):
         entirely guaranteed to be enforced.
         Specific values:
             . 0 is meant to define the default size. For some items,
-              such as windows or sliders (TODO check), it triggers
-              a fit to the maximum size. On the other hand for
-              most items, there is a default size defined in the style
-              policy.
+              such as windows, it triggers a fit to the content size.
+               For other items, there is a default size deduced from the
+              style policy. And for some items (such as child windows),
+              it triggers a fit to the full size available within the
+              parent window.
             . > 0 values is meant as a hint for rect_size.
             . < 0 values to be interpreted as 'take remaining space
               of the parent's content region from the current position,
@@ -5685,7 +5686,7 @@ cdef class uiItem(baseItem):
         Specific values:
             . 0 is meant to define the default size. For some items,
               such as windows, it triggers a fit to the content size.
-              For other items, there is a default size defined in the
+              For other items, there is a default size deduced from the
               style policy. And for some items (such as child windows),
               it triggers a fit to the full size available within the
               parent window.
@@ -10473,7 +10474,6 @@ cdef class ChildWindow(uiItem):
             self.state.cur.rendered = True
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self.requested_size = imgui.GetWindowSize() # TODO: unsure we should do that 
             self.state.cur.rect_size = imgui.GetWindowSize()
             # TODO scrolling
             imgui.EndChild()
@@ -11236,7 +11236,6 @@ cdef class Window(uiItem):
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
             rect_size = imgui.GetWindowSize()
-            self.requested_size = rect_size
             self.state.cur.rect_size = rect_size
             self.last_frame_update = self.context.viewport.frame_count # TODO remove ?
             self.state.cur.pos_to_viewport = imgui.GetWindowPos()
