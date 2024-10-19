@@ -3472,7 +3472,7 @@ cdef class DrawRect_(drawingItem):
 cdef class DrawText_(drawingItem):
     def __cinit__(self):
         self.color = 4294967295 # 0xffffffff
-        self.size = 1.
+        self.size = 0. # 0: default size. DearPyGui uses 1. internally, then 10. in the wrapper.
 
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
@@ -3485,8 +3485,11 @@ cdef class DrawText_(drawingItem):
 
         self.context.viewport.apply_current_transform(p, self.pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
-
-        drawlist.AddText(self._font.font if self._font is not None else NULL, 0., ip, self.color, self.text.c_str())
+        cdef float size = self.size
+        if size > 0 and self.context.viewport.in_plot:
+            size *= self.context.viewport.size_multiplier
+        size = abs(size)
+        drawlist.AddText(self._font.font if self._font is not None else NULL, size, ip, self.color, self.text.c_str())
 
 
 cdef class DrawTriangle_(drawingItem):
@@ -3875,8 +3878,6 @@ cdef class DrawInvisibleButton(drawingItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.has_rect_size):
-            raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
@@ -4922,7 +4923,7 @@ cdef class uiItem(baseItem):
         self.user_label = ""
         self._show = True
         self._enabled = True
-        self.can_be_disabled = False
+        self.can_be_disabled = True
         #self.location = -1
         # next frame triggers
         self.focus_update_requested = False
@@ -4937,7 +4938,7 @@ cdef class uiItem(baseItem):
         self.payloadType = b"$$DPG_PAYLOAD"
         self.requested_size = imgui.ImVec2(0., 0.)
         self._indent = 0.
-        self.theme_condition_enabled = theme_enablers.t_enabled_any
+        self.theme_condition_enabled = theme_enablers.t_enabled_True
         self.theme_condition_category = theme_categories.t_any
         self.can_have_sibling = True
         self.element_child_category = child_type.cat_widget
@@ -5049,6 +5050,16 @@ cdef class uiItem(baseItem):
             run_handlers(self, self._handlers, self.state)
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
+    def __dir__(self):
+        default_dir = dir(type(self))
+        if hasattr(self, '__dict__'): # Can happen with python subclassing
+            default_dir + list(self.__dict__.keys())
+        # Remove invalid ones
+        results = []
+        for e in default_dir:
+            if hasattr(self, e):
+                results.append(e)
+        return list(set(results))
 
     @property
     def active(self):
@@ -5267,6 +5278,7 @@ cdef class uiItem(baseItem):
         or to use a specific disabled element theme.
         Note a disabled item is still rendered. Use show=False to hide
         an object.
+        A disabled item does not react to hovering or clicking.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -5917,11 +5929,18 @@ cdef class uiItem(baseItem):
         if self._theme is not None:
             self._theme.push()
 
+        cdef bint enabled = self._enabled
+        if not(enabled):
+            imgui.PushItemFlag(1 << 10, True) #ImGuiItemFlags_Disabled
+
         cdef bint action = self.draw_item()
         cdef int i
         if action and not(self._callbacks.empty()):
             for i in range(<int>self._callbacks.size()):
                 self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)
+
+        if not(enabled):
+            imgui.PopItemFlag()
 
         if self._theme is not None:
             self._theme.pop()
@@ -6424,9 +6443,6 @@ cdef class Checkbox(uiItem):
         self.state.cap.can_be_dragged = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
-        self.can_be_disabled = True
-        self.theme_condition_enabled = theme_enablers.t_enabled_True
-        
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bool checked = SharedBool.get(<SharedBool>self._value)
@@ -6456,8 +6472,6 @@ cdef class Slider(uiItem):
         self.state.cap.can_be_edited = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
-        self.can_be_disabled = True
-        self.theme_condition_enabled = theme_enablers.t_enabled_True
 
     def configure(self, **kwargs):
         # Since some options cancel each other, one
@@ -7516,8 +7530,6 @@ cdef class InputValue(uiItem):
         self.state.cap.can_be_edited = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
-        self.can_be_disabled = True
-        self.theme_condition_enabled = theme_enablers.t_enabled_True
 
     def configure(self, **kwargs):
         # Since some options cancel each other, one
@@ -7954,8 +7966,8 @@ cdef class InputValue(uiItem):
         cdef float[4] value_float4
         cdef double[4] value_double4
         cdef void *data
-        cdef void *data_step
-        cdef void *data_step_fast
+        cdef void *data_step = NULL
+        cdef void *data_step_fast = NULL
         cdef bint modified
         cdef int istep, istep_fast
         cdef float fstep, fstep_fast
@@ -7965,20 +7977,26 @@ cdef class InputValue(uiItem):
             type = imgui.ImGuiDataType_S32
             istep = <int>self._step
             istep_fast = <int>self._step_fast
-            data_step = &istep
-            data_step_fast = &istep_fast
+            if istep > 0:
+                data_step = &istep
+            if istep_fast > 0:
+                data_step_fast = &istep_fast
         elif self._format == 1:
             type = imgui.ImGuiDataType_Float
             fstep = <float>self._step
             fstep_fast = <float>self._step_fast
-            data_step = &fstep
-            data_step_fast = &fstep_fast
+            if fstep > 0:
+                data_step = &fstep
+            if fstep_fast > 0:
+                data_step_fast = &fstep_fast
         else:
             type = imgui.ImGuiDataType_Double
             dstep = <double>self._step
             dstep_fast = <double>self._step_fast
-            data_step = &dstep
-            data_step_fast = &dstep_fast
+            if dstep > 0:
+                data_step = &dstep
+            if fstep_fast > 0:
+                data_step_fast = &dstep_fast
 
         # Read the value
         if self._format == 0:
@@ -8069,7 +8087,6 @@ cdef class Text(uiItem):
         self.state.cap.can_be_dragged = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
-        self.theme_condition_enabled = theme_enablers.t_enabled_True
 
     @property
     def color(self):
@@ -8385,6 +8402,7 @@ cdef class Image(uiItem):
         self.state.cap.can_be_dragged = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
+        self._uv = [0., 0., 1., 1.]
         self._border_color = 0
         self._color_multiplier = 4294967295
 
@@ -8594,9 +8612,10 @@ cdef class Separator(uiItem):
             imgui.SeparatorText(self.imgui_label.c_str())
         return False
 
-cdef class Spacer(uiItem): # TODO: disable all states
+cdef class Spacer(uiItem):
     def __cinit__(self):
         self.state.cap.has_rect_size = False
+        self.can_be_disabled = False
     cdef bint draw_item(self) noexcept nogil:
         if self.requested_size.x == 0 and \
            self.requested_size.y == 0:
@@ -10184,6 +10203,7 @@ cdef class TimeWatcher(uiItem):
     def __cinit__(self):
         self.state.cap.has_position = False
         self.state.cap.has_rect_size = False
+        self.can_be_disabled = False
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -10216,7 +10236,6 @@ cdef class Window(uiItem):
         self.on_close_callback = None
         self.min_size = imgui.ImVec2(100., 100.)
         self.max_size = imgui.ImVec2(30000., 30000.)
-        self.theme_condition_enabled = theme_enablers.t_enabled_any
         self.theme_condition_category = theme_categories.t_window
         self.scroll_x = 0.
         self.scroll_y = 0.
