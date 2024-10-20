@@ -2318,3 +2318,6 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
 
 cdef extern from "imgui_internal.h" namespace "ImGui" nogil:
     ImGuiKeyData* GetKeyData(ImGuiKey)
+    ImGuiID GetActiveID()
+    ImGuiID GetHoveredID()
+    ImGuiID GetFocusID()

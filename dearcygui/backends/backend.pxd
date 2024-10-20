@@ -31,6 +31,7 @@ cdef extern from "backend.h" nogil:
         bint disableClose
         bint waitForEvents
         atomic[bint] activity
+        atomic[bint] needs_refresh
 
         bint sizeDirty
         bint posDirty
@@ -72,8 +73,9 @@ cdef extern from "backend.h" nogil:
     void        mvMinimizeViewport(mvViewport& viewport)
     void        mvRestoreViewport (mvViewport& viewport)
     void        mvProcessEvents(mvViewport* viewport)
-    void        mvRenderFrame(mvViewport& viewport,
-                              mvGraphics& graphics)
+    bint        mvRenderFrame(mvViewport& viewport,
+                              mvGraphics& graphics,
+                              bint can_skip_presenting)
     void        mvPresent(mvViewport* viewport)
     void        mvToggleFullScreen(mvViewport& viewport)
     void        mvWakeRendering(mvViewport& viewport)

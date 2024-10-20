@@ -87,7 +87,7 @@ static void handle_refresh_request(GLFWwindow* window)
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
-    viewport->activity.store(true);
+    viewport->needs_refresh.store(true);
 }
 
 static void handle_window_resize(GLFWwindow *window, int width, int height)
@@ -95,12 +95,14 @@ static void handle_window_resize(GLFWwindow *window, int width, int height)
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
     viewport->on_resize(viewport->callback_data, width, height);
+    viewport->needs_refresh.store(true);
 }
 
 static void handle_window_close(GLFWwindow *window)
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
+    viewport->needs_refresh.store(true);
     viewport->on_close(viewport->callback_data);
 }
 
@@ -109,21 +111,23 @@ static void handle_mouse_button(GLFWwindow* window, int button, int action, int 
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
-    viewport->activity.store(true);
+    //viewport->activity.store(true);
+    viewport->needs_refresh.store(true); // conservative choice
 }
 
 static void handle_scroll(GLFWwindow* window, double xoffset, double yoffset)
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
-    viewport->activity.store(true);
+    viewport->needs_refresh.store(true); // Hard to detect when we do not need to render for scroll
 }
 
 static void handle_key(GLFWwindow* window, int keycode, int scancode, int action, int mods)
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
-    viewport->activity.store(true);
+    //viewport->activity.store(true);
+    viewport->needs_refresh.store(true); // editable fields, etc might get updated
 }
 
 static void handle_focus(GLFWwindow* window, int focused)
@@ -151,7 +155,7 @@ static void handle_char(GLFWwindow* window, unsigned int c)
 {
     mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
 
-    viewport->activity.store(true);
+    viewport->needs_refresh.store(true);
 }
 
 static void
@@ -200,8 +204,10 @@ mvProcessEvents(mvViewport* viewport)
     // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
     // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 
+    // Activity: input activity. Needs to render to check impact
+    // Needs refresh: if the content has likely changed and we must render and present
     if (viewport->waitForEvents || glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
-        while (!viewport->activity.load())
+        while (!viewport->activity.load() && !viewport->needs_refresh.load())
             glfwWaitEventsTimeout(0.001);
     viewport->activity.store(false);
     glfwPollEvents();
@@ -377,9 +383,34 @@ mvRestoreViewport(mvViewport& viewport)
     glfwRestoreWindow(viewportData->handle);
 }
 
-void
+static bool FastActivityCheck()
+{
+    ImGuiContext& g = *GImGui;
+
+    /* Change in active ID or hovered ID might trigger animation */
+    if (g.ActiveIdPreviousFrame != g.ActiveId ||
+        g.HoveredId != g.HoveredIdPreviousFrame ||
+        g.NavJustMovedToId)
+        return true;
+    /* Dragging item likely needs refresh */
+    for (int button = 0; button < IM_ARRAYSIZE(g.IO.MouseDown); button++) {
+        if (g.IO.MouseDown[button] && g.IO.MouseDragMaxDistanceSqr[button] > 0)
+            return true;
+    }
+
+    /* Cursor needs redraw */
+    if (g.IO.MouseDrawCursor && \
+        (g.IO.MouseDelta.x != 0. ||
+         g.IO.MouseDelta.y != 0.))
+        return true;
+
+    return false;
+}
+
+bool
 mvRenderFrame(mvViewport& viewport,
- 			  mvGraphics& graphics)
+ 			  mvGraphics& graphics,
+              bool can_skip_presenting)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     (void)viewportData;
@@ -395,11 +426,40 @@ mvRenderFrame(mvViewport& viewport,
     ImGui::NewFrame();
 
     if (GImGui->CurrentWindow == nullptr)
-        return;
+        return false;
+
+    bool needs_refresh = viewport.needs_refresh.load();
+    viewport.needs_refresh.store(false);
 
     viewport.render(viewport.callback_data);
 
+    // Updates during the frame
+    needs_refresh |= viewport.needs_refresh.load();
+
+    static bool prev_needs_refresh = true;
+
+    if (!needs_refresh) {
+        needs_refresh = FastActivityCheck();
+        /* Refresh next frame too */
+        if (needs_refresh)
+            viewport.needs_refresh.store(true);
+    }
+    // Maybe we could use some statistics like number of vertices
+    can_skip_presenting &= !needs_refresh && !prev_needs_refresh;
+    // The frame just after an activity might trigger some visual changes
+    prev_needs_refresh = needs_refresh;
+
+    if (can_skip_presenting) {
+        /* Check one frame more for changes*/
+        if (!needs_refresh)
+            viewport.activity.store(true);
+        ImGui::EndFrame();
+        return false;
+    }
+
     prepare_present(graphics, &viewport, viewport.clearColor, viewport.vsync);
+    return true;
+    
 }
 
 void
@@ -438,7 +498,7 @@ mvToggleFullScreen(mvViewport& viewport)
 
 void mvWakeRendering(mvViewport& viewport)
 {
-    viewport.activity.store(true);
+    viewport.needs_refresh.store(true);
     glfwPostEmptyEvent();
 }
 
@@ -455,6 +515,7 @@ void mvReleaseUploadContext(mvViewport& viewport)
     glFlush();
     glfwMakeContextCurrent(NULL);
     viewportData->secondary_gl_context.unlock();
+    viewport.needs_refresh.store(true);
 }
 
 static std::unordered_map<GLuint, GLuint> PBO_ids;

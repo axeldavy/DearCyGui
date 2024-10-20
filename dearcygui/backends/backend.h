@@ -77,6 +77,7 @@ struct mvViewport
 	bool disableClose = false;
 	bool waitForEvents = false;
 	std::atomic<bool> activity = std::atomic<bool>(true);
+	std::atomic<bool> needs_refresh = std::atomic<bool>(true);
 
 	// position/size
 	bool  sizeDirty    = false;
@@ -127,8 +128,9 @@ void        mvMaximizeViewport(mvViewport& viewport);
 void        mvMinimizeViewport(mvViewport& viewport);
 void        mvRestoreViewport (mvViewport& viewport);
 void        mvProcessEvents(mvViewport* viewport);
-void        mvRenderFrame(mvViewport& viewport,
-						  mvGraphics& graphics);
+bool        mvRenderFrame(mvViewport& viewport,
+						  mvGraphics& graphics,
+						  bool can_skip_presenting);
 void		mvPresent(mvViewport* viewport);
 void        mvToggleFullScreen(mvViewport& viewport);
 void        mvWakeRendering(mvViewport& viewport);

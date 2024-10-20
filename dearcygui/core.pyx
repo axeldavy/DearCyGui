@@ -46,6 +46,7 @@ cnp.import_array()
 
 import scipy
 import scipy.spatial
+import time as python_time
 import threading
 import weakref
 
@@ -2362,6 +2363,7 @@ cdef class Viewport(baseItem):
 
     cdef void __render(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef bint any_change = False
         self.last_t_before_rendering = ctime.monotonic_ns()
         # Initialize drawing state
         imgui.SetMouseCursor(self._cursor)
@@ -2562,7 +2564,7 @@ cdef class Viewport(baseItem):
             self.applied_theme_actions.pop_back()
 
 
-    def render_frame(self):
+    def render_frame(self, bint can_skip_presenting=False):
         """
         Render one frame.
 
@@ -2577,6 +2579,19 @@ cdef class Viewport(baseItem):
           window update. It's usually at this step that the system will
           apply vsync by making the application wait if it rendered faster
           than the screen refresh rate.
+
+        can_skip_presenting: rendering will occur (handlers checked, etc),
+            but the backend might decide, if this flag is set, to not
+            submit the rendering commands to the GPU and refresh the
+            window. Can be used to avoid using the GPU in response
+            to a simple mouse motion.
+            Fast checks are used to determine if presenting should occur
+            or not. Thus set this only if you haven't updated any content
+            on the screen.
+            Note wake() will automatically force a redraw the next frame.
+
+        Returns True if the frame was presented to the screen,
+            False else (can_skip_presenting)
         """
         # to lock in this order
         cdef unique_lock[recursive_mutex] imgui_m = unique_lock[recursive_mutex](self.context.imgui_mutex, defer_lock_t())
@@ -2585,6 +2600,7 @@ cdef class Viewport(baseItem):
         lock_gil_friendly(self_m, self.mutex)
         self.__check_initialized()
         self.last_t_before_event_handling = ctime.monotonic_ns()
+        cdef bint should_present
         with nogil:
             backend_m.lock()
             self_m.unlock()
@@ -2601,16 +2617,22 @@ cdef class Viewport(baseItem):
             ensure_correct_im_context(self.context)
             #imgui.GetMainViewport().DpiScale = self.viewport.dpi
             #imgui.GetIO().FontGlobalScale = self.viewport.dpi
-            mvRenderFrame(dereference(self.viewport),
-			    		  self.graphics)
+            should_present = \
+                mvRenderFrame(dereference(self.viewport),
+                              self.graphics,
+                              can_skip_presenting)
             #self.last_t_after_rendering = ctime.monotonic_ns()
             backend_m.unlock()
             self_m.unlock()
             imgui_m.unlock()
             # Present doesn't use imgui but can take time (vsync)
             backend_m.lock()
-            mvPresent(self.viewport)
+            if should_present:
+                mvPresent(self.viewport)
             backend_m.unlock()
+        if not(should_present) and self.viewport.vsync:
+            # cap 'cpu' framerate when not presenting
+            python_time.sleep(0.005)
         lock_gil_friendly(self_m, self.mutex)
         cdef long long current_time = ctime.monotonic_ns()
         self.delta_frame = 1e-9 * <float>(current_time - self.last_t_after_swapping)
@@ -2631,6 +2653,7 @@ cdef class Viewport(baseItem):
         assert(self.pending_theme_actions.empty())
         assert(self.applied_theme_actions.empty())
         assert(self.start_pending_theme_actions == 0)
+        return should_present
 
     def wake(self):
         """
@@ -2644,13 +2667,11 @@ cdef class Viewport(baseItem):
         cdef unique_lock[recursive_mutex] m2
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex)
-        self.viewport.activity.store(True)
         mvWakeRendering(dereference(self.viewport))
 
     cdef void cwake(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
-        self.viewport.activity.store(True)
         mvWakeRendering(dereference(self.viewport))
 
 
@@ -8882,6 +8903,8 @@ cdef class Tooltip(uiItem):
         else:
             self.set_hidden_and_propagate_to_children(False)
             # NOTE: we could also set the rects. DPG does it.
+        if self.state.cur.rendered != was_visible:
+            self.context._viewport.viewport.needs_refresh.store(True)
         return self.state.cur.rendered and not(was_visible)
 
 cdef class TabButton(uiItem):
@@ -9484,7 +9507,7 @@ cdef class HorizontalLayout(Layout):
             size += (<uiItem>child).state.cur.rect_size.x
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).state.cur.rect_size.x == 0:
+            if (<uiItem>child).requested_size.x == 0 and not(self.state.prev.rendered):
                 # Will need to recompute layout after the size is computed
                 self.force_update = True
         return size
@@ -9735,7 +9758,7 @@ cdef class VerticalLayout(Layout):
             size += (<uiItem>child).state.cur.rect_size.y
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).state.cur.rect_size.y == 0:
+            if (<uiItem>child).requested_size.y == 0 and not(self.state.prev.rendered):
                 # Will need to recompute layout after the size is computed
                 self.force_update = True
         return size
