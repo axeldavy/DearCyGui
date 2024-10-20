@@ -9,6 +9,77 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from cpython cimport PyObject_GenericSetAttr
 
 cdef class ThemeColorImGui(baseTheme):
+    """
+    Theme color parameters that affect how ImGui
+    renders items.
+    All colors accept three formats:
+    - unsigned (encodes a rgba little-endian)
+    - (r, g, b, a) with r, g, b, a as integers.
+    - (r, g, b, a) with r, g, b, a as floats.
+
+    When r, g, b, a are floats, they should be normalized
+    between 0 and 1, while integers are between 0 and 255.
+    If a is missing, it defaults to 255.
+
+    Keyword Arguments:
+        Text: Color for text rendering
+        TextDisabled: Color for the text of disabled items
+        WindowBg: Background of normal windows
+        ChildBg:  Background of child windows
+        PopupBg: Background of popups, menus, tooltips windows
+        Border: Color of borders
+        BorderShadow: Color of border shadows
+        FrameBg: Background of checkbox, radio button, plot, slider, text input
+        FrameBgHovered: Color of FrameBg when the item is hovered
+        FrameBgActive: Color of FrameBg when the item is active
+        TitleBg: Title bar
+        TitleBgActive: Title bar when focused
+        TitleBgCollapsed: Title bar when collapsed
+        MenuBarBg: Background color of the menu bar
+        ScrollbarBg: Background color of the scroll bar
+        ScrollbarGrab: Color of the scroll slider
+        ScrollbarGrabHovered: Color of the scroll slider when hovered
+        ScrollbarGrabActive: Color of the scroll slider when selected
+        CheckMark: Checkbox tick and RadioButton circle
+        SliderGrab: Color of sliders
+        SliderGrabActive: Color of selected sliders
+        Button: Color of buttons
+        ButtonHovered: Color of buttons when hovered
+        ButtonActive: Color of buttons when selected
+        Header: Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
+        HeaderHovered: Header color when hovered
+        HeaderActive: Header color when clicked
+        Separator: Color of separators
+        SeparatorHovered: Color of separator when hovered
+        SeparatorActive: Color of separator when active
+        ResizeGrip: Resize grip in lower-right and lower-left corners of windows.
+        ResizeGripHovered: ResizeGrip when hovered
+        ResizeGripActive: ResizeGrip when clicked
+        TabHovered: Tab background, when hovered
+        Tab: Tab background, when tab-bar is focused & tab is unselected
+        TabSelected: Tab background, when tab-bar is focused & tab is selected
+        TabSelectedOverline: Tab horizontal overline, when tab-bar is focused & tab is selected
+        TabDimmed: Tab background, when tab-bar is unfocused & tab is unselected
+        TabDimmedSelected: Tab background, when tab-bar is unfocused & tab is selected
+        TabDimmedSelectedOverline: ..horizontal overline, when tab-bar is unfocused & tab is selected
+        PlotLines: Color of SimplePlot lines
+        PlotLinesHovered: Color of SimplePlot lines when hovered
+        PlotHistogram: Color of SimplePlot histogram
+        PlotHistogramHovered: Color of SimplePlot histogram when hovered
+        TableHeaderBg: Table header background
+        TableBorderStrong: Table outer and header borders (prefer using Alpha=1.0 here)
+        TableBorderLight: Table inner borders (prefer using Alpha=1.0 here)
+        TableRowBg: Table row background (even rows)
+        TableRowBgAlt: Table row background (odd rows)
+        TextLink: Hyperlink color
+        TextSelectedBg: Color of the background of selected text
+        DragDropTarget: Rectangle highlighting a drop target
+        NavHighlight: Gamepad/keyboard: current highlighted item
+        NavWindowingHighlight: Highlight window when using CTRL+TAB
+        NavWindowingDimBg: Darken/colorize entire screen behind the CTRL+TAB window list, when active
+        ModalWindowDimBg: Darken/colorize entire screen behind a modal window, when one is active
+    """
+
     def __cinit__(self):
         cdef int i
         cdef string col_name
@@ -38,6 +109,7 @@ cdef class ThemeColorImGui(baseTheme):
             # None: default
             return None
         cdef imgui.ImU32 value = dereference(element_content).second
+        # TODO: maybe use unparse_color
         return value
 
     def __getitem__(self, key):
