@@ -2391,7 +2391,6 @@ cdef class Viewport(baseItem):
         if self._font is not None:
             self._font.pop()
         run_handlers(self, self._handlers, self.state)
-        self.state.prev.rendered = True
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
@@ -10216,6 +10215,7 @@ cdef class ChildWindow(uiItem):
         self.state.cap.can_be_dragged = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
+        self.state.cap.has_content_region = True
         #self.state.cap.can_be_toggled = True # maybe ?
         self.theme_condition_category = theme_categories.t_child
 
@@ -10516,6 +10516,7 @@ cdef class ChildWindow(uiItem):
                             requested_size,
                             child_flags,
                             flags):
+            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             pos_p = imgui.GetCursorScreenPos()
             # TODO: since Child windows are ... windows, should we update window_pos ?
             swap(pos_p, self.context._viewport.parent_pos)
