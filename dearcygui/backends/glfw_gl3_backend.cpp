@@ -392,9 +392,13 @@ static bool FastActivityCheck()
         g.HoveredId != g.HoveredIdPreviousFrame ||
         g.NavJustMovedToId)
         return true;
-    /* Dragging item likely needs refresh */
+
     for (int button = 0; button < IM_ARRAYSIZE(g.IO.MouseDown); button++) {
+        /* Dragging item likely needs refresh */
         if (g.IO.MouseDown[button] && g.IO.MouseDragMaxDistanceSqr[button] > 0)
+            return true;
+        /* Releasing or clicking mouse might trigger things */
+        if (g.IO.MouseReleased[button] || g.IO.MouseClicked[button])
             return true;
     }
 
@@ -434,25 +438,28 @@ mvRenderFrame(mvViewport& viewport,
     viewport.render(viewport.callback_data);
 
     // Updates during the frame
+    // Not all might have been made into rendering
+    // thus we don't reset needs_refresh
     needs_refresh |= viewport.needs_refresh.load();
+
+    if (FastActivityCheck()) {
+        needs_refresh = true;
+        /* Refresh next frame in case of activity.
+         * For instance click release might open
+         * a menu */
+        viewport.needs_refresh.store(true);
+    }
 
     static bool prev_needs_refresh = true;
 
-    if (!needs_refresh) {
-        needs_refresh = FastActivityCheck();
-        /* Refresh next frame too */
-        if (needs_refresh)
-            viewport.needs_refresh.store(true);
-    }
     // Maybe we could use some statistics like number of vertices
     can_skip_presenting &= !needs_refresh && !prev_needs_refresh;
+
     // The frame just after an activity might trigger some visual changes
     prev_needs_refresh = needs_refresh;
 
     if (can_skip_presenting) {
-        /* Check one frame more for changes*/
-        if (!needs_refresh)
-            viewport.activity.store(true);
+
         ImGui::EndFrame();
         return false;
     }

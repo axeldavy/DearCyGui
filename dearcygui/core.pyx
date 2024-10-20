@@ -102,7 +102,7 @@ cdef void internal_render_callback(void *object) noexcept nogil:
     (<Viewport>object).__render()
 
 # Placeholder global where the last created Context is stored.
-C = None
+C : Context = None
 
 # The no gc clear flag enforces that in case
 # of no-reference cycle detected, the Context is freed last.
