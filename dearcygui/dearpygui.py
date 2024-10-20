@@ -13,6 +13,8 @@
 import warnings
 import functools
 import inspect
+import random
+import string
 from contextlib import contextmanager
 
 import dearcygui as dcg
@@ -1367,7 +1369,15 @@ def bar_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float],
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return bar_series(x, y, label=label, user_data=user_data, show=show, weight=weight, horizontal=horizontal, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    return dcg.PlotBars(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, show=show, weight=weight, horizontal=horizontal, **kwargs)
 
 def bool_value(*, label: str =None, user_data: Any =None, default_value: bool =False, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a bool value.
@@ -1556,8 +1566,7 @@ def child_window(*, label: str =None, user_data: Any =None, width: int =0, heigh
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return child_window(label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, border=border, autosize_x=autosize_x, autosize_y=autosize_y, no_scrollbar=no_scrollbar, horizontal_scrollbar=horizontal_scrollbar, menubar=menubar, no_scroll_with_mouse=no_scroll_with_mouse, flattened_navigation=flattened_navigation, always_use_window_padding=always_use_window_padding, resizable_x=resizable_x, resizable_y=resizable_y, always_auto_resize=always_auto_resize, frame_style=frame_style, auto_resize_x=auto_resize_x, auto_resize_y=auto_resize_y, **kwargs)
-    return dcg.TreeNode(DCG_CONTEXT)
+    return dcg.ChildWindow(DCG_CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, drop_callback=drop_callback, show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, border=border, autosize_x=autosize_x, autosize_y=autosize_y, no_scrollbar=no_scrollbar, horizontal_scrollbar=horizontal_scrollbar, menubar=menubar, no_scroll_with_mouse=no_scroll_with_mouse, flattened_navigation=flattened_navigation, always_use_window_padding=always_use_window_padding, resizable_x=resizable_x, resizable_y=resizable_y, always_auto_resize=always_auto_resize, frame_style=frame_style, auto_resize_x=auto_resize_x, auto_resize_y=auto_resize_y, **kwargs)
 
 def clipper(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, show: bool =True, **kwargs) -> Union[int, str]:
     """     Helper to manually clip large list of items. Increases performance by not searching or drawing widgets outside of the clipped region.
@@ -3076,7 +3085,20 @@ def image_series(texture_tag : Union[int, str], bounds_min : Union[List[float], 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return image_series(texture_tag, bounds_min, bounds_max, label=label, user_data=user_data, show=show, uv_min=uv_min, uv_max=uv_max, tint_color=tint_color, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    # TODO: tint color if set should be attributed to the legend color
+    parent_item =  dcg.DrawInPlot(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), no_legend=False, label=label, user_data=user_data, **kwargs)
+
+    dcg.DrawImage(DCG_CONTEXT, parent=parent_item, texture=DCG_CONTEXT[texture_tag], pmin=bounds_min, pmax=bounds_max, show=show, uv_min=uv_min, uv_max=uv_max, color=tint_color)
+
+    return parent_item
 
 def inf_line_series(x : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, horizontal: bool =False, **kwargs) -> Union[int, str]:
     """     Adds an infinite line series to a plot.
@@ -3100,7 +3122,15 @@ def inf_line_series(x : Union[List[float], Tuple[float, ...]], *, label: str =No
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return inf_line_series(x, label=label, user_data=user_data, show=show, horizontal=horizontal, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    return dcg.PlotInfLines(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, label=label, user_data=user_data, show=show, horizontal=horizontal, **kwargs)
 
 def input_double(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, format: str ='%.3f', min_value: float =0.0, max_value: float =100.0, step: float =0.1, step_fast: float =1.0, min_clamped: bool =False, max_clamped: bool =False, on_enter: bool =False, readonly: bool =False, **kwargs) -> Union[int, str]:
     """     Adds input for an double. Useful when input float is not accurate enough. +/- buttons can be activated by setting the value of step.
@@ -4698,7 +4728,15 @@ def scatter_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[flo
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return scatter_series(x, y, label=label, user_data=user_data, show=show, no_clip=no_clip, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    return dcg.PlotScatter(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, show=show, no_clip=no_clip, **kwargs)
 
 def selectable(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: bool =False, span_columns: bool =False, disable_popup_close: bool =False, **kwargs) -> Union[int, str]:
     """     Adds a selectable. Similar to a button but can indicate its selected state.
@@ -4804,7 +4842,15 @@ def shade_series(x : Union[List[float], Tuple[float, ...]], y1 : Union[List[floa
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return shade_series(x, y1, label=label, user_data=user_data, show=show, y2=y2, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    return dcg.PlotShadedLine(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y1=y1, label=label, user_data=user_data, show=show, Y2=y2, **kwargs)
 
 def simple_plot(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: Union[List[float], Tuple[float, ...]] =(), overlay: str ='', histogram: bool =False, autosize: bool =True, min_scale: float =0.0, max_scale: float =0.0, **kwargs) -> Union[int, str]:
     """     Adds a simple plot for visualization of a 1 dimensional set of values.
@@ -5150,7 +5196,15 @@ def stair_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return stair_series(x, y, label=label, user_data=user_data, show=show, pre_step=pre_step, shaded=shaded, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    return dcg.PlotStairs(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, show=show, pre_step=pre_step, shaded=shaded, **kwargs)
 
 def static_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a static texture.
@@ -5198,7 +5252,15 @@ def stem_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float]
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return stem_series(x, y, label=label, user_data=user_data, indent=indent, show=show, horizontal=horizontal, **kwargs)
+    parent = kwargs.pop("parent", None)
+    if parent is None:
+        axis_y = LOCAL_STORAGE.CURRENT_Y_AXIS
+    else:
+        axis_y = parent
+
+    plot = axis_y.plot
+
+    return dcg.PlotStems(DCG_CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, indent=indent, show=show, horizontal=horizontal, **kwargs)
 
 def string_value(*, label: str =None, user_data: Any =None, default_value: str ='', parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a string value.
@@ -6651,7 +6713,8 @@ def empty_container_stack(**kwargs) -> None:
         None
     """
 
-    #return internal_dpg.empty_container_stack(**kwargs)
+    while DCG_CONTEXT.fetch_parent_queue_back() is not None:
+        DCG_CONTEXT.pop_next_parent()
 
 def fit_axis_data(axis : Union[int, str], **kwargs) -> None:
     """     Sets the axis boundaries max/min in the data series currently on the plot.
@@ -6683,7 +6746,7 @@ def generate_uuid(**kwargs) -> Union[int, str]:
         Union[int, str]
     """
 
-    #return internal_dpg.generate_uuid(**kwargs)
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 def get_active_window(**kwargs) -> Union[int, str]:
     """     Returns the active window.
@@ -6760,7 +6823,8 @@ def get_axis_limits(axis : Union[int, str], **kwargs) -> Union[List[float], Tupl
         Union[List[float], Tuple[float, ...]]
     """
 
-    #return internal_dpg.get_axis_limits(axis, **kwargs)
+    item = DCG_CONTEXT[axis]
+    return (item.min, item.max)
 
 def get_callback_queue(**kwargs) -> Any:
     """     New in 1.2. Returns and clears callback queue.

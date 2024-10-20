@@ -694,4 +694,7 @@ cdef extern from "implot.h" namespace "ImPlot" nogil:
 cdef extern from "implot_internal.h" namespace "ImPlot" nogil:
     bint BeginItem(const char*, ImPlotFlags, ImPlotCol)
     void EndItem()
+    bint FitThisFrame()
+    void FitPointX(double)
+    void FitPointY(double)
 

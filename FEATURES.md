@@ -48,13 +48,14 @@ Layouts replace Groups.
 - Support for X2 and X3 axes
 - Support for handlers on the axes
 - Support for zero copy when passing plot data (requires int32, float32 or float64 data)
+- It is possible to fit the plot to contained drawing items
+- Extended Custom Plot functionnality (possibility to add legend to groups of drawing items drawn in plot space)
 
 ## Features that DearCyGui does not support yet
 - Tables
 - Drag rects/lines
-- fonts, colormaps
+- colormaps
 - some types of plots
-- Child windows
 - Colormaps
 - DragNDrop. Not 100% sure yet it will be supported.
 

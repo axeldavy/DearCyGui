@@ -290,6 +290,7 @@ cdef class Viewport(baseItem):
     cdef imgui.ImVec2 window_pos
     cdef imgui.ImVec2 parent_pos
     cdef bint in_plot
+    cdef bint plot_fit
     cdef float thickness_multiplier # in plots
     cdef float size_multiplier # in plots
     cdef bint[<int>implot.ImAxis_COUNT] enabled_axes
@@ -1197,6 +1198,7 @@ cdef class PlotScatter(plotElementXY):
     cdef void draw_element(self) noexcept nogil
 
 cdef class DrawInPlot(plotElementWithLegend):
+    cdef bint _ignore_fit
     cdef void draw(self) noexcept nogil
 
 """

@@ -2412,6 +2412,9 @@ cdef class Viewport(baseItem):
 
         cdef imgui.ImVec2 plot_transformed
         if self.in_plot:
+            if self.plot_fit:
+                implot.FitPointX(transformed_p[0])
+                implot.FitPointY(transformed_p[1])
             plot_transformed = \
                 implot.PlotToPixels(transformed_p[0],
                                     transformed_p[1],
@@ -10333,15 +10336,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_Borders) != 0
+        return (self.child_flags & imgui.ImGuiChildFlags_Border) != 0
 
     @border.setter
     def border(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_Borders
+        self.child_flags &= ~imgui.ImGuiChildFlags_Border
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_Borders
+            self.child_flags |= imgui.ImGuiChildFlags_Border
 
     @property
     def always_auto_resize(self):
@@ -10475,9 +10478,23 @@ cdef class ChildWindow(uiItem):
         if self.last_menubar_child is not None:
             flags |= imgui.ImGuiWindowFlags_MenuBar
         cdef imgui.ImVec2 pos_p
+        cdef imgui.ImVec2 requested_size = self.requested_size
+        cdef imgui.ImGuiChildFlags child_flags = self.child_flags
+        # Else they have no effect
+        if child_flags & imgui.ImGuiChildFlags_AutoResizeX:
+            requested_size.x = 0
+            # incompatible flags
+            child_flags &= ~imgui.ImGuiChildFlags_ResizeX
+        if child_flags & imgui.ImGuiChildFlags_AutoResizeY:
+            requested_size.y = 0
+            child_flags &= ~imgui.ImGuiChildFlags_ResizeY
+        # Else imgui is not happy
+        if child_flags & imgui.ImGuiChildFlags_AlwaysAutoResize:
+            if (child_flags & (imgui.ImGuiChildFlags_AutoResizeX | imgui.ImGuiChildFlags_AutoResizeY)) == 0:
+                child_flags &= ~imgui.ImGuiChildFlags_AlwaysAutoResize
         if imgui.BeginChild(self.imgui_label.c_str(),
-                            self.requested_size,
-                            self.child_flags,
+                            requested_size,
+                            child_flags,
                             flags):
             pos_p = imgui.GetCursorScreenPos()
             # TODO: since Child windows are ... windows, should we update window_pos ?
@@ -10492,9 +10509,9 @@ cdef class ChildWindow(uiItem):
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
             self.state.cur.rect_size = imgui.GetWindowSize()
             # TODO scrolling
-            imgui.EndChild()
         else:
             self.set_hidden_and_propagate_to_children(False)
+        imgui.EndChild()
         return False # maybe True when visible ?
 
 cdef class ColorButton(uiItem):
@@ -14719,6 +14736,23 @@ cdef class DrawInPlot(plotElementWithLegend):
     def __cinit__(self):
         self.can_have_drawing_child = True
         self._legend = False
+        self._ignore_fit = False
+
+    @property
+    def ignore_fit(self):
+        """
+        Writable attribute to make this element
+        be ignored during plot fits
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._ignore_fit
+
+    @ignore_fit.setter
+    def ignore_fit(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._ignore_fit = value
 
     cdef void draw(self) noexcept nogil:
         # Render siblings first
@@ -14755,6 +14789,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         self.context.viewport.depthClipping = False
         self.context.viewport.has_matrix_transform = False
         self.context.viewport.in_plot = True
+        self.context.viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
         self.context.viewport.thickness_multiplier = implot.GetStyle().LineWeight
         self.context.viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
         self.context.viewport.thickness_multiplier = self.context.viewport.thickness_multiplier * self.context.viewport.size_multiplier
