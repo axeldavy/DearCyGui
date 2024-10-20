@@ -890,6 +890,18 @@ cdef class ChildWindow(uiItem):
     cdef imgui.ImGuiChildFlags child_flags
     cdef bint draw_item(self) noexcept nogil
 
+cdef class ColorButton(uiItem):
+    cdef imgui.ImGuiColorEditFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class ColorEdit(uiItem):
+    cdef imgui.ImGuiColorEditFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
+cdef class ColorPicker(uiItem):
+    cdef imgui.ImGuiColorEditFlags flags
+    cdef bint draw_item(self) noexcept nogil
+
 """
 Complex UI elements
 """
@@ -1004,6 +1016,9 @@ cpdef enum theme_categories:
     t_treenode,
     t_collapsingheader,
     t_child,
+    t_colorbutton,
+    t_coloredit,
+    t_colorpicker,
     t_window,
     t_plot
 

@@ -4500,6 +4500,10 @@ cdef class SharedValue:
         raise ValueError("Shared value is empty. Cannot set.")
 
     @property
+    def shareable_value(self):
+        return self
+
+    @property
     def last_frame_update(self):
         """
         Readable attribute: last frame index when the value
@@ -4916,6 +4920,15 @@ cdef class baseHandler(baseItem):
 cdef inline object IntPairFromVec2(imgui.ImVec2 v):
     return (<int>v.x, <int>v.y)
 
+cdef extern from * nogil:
+    """
+    ImVec2 GetDefaultItemSize(ImVec2 requested_size)
+    {
+        return ImTrunc(ImGui::CalcItemSize(requested_size, ImGui::CalcItemWidth(), ImGui::GetTextLineHeightWithSpacing() * 7.25f + ImGui::GetStyle().FramePadding.y * 2.0f));
+    }
+    """
+    imgui.ImVec2 GetDefaultItemSize(imgui.ImVec2)
+
 cdef class uiItem(baseItem):
     def __cinit__(self):
         # mvAppItemInfo
@@ -4964,6 +4977,10 @@ cdef class uiItem(baseItem):
                 self.state.cur.pos_to_viewport = self.state.cur.pos_to_window # for windows TODO move to own configure
         if 'callback' in kwargs:
             self.callbacks = kwargs.pop("callback")
+        if 'source' in kwargs:
+            source = kwargs.pop("source")
+            if source is not None and (not(isinstance(source, int)) or (source > 0)):
+                self.shareable_value = self.context[source].shareable_value
         return super().configure(**kwargs)
 
     cdef void update_current_state(self) noexcept nogil:
@@ -6215,7 +6232,6 @@ cdef class Button(uiItem):
         self._repeat = value
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef bint activated
         imgui.PushItemFlag(imgui.ImGuiItemFlags_ButtonRepeat, self._repeat)
         if self._small:
@@ -6854,7 +6870,7 @@ cdef class Slider(uiItem):
             if self._size == 1:
                 if self._vertical:
                     modified = imgui.VSliderScalar(self.imgui_label.c_str(),
-                                                   self.requested_size,
+                                                   GetDefaultItemSize(self.requested_size),
                                                    type,
                                                    data,
                                                    data_min,
@@ -10480,6 +10496,389 @@ cdef class ChildWindow(uiItem):
         else:
             self.set_hidden_and_propagate_to_children(False)
         return False # maybe True when visible ?
+
+cdef class ColorButton(uiItem):
+    def __cinit__(self):
+        self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
+        self.theme_condition_category = theme_categories.t_colorbutton
+        self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+
+    @property
+    def no_alpha(self):
+        """
+        Writable attribute: ignore Alpha component (will only read 3 components from the input pointer)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
+
+    @no_alpha.setter
+    def no_alpha(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoAlpha
+
+    @property
+    def no_tooltip(self):
+        """
+        Writable attribute: disable default tooltip when hovering the preview
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
+
+    @no_tooltip.setter
+    def no_tooltip(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoTooltip
+
+    @property
+    def no_drag_drop(self):
+        """
+        Writable attribute: disable drag and drop source
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoDragDrop) != 0
+
+    @no_drag_drop.setter
+    def no_drag_drop(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoDragDrop
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoDragDrop
+
+    @property
+    def no_border(self):
+        """
+        Writable attribute: disable the default border
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoBorder) != 0
+
+    @no_border.setter
+    def no_border(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoBorder
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoBorder
+
+    # TODO: there are more options, which can be user toggled.
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bint activated
+        cdef imgui.ImVec4 col = SharedColor.getF4(<SharedColor>self._value)
+        activated = imgui.ColorButton(self.imgui_label.c_str(),
+                                      col,
+                                      self.flags,
+                                      self.requested_size)
+        self.update_current_state()
+        SharedColor.setF4(<SharedColor>self._value, col)
+        return activated
+
+
+cdef class ColorEdit(uiItem):
+    def __cinit__(self):
+        self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
+        self.theme_condition_category = theme_categories.t_coloredit
+        self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+
+    @property
+    def no_alpha(self):
+        """
+        Writable attribute: ignore Alpha component (will only read 3 components from the input pointer)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
+
+    @no_alpha.setter
+    def no_alpha(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoAlpha
+
+    @property
+    def no_picker(self):
+        """
+        Writable attribute: disable picker when clicking on color square.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoPicker) != 0
+
+    @no_picker.setter
+    def no_picker(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoPicker
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoPicker
+
+    @property
+    def no_options(self):
+        """
+        Writable attribute: disable toggling options menu when right-clicking on inputs/small preview.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoOptions) != 0
+
+    @no_options.setter
+    def no_options(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoOptions
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoOptions
+
+    @property
+    def no_small_preview(self):
+        """
+        Writable attribute: disable color square preview next to the inputs. (e.g. to show only the inputs)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoSmallPreview) != 0
+
+    @no_small_preview.setter
+    def no_small_preview(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoSmallPreview
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoSmallPreview
+
+    @property
+    def no_inputs(self):
+        """
+        Writable attribute: disable inputs sliders/text widgets (e.g. to show only the small preview color square).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoInputs) != 0
+
+    @no_inputs.setter
+    def no_inputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoInputs
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoInputs
+
+    @property
+    def no_tooltip(self):
+        """
+        Writable attribute: disable default tooltip when hovering the preview
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
+
+    @no_tooltip.setter
+    def no_tooltip(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoTooltip
+
+    @property
+    def no_label(self):
+        """
+        Writable attribute: disable display of inline text label (the label is still forwarded to the tooltip and picker).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoLabel) != 0
+
+    @no_label.setter
+    def no_label(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoLabel
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoLabel
+
+    @property
+    def no_drag_drop(self):
+        """
+        Writable attribute: disable drag and drop target
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoDragDrop) != 0
+
+    @no_drag_drop.setter
+    def no_drag_drop(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoDragDrop
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoDragDrop
+
+    # TODO: there are more options, which can be user toggled.
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bint activated
+        cdef imgui.ImVec4 col = SharedColor.getF4(<SharedColor>self._value)
+        cdef float[4] color = [col.x, col.y, col.z, col.w]
+        activated = imgui.ColorEdit4(self.imgui_label.c_str(),
+                                      color,
+                                      self.flags)
+        self.update_current_state()
+        col = imgui.ImVec4(color[0], color[1], color[2], color[3])
+        SharedColor.setF4(<SharedColor>self._value, col)
+        return activated
+
+
+cdef class ColorPicker(uiItem):
+    def __cinit__(self):
+        self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
+        self.theme_condition_category = theme_categories.t_colorpicker
+        self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+
+    @property
+    def no_alpha(self):
+        """
+        Writable attribute: ignore Alpha component (will only read 3 components from the input pointer)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
+
+    @no_alpha.setter
+    def no_alpha(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoAlpha
+
+    @property
+    def no_small_preview(self):
+        """
+        Writable attribute: disable color square preview next to the inputs. (e.g. to show only the inputs)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoSmallPreview) != 0
+
+    @no_small_preview.setter
+    def no_small_preview(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoSmallPreview
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoSmallPreview
+
+    @property
+    def no_inputs(self):
+        """
+        Writable attribute: disable inputs sliders/text widgets (e.g. to show only the small preview color square).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoInputs) != 0
+
+    @no_inputs.setter
+    def no_inputs(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoInputs
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoInputs
+
+    @property
+    def no_tooltip(self):
+        """
+        Writable attribute: disable default tooltip when hovering the preview
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
+
+    @no_tooltip.setter
+    def no_tooltip(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoTooltip
+
+    @property
+    def no_label(self):
+        """
+        Writable attribute: disable display of inline text label (the label is still forwarded to the tooltip and picker).
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoLabel) != 0
+
+    @no_label.setter
+    def no_label(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoLabel
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoLabel
+
+    @property
+    def no_side_preview(self):
+        """
+        Writable attribute: disable bigger color preview on right side of the picker, use small color square preview instead.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self.flags & imgui.ImGuiColorEditFlags_NoSidePreview) != 0
+
+    @no_side_preview.setter
+    def no_side_preview(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.flags &= ~imgui.ImGuiColorEditFlags_NoSidePreview
+        if value:
+            self.flags |= imgui.ImGuiColorEditFlags_NoSidePreview
+
+    # TODO: there are more options, which can be user toggled.
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef bint activated
+        cdef imgui.ImVec4 col = SharedColor.getF4(<SharedColor>self._value)
+        cdef float[4] color = [col.x, col.y, col.z, col.w]
+        activated = imgui.ColorPicker4(self.imgui_label.c_str(),
+                                       color,
+                                       self.flags,
+                                       NULL) # ref_col ??
+        self.update_current_state()
+        col = imgui.ImVec4(color[0], color[1], color[2], color[3])
+        SharedColor.setF4(<SharedColor>self._value, col)
+        return activated
 
 """
 Complex ui items

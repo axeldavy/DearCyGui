@@ -1652,7 +1652,7 @@ def color_button(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 25
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return color_button(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_border=no_border, no_drag_drop=no_drag_drop, **kwargs)
+    return dcg.ColorButton(DCG_CONTEXT, value=default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_border=no_border, no_drag_drop=no_drag_drop, **kwargs)
 
 def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_picker: bool =False, no_options: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, no_drag_drop: bool =False, alpha_bar: bool =False, alpha_preview: int =0, display_mode: int =constants.mvColorEdit_rgb, display_type: int =constants.mvColorEdit_uint8, input_mode: int =constants.mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
     """     Adds an RGBA color editor. Left clicking the small color preview will provide a color picker. Click and draging the small color preview will copy the color to be applied on any other color widget.
@@ -1700,7 +1700,7 @@ def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255)
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return color_edit(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_picker=no_picker, no_options=no_options, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, no_drag_drop=no_drag_drop, alpha_bar=alpha_bar, alpha_preview=alpha_preview, display_mode=display_mode, display_type=display_type, input_mode=input_mode, **kwargs)
+    return dcg.ColorEdit(DCG_CONTEXT, value=default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_picker=no_picker, no_options=no_options, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, no_drag_drop=no_drag_drop, alpha_bar=alpha_bar, alpha_preview=alpha_preview, display_mode=display_mode, display_type=display_type, input_mode=input_mode, **kwargs)
 
 def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_side_preview: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, alpha_bar: bool =False, display_rgb: bool =False, display_hsv: bool =False, display_hex: bool =False, picker_mode: int =constants.mvColorPicker_bar, alpha_preview: int =0, display_type: int =constants.mvColorEdit_uint8, input_mode: int =constants.mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
     """     Adds an RGB color picker. Right click the color picker for options. Click and drag the color preview to copy the color and drop on any other color widget to apply. Right Click allows the style of the color picker to be changed.
@@ -1749,7 +1749,7 @@ def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 25
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return color_picker(default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_side_preview=no_side_preview, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, alpha_bar=alpha_bar, display_rgb=display_rgb, display_hsv=display_hsv, display_hex=display_hex, picker_mode=picker_mode, alpha_preview=alpha_preview, display_type=display_type, input_mode=input_mode, **kwargs)
+    return dcg.ColorPicker(DCG_CONTEXT, value=default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_side_preview=no_side_preview, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, alpha_bar=alpha_bar, display_rgb=display_rgb, display_hsv=display_hsv, display_hex=display_hex, picker_mode=picker_mode, alpha_preview=alpha_preview, display_type=display_type, input_mode=input_mode, **kwargs)
 
 def color_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a color value.
@@ -1770,7 +1770,7 @@ def color_value(*, label: str =None, user_data: Any =None, default_value: Union[
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.shared_color(DCG_CONTEXT, default_value)
+    return dcg.SharedColor(DCG_CONTEXT, default_value)
 
 def colormap(colors : List[Union[List[int], Tuple[int, ...]]], qualitative : bool, *, label: str =None, user_data: Any =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_4, **kwargs) -> Union[int, str]:
     """     Adds a legend that pairs colors with normalized value 0.0->1.0. Each color will be  This is typically used with a heat series. (ex. [[0, 0, 0, 255], [255, 255, 255, 255]] will be mapped to a soft transition from 0.0-1.0)
@@ -2073,7 +2073,7 @@ def double4_value(*, label: str =None, user_data: Any =None, default_value: Any 
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.shared_double4(DCG_CONTEXT, default_value)
+    return dcg.SharedDouble4(DCG_CONTEXT, default_value)
 
 def double_value(*, label: str =None, user_data: Any =None, default_value: float =0.0, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a double value.
@@ -2094,7 +2094,7 @@ def double_value(*, label: str =None, user_data: Any =None, default_value: float
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.shared_double(DCG_CONTEXT, default_value)
+    return dcg.SharedDouble(DCG_CONTEXT, default_value)
 
 def drag_double(*, label: str =None, user_data: Any =None, width: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, format: str ='%0.3f', speed: float =1.0, min_value: float =0.0, max_value: float =100.0, no_input: bool =False, clamped: bool =False, **kwargs) -> Union[int, str]:
     """     Adds drag for a single double value. Useful when drag float is not accurate enough. Directly entry can be done with double click or CTRL+Click. Min and Max alone are a soft limit for the drag. Use clamped keyword to also apply limits to the direct entry modes.
@@ -9174,9 +9174,9 @@ mvDragFloat=dcg.theme_categories.t_slider
 mvDragInt=dcg.theme_categories.t_slider
 mvInputFloat=dcg.theme_categories.t_inputvalue
 mvInputInt=dcg.theme_categories.t_inputvalue
-#mvColorEdit=constants.mvColorEdit
+mvColorEdit=dcg.theme_categories.t_coloredit
 #mvClipper=constants.mvClipper
-#mvColorPicker=constants.mvColorPicker
+mvColorPicker=dcg.theme_categories.t_colorpicker
 mvTooltip=dcg.theme_categories.t_tooltip
 mvCollapsingHeader=dcg.theme_categories.t_collapsingheader
 #mvSeparator=constants.mvSeparator
@@ -9195,7 +9195,7 @@ mvProgressBar=dcg.theme_categories.t_progressbar
 mvImageButton=dcg.theme_categories.t_imagebutton
 #mvTimePicker=constants.mvTimePicker
 #mvDatePicker=constants.mvDatePicker
-#mvColorButton=constants.mvColorButton
+mvColorButton=dcg.theme_categories.t_colorbutton
 #mvFileDialog=constants.mvFileDialog
 mvTabButton=dcg.theme_categories.t_tabbutton
 #mvDrawNode=constants.mvDrawNode
