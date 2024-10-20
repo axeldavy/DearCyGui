@@ -63,7 +63,7 @@ cdef class Context:
     # Mutex that must be held for any
     # call to imgui, glfw, etc
     cdef recursive_mutex imgui_mutex
-    cdef readonly Viewport viewport
+    cdef Viewport _viewport
     cdef imgui.ImGuiContext* imgui_context
     cdef implot.ImPlotContext* implot_context
     cdef imnodes.ImNodesContext* imnodes_context
@@ -77,7 +77,6 @@ cdef class Context:
     #cdef UUID activeWindow
     #cdef UUID focusedItem
     cdef Callback on_close_callback
-    cdef public object on_frame_callbacks
     cdef object queue
     cdef void queue_callback_noarg(self, Callback, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem, baseItem) noexcept nogil

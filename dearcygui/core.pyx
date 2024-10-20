@@ -32,7 +32,7 @@ from dearcygui.backends.backend cimport *
 # which causes trouble to cython
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Executor, ThreadPoolExecutor
 from libcpp.algorithm cimport swap
 from libcpp.cmath cimport atan, sin, cos, trunc, floor
 from libcpp.vector cimport vector
@@ -100,6 +100,9 @@ cdef void internal_close_callback(void *object) noexcept nogil:
 cdef void internal_render_callback(void *object) noexcept nogil:
     (<Viewport>object).__render()
 
+# Placeholder global where the last created Context is stored.
+C = None
+
 # The no gc clear flag enforces that in case
 # of no-reference cycle detected, the Context is freed last.
 # The cycle is due to Context referencing Viewport
@@ -113,11 +116,25 @@ cdef class Context:
     Items are assigned an uuid and eventually a user tag.
     indexing the context with the uuid or the tag returns
     the object associated.
+
+    The last created context can be accessed as deacygui.C
     """
-    def __init__(self):
+    def __init__(self, queue=None):
+        """
+        Parameters:
+            queue (optional, defaults to ThreadPoolExecutor(max_workers=1)):
+                Subclass of concurrent.futures.Executor used to submit
+                callbacks during the frame.
+        """
+        global C
         self.on_close_callback = None
-        self.on_frame_callbacks = None
-        self.queue = ThreadPoolExecutor(max_workers=1)
+        if queue is None:
+            self.queue = ThreadPoolExecutor(max_workers=1)
+        else:
+            if not(isinstance(queue, Executor)):
+                raise TypeError("queue must be a subclass of concurrent.futures.Executor")
+            self.queue = queue
+        C = self
 
     def __cinit__(self):
         self.next_uuid.store(21)
@@ -127,7 +144,7 @@ cdef class Context:
         self.tag_to_uuid = dict()
         self.items = weakref.WeakValueDictionary()
         self.threadlocal_data = threading.local()
-        self.viewport = Viewport(self)
+        self._viewport = Viewport(self)
         self.resetTheme = False
         imgui.IMGUI_CHECKVERSION()
         self.imgui_context = imgui.CreateContext()
@@ -155,6 +172,11 @@ cdef class Context:
         #ClearItemRegistry(*GContext->itemRegistry)
         if self.queue is not None:
             self.queue.shutdown(wait=True)
+
+    @property
+    def viewport(self) -> Viewport:
+        """Readonly attribute: root item from where rendering starts"""
+        return self._viewport
 
     cdef void queue_callback_noarg(self, Callback callback, baseItem parent_item, baseItem target_item) noexcept nogil:
         if callback is None:
@@ -560,7 +582,7 @@ cdef class Context:
     def clipboard(self):
         """Writable attribute: content of the clipboard"""
         cdef unique_lock[recursive_mutex] m
-        if not(self.viewport.initialized):
+        if not(self._viewport.initialized):
             return ""
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
@@ -570,7 +592,7 @@ cdef class Context:
     def clipboard(self, str value):
         cdef string value_str = bytes(value, 'utf-8')
         cdef unique_lock[recursive_mutex] m
-        if not(self.viewport.initialized):
+        if not(self._viewport.initialized):
             return
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
@@ -834,7 +856,7 @@ cdef class baseItem:
                 if parent is None:
                     parent = self.context.fetch_parent_queue_back()
                     if parent is None:
-                        parent = self.context.viewport
+                        parent = self.context._viewport
                 else:
                     # parent manually set. Do not ignore failure
                     ignore_if_fail = False
@@ -1739,6 +1761,7 @@ cdef class Viewport(baseItem):
         self.last_t_after_rendering = self.last_t_before_event_handling
         self.last_t_after_swapping = self.last_t_before_event_handling
         self.frame_count = 0
+        self.state.cur.rendered = True # For compatibility with RenderHandlers
         self._cursor = imgui.ImGuiMouseCursor_Arrow
         self.viewport = mvCreateViewport(internal_render_callback,
                                          internal_resize_callback,
@@ -1915,7 +1938,7 @@ cdef class Viewport(baseItem):
         self.viewport.sizeDirty = 1
 
     @property
-    def resizable(self) -> bint:
+    def resizable(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.viewport.resizable
@@ -1928,7 +1951,7 @@ cdef class Viewport(baseItem):
         self.viewport.modesDirty = 1
 
     @property
-    def vsync(self) -> bint:
+    def vsync(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.viewport.vsync
@@ -2013,7 +2036,7 @@ cdef class Viewport(baseItem):
         self.viewport.sizeDirty = True
 
     @property
-    def always_on_top(self) -> bint:
+    def always_on_top(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.viewport.alwaysOnTop
@@ -2026,7 +2049,7 @@ cdef class Viewport(baseItem):
         self.viewport.modesDirty = 1
 
     @property
-    def decorated(self) -> bint:
+    def decorated(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.viewport.decorated
@@ -2140,7 +2163,7 @@ cdef class Viewport(baseItem):
         self.viewport.titleDirty = 1
 
     @property
-    def disable_close(self) -> bint:
+    def disable_close(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.viewport.disableClose
@@ -2231,7 +2254,7 @@ cdef class Viewport(baseItem):
         self.viewport.waitForEvents = value
 
     @property
-    def shown(self) -> bint:
+    def shown(self) -> bool:
         """
         Whether the viewport window has been created by the
         operating system.
@@ -2355,14 +2378,10 @@ cdef class Viewport(baseItem):
         self.start_pending_theme_actions = 0
         #if self.filedialogRoots is not None:
         #    self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        #if self.colormapRoots is not None:
-        #    self.colormapRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         self.parent_pos = imgui.ImVec2(0., 0.)
         self.window_pos = imgui.ImVec2(0., 0.)
         if self.last_window_child is not None:
             self.last_window_child.draw()
-        #if self.viewportMenubarRoots is not None:
-        #    self.viewportMenubarRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         #if self.last_viewport_drawlist_child is not None:
         #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         if self.last_menubar_child is not None:
@@ -2372,6 +2391,7 @@ cdef class Viewport(baseItem):
         if self._font is not None:
             self._font.pop()
         run_handlers(self, self._handlers, self.state)
+        self.state.prev.rendered = True
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
@@ -2867,18 +2887,18 @@ cdef class DrawLayer_(drawingItem):
             return
 
         # Reset current drawInfo - except in_plot as we keep drawlist
-        #self.context.viewport.cullMode = self._cull_mode
-        self.context.viewport.perspectiveDivide = self._perspective_divide
-        self.context.viewport.depthClipping = self._depth_clipping
+        #self.context._viewport.cullMode = self._cull_mode
+        self.context._viewport.perspectiveDivide = self._perspective_divide
+        self.context._viewport.depthClipping = self._depth_clipping
         if self._depth_clipping:
-            self.context.viewport.clipViewport = self.clip_viewport
-        #if self.has_matrix_transform and self.context.viewport.has_matrix_transform:
+            self.context._viewport.clipViewport = self.clip_viewport
+        #if self.has_matrix_transform and self.context._viewport.has_matrix_transform:
         #    TODO
-        #    matrix_fourfour_mul(self.context.viewport.transform, self.transform)
+        #    matrix_fourfour_mul(self.context._viewport.transform, self.transform)
         #elif
         if self.has_matrix_transform:
-            self.context.viewport.has_matrix_transform = True
-            self.context.viewport.transform = self._transform
+            self.context._viewport.has_matrix_transform = True
+            self.context._viewport.transform = self._transform
         # As we inherit from drawlist
         # We don't change self.in_plot
 
@@ -2934,18 +2954,18 @@ cdef class DrawArrow_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] tstart
         cdef float[2] tend
         cdef float[2] tcorner1
         cdef float[2] tcorner2
-        self.context.viewport.apply_current_transform(tstart, self.start)
-        self.context.viewport.apply_current_transform(tend, self.end)
-        self.context.viewport.apply_current_transform(tcorner1, self.corner1)
-        self.context.viewport.apply_current_transform(tcorner2, self.corner2)
+        self.context._viewport.apply_current_transform(tstart, self.start)
+        self.context._viewport.apply_current_transform(tend, self.end)
+        self.context._viewport.apply_current_transform(tcorner1, self.corner1)
+        self.context._viewport.apply_current_transform(tcorner2, self.corner2)
         cdef imgui.ImVec2 itstart = imgui.ImVec2(tstart[0], tstart[1])
         cdef imgui.ImVec2 itend  = imgui.ImVec2(tend[0], tend[1])
         cdef imgui.ImVec2 itcorner1 = imgui.ImVec2(tcorner1[0], tcorner1[1])
@@ -2970,18 +2990,18 @@ cdef class DrawBezierCubic_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
         cdef float[2] p2
         cdef float[2] p3
         cdef float[2] p4
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
-        self.context.viewport.apply_current_transform(p4, self.p4)
+        self.context._viewport.apply_current_transform(p1, self.p1)
+        self.context._viewport.apply_current_transform(p2, self.p2)
+        self.context._viewport.apply_current_transform(p3, self.p3)
+        self.context._viewport.apply_current_transform(p4, self.p4)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -3003,16 +3023,16 @@ cdef class DrawBezierQuadratic_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
         cdef float[2] p2
         cdef float[2] p3
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
+        self.context._viewport.apply_current_transform(p1, self.p1)
+        self.context._viewport.apply_current_transform(p2, self.p2)
+        self.context._viewport.apply_current_transform(p3, self.p3)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -3037,16 +3057,16 @@ cdef class DrawCircle_(drawingItem):
 
         cdef float thickness = self.thickness
         cdef float radius = self.radius
-        if self.context.viewport.in_plot:
+        if self.context._viewport.in_plot:
             if thickness > 0:
-                thickness *= self.context.viewport.thickness_multiplier
+                thickness *= self.context._viewport.thickness_multiplier
             if radius > 0:
-                radius *= self.context.viewport.size_multiplier
+                radius *= self.context._viewport.size_multiplier
         thickness = abs(thickness)
         radius = abs(radius)
 
         cdef float[2] center
-        self.context.viewport.apply_current_transform(center, self.center)
+        self.context._viewport.apply_current_transform(center, self.center)
         cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
         if self.fill & imgui.IM_COL32_A_MASK != 0:
             drawlist.AddCircleFilled(icenter, radius, self.fill, self.segments)
@@ -3094,8 +3114,8 @@ cdef class DrawEllipse_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef vector[imgui.ImVec2] transformed_points
@@ -3103,7 +3123,7 @@ cdef class DrawEllipse_(drawingItem):
         cdef int i
         cdef float[2] p
         for i in range(<int>self.points.size()):
-            self.context.viewport.apply_current_transform(p, self.points[i].p)
+            self.context._viewport.apply_current_transform(p, self.points[i].p)
             transformed_points.push_back(imgui.ImVec2(p[0], p[1]))
         # TODO imgui requires clockwise order for correct AA
         # Reverse order if needed
@@ -3137,8 +3157,8 @@ cdef class DrawImage_(drawingItem):
 
         cdef float[2] pmin
         cdef float[2] pmax
-        self.context.viewport.apply_current_transform(pmin, self.pmin)
-        self.context.viewport.apply_current_transform(pmax, self.pmax)
+        self.context._viewport.apply_current_transform(pmin, self.pmin)
+        self.context._viewport.apply_current_transform(pmax, self.pmax)
         cdef imgui.ImVec2 ipmin = imgui.ImVec2(pmin[0], pmin[1])
         cdef imgui.ImVec2 ipmax = imgui.ImVec2(pmax[0], pmax[1])
         cdef imgui.ImVec2 uvmin = imgui.ImVec2(self.uv[0], self.uv[1])
@@ -3176,10 +3196,10 @@ cdef class DrawImageQuad_(drawingItem):
         cdef imgui.ImVec2 ip3
         cdef imgui.ImVec2 ip4
 
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
-        self.context.viewport.apply_current_transform(p4, self.p4)
+        self.context._viewport.apply_current_transform(p1, self.p1)
+        self.context._viewport.apply_current_transform(p2, self.p2)
+        self.context._viewport.apply_current_transform(p3, self.p3)
+        self.context._viewport.apply_current_transform(p4, self.p4)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -3207,14 +3227,14 @@ cdef class DrawLine_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
         cdef float[2] p2
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
+        self.context._viewport.apply_current_transform(p1, self.p1)
+        self.context._viewport.apply_current_transform(p2, self.p2)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         drawlist.AddLine(ip1, ip2, self.color, thickness)
@@ -3234,22 +3254,22 @@ cdef class DrawPolyline_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip1_
         cdef imgui.ImVec2 ip2
-        self.context.viewport.apply_current_transform(p, self.points[0].p)
+        self.context._viewport.apply_current_transform(p, self.points[0].p)
         ip1 = imgui.ImVec2(p[0], p[1])
         ip1_ = ip1
         # imgui requires clockwise order + convexity for correct AA of AddPolyline
         # Thus we only call AddLine
         cdef int i
         for i in range(1, <int>self.points.size()):
-            self.context.viewport.apply_current_transform(p, self.points[i].p)
+            self.context._viewport.apply_current_transform(p, self.points[i].p)
             ip2 = imgui.ImVec2(p[0], p[1])
             drawlist.AddLine(ip1, ip2, self.color, thickness)
             ip1 = ip2
@@ -3291,8 +3311,8 @@ cdef class DrawPolygon_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p
@@ -3302,7 +3322,7 @@ cdef class DrawPolygon_(drawingItem):
         cdef bint ccw
         ipoints.reserve(self.points.size())
         for i in range(<int>self.points.size()):
-            self.context.viewport.apply_current_transform(p, self.points[i].p)
+            self.context._viewport.apply_current_transform(p, self.points[i].p)
             ip = imgui.ImVec2(p[0], p[1])
             ipoints.push_back(ip)
 
@@ -3352,8 +3372,8 @@ cdef class DrawQuad_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
@@ -3366,10 +3386,10 @@ cdef class DrawQuad_(drawingItem):
         cdef imgui.ImVec2 ip4
         cdef bint ccw
 
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
-        self.context.viewport.apply_current_transform(p4, self.p4)
+        self.context._viewport.apply_current_transform(p1, self.p1)
+        self.context._viewport.apply_current_transform(p2, self.p2)
+        self.context._viewport.apply_current_transform(p3, self.p3)
+        self.context._viewport.apply_current_transform(p4, self.p4)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -3420,8 +3440,8 @@ cdef class DrawRect_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] pmin
@@ -3433,8 +3453,8 @@ cdef class DrawRect_(drawingItem):
         cdef imgui.ImU32 col_bot_left = self.color_bottom_left
         cdef imgui.ImU32 col_bot_right = self.color_bottom_right
 
-        self.context.viewport.apply_current_transform(pmin, self.pmin)
-        self.context.viewport.apply_current_transform(pmax, self.pmax)
+        self.context._viewport.apply_current_transform(pmin, self.pmin)
+        self.context._viewport.apply_current_transform(pmax, self.pmax)
         ipmin = imgui.ImVec2(pmin[0], pmin[1])
         ipmax = imgui.ImVec2(pmax[0], pmax[1])
 
@@ -3486,11 +3506,11 @@ cdef class DrawText_(drawingItem):
 
         cdef float[2] p
 
-        self.context.viewport.apply_current_transform(p, self.pos)
+        self.context._viewport.apply_current_transform(p, self.pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
         cdef float size = self.size
-        if size > 0 and self.context.viewport.in_plot:
-            size *= self.context.viewport.size_multiplier
+        if size > 0 and self.context._viewport.in_plot:
+            size *= self.context._viewport.size_multiplier
         size = abs(size)
         drawlist.AddText(self._font.font if self._font is not None else NULL, size, ip, self.color, self.text.c_str())
 
@@ -3511,8 +3531,8 @@ cdef class DrawTriangle_(drawingItem):
             return
 
         cdef float thickness = self.thickness
-        if self.context.viewport.in_plot and thickness > 0:
-            thickness *= self.context.viewport.thickness_multiplier
+        if self.context._viewport.in_plot and thickness > 0:
+            thickness *= self.context._viewport.thickness_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
@@ -3523,9 +3543,9 @@ cdef class DrawTriangle_(drawingItem):
         cdef imgui.ImVec2 ip3
         cdef bint ccw
 
-        self.context.viewport.apply_current_transform(p1, self.p1)
-        self.context.viewport.apply_current_transform(p2, self.p2)
-        self.context.viewport.apply_current_transform(p3, self.p3)
+        self.context._viewport.apply_current_transform(p1, self.p1)
+        self.context._viewport.apply_current_transform(p2, self.p2)
+        self.context._viewport.apply_current_transform(p3, self.p3)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -3942,8 +3962,8 @@ cdef class DrawInvisibleButton(drawingItem):
         # Get button position in screen space
         cdef float[2] p1
         cdef float[2] p2
-        self.context.viewport.apply_current_transform(p1, self._p1)
-        self.context.viewport.apply_current_transform(p2, self._p2)
+        self.context._viewport.apply_current_transform(p1, self._p1)
+        self.context._viewport.apply_current_transform(p2, self._p2)
         cdef imgui.ImVec2 top_left
         cdef imgui.ImVec2 bottom_right
         cdef imgui.ImVec2 size
@@ -3964,10 +3984,10 @@ cdef class DrawInvisibleButton(drawingItem):
         # Update rect and position size
         self.state.cur.rect_size = size
         self.state.cur.pos_to_viewport = top_left
-        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context.viewport.window_pos.x
-        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context.viewport.window_pos.y
-        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context.viewport.parent_pos.x
-        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context.viewport.parent_pos.y
+        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
         cdef bint was_visible = self.state.cur.rendered
         self.state.cur.rendered = imgui.IsRectVisible(top_left, bottom_right) or self.state.cur.active
         if not(was_visible) and not(self.state.cur.rendered):
@@ -4006,7 +4026,7 @@ cdef class DrawInvisibleButton(drawingItem):
         self.state.cur.active = activated or held
         self.state.cur.hovered = hovered
         if activated:
-            if self.context.viewport.in_plot:
+            if self.context._viewport.in_plot:
                 # IMPLOT_AUTO uses current axes
                 cur_mouse_pos_plot = \
                     implot.GetPlotMousePos(implot.IMPLOT_AUTO,
@@ -4019,7 +4039,7 @@ cdef class DrawInvisibleButton(drawingItem):
         cdef bint dragging = False
         cdef int i
         if self.state.cur.active:
-            if self.context.viewport.in_plot:
+            if self.context._viewport.in_plot:
                 cur_mouse_pos_plot = implot.GetPlotMousePos(implot.IMPLOT_AUTO,
                                                             implot.IMPLOT_AUTO)
                 cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
@@ -4106,12 +4126,12 @@ cdef class DrawInWindow(uiItem):
         cdef float starty = <float>imgui.GetCursorScreenPos().y
 
         # Reset current drawInfo
-        #self.context.viewport.cullMode = 0 # mvCullMode_None
-        self.context.viewport.perspectiveDivide = False
-        self.context.viewport.depthClipping = False
-        self.context.viewport.has_matrix_transform = False
-        self.context.viewport.in_plot = False
-        self.context.viewport.parent_pos = imgui.GetCursorScreenPos()
+        #self.context._viewport.cullMode = 0 # mvCullMode_None
+        self.context._viewport.perspectiveDivide = False
+        self.context._viewport.depthClipping = False
+        self.context._viewport.has_matrix_transform = False
+        self.context._viewport.in_plot = False
+        self.context._viewport.parent_pos = imgui.GetCursorScreenPos()
 
         imgui.PushClipRect(imgui.ImVec2(startx, starty),
                            imgui.ImVec2(startx + clip_width,
@@ -4152,13 +4172,13 @@ cdef class ViewportDrawList_(baseItem):
             return
 
         # Reset current drawInfo
-        #self.context.viewport.cullMode = 0 # mvCullMode_None
-        self.context.viewport.perspectiveDivide = False
-        self.context.viewport.depthClipping = False
-        self.context.viewport.has_matrix_transform = False
-        self.context.viewport.in_plot = False
-        self.context.viewport.window_pos = imgui.ImVec2(0., 0.)
-        self.context.viewport.parent_pos = imgui.ImVec2(0., 0.)
+        #self.context._viewport.cullMode = 0 # mvCullMode_None
+        self.context._viewport.perspectiveDivide = False
+        self.context._viewport.depthClipping = False
+        self.context._viewport.has_matrix_transform = False
+        self.context._viewport.in_plot = False
+        self.context._viewport.window_pos = imgui.ImVec2(0., 0.)
+        self.context._viewport.parent_pos = imgui.ImVec2(0., 0.)
 
         cdef imgui.ImDrawList* internal_drawlist = \
             imgui.GetForegroundDrawList() if self._front else \
@@ -4488,8 +4508,8 @@ cdef class SharedValue:
         self._num_attached = 0
     def __cinit__(self, Context context, *args, **kwargs):
         self.context = context
-        self._last_frame_change = context.viewport.frame_count
-        self._last_frame_update = context.viewport.frame_count
+        self._last_frame_change = context._viewport.frame_count
+        self._last_frame_update = context._viewport.frame_count
         self._num_attached = 1
     @property
     def value(self):
@@ -4534,9 +4554,9 @@ cdef class SharedValue:
     cdef void on_update(self, bint changed) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         # TODO: figure out if not using mutex is ok
-        self._last_frame_update = self.context.viewport.frame_count
+        self._last_frame_update = self.context._viewport.frame_count
         if changed:
-            self._last_frame_change = self.context.viewport.frame_count
+            self._last_frame_change = self.context._viewport.frame_count
 
     cdef void inc_num_attached(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -5910,9 +5930,9 @@ cdef class uiItem(baseItem):
         if policy[0] == positioning.REL_DEFAULT:
             pos.x += self.state.cur.pos_to_default.x
         elif policy[0] == positioning.REL_PARENT:
-            pos.x = self.context.viewport.parent_pos.x + self.state.cur.pos_to_parent.x
+            pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
         elif policy[0] == positioning.REL_WINDOW:
-            pos.x = self.context.viewport.window_pos.x + self.state.cur.pos_to_window.x
+            pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
         elif policy[0] == positioning.REL_VIEWPORT:
             pos.x = self.state.cur.pos_to_viewport.x
         # else: DEFAULT
@@ -5920,9 +5940,9 @@ cdef class uiItem(baseItem):
         if policy[1] == positioning.REL_DEFAULT:
             pos.y += self.state.cur.pos_to_default.y
         elif policy[1] == positioning.REL_PARENT:
-            pos.y = self.context.viewport.parent_pos.y + self.state.cur.pos_to_parent.y
+            pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
         elif policy[1] == positioning.REL_WINDOW:
-            pos.y = self.context.viewport.window_pos.y + self.state.cur.pos_to_window.y
+            pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
         elif policy[1] == positioning.REL_VIEWPORT:
             pos.y = self.state.cur.pos_to_viewport.y
         # else: DEFAULT
@@ -5931,10 +5951,10 @@ cdef class uiItem(baseItem):
 
         # Retrieve current positions
         self.state.cur.pos_to_viewport = imgui.GetCursorScreenPos()
-        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context.viewport.window_pos.x
-        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context.viewport.window_pos.y
-        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context.viewport.parent_pos.x
-        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context.viewport.parent_pos.y
+        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
         self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
         self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
 
@@ -5943,7 +5963,7 @@ cdef class uiItem(baseItem):
             self._font.push()
 
         # themes
-        self.context.viewport.push_pending_theme_actions(
+        self.context._viewport.push_pending_theme_actions(
             self.theme_condition_enabled,
             self.theme_condition_category
         )
@@ -5965,7 +5985,7 @@ cdef class uiItem(baseItem):
 
         if self._theme is not None:
             self._theme.pop()
-        self.context.viewport.pop_applied_pending_theme_actions()
+        self.context._viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()
@@ -8658,7 +8678,7 @@ cdef class MenuBar(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint menu_allowed
-        cdef bint parent_viewport = self._parent is self.context.viewport
+        cdef bint parent_viewport = self._parent is self.context._viewport
         if parent_viewport:
             menu_allowed = imgui.BeginMainMenuBar()
         else:
@@ -8670,11 +8690,11 @@ cdef class MenuBar(uiItem):
                 # We are at the top of the window, but behave as if popup
                 pos_w = imgui.GetCursorScreenPos()
                 pos_p = pos_w
-                swap(pos_w, self.context.viewport.window_pos)
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_w, self.context._viewport.window_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
-                self.context.viewport.window_pos = pos_w
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.window_pos = pos_w
+                self.context._viewport.parent_pos = pos_p
             if parent_viewport:
                 imgui.EndMainMenuBar()
             else:
@@ -8712,11 +8732,11 @@ cdef class Menu(uiItem):
                 # We are in a separate window
                 pos_w = imgui.GetCursorScreenPos()
                 pos_p = pos_w
-                swap(pos_w, self.context.viewport.window_pos)
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_w, self.context._viewport.window_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
-                self.context.viewport.window_pos = pos_w
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.window_pos = pos_w
+                self.context._viewport.parent_pos = pos_p
             imgui.EndMenu()
         else:
             self.propagate_hidden_state_to_children()
@@ -8853,11 +8873,11 @@ cdef class Tooltip(uiItem):
                 # We are in a popup window
                 pos_w = imgui.GetCursorScreenPos()
                 pos_p = pos_w
-                swap(pos_w, self.context.viewport.window_pos)
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_w, self.context._viewport.window_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
-                self.context.viewport.window_pos = pos_w
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.window_pos = pos_w
+                self.context._viewport.parent_pos = pos_p
             imgui.EndTooltip()
             self.update_current_state()
         else:
@@ -9063,7 +9083,7 @@ cdef class Tab(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef imgui.ImGuiTabItemFlags flags = self.flags
-        if (<SharedBool>self._value)._last_frame_change == self.context.viewport.frame_count:
+        if (<SharedBool>self._value)._last_frame_change == self.context._viewport.frame_count:
             # The value was changed after the last time we drew
             # TODO: will have no effect if we switch from show to no show.
             # maybe have a counter here.
@@ -9079,9 +9099,9 @@ cdef class Tab(uiItem):
         if menu_open:
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.parent_pos = pos_p
             imgui.EndTabItem()
         else:
             self.propagate_hidden_state_to_children()
@@ -9266,9 +9286,9 @@ cdef class TabBar(uiItem):
         if visible:
             if self.last_tab_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_tab_child.draw()
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.parent_pos = pos_p
             imgui.EndTabBar()
         else:
             self.propagate_hidden_state_to_children()
@@ -9355,9 +9375,9 @@ cdef class Layout(uiItem):
         cdef imgui.ImVec2 pos_p
         if self.last_widgets_child is not None:
             pos_p = imgui.GetCursorScreenPos()
-            swap(pos_p, self.context.viewport.parent_pos)
+            swap(pos_p, self.context._viewport.parent_pos)
             self.last_widgets_child.draw()
-            self.context.viewport.parent_pos = pos_p
+            self.context._viewport.parent_pos = pos_p
         imgui.EndGroup()
         imgui.PopID()
         self.update_current_state()
@@ -9566,7 +9586,7 @@ cdef class HorizontalLayout(Layout):
 
         if self.force_update:
             # Prevent not refreshing
-            self.context.viewport.cwake()
+            self.context._viewport.cwake()
 
     cdef bint check_change(self) noexcept nogil:
         # Same as Layout check_change but only looks
@@ -9601,9 +9621,9 @@ cdef class HorizontalLayout(Layout):
         cdef imgui.ImVec2 pos_p
         if self.last_widgets_child is not None:
             pos_p = imgui.GetCursorScreenPos()
-            swap(pos_p, self.context.viewport.parent_pos)
+            swap(pos_p, self.context._viewport.parent_pos)
             self.last_widgets_child.draw()
-            self.context.viewport.parent_pos = pos_p
+            self.context._viewport.parent_pos = pos_p
         if changed:
             # We maintain the lock during the rendering
             # just to be sure the user doesn't change the
@@ -9818,7 +9838,7 @@ cdef class VerticalLayout(Layout):
 
         if self.force_update:
             # Prevent not refreshing
-            self.context.viewport.cwake()
+            self.context._viewport.cwake()
 
     cdef bint check_change(self) noexcept nogil:
         # Same as Layout check_change but ignores horizontal content
@@ -9853,9 +9873,9 @@ cdef class VerticalLayout(Layout):
         cdef imgui.ImVec2 pos_p
         if self.last_widgets_child is not None:
             pos_p = imgui.GetCursorScreenPos()
-            swap(pos_p, self.context.viewport.parent_pos)
+            swap(pos_p, self.context._viewport.parent_pos)
             self.last_widgets_child.draw()
-            self.context.viewport.parent_pos = pos_p
+            self.context._viewport.parent_pos = pos_p
         if changed:
             # We maintain the lock during the rendering
             # just to be sure the user doesn't change the
@@ -10045,9 +10065,9 @@ cdef class TreeNode(uiItem):
         if open_and_visible:
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.parent_pos = pos_p
             imgui.TreePop()
 
         imgui.EndGroup()
@@ -10180,9 +10200,9 @@ cdef class CollapsingHeader(uiItem):
         if open_and_visible:
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context.viewport.parent_pos)
+                swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
-                self.context.viewport.parent_pos = pos_p
+                self.context._viewport.parent_pos = pos_p
         return not(was_open) and self.state.cur.open
 
 cdef class ChildWindow(uiItem):
@@ -10498,12 +10518,12 @@ cdef class ChildWindow(uiItem):
                             flags):
             pos_p = imgui.GetCursorScreenPos()
             # TODO: since Child windows are ... windows, should we update window_pos ?
-            swap(pos_p, self.context.viewport.parent_pos)
+            swap(pos_p, self.context._viewport.parent_pos)
             if self.last_widgets_child is not None:
                 self.last_widgets_child.draw()
             if self.last_menubar_child is not None:
                 self.last_menubar_child.draw()
-            self.context.viewport.parent_pos = pos_p
+            self.context._viewport.parent_pos = pos_p
             self.state.cur.rendered = True
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
@@ -10951,8 +10971,8 @@ cdef class TimeWatcher(uiItem):
                                                          self,
                                                          time_start,
                                                          time_end,
-                                                         self.context.viewport.last_t_before_rendering,
-                                                         self.context.viewport.frame_count)
+                                                         self.context._viewport.last_t_before_rendering,
+                                                         self.context._viewport.frame_count)
         
 
 cdef class Window(uiItem):
@@ -11447,7 +11467,7 @@ cdef class Window(uiItem):
         cdef unique_lock[recursive_mutex] m2
         cdef unique_lock[recursive_mutex] m3
         # If window has a parent, it is the viewport
-        lock_gil_friendly(m, self.context.viewport.mutex)
+        lock_gil_friendly(m, self.context._viewport.mutex)
         lock_gil_friendly(m2, self.mutex)
 
         if self._parent is None:
@@ -11483,7 +11503,7 @@ cdef class Window(uiItem):
             self.size_update_requested = True
 
         # Re-tell imgui the window hierarchy
-        cdef Window w = self.context.viewport.last_window_child
+        cdef Window w = self.context._viewport.last_window_child
         cdef Window next = None
         while w is not None:
             lock_gil_friendly(m3, w.mutex)
@@ -11578,8 +11598,8 @@ cdef class Window(uiItem):
             imgui.SetNextWindowBgAlpha(1.0)
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0) #to prevent main window corners from showing
             imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context.viewport.viewport.clientWidth,
-                                           <float>self.context.viewport.viewport.clientHeight),
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.viewport.clientWidth,
+                                           <float>self.context._viewport.viewport.clientHeight),
                                     <imgui.ImGuiCond>0)
 
         # handle fonts
@@ -11587,7 +11607,7 @@ cdef class Window(uiItem):
             self._font.push()
 
         # themes
-        self.context.viewport.push_pending_theme_actions(
+        self.context._viewport.push_pending_theme_actions(
             theme_enablers.t_enabled_any,
             theme_categories.t_window
         )
@@ -11625,8 +11645,8 @@ cdef class Window(uiItem):
             # Retrieve the full region size before the cursor is moved.
             self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             # Draw the window content
-            self.context.viewport.window_pos = imgui.GetCursorScreenPos()
-            self.context.viewport.parent_pos = self.context.viewport.window_pos # should we restore after ? TODO
+            self.context._viewport.window_pos = imgui.GetCursorScreenPos()
+            self.context._viewport.parent_pos = self.context._viewport.window_pos # should we restore after ? TODO
 
             #if self.last_0_child is not None:
             #    self.last_0_child.draw(this_drawlist, startx, starty)
@@ -11638,7 +11658,7 @@ cdef class Window(uiItem):
 
             # Seems redundant with DrawInWindow
             # DrawInWindow is more powerful
-            self.context.viewport.in_plot = False
+            self.context._viewport.in_plot = False
             if self.last_drawings_child is not None:
                 self.last_drawings_child.draw(imgui.GetWindowDrawList())
 
@@ -11653,7 +11673,7 @@ cdef class Window(uiItem):
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
             rect_size = imgui.GetWindowSize()
             self.state.cur.rect_size = rect_size
-            self.last_frame_update = self.context.viewport.frame_count # TODO remove ?
+            self.last_frame_update = self.context._viewport.frame_count # TODO remove ?
             self.state.cur.pos_to_viewport = imgui.GetWindowPos()
             self.state.cur.pos_to_parent = self.state.cur.pos_to_viewport
         else:
@@ -11695,7 +11715,7 @@ cdef class Window(uiItem):
 
         if self._theme is not None:
             self._theme.pop()
-        self.context.viewport.pop_applied_pending_theme_actions()
+        self.context._viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()
@@ -11733,9 +11753,9 @@ cdef class Texture(baseItem):
         # Thus we must wait there is no rendering to free a texture.
         if self.allocated_texture != NULL:
             lock_gil_friendly(imgui_m, self.context.imgui_mutex)
-            mvMakeUploadContextCurrent(dereference(self.context.viewport.viewport))
+            mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
             mvFreeTexture(self.allocated_texture)
-            mvReleaseUploadContext(dereference(self.context.viewport.viewport))
+            mvReleaseUploadContext(dereference(self.context._viewport.viewport))
 
     def configure(self, *args, **kwargs):
         if len(args) == 1:
@@ -11863,12 +11883,12 @@ cdef class Texture(baseItem):
                     # rendering can take some time, fortunately we avoid holding the gil
                     self.context.imgui_mutex.lock()
                     m2.lock()
-                mvMakeUploadContextCurrent(dereference(self.context.viewport.viewport))
+                mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
                 mvFreeTexture(self.allocated_texture)
                 self.context.imgui_mutex.unlock()
                 self.allocated_texture = NULL
             else:
-                mvMakeUploadContextCurrent(dereference(self.context.viewport.viewport))
+                mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
 
             # Note we don't need the imgui mutex to create or upload textures.
             # In the case of GL, as only one thread can access GL data at a single
@@ -11890,7 +11910,7 @@ cdef class Texture(baseItem):
                     success = mvUpdateDynamicTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
                 else:
                     success = mvUpdateStaticTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
-            mvReleaseUploadContext(dereference(self.context.viewport.viewport))
+            mvReleaseUploadContext(dereference(self.context._viewport.viewport))
             m.unlock()
             m2.unlock() # Release before we get gil again
         if not(success):
@@ -12195,7 +12215,7 @@ cdef class PlotAxisConfig(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._min = value
-        self.last_frame_minmax_update = self.context.viewport.frame_count
+        self.last_frame_minmax_update = self.context._viewport.frame_count
 
     @property
     def max(self):
@@ -12213,7 +12233,7 @@ cdef class PlotAxisConfig(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._max = value
-        self.last_frame_minmax_update = self.context.viewport.frame_count
+        self.last_frame_minmax_update = self.context._viewport.frame_count
 
     @property
     def constraint_min(self):
@@ -12573,15 +12593,15 @@ cdef class PlotAxisConfig(baseItem):
         self.state.cur.rendered = False
 
         if self._enabled == False:
-            self.context.viewport.enabled_axes[axis] = False
+            self.context._viewport.enabled_axes[axis] = False
             return
-        self.context.viewport.enabled_axes[axis] = True
+        self.context._viewport.enabled_axes[axis] = True
         self.state.cur.rendered = True
         # TODO label
         implot.SetupAxis(axis, NULL, self.flags)
         # we test the frame count to correctly support the
         # same config instance applied to several axes
-        if self.last_frame_minmax_update >= self.context.viewport.frame_count-1:
+        if self.last_frame_minmax_update >= self.context._viewport.frame_count-1:
             # enforce min < max
             self._max = max(self._max, self._min + 1e-12)
             implot.SetupAxisLimits(axis,
@@ -13748,8 +13768,8 @@ cdef class plotElementWithLegend(plotElement):
 
         # Check the axes are enabled
         if not(self._show) or \
-           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
-           not(self.context.viewport.enabled_axes[self._axes[1]]):
+           not(self.context._viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.state.cur.rendered = False
             self.state.cur.hovered = False
             if self.last_widgets_child is not None:
@@ -13760,7 +13780,7 @@ cdef class plotElementWithLegend(plotElement):
         if self._font is not None:
             self._font.push()
 
-        self.context.viewport.push_pending_theme_actions(
+        self.context._viewport.push_pending_theme_actions(
             theme_enablers.t_enabled_any,
             theme_categories.t_plot
         )
@@ -13792,11 +13812,11 @@ cdef class plotElementWithLegend(plotElement):
                         # sub-window
                         pos_w = imgui.GetCursorScreenPos()
                         pos_p = pos_w
-                        swap(pos_w, self.context.viewport.window_pos)
-                        swap(pos_p, self.context.viewport.parent_pos)
+                        swap(pos_w, self.context._viewport.window_pos)
+                        swap(pos_p, self.context._viewport.parent_pos)
                         self.last_widgets_child.draw()
-                        self.context.viewport.window_pos = pos_w
-                        self.context.viewport.parent_pos = pos_p
+                        self.context._viewport.window_pos = pos_w
+                        self.context._viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
             self.state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
 
@@ -13805,7 +13825,7 @@ cdef class plotElementWithLegend(plotElement):
         if self._theme is not None:
             self._theme.pop()
 
-        self.context.viewport.pop_applied_pending_theme_actions()
+        self.context._viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()
@@ -14690,8 +14710,8 @@ cdef class plotDraggable(plotElement):
 
         # Check the axes are enabled
         if not(self._show) or \
-           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
-           not(self.context.viewport.enabled_axes[self._axes[1]]):
+           not(self.context._viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.state.cur.hovered = False
             self.state.cur.rendered = False
             for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -14702,7 +14722,7 @@ cdef class plotDraggable(plotElement):
             return
 
         # push theme, font
-        self.context.viewport.push_pending_theme_actions(
+        self.context._viewport.push_pending_theme_actions(
             theme_enablers.t_enabled_any,
             theme_categories.t_plot
         )
@@ -14718,7 +14738,7 @@ cdef class plotDraggable(plotElement):
         if self._theme is not None:
             self._theme.pop()
 
-        self.context.viewport.pop_applied_pending_theme_actions()
+        self.context._viewport.pop_applied_pending_theme_actions()
 
         run_handlers(self, self._handlers, self.state)
 
@@ -14761,8 +14781,8 @@ cdef class DrawInPlot(plotElementWithLegend):
 
         # Check the axes are enabled
         if not(self._show) or \
-           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
-           not(self.context.viewport.enabled_axes[self._axes[1]]):
+           not(self.context._viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.state.cur.rendered = False
             self.state.cur.hovered = False
             if self.last_widgets_child is not None:
@@ -14773,7 +14793,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         if self._font is not None:
             self._font.push()
 
-        self.context.viewport.push_pending_theme_actions(
+        self.context._viewport.push_pending_theme_actions(
             theme_enablers.t_enabled_any,
             theme_categories.t_plot
         )
@@ -14784,16 +14804,16 @@ cdef class DrawInPlot(plotElementWithLegend):
         implot.SetAxes(self._axes[0], self._axes[1])
 
         # Reset current drawInfo
-        #self.context.viewport.cullMode = 0 # mvCullMode_None
-        self.context.viewport.perspectiveDivide = False
-        self.context.viewport.depthClipping = False
-        self.context.viewport.has_matrix_transform = False
-        self.context.viewport.in_plot = True
-        self.context.viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
-        self.context.viewport.thickness_multiplier = implot.GetStyle().LineWeight
-        self.context.viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
-        self.context.viewport.thickness_multiplier = self.context.viewport.thickness_multiplier * self.context.viewport.size_multiplier
-        self.context.viewport.parent_pos = implot.GetPlotPos()
+        #self.context._viewport.cullMode = 0 # mvCullMode_None
+        self.context._viewport.perspectiveDivide = False
+        self.context._viewport.depthClipping = False
+        self.context._viewport.has_matrix_transform = False
+        self.context._viewport.in_plot = True
+        self.context._viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
+        self.context._viewport.thickness_multiplier = implot.GetStyle().LineWeight
+        self.context._viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
+        self.context._viewport.thickness_multiplier = self.context._viewport.thickness_multiplier * self.context._viewport.size_multiplier
+        self.context._viewport.parent_pos = implot.GetPlotPos()
 
         cdef bint render = True
 
@@ -14826,11 +14846,11 @@ cdef class DrawInPlot(plotElementWithLegend):
                         # sub-window
                         pos_w = imgui.GetCursorScreenPos()
                         pos_p = pos_w
-                        swap(pos_w, self.context.viewport.window_pos)
-                        swap(pos_p, self.context.viewport.parent_pos)
+                        swap(pos_w, self.context._viewport.window_pos)
+                        swap(pos_p, self.context._viewport.parent_pos)
                         self.last_widgets_child.draw()
-                        self.context.viewport.window_pos = pos_w
-                        self.context.viewport.parent_pos = pos_p
+                        self.context._viewport.window_pos = pos_w
+                        self.context._viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
             self.state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
 
@@ -14838,7 +14858,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         if self._theme is not None:
             self._theme.pop()
 
-        self.context.viewport.pop_applied_pending_theme_actions()
+        self.context._viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()

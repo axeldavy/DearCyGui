@@ -1418,14 +1418,14 @@ cdef class ThemeListWithCondition(baseTheme):
         count = 0
         applied_count = 0
         if self.last_theme_child is not None:
-            prev_size = <int>self.context.viewport.pending_theme_actions.size()
-            self.last_theme_child.push_to_list(self.context.viewport.pending_theme_actions)
-            new_size = <int>self.context.viewport.pending_theme_actions.size()
+            prev_size = <int>self.context._viewport.pending_theme_actions.size()
+            self.last_theme_child.push_to_list(self.context._viewport.pending_theme_actions)
+            new_size = <int>self.context._viewport.pending_theme_actions.size()
             count = new_size - prev_size
             # Set the conditions
             for i in range(prev_size, new_size):
-                condition_enabled = self.context.viewport.pending_theme_actions[i].activation_condition_enabled
-                condition_category = self.context.viewport.pending_theme_actions[i].activation_condition_category
+                condition_enabled = self.context._viewport.pending_theme_actions[i].activation_condition_enabled
+                condition_category = self.context._viewport.pending_theme_actions[i].activation_condition_category
                 if self.activation_condition_enabled != theme_enablers.t_enabled_any:
                     if condition_enabled != theme_enablers.t_enabled_any and \
                        condition_enabled != self.activation_condition_enabled:
@@ -1440,13 +1440,13 @@ cdef class ThemeListWithCondition(baseTheme):
                         condition_enabled = theme_enablers.t_discarded
                     else:
                         condition_category = self.activation_condition_category
-                self.context.viewport.pending_theme_actions[i].activation_condition_enabled = condition_enabled
-                self.context.viewport.pending_theme_actions[i].activation_condition_category = condition_category
+                self.context._viewport.pending_theme_actions[i].activation_condition_enabled = condition_enabled
+                self.context._viewport.pending_theme_actions[i].activation_condition_category = condition_category
             # Find if any of the conditions hold right now, and if so execute them
             # It is important to execute them now rather than later because we need
             # to insert before the next siblings
             if count > 0:
-                self.context.viewport.push_pending_theme_actions_on_subset(prev_size, new_size)
+                self.context._viewport.push_pending_theme_actions_on_subset(prev_size, new_size)
 
         self.last_push_size.push_back(count)
 
@@ -1455,9 +1455,9 @@ cdef class ThemeListWithCondition(baseTheme):
         self.last_push_size.pop_back()
         cdef int i
         for i in range(count):
-            self.context.viewport.pending_theme_actions.pop_back()
+            self.context._viewport.pending_theme_actions.pop_back()
         if count > 0:
-            self.context.viewport.pop_applied_pending_theme_actions()
+            self.context._viewport.pop_applied_pending_theme_actions()
         if self._prev_sibling is not None:
             (<baseTheme>self._prev_sibling).pop()
         self.mutex.unlock()
@@ -1500,11 +1500,11 @@ cdef class ThemeStopCondition(baseTheme):
         self.mutex.lock()
         if self._prev_sibling is not None:
             (<baseTheme>self._prev_sibling).push()
-        self.start_pending_theme_actions_backup.push_back(self.context.viewport.start_pending_theme_actions)
+        self.start_pending_theme_actions_backup.push_back(self.context._viewport.start_pending_theme_actions)
         if self.enabled:
-            self.context.viewport.start_pending_theme_actions = <int>self.context.viewport.pending_theme_actions.size()
+            self.context._viewport.start_pending_theme_actions = <int>self.context._viewport.pending_theme_actions.size()
     cdef void pop(self) noexcept nogil:
-        self.context.viewport.start_pending_theme_actions = self.start_pending_theme_actions_backup.back()
+        self.context._viewport.start_pending_theme_actions = self.start_pending_theme_actions_backup.back()
         self.start_pending_theme_actions_backup.pop_back()
         if self._prev_sibling is not None:
             (<baseTheme>self._prev_sibling).pop()
