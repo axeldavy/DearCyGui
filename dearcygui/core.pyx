@@ -243,6 +243,15 @@ cdef class Context:
             except Exception as e:
                 print(traceback.format_exc())
 
+    cdef void queue_callback_arg2double(self, Callback callback, baseItem parent_item, baseItem target_item, double arg1, double arg2) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, target_item, (arg1, arg2))
+            except Exception as e:
+                print(traceback.format_exc())
+
     cdef void queue_callback_arg1int2float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2, float arg3) noexcept nogil:
         if callback is None:
             return
@@ -8685,7 +8694,6 @@ cdef class Spacer(uiItem):
         return False
 
 cdef class MenuBar(uiItem):
-    # TODO: must be allowed as viewport child
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
@@ -8727,6 +8735,7 @@ cdef class MenuBar(uiItem):
 
 
 cdef class Menu(uiItem):
+    # TODO: MUST be inside a menubar
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
@@ -11865,7 +11874,7 @@ cdef class Texture(baseItem):
         """
         self.set_content(np.ascontiguousarray(value))
 
-    cdef void set_content(self, cnp.ndarray content):
+    cdef void set_content(self, cnp.ndarray content): # TODO: deadlock when held by external lock
         # The write mutex is to ensure order of processing of set_content
         # as we might release the item mutex to wait for imgui to render
         cdef unique_lock[recursive_mutex] m
@@ -11909,10 +11918,12 @@ cdef class Texture(baseItem):
                     m2.lock()
                 mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
                 mvFreeTexture(self.allocated_texture)
-                self.context.imgui_mutex.unlock()
                 self.allocated_texture = NULL
+                self.context.imgui_mutex.unlock()
             else:
+                m2.unlock()
                 mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
+                m2.lock()
 
             # Note we don't need the imgui mutex to create or upload textures.
             # In the case of GL, as only one thread can access GL data at a single
@@ -11972,6 +11983,8 @@ cdef class Font(baseItem):
 
     @property
     def scale(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         """Writable attribute: multiplicative factor to scale the font when used"""
         if self.font == NULL:
             raise ValueError("Uninitialized font")
@@ -11979,6 +11992,8 @@ cdef class Font(baseItem):
 
     @scale.setter
     def scale(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if self.font == NULL:
             raise ValueError("Uninitialized font")
         if value <= 0.:
@@ -11988,12 +12003,14 @@ cdef class Font(baseItem):
     cdef void push(self) noexcept nogil:
         if self.font == NULL:
             return
+        self.mutex.lock()
         imgui.PushFont(self.font)
 
     cdef void pop(self) noexcept nogil:
         if self.font == NULL:
             return
         imgui.PopFont()
+        self.mutex.unlock()
 
 cdef class FontTexture(baseItem):
     """
@@ -12019,6 +12036,8 @@ cdef class FontTexture(baseItem):
         """
         Prepare the target font file to be added to the FontTexture
         """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if self._built:
             raise ValueError("Cannot add Font to built FontTexture")
         if not(os.path.exists(path)):
@@ -12046,6 +12065,8 @@ cdef class FontTexture(baseItem):
 
     @property
     def built(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         return self._built
 
     @property
@@ -12054,16 +12075,22 @@ cdef class FontTexture(baseItem):
         Readonly texture containing the font data.
         build() must be called first
         """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if not(self._built):
             raise ValueError("Texture not yet built")
         return self._texture
 
     def __len__(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if not(self._built):
             return 0
         return <int>self.atlas.Fonts.size()
 
     def __getitem__(self, index):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if not(self._built):
             raise ValueError("Texture not yet built")
         if index < 0 or index >= <int>self.atlas.Fonts.size():
@@ -12075,6 +12102,8 @@ cdef class FontTexture(baseItem):
         Packs all the fonts appended with add_font_file
         into a readonly texture. 
         """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         if self._built:
             return
         if self.atlas.Fonts.Size == 0:
@@ -12176,7 +12205,7 @@ cdef class PlotAxisConfig(baseItem):
         self.flags = 0
         self._min = 0
         self._max = 1
-        self.last_frame_minmax_update = -1
+        self.dirty_minmax = False
         self._constraint_min = -INFINITY
         self._constraint_max = INFINITY
         self._zoom_min = 0
@@ -12239,7 +12268,7 @@ cdef class PlotAxisConfig(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._min = value
-        self.last_frame_minmax_update = self.context._viewport.frame_count
+        self.dirty_minmax = True
 
     @property
     def max(self):
@@ -12257,7 +12286,7 @@ cdef class PlotAxisConfig(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._max = value
-        self.last_frame_minmax_update = self.context._viewport.frame_count
+        self.dirty_minmax = True
 
     @property
     def constraint_min(self):
@@ -12608,47 +12637,6 @@ cdef class PlotAxisConfig(baseItem):
         if value:
             self.flags |= implot.ImPlotAxisFlags_LockMax
 
-    cdef void setup(self, implot.ImAxis axis) noexcept nogil:
-        """
-        Apply the config to the target axis during plot
-        setup
-        """
-        self.state.cur.hovered = False
-        self.state.cur.rendered = False
-
-        if self._enabled == False:
-            self.context._viewport.enabled_axes[axis] = False
-            return
-        self.context._viewport.enabled_axes[axis] = True
-        self.state.cur.rendered = True
-        # TODO label
-        implot.SetupAxis(axis, NULL, self.flags)
-        # we test the frame count to correctly support the
-        # same config instance applied to several axes
-        if self.last_frame_minmax_update >= self.context._viewport.frame_count-1:
-            # enforce min < max
-            self._max = max(self._max, self._min + 1e-12)
-            implot.SetupAxisLimits(axis,
-                                   self._min,
-                                   self._max,
-                                   implot.ImPlotCond_Always)
-        # TODO format, ticks
-        implot.SetupAxisScale(axis, self._scale)
-
-        if self._constraint_min != -INFINITY or \
-           self._constraint_max != INFINITY:
-            self._constraint_max = max(self._constraint_max, self._constraint_min + 1e-12)
-            implot.SetupAxisLimitsConstraints(axis,
-                                              self._constraint_min,
-                                              self._constraint_max)
-        if self._zoom_min != 0 or \
-           self._zoom_max != INFINITY:
-            self._zoom_min = max(0, self._zoom_min)
-            self._zoom_max = max(self._zoom_min, self._zoom_max)
-            implot.SetupAxisZoomConstraints(axis,
-                                            self._zoom_min,
-                                            self._zoom_max)
-
     @property
     def hovered(self):
         """
@@ -12724,12 +12712,172 @@ cdef class PlotAxisConfig(baseItem):
         clear_obj_vector(self._handlers)
         append_obj_vector(self._handlers, items)
 
+    def fit(self):
+        """
+        Request for a fit of min/max to the data the next time the plot is drawn
+        """
+        self.to_fit = True
+
+    @property
+    def on_resize(self):
+        """
+        Writable attribute: allback called whenever min or max changes.
+        (min, max) is passed to the callback.
+        """
+        return self._resize_callback
+
+    @on_resize.setter
+    def on_resize(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._resize_callback = value if isinstance(value, Callback) or value is None else Callback(value)
+
+    @property
+    def label(self):
+        """
+        Writable attribute: axis name
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(self._label, encoding='utf-8')
+
+    @label.setter
+    def label(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._label = bytes(value, 'utf-8')
+
+    @property
+    def format(self):
+        """
+        Writable attribute: format string to display axis values
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(self._format, encoding='utf-8')
+
+    @format.setter
+    def format(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._format = bytes(value, 'utf-8')
+
+    @property
+    def labels(self):
+        """
+        Writable attribute: array of strings to display as labels
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [str(v, encoding='utf-8') for v in self._labels]
+
+    @labels.setter
+    def labels(self, value):
+        cdef unique_lock[recursive_mutex] m
+        cdef int i
+        lock_gil_friendly(m, self.mutex)
+        self._labels.clear()
+        self._labels_cstr.clear()
+        if value is None:
+            return
+        if hasattr(value, '__len__'):
+            for v in value:
+                self._labels.push_back(bytes(v, 'utf-8'))
+            for i in range(<int>self._labels.size()):
+                self._labels_cstr.push_back(self._labels[i].c_str())
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as labels. Expected array of strings")
+
+    @property
+    def labels_coord(self):
+        """
+        Writable attribute: coordinate for each label in labels at
+        which to display the labels
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [v for v in self._labels_coord]
+
+    @labels_coord.setter
+    def labels_coord(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._labels_coord.clear()
+        if value is None:
+            return
+        if hasattr(value, '__len__'):
+            for v in value:
+                self._labels_coord.push_back(v)
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as labels_coord. Expected array of strings")
+
+    cdef void setup(self, implot.ImAxis axis) noexcept nogil:
+        """
+        Apply the config to the target axis during plot
+        setup
+        """
+        self.state.cur.hovered = False
+        self.state.cur.rendered = False
+
+        if self._enabled == False:
+            self.context._viewport.enabled_axes[axis] = False
+            return
+        self.context._viewport.enabled_axes[axis] = True
+        self.state.cur.rendered = True
+
+        cdef implot.ImPlotAxisFlags flags = self.flags
+        if self.to_fit:
+            flags |= implot.ImPlotAxisFlags_AutoFit
+            self.to_fit = False
+        if <int>self._label.size() > 0:
+            implot.SetupAxis(axis, self._label.c_str(), flags)
+        else:
+            implot.SetupAxis(axis, NULL, flags)
+        if self.dirty_minmax:
+            # enforce min < max
+            self._max = max(self._max, self._min + 1e-12)
+            implot.SetupAxisLimits(axis,
+                                   self._min,
+                                   self._max,
+                                   implot.ImPlotCond_Always)
+
+        implot.SetupAxisScale(axis, self._scale)
+
+        if <int>self._format.size() > 0:
+            implot.SetupAxisFormat(axis, self._format.c_str())
+
+        if self._constraint_min != -INFINITY or \
+           self._constraint_max != INFINITY:
+            self._constraint_max = max(self._constraint_max, self._constraint_min + 1e-12)
+            implot.SetupAxisLimitsConstraints(axis,
+                                              self._constraint_min,
+                                              self._constraint_max)
+        if self._zoom_min > 0 or \
+           self._zoom_max != INFINITY:
+            self._zoom_min = max(0, self._zoom_min)
+            self._zoom_max = max(self._zoom_min, self._zoom_max)
+            implot.SetupAxisZoomConstraints(axis,
+                                            self._zoom_min,
+                                            self._zoom_max)
+        cdef int label_count = min(<int>self._labels_coord.size(), self._labels_cstr.size())
+        if label_count > 0:
+            implot.SetupAxisTicks(axis,
+                                  self._labels_coord.data(),
+                                  label_count,
+                                  self._labels_cstr.data())
+
     cdef void after_setup(self, implot.ImAxis axis) noexcept nogil:
         """
         Update states, etc. after the elements were setup
         """
-        # TODO: return if not enabled ?
+        if not(self.context._viewport.enabled_axes[axis]):
+            if self.state.cur.rendered:
+                self.set_hidden()
+            return
         cdef implot.ImPlotRect rect
+        cdef double prev_min = self._min
+        cdef double prev_max = self._max
+        self.dirty_minmax = False
         if axis <= implot.ImAxis_X3:
             rect = implot.GetPlotLimits(axis, implot.IMPLOT_AUTO)
             self._min = rect.X.Min
@@ -12740,6 +12888,8 @@ cdef class PlotAxisConfig(baseItem):
             self._min = rect.Y.Min
             self._max = rect.Y.Max
             self._mouse_coord = implot.GetPlotMousePos(implot.IMPLOT_AUTO, axis).y
+        if prev_min != self._min or prev_max != self._max:
+            self.context.queue_callback_arg2double(self._resize_callback, self, self, self._min, self._max)
 
         # Take into accounts flags changed by user interactions
         self.flags = GetAxisConfig(<int>axis)
@@ -12751,7 +12901,7 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
         cdef bint backup_hovered = self.state.cur.hovered
         self.state.cur.hovered = hovered
-        run_handlers(self, self._handlers, self.state) # TODO FIX multiple configs tied
+        run_handlers(self, self._handlers, self.state) # TODO FIX multiple configs tied. Maybe just not support ?
         if not(backup_hovered) or self.state.cur.hovered:
             return
         # Restore correct states

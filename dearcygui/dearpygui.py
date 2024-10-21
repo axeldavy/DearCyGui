@@ -13,6 +13,7 @@
 import warnings
 import functools
 import inspect
+import math
 import random
 import string
 from contextlib import contextmanager
@@ -6725,7 +6726,7 @@ def fit_axis_data(axis : Union[int, str], **kwargs) -> None:
         None
     """
 
-    #return internal_dpg.fit_axis_data(axis, **kwargs)
+    return DCG_CONTEXT[axis].fit()
 
 def focus_item(item : Union[int, str], **kwargs) -> None:
     """     Focuses an item.
@@ -7700,8 +7701,9 @@ def reset_axis_limits_constraints(axis : Union[int, str], **kwargs) -> None:
     Returns:
         None
     """
-
-    #return internal_dpg.reset_axis_limits_constraints(axis, **kwargs)
+    item = DCG_CONTEXT[axis]
+    item.constraint_min = -math.inf
+    item.constraint_max = math.inf
 
 def reset_axis_ticks(axis : Union[int, str], **kwargs) -> None:
     """     Removes the manually set axis ticks and applies the default axis ticks
@@ -7712,7 +7714,7 @@ def reset_axis_ticks(axis : Union[int, str], **kwargs) -> None:
         None
     """
 
-    #return internal_dpg.reset_axis_ticks(axis, **kwargs)
+    DCG_CONTEXT[axis].labels = None
 
 def reset_axis_zoom_constraints(axis : Union[int, str], **kwargs) -> None:
     """     Remove an axis' zoom constraints
@@ -7723,7 +7725,9 @@ def reset_axis_zoom_constraints(axis : Union[int, str], **kwargs) -> None:
         None
     """
 
-    #return internal_dpg.reset_axis_zoom_constraints(axis, **kwargs)
+    item = DCG_CONTEXT[axis]
+    item.zoom_min = 0.
+    item.zoom_max = math.inf
 
 def reset_pos(item : Union[int, str], **kwargs) -> None:
     """     Resets an item's position after using 'set_item_pos'.
@@ -7786,7 +7790,12 @@ def set_axis_limits(axis : Union[int, str], ymin : float, ymax : float, **kwargs
         None
     """
 
-    #return internal_dpg.set_axis_limits(axis, ymin, ymax, **kwargs)
+    item = DCG_CONTEXT[axis]
+    item.min = ymin
+    item.max = ymax
+    item.lock_min = True
+    item.lock_max = True
+    print(item.min, item.max)
 
 def set_axis_limits_auto(axis : Union[int, str], **kwargs) -> None:
     """     Removes all limits on specified axis.
@@ -7796,7 +7805,9 @@ def set_axis_limits_auto(axis : Union[int, str], **kwargs) -> None:
     Returns:
         None
     """
-
+    item = DCG_CONTEXT[axis]
+    item.lock_min = False
+    item.lock_max = False
     #return internal_dpg.set_axis_limits_auto(axis, **kwargs)
 
 def set_axis_limits_constraints(axis : Union[int, str], vmin : float, vmax : float, **kwargs) -> None:
@@ -7810,7 +7821,9 @@ def set_axis_limits_constraints(axis : Union[int, str], vmin : float, vmax : flo
         None
     """
 
-    #return internal_dpg.set_axis_limits_constraints(axis, vmin, vmax, **kwargs)
+    item = DCG_CONTEXT[axis]
+    item.constraint_min = vmin
+    item.constraint_max = vmax
 
 def set_axis_ticks(axis : Union[int, str], label_pairs : Any, **kwargs) -> None:
     """     Replaces axis ticks with 'label_pairs' argument.
@@ -7821,8 +7834,16 @@ def set_axis_ticks(axis : Union[int, str], label_pairs : Any, **kwargs) -> None:
     Returns:
         None
     """
+    labels = []
+    coords = []
+    for (label, coord) in label_pairs:
+        labels.append(label)
+        coords.append(coord)
 
-    #return internal_dpg.set_axis_ticks(axis, label_pairs, **kwargs)
+    print(labels, coords)
+    item = DCG_CONTEXT[axis]
+    item.labels = labels
+    item.labels_coord = coords
 
 def set_axis_zoom_constraints(axis : Union[int, str], vmin : float, vmax : float, **kwargs) -> None:
     """     Sets an axis' zoom constraints so that users can't zoom beyond a min or max value
@@ -7835,7 +7856,9 @@ def set_axis_zoom_constraints(axis : Union[int, str], vmin : float, vmax : float
         None
     """
 
-    #return internal_dpg.set_axis_zoom_constraints(axis, vmin, vmax, **kwargs)
+    item = DCG_CONTEXT[axis]
+    item.zoom_min = vmin
+    item.zoom_max = vmax
 
 def set_clip_space(item : Union[int, str], top_left_x : float, top_left_y : float, width : float, height : float, min_depth : float, max_depth : float, **kwargs) -> None:
     """     New in 1.1. Set the clip space for depth clipping and 'viewport' transformation.
@@ -8203,6 +8226,7 @@ def unstage(item : Union[int, str], **kwargs) -> None:
 # Container Context Managers legacy + item legacy
 ##########################################################
 
+add_bar_series = bar_series
 add_button = button
 add_checkbox = checkbox
 add_child_window = child_window

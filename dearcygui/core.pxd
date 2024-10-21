@@ -85,6 +85,7 @@ cdef class Context:
     cdef void queue_callback_arg1value(self, Callback, baseItem, baseItem, SharedValue) noexcept nogil
     cdef void queue_callback_arg1int1float(self, Callback, baseItem, baseItem, int, float) noexcept nogil
     cdef void queue_callback_arg2float(self, Callback, baseItem, baseItem, float, float) noexcept nogil
+    cdef void queue_callback_arg2double(self, Callback, baseItem, baseItem, double, double) noexcept nogil
     cdef void queue_callback_arg1int2float(self, Callback, baseItem, baseItem, int, float, float) noexcept nogil
     cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
     cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
@@ -1098,14 +1099,21 @@ cdef class PlotAxisConfig(baseItem):
     cdef implot.ImPlotAxisFlags flags
     cdef double _min
     cdef double _max
-    cdef int last_frame_minmax_update
+    cdef bint dirty_minmax
     cdef double _constraint_min
     cdef double _constraint_max
     cdef double _zoom_min
     cdef double _zoom_max
     cdef double _mouse_coord
+    cdef bint to_fit
     cdef itemState state
     cdef vector[PyObject*] _handlers # type baseHandler
+    cdef Callback _resize_callback
+    cdef string _label
+    cdef string _format
+    cdef vector[string] _labels
+    cdef vector[const char*] _labels_cstr
+    cdef vector[double] _labels_coord
     cdef void setup(self, implot.ImAxis) noexcept nogil
     cdef void after_setup(self, implot.ImAxis) noexcept nogil
     cdef void set_hidden(self) noexcept nogil
