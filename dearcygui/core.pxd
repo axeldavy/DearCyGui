@@ -89,6 +89,7 @@ cdef class Context:
     cdef void queue_callback_arg1int2float(self, Callback, baseItem, baseItem, int, float, float) noexcept nogil
     cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
     cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
+    cdef void queue_callback_argdoubletriplet(self, Callback, baseItem, baseItem, double, double, double, double, double, double) noexcept nogil
     cdef void register_item(self, baseItem o, long long uuid)
     cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
     cdef void unregister_item(self, long long uuid)
@@ -1099,6 +1100,8 @@ cdef class PlotAxisConfig(baseItem):
     cdef implot.ImPlotAxisFlags flags
     cdef double _min
     cdef double _max
+    cdef double prev_min
+    cdef double prev_max
     cdef bint dirty_minmax
     cdef double _constraint_min
     cdef double _constraint_max

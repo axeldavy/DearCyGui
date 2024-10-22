@@ -134,6 +134,12 @@ cdef class MouseCursorHandler(baseHandler):
     cdef bint check_state(self, baseItem, itemState&) noexcept nogil
     cdef void run_handler(self, baseItem, itemState&) noexcept nogil
 
+cdef class AxesResizeHandler(baseHandler):
+    cdef int[2] _axes
+    cdef void check_bind(self, baseItem, itemState&)
+    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+
 cdef class KeyDownHandler(KeyDownHandler_):
     pass
 

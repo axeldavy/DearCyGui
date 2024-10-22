@@ -1,7 +1,7 @@
 from .core cimport *
 from cython.operator cimport dereference
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
-from dearcygui.wrapper cimport imgui
+from dearcygui.wrapper cimport imgui, implot
 import traceback
 
 cdef class CustomHandler(baseHandler):
@@ -725,6 +725,7 @@ cdef class LostHoverHandler(baseHandler):
     cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
         return not(state.cur.hovered) and state.prev.hovered
 
+# TODO: ContentResizeHandler. Add size as data to the callback
 cdef class ResizeHandler(baseHandler):
     """
     Handler that triggers the callback
@@ -934,6 +935,129 @@ cdef class MouseCursorHandler(baseHandler):
         if self._callback is not None:
             if self.check_state(item, state):
                 self.run_callback(item)
+
+
+cdef class AxesResizeHandler(baseHandler):
+    """
+    Handler that can only be bound to a plot,
+    and that triggers the callback whenever the
+    axes min/max OR the plot region box changes.
+    Basically whenever the size
+    of a pixel within plot coordinate has likely changed.
+
+    The data field passed to the callback contains
+    ((min, max, scale), (min, max, scale)) where
+    scale = (max-min) / num_real_pixels
+    and the first tuple is for the target X axis (default X1),
+    and the second tuple for the target Y axis (default Y1)
+    """
+    def __cinit__(self):
+        self._axes = [implot.ImAxis_X1, implot.ImAxis_Y1]
+    @property
+    def axes(self):
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this handler.
+        Default is (X1, Y1)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._axes[0], self._axes[1])
+
+    @axes.setter
+    def axes(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef int axis_x, axis_y
+        try:
+            (axis_x, axis_y) = value
+            assert(axis_x in [implot.ImAxis_X1,
+                              implot.ImAxis_X2,
+                              implot.ImAxis_X3])
+            assert(axis_y in [implot.ImAxis_Y1,
+                              implot.ImAxis_Y2,
+                              implot.ImAxis_Y3])
+        except Exception as e:
+            raise ValueError("Axes must be a tuple of valid X/Y axes")
+        self._axes[0] = axis_x
+        self._axes[1] = axis_y
+
+    cdef void check_bind(self, baseItem item, itemState &state):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).check_bind(item, state)
+        if not(isinstance(item, Plot)):
+            raise TypeError(f"Cannot only bind handler {self} to a plot, not {item}")
+
+    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+        cdef bint changed = \
+               state.cur.content_region_size.x != state.prev.content_region_size.x or \
+               state.cur.content_region_size.y != state.prev.content_region_size.y
+        if changed:
+            return True
+        if self._axes[0] == implot.ImAxis_X1:
+            changed = (<Plot>item)._X1._min != (<Plot>item)._X1.prev_min or \
+                      (<Plot>item)._X1._max != (<Plot>item)._X1.prev_max
+        elif self._axes[0] == implot.ImAxis_X2:
+            changed = (<Plot>item)._X2._min != (<Plot>item)._X2.prev_min or \
+                      (<Plot>item)._X2._max != (<Plot>item)._X2.prev_max
+        elif self._axes[0] == implot.ImAxis_X3:
+            changed = (<Plot>item)._X3._min != (<Plot>item)._X3.prev_min or \
+                      (<Plot>item)._X3._max != (<Plot>item)._X3.prev_max
+        if changed:
+            return True
+        if self._axes[1] == implot.ImAxis_Y1:
+            changed = (<Plot>item)._Y1._min != (<Plot>item)._Y1.prev_min or \
+                      (<Plot>item)._Y1._max != (<Plot>item)._Y1.prev_max
+        elif self._axes[1] == implot.ImAxis_Y2:
+            changed = (<Plot>item)._Y2._min != (<Plot>item)._Y2.prev_min or \
+                      (<Plot>item)._Y2._max != (<Plot>item)._Y2.prev_max
+        elif self._axes[1] == implot.ImAxis_Y3:
+            changed = (<Plot>item)._Y3._min != (<Plot>item)._Y3.prev_min or \
+                      (<Plot>item)._Y3._max != (<Plot>item)._Y3.prev_max
+
+        return changed
+
+    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self._prev_sibling is not None:
+            (<baseHandler>self._prev_sibling).run_handler(item, state)
+        if not(self._enabled):
+            return
+        if self._callback is not None or not(self.check_state(item, state)):
+            return
+        cdef double x_min = 0., x_max = 0., x_scale = 0.
+        cdef double y_min = 0., y_max = 0., y_scale = 0.
+        if self._axes[0] == implot.ImAxis_X1:
+            x_min = (<Plot>item)._X1._min
+            x_max = (<Plot>item)._X1._max
+        elif self._axes[0] == implot.ImAxis_X2:
+            x_min = (<Plot>item)._X2._min
+            x_max = (<Plot>item)._X2._max
+        elif self._axes[0] == implot.ImAxis_X3:
+            x_min = (<Plot>item)._X3._min
+            x_max = (<Plot>item)._X3._max
+        if self._axes[1] == implot.ImAxis_Y1:
+            y_min = (<Plot>item)._Y1._min
+            y_max = (<Plot>item)._Y1._max
+        elif self._axes[1] == implot.ImAxis_Y2:
+            y_min = (<Plot>item)._Y2._min
+            y_max = (<Plot>item)._Y2._max
+        elif self._axes[1] == implot.ImAxis_Y3:
+            y_min = (<Plot>item)._Y3._min
+            y_max = (<Plot>item)._Y3._max
+        x_scale = (x_max - x_min) / <double>state.cur.content_region_size.x
+        y_scale = (y_max - y_min) / <double>state.cur.content_region_size.y
+        self.context.queue_callback_argdoubletriplet(self._callback,
+                                                     self,
+                                                     item,
+                                                     x_min,
+                                                     x_max,
+                                                     x_scale,
+                                                     y_min,
+                                                     y_max,
+                                                     y_scale)
 
 cdef class KeyDownHandler(KeyDownHandler_):
     @property

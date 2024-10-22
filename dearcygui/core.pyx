@@ -279,6 +279,19 @@ cdef class Context:
             except Exception as e:
                 print(traceback.format_exc())
 
+    cdef void queue_callback_argdoubletriplet(self, Callback callback, baseItem parent_item, baseItem target_item,
+                                              double arg1_1, double arg1_2, double arg1_3,
+                                              double arg2_1, double arg2_2, double arg2_3) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, target_item,
+                                  ((arg1_1, arg1_2, arg1_3), (arg2_1, arg2_2, arg2_3)))
+            except Exception as e:
+                print(traceback.format_exc())
+
+
     cdef void register_item(self, baseItem o, long long uuid):
         """ Stores weak references to objects.
         
@@ -8064,7 +8077,7 @@ cdef class InputValue(uiItem):
             dstep_fast = <double>self._step_fast
             if dstep > 0:
                 data_step = &dstep
-            if fstep_fast > 0:
+            if dstep_fast > 0:
                 data_step_fast = &dstep_fast
 
         # Read the value
@@ -12719,20 +12732,6 @@ cdef class PlotAxisConfig(baseItem):
         self.to_fit = True
 
     @property
-    def on_resize(self):
-        """
-        Writable attribute: allback called whenever min or max changes.
-        (min, max) is passed to the callback.
-        """
-        return self._resize_callback
-
-    @on_resize.setter
-    def on_resize(self, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._resize_callback = value if isinstance(value, Callback) or value is None else Callback(value)
-
-    @property
     def label(self):
         """
         Writable attribute: axis name
@@ -12875,8 +12874,8 @@ cdef class PlotAxisConfig(baseItem):
                 self.set_hidden()
             return
         cdef implot.ImPlotRect rect
-        cdef double prev_min = self._min
-        cdef double prev_max = self._max
+        self.prev_min = self._min
+        self.prev_max = self._max
         self.dirty_minmax = False
         if axis <= implot.ImAxis_X3:
             rect = implot.GetPlotLimits(axis, implot.IMPLOT_AUTO)
@@ -12888,8 +12887,6 @@ cdef class PlotAxisConfig(baseItem):
             self._min = rect.Y.Min
             self._max = rect.Y.Max
             self._mouse_coord = implot.GetPlotMousePos(implot.IMPLOT_AUTO, axis).y
-        if prev_min != self._min or prev_max != self._max:
-            self.context.queue_callback_arg2double(self._resize_callback, self, self, self._min, self._max)
 
         # Take into accounts flags changed by user interactions
         self.flags = GetAxisConfig(<int>axis)
