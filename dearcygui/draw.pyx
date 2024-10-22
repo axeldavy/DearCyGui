@@ -32,85 +32,6 @@ cdef class ViewportDrawList(ViewportDrawList_):
         lock_gil_friendly(m, self.mutex)
         self._show = value
 
-cdef class DrawLayer(DrawLayer_):
-    @property
-    def perspective_divide(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._perspective_divide
-    @perspective_divide.setter
-    def perspective_divide(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._perspective_divide = value
-    @property
-    def depth_clipping(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._depth_clipping
-    @depth_clipping.setter
-    def depth_clipping(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._depth_clipping = value
-    @property
-    def cull_mode(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._cull_mode
-    @cull_mode.setter
-    def cull_mode(self, int value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._cull_mode = value
-    @property
-    def transform(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        if not(self.has_matrix_transform):
-            # identity:
-            return [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]
-        res = []
-        cdef int i
-        for i in range(4):
-            res.append(list(self._transform[i]))
-        return res
-    @transform.setter
-    def transform(self, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef int i, j
-        if len(value) == 16:
-            for i in range(16):
-                self._transform[i//4][i%4] = <float>value[i]
-        elif len(value) == 4:
-            for i in range(4):
-                if len(value[i]) != 4:
-                    raise ValueError("Invalid matrix format")
-                for j in range(4):
-                    self._transform[i][j] = <float>value[i][j]
-        else:
-             raise ValueError("Expected a 4x4 matrix")
-
-    def clip_space(self,
-                   float topleftx,
-                   float toplefty,
-                   float width,
-                   float height,
-                   float mindepth,
-                   float maxdepth):
-        self.clipViewport[0] = topleftx
-        self.clipViewport[1] = toplefty + height
-        self.clipViewport[2] = width
-        self.clipViewport[3] = height
-        self.clipViewport[4] = mindepth
-        self.clipViewport[5] = maxdepth
-        self.transform[0] = [width, 0., 0., topleftx + (width / 2.)]
-        self.transform[0] = [0., -height, 0., toplefty + (height / 2.)]
-        self.transform[0] = [0., 0., 0.25, 0.5]
-        self.transform[1] = [0., 0., 0., 1.]
-        self.has_matrix_transform = True
-
 cdef class DrawArrow(DrawArrow_):
     @property
     def p1(self):
@@ -496,7 +417,7 @@ cdef class DrawImage(DrawImage_):
     def uv(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[float](self.uv, value)
+        read_vec4[float](self.uv, value)
     @property
     def color_multiplier(self):
         cdef unique_lock[recursive_mutex] m
@@ -567,7 +488,7 @@ cdef class DrawImageQuad(DrawImageQuad_):
     def uv1(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self.uv1)[:2]
+        return list(self.uv1)
     @uv1.setter
     def uv1(self, value):
         cdef unique_lock[recursive_mutex] m
@@ -577,7 +498,7 @@ cdef class DrawImageQuad(DrawImageQuad_):
     def uv2(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self.uv2)[:2]
+        return list(self.uv2)
     @uv2.setter
     def uv2(self, value):
         cdef unique_lock[recursive_mutex] m
@@ -587,7 +508,7 @@ cdef class DrawImageQuad(DrawImageQuad_):
     def uv3(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self.uv3)[:2]
+        return list(self.uv3)
     @uv3.setter
     def uv3(self, value):
         cdef unique_lock[recursive_mutex] m
@@ -597,7 +518,7 @@ cdef class DrawImageQuad(DrawImageQuad_):
     def uv4(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self.uv4)[:2]
+        return list(self.uv4)
     @uv4.setter
     def uv4(self, value):
         cdef unique_lock[recursive_mutex] m

@@ -2394,10 +2394,8 @@ cdef class Viewport(baseItem):
             self._font.push()
         if self._theme is not None: # maybe apply in render_frame instead ?
             self._theme.push()
-        #self.cullMode = 0
-        self.perspectiveDivide = False
-        self.depthClipping = False
-        self.has_matrix_transform = False
+        self.shifts = [0., 0.]
+        self.scales = [1., 1.]
         self.in_plot = False
         self.start_pending_theme_actions = 0
         #if self.filedialogRoots is not None:
@@ -2418,57 +2416,31 @@ cdef class Viewport(baseItem):
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
-    cdef void apply_current_transform(self, float *dst_p, double[4] src_p) noexcept nogil:
+    cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil:
         """
         Used during rendering as helper to convert drawing coordinates to pixel coordinates
         """
         # assumes imgui + viewport mutex are held
-        cdef double[4] transformed_p
-        if self.has_matrix_transform:
-            transformed_p[0] = self.transform[0][0] * src_p[0] + \
-                               self.transform[0][1] * src_p[1] + \
-                               self.transform[0][2] * src_p[2] + \
-                               self.transform[0][3] * src_p[3]
-            transformed_p[1] = self.transform[1][0] * src_p[0] + \
-                               self.transform[1][1] * src_p[1] + \
-                               self.transform[1][2] * src_p[2] + \
-                               self.transform[1][3] * src_p[3]
-            transformed_p[2] = self.transform[2][0] * src_p[0] + \
-                               self.transform[2][1] * src_p[1] + \
-                               self.transform[2][2] * src_p[2] + \
-                               self.transform[2][3] * src_p[3]
-            transformed_p[3] = self.transform[3][0] * src_p[0] + \
-                               self.transform[3][1] * src_p[1] + \
-                               self.transform[3][2] * src_p[2] + \
-                               self.transform[3][3] * src_p[3]
-        else:
-            transformed_p = src_p
-
-        if self.perspectiveDivide:
-            if transformed_p[3] != 0.:
-                transformed_p[0] /= transformed_p[3]
-                transformed_p[1] /= transformed_p[3]
-                transformed_p[2] /= transformed_p[3]
-            transformed_p[3] = 1.
-
-        # TODO clipViewport
 
         cdef imgui.ImVec2 plot_transformed
+        cdef double[2] p
+        p[0] = src_p[0] * self.scales[0] + self.shifts[0]
+        p[1] = src_p[1] * self.scales[1] + self.shifts[1]
         if self.in_plot:
             if self.plot_fit:
-                implot.FitPointX(transformed_p[0])
-                implot.FitPointY(transformed_p[1])
+                implot.FitPointX(src_p[0])
+                implot.FitPointY(src_p[1])
             plot_transformed = \
-                implot.PlotToPixels(transformed_p[0],
-                                    transformed_p[1],
+                implot.PlotToPixels(src_p[0],
+                                    src_p[1],
                                     -1,
                                     -1)
             dst_p[0] = plot_transformed.x
             dst_p[1] = plot_transformed.y
         else:
             # When in a plot, PlotToPixel already handles that.
-            dst_p[0] = transformed_p[0] + self.parent_pos.x
-            dst_p[1] = transformed_p[1] + self.parent_pos.y
+            dst_p[0] = <float>p[0]
+            dst_p[1] = <float>p[1]
 
     cdef void push_pending_theme_actions(self,
                                          theme_enablers theme_activation_condition_enabled,
@@ -2904,20 +2876,79 @@ cdef class DrawingList(drawingItem):
         # draw children
         self.last_drawings_child.draw(drawlist)
 
-cdef class DrawLayer_(drawingItem):
+cdef class DrawingListScale(drawingItem):
     """
     Similar to a DrawingList, but
-    can apply scene clipping, enable
-    perspective divide and/or a 4x4 matrix
-    transform.
+    can apply shift and scale to the data
     """
     def __cinit__(self):
-        self._cull_mode = 0 # mvCullMode_None == 0
-        self._perspective_divide = False
-        self._depth_clipping = False
-        self.clip_viewport = [0.0, 0.0, 1.0, 1.0, -1.0, 1.0]
-        self.has_matrix_transform = False
-        self.can_have_drawing_child = True
+        self._scales = [1., 1.]
+        self._shifts = [0., 0.]
+        self._no_parent_scale = False
+
+    @property
+    def scales(self):
+        """
+        Scales applied to the x and y axes
+        Default is (1., 1.).
+        The scales multiply any previous scales
+        already set (including plot scales).
+        Use no_parent_scale to remove that behaviour.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._scales
+
+    @scales.setter
+    def scales(self, values):
+        if not(hasattr(values, '__len__')) or len(values) != 2:
+            raise ValueError(f"Expected tuple, got {values}")
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._scales[0] = values[0]
+        self._scales[1] = values[1]
+
+    @property
+    def shifts(self):
+        """
+        Shifts applied to the x and y axes.
+        Default is (0., 0.)
+        The shifts are applied any previous
+        shift and scale.
+        For instance on x, the transformation to
+        screen space is:
+        parent_x_transform(x * scales[0] + shifts[0])
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._shifts
+
+    @shifts.setter
+    def shifts(self, values):
+        if not(hasattr(values, '__len__')) or len(values) != 2:
+            raise ValueError(f"Expected tuple, got {values}")
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._shifts[0] = values[0]
+        self._shifts[1] = values[1]
+
+    @property
+    def no_parent_scale(self):
+        """
+        Resets any previous scaling to screen space.
+        shifts are transformed to screen space using
+        the parent transform and serves as origin (0, 0)
+        for the child coordinates.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._no_parent_scale
+
+    @no_parent_scale.setter
+    def no_parent_scale(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._no_parent_scale = value
 
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
@@ -2928,24 +2959,36 @@ cdef class DrawLayer_(drawingItem):
         if self.last_drawings_child is None:
             return
 
-        # Reset current drawInfo - except in_plot as we keep drawlist
-        #self.context._viewport.cullMode = self._cull_mode
-        self.context._viewport.perspectiveDivide = self._perspective_divide
-        self.context._viewport.depthClipping = self._depth_clipping
-        if self._depth_clipping:
-            self.context._viewport.clipViewport = self.clip_viewport
-        #if self.has_matrix_transform and self.context._viewport.has_matrix_transform:
-        #    TODO
-        #    matrix_fourfour_mul(self.context._viewport.transform, self.transform)
-        #elif
-        if self.has_matrix_transform:
-            self.context._viewport.has_matrix_transform = True
-            self.context._viewport.transform = self._transform
-        # As we inherit from drawlist
-        # We don't change self.in_plot
+        # save states
+        cdef double[2] cur_scales = self.context._viewport.scales
+        cdef double[2] cur_shifts = self.context._viewport.shifts
+        cdef bint cur_in_plot = self.context._viewport.in_plot
+
+        cdef float[2] p
+        if self._no_parent_scale:
+            self.context._viewport.apply_current_transform(p, self._shifts)
+            self.context._viewport.scales = self._scales
+            self.context._viewport.shifts[0] = <double>p[0]
+            self.context._viewport.shifts[1] = <double>p[1]
+            self.context._viewport.in_plot = False
+        else:
+            self.context._viewport.scales[0] = cur_scales[0] * self._scales[0]
+            self.context._viewport.scales[1] = cur_scales[1] * self._scales[1]
+            self.context._viewport.shifts[0] = self.context._viewport.shifts[0] + cur_scales[0] * self._shifts[0]
+            self.context._viewport.shifts[1] = self.context._viewport.shifts[1] + cur_scales[1] * self._shifts[1]
+            # TODO investigate if it'd be better if we do or not:
+            # maybe instead have the multipliers as params
+            #if cur_in_plot:
+            #    self.thickness_multiplier *= cur_scales[0]
+            #    self.size_multiplier *= cur_scales[0]
 
         # draw children
         self.last_drawings_child.draw(drawlist)
+
+        # restore states
+        self.context._viewport.scales = cur_scales
+        self.context._viewport.shifts = cur_shifts
+        self.context._viewport.in_plot = cur_in_plot
 
 cdef class DrawArrow_(drawingItem):
     def __cinit__(self):
@@ -2980,13 +3023,9 @@ cdef class DrawArrow_(drawingItem):
         cdef double x1 = <double>(xsi - xoffset * cos(angle))
         cdef double y1 = <double>(ysi - yoffset * sin(angle))
         self.corner1 = [x1 - 0.5 * self.size * sin(angle),
-                        y1 + 0.5 * self.size * cos(angle),
-                        0.,
-                        1.]
+                        y1 + 0.5 * self.size * cos(angle)]
         self.corner2 = [x1 + 0.5 * self.size * cos((M_PI / 2.0) - angle),
-                        y1 - 0.5 * self.size * sin((M_PI / 2.0) - angle),
-                        0.,
-                        1.]
+                        y1 - 0.5 * self.size * sin((M_PI / 2.0) - angle)]
 
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
@@ -3210,11 +3249,10 @@ cdef class DrawImage_(drawingItem):
 
 cdef class DrawImageQuad_(drawingItem):
     def __cinit__(self):
-        # last two fields are unused
-        self.uv1 = [0., 0., 0., 0.]
-        self.uv2 = [0., 0., 0., 0.]
-        self.uv3 = [0., 0., 0., 0.]
-        self.uv4 = [0., 0., 0., 0.]
+        self.uv1 = [0., 0.]
+        self.uv2 = [0., 0.]
+        self.uv3 = [0., 0.]
+        self.uv4 = [0., 0.]
         self.color_multiplier = 4294967295 # 0xffffffff
 
     cdef void draw(self,
@@ -3462,8 +3500,8 @@ cdef class DrawQuad_(drawingItem):
 
 cdef class DrawRect_(drawingItem):
     def __cinit__(self):
-        self.pmin = [0., 0., 0., 0.]
-        self.pmax = [1., 1., 0., 0.]
+        self.pmin = [0., 0.]
+        self.pmax = [1., 1.]
         self.color = 4294967295 # 0xffffffff
         self.fill = 0
         self.color_upper_left = 0
@@ -3700,6 +3738,10 @@ cdef class DrawInvisibleButton(drawingItem):
 
     If your Draw Button is not part of a window (ViewportDrawList),
     the hovering test might not be reliable (except specific case above).
+
+    DrawInvisibleButton accepts children. In that case, the children
+    are drawn relative to the coordinates of the DrawInvisibleButton,
+    where top left is (0, 0) and bottom right is (1, 1).
     """
     def __cinit__(self):
         self._button = 1
@@ -3709,7 +3751,9 @@ cdef class DrawInvisibleButton(drawingItem):
         self.state.cap.can_be_hovered = True
         self.state.cap.has_rect_size = True
         self.state.cap.has_position = True
+        self.can_have_drawing_child = True
         self._min_side = 0
+        self._max_side = INFINITY
         self._capture_mouse = True
         self._no_input = False
 
@@ -3779,7 +3823,8 @@ cdef class DrawInvisibleButton(drawingItem):
         If the rectangle width or height after
         coordinate transform is lower than this,
         resize the screen space transformed coordinates
-        such that the width/height are at least min_side
+        such that the width/height are at least min_side.
+        Retains original ratio.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -3792,6 +3837,27 @@ cdef class DrawInvisibleButton(drawingItem):
         if value < 0:
             value = 0
         self._min_side = value
+
+    @property
+    def max_side(self):
+        """
+        If the rectangle width or height after
+        coordinate transform is higher than this,
+        resize the screen space transformed coordinates
+        such that the width/height are at max max_side.
+        Retains original ratio.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._max_side
+
+    @max_side.setter
+    def max_side(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < 0:
+            value = 0
+        self._max_side = value
 
     @property
     def handlers(self):
@@ -4008,21 +4074,38 @@ cdef class DrawInvisibleButton(drawingItem):
         self.context._viewport.apply_current_transform(p2, self._p2)
         cdef imgui.ImVec2 top_left
         cdef imgui.ImVec2 bottom_right
+        cdef imgui.ImVec2 center
         cdef imgui.ImVec2 size
         top_left.x = min(p1[0], p2[0])
         top_left.y = min(p1[1], p2[1])
         bottom_right.x = max(p1[0], p2[0])
         bottom_right.y = max(p1[1], p2[1])
+        center.x = (top_left.x + bottom_right.x) / 2.
+        center.y = (top_left.y + bottom_right.y) / 2.
         size.x = bottom_right.x - top_left.x
         size.y = bottom_right.y - top_left.y
+        cdef float ratio = 1e30
+        if size.y != 0.:
+            if size.x == 0.:
+                ratio = 1.
+            else:
+                ratio = size.x/size.y
         if size.x < self._min_side:
-            top_left.x = (top_left.x + bottom_right.x) / 2. - self._min_side / 2.
+            size.y += (self._min_side - size.x) / ratio
             size.x = self._min_side
-            bottom_right.x = top_left.x + self._min_side
         if size.y < self._min_side:
-            top_left.y = (top_left.y + bottom_right.y) / 2. - self._min_side / 2.
+            size.x += (self._min_side - size.y) * ratio
             size.y = self._min_side
-            bottom_right.y = top_left.y + self._min_side
+        if size.x > self._max_side:
+            size.y = max(0., size.y - (size.x - self._max_side) / ratio)
+            size.x = self._max_side
+        if size.y > self._max_side:
+            size.x += max(0., size.x - (size.y - self._max_side) * ratio)
+            size.y = self._max_side
+        top_left.x = center.x - size.x * 0.5
+        bottom_right.x = top_left.x + size.x * 0.5
+        top_left.y = center.y - size.y * 0.5
+        bottom_right.y = top_left.y + size.y
         # Update rect and position size
         self.state.cur.rect_size = size
         self.state.cur.pos_to_viewport = top_left
@@ -4038,6 +4121,24 @@ cdef class DrawInvisibleButton(drawingItem):
             # in order to update the relevant states to False.
             # If the button is active, do not skip anything.
             return
+
+        # Render children if any
+        cdef double[2] cur_scales = self.context._viewport.scales
+        cdef double[2] cur_shifts = self.context._viewport.shifts
+        cdef bint cur_in_plot = self.context._viewport.in_plot
+
+        # draw children
+        if self.last_drawings_child is not None:
+            self.context._viewport.shifts[0] = <double>top_left.x
+            self.context._viewport.shifts[1] = <double>top_left.y
+            self.context._viewport.scales = [<double>size.x, <double>size.y]
+            self.context._viewport.in_plot = False
+            self.last_drawings_child.draw(drawlist)
+
+        # restore states
+        self.context._viewport.scales = cur_scales
+        self.context._viewport.shifts = cur_shifts
+        self.context._viewport.in_plot = cur_in_plot
 
         cdef bint mouse_down = False
         if (self._button & 1) != 0 and imgui.IsMouseDown(imgui.ImGuiMouseButton_Left):
@@ -4168,12 +4269,11 @@ cdef class DrawInWindow(uiItem):
         cdef float starty = <float>imgui.GetCursorScreenPos().y
 
         # Reset current drawInfo
-        #self.context._viewport.cullMode = 0 # mvCullMode_None
-        self.context._viewport.perspectiveDivide = False
-        self.context._viewport.depthClipping = False
-        self.context._viewport.has_matrix_transform = False
         self.context._viewport.in_plot = False
         self.context._viewport.parent_pos = imgui.GetCursorScreenPos()
+        self.context._viewport.shifts[0] = <double>startx
+        self.context._viewport.shifts[1] = <double>starty
+        self.context._viewport.scales = [1., 1.]
 
         imgui.PushClipRect(imgui.ImVec2(startx, starty),
                            imgui.ImVec2(startx + clip_width,
@@ -4214,13 +4314,11 @@ cdef class ViewportDrawList_(baseItem):
             return
 
         # Reset current drawInfo
-        #self.context._viewport.cullMode = 0 # mvCullMode_None
-        self.context._viewport.perspectiveDivide = False
-        self.context._viewport.depthClipping = False
-        self.context._viewport.has_matrix_transform = False
         self.context._viewport.in_plot = False
         self.context._viewport.window_pos = imgui.ImVec2(0., 0.)
         self.context._viewport.parent_pos = imgui.ImVec2(0., 0.)
+        self.context._viewport.shifts = [0., 0.]
+        self.context._viewport.scales = [1., 1.]
 
         cdef imgui.ImDrawList* internal_drawlist = \
             imgui.GetForegroundDrawList() if self._front else \
@@ -4771,7 +4869,7 @@ cdef class SharedStr(SharedValue):
 
 cdef class SharedFloat4(SharedValue):
     def __init__(self, Context context, value):
-        read_point[float](self._value, value)
+        read_vec4[float](self._value, value)
         self._num_attached = 0
     @property
     def value(self):
@@ -4782,7 +4880,7 @@ cdef class SharedFloat4(SharedValue):
     def value(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[float](self._value, value)
+        read_vec4[float](self._value, value)
         self.on_update(True)
     cdef void get(self, float *dst) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -4800,7 +4898,7 @@ cdef class SharedFloat4(SharedValue):
 
 cdef class SharedInt4(SharedValue):
     def __init__(self, Context context, value):
-        read_point[int](self._value, value)
+        read_vec4[int](self._value, value)
         self._num_attached = 0
     @property
     def value(self):
@@ -4811,7 +4909,7 @@ cdef class SharedInt4(SharedValue):
     def value(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[int](self._value, value)
+        read_vec4[int](self._value, value)
         self.on_update(True)
     cdef void get(self, int *dst) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -4829,7 +4927,7 @@ cdef class SharedInt4(SharedValue):
 
 cdef class SharedDouble4(SharedValue):
     def __init__(self, Context context, value):
-        read_point[double](self._value, value)
+        read_vec4[double](self._value, value)
     @property
     def value(self):
         cdef unique_lock[recursive_mutex] m
@@ -4839,7 +4937,7 @@ cdef class SharedDouble4(SharedValue):
     def value(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[double](self._value, value)
+        read_vec4[double](self._value, value)
         self.on_update(True)
     cdef void get(self, double *dst) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -8510,7 +8608,7 @@ cdef class Image(uiItem):
     def uv(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[float](self._uv, value)
+        read_vec4[float](self._uv, value)
     @property
     def color_multiplier(self):
         cdef unique_lock[recursive_mutex] m
@@ -8604,7 +8702,7 @@ cdef class ImageButton(uiItem):
     def uv(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        read_point[float](self._uv, value)
+        read_vec4[float](self._uv, value)
     @property
     def color_multiplier(self):
         cdef unique_lock[recursive_mutex] m
@@ -11049,7 +11147,7 @@ cdef class Window(uiItem):
         #self.backup_rect_size = self.state.cur.rect_size
         # Type info
         self.can_have_widget_child = True
-        self.can_have_drawing_child = True
+        #self.can_have_drawing_child = True
         self.can_have_menubar_child = True
         self.can_have_payload_child = True
         self.element_child_category = child_type.cat_window
@@ -11704,9 +11802,9 @@ cdef class Window(uiItem):
 
             # Seems redundant with DrawInWindow
             # DrawInWindow is more powerful
-            self.context._viewport.in_plot = False
-            if self.last_drawings_child is not None:
-                self.last_drawings_child.draw(imgui.GetWindowDrawList())
+            #self.context._viewport.in_plot = False
+            #if self.last_drawings_child is not None:
+            #    self.last_drawings_child.draw(imgui.GetWindowDrawList())
 
             if self.last_menubar_child is not None:
                 self.last_menubar_child.draw()
@@ -14975,10 +15073,8 @@ cdef class DrawInPlot(plotElementWithLegend):
         implot.SetAxes(self._axes[0], self._axes[1])
 
         # Reset current drawInfo
-        #self.context._viewport.cullMode = 0 # mvCullMode_None
-        self.context._viewport.perspectiveDivide = False
-        self.context._viewport.depthClipping = False
-        self.context._viewport.has_matrix_transform = False
+        self.context._viewport.scales = [1., 1.]
+        self.context._viewport.shifts = [0., 0.]
         self.context._viewport.in_plot = True
         self.context._viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
         self.context._viewport.thickness_multiplier = implot.GetStyle().LineWeight

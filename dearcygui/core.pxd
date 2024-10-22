@@ -283,11 +283,8 @@ cdef class Viewport(baseItem):
     cdef int frame_count # frame count
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
-    cdef bint perspectiveDivide
-    cdef bint depthClipping
-    cdef double[6] clipViewport
-    cdef bint has_matrix_transform
-    cdef double[4][4] transform
+    cdef double[2] scales
+    cdef double[2] shifts
     cdef imgui.ImVec2 window_pos
     cdef imgui.ImVec2 parent_pos
     cdef bint in_plot
@@ -307,7 +304,7 @@ cdef class Viewport(baseItem):
     cdef void __on_resize(self, int width, int height)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
-    cdef void apply_current_transform(self, float *dst_p, double[4] src_p) noexcept nogil
+    cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil
     cdef void push_pending_theme_actions(self, theme_enablers, theme_categories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
@@ -331,23 +328,17 @@ cdef class drawingItem(baseItem):
 cdef class DrawingList(drawingItem):
     pass
 
-cdef class DrawLayer_(drawingItem):
-    cdef long _cull_mode
-    cdef bint _perspective_divide
-    cdef bint _depth_clipping
-    cdef double[6] clip_viewport
-    cdef bint has_matrix_transform
-    cdef double[4][4] _transform
+cdef class DrawingListScale(drawingItem):
+    cdef double[2] _scales
+    cdef double[2] _shifts
+    cdef bint _no_parent_scale
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
-# Draw Node ? Seems to be exactly like Drawlayer, but with only
-# the matrix settable (via apply_transform). -> merge to drawlayer
-
 cdef class DrawArrow_(drawingItem):
-    cdef double[4] start
-    cdef double[4] end
-    cdef double[4] corner1
-    cdef double[4] corner2
+    cdef double[2] start
+    cdef double[2] end
+    cdef double[2] corner1
+    cdef double[2] corner2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef float size
@@ -355,26 +346,26 @@ cdef class DrawArrow_(drawingItem):
     cdef void __compute_tip(self)
 
 cdef class DrawBezierCubic_(drawingItem):
-    cdef double[4] p1
-    cdef double[4] p2
-    cdef double[4] p3
-    cdef double[4] p4
+    cdef double[2] p1
+    cdef double[2] p2
+    cdef double[2] p3
+    cdef double[2] p4
     cdef imgui.ImU32 color
     cdef float thickness
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawBezierQuadratic_(drawingItem):
-    cdef double[4] p1
-    cdef double[4] p2
-    cdef double[4] p3
+    cdef double[2] p1
+    cdef double[2] p2
+    cdef double[2] p3
     cdef imgui.ImU32 color
     cdef float thickness
     cdef int segments
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawCircle_(drawingItem):
-    cdef double[4] center
+    cdef double[2] center
     cdef float radius
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
@@ -383,8 +374,8 @@ cdef class DrawCircle_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawEllipse_(drawingItem):
-    cdef double[4] pmin
-    cdef double[4] pmax
+    cdef double[2] pmin
+    cdef double[2] pmax
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -394,30 +385,29 @@ cdef class DrawEllipse_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawImage_(drawingItem):
-    cdef double[4] pmin
-    cdef double[4] pmax
+    cdef double[2] pmin
+    cdef double[2] pmax
     cdef float[4] uv
     cdef imgui.ImU32 color_multiplier
     cdef Texture texture
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawImageQuad_(drawingItem):
-    cdef double[4] p1
-    cdef double[4] p2
-    cdef double[4] p3
-    cdef double[4] p4
-    cdef double[4] pmax
-    cdef float[4] uv1
-    cdef float[4] uv2
-    cdef float[4] uv3
-    cdef float[4] uv4
+    cdef double[2] p1
+    cdef double[2] p2
+    cdef double[2] p3
+    cdef double[2] p4
+    cdef float[2] uv1
+    cdef float[2] uv2
+    cdef float[2] uv3
+    cdef float[2] uv4
     cdef imgui.ImU32 color_multiplier
     cdef Texture texture
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawLine_(drawingItem):
-    cdef double[4] p1
-    cdef double[4] p2
+    cdef double[2] p1
+    cdef double[2] p2
     cdef imgui.ImU32 color
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
@@ -439,18 +429,18 @@ cdef class DrawPolygon_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawQuad_(drawingItem):
-    cdef double[4] p1
-    cdef double[4] p2
-    cdef double[4] p3
-    cdef double[4] p4
+    cdef double[2] p1
+    cdef double[2] p2
+    cdef double[2] p3
+    cdef double[2] p4
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawRect_(drawingItem):
-    cdef double[4] pmin
-    cdef double[4] pmax
+    cdef double[2] pmin
+    cdef double[2] pmax
     cdef imgui.ImU32 color
     cdef imgui.ImU32 color_upper_left
     cdef imgui.ImU32 color_upper_right
@@ -463,7 +453,7 @@ cdef class DrawRect_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawText_(drawingItem):
-    cdef double[4] pos
+    cdef double[2] pos
     cdef string text
     cdef imgui.ImU32 color
     cdef float size
@@ -471,9 +461,9 @@ cdef class DrawText_(drawingItem):
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawTriangle_(drawingItem):
-    cdef double[4] p1
-    cdef double[4] p2
-    cdef double[4] p3
+    cdef double[2] p1
+    cdef double[2] p2
+    cdef double[2] p3
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
@@ -483,12 +473,13 @@ cdef class DrawTriangle_(drawingItem):
 cdef class DrawInvisibleButton(drawingItem):
     cdef itemState state
     cdef imgui.ImGuiButtonFlags _button
-    cdef int _min_side
+    cdef float _min_side
+    cdef float _max_side
     cdef bint _no_input
     cdef bint _capture_mouse
     cdef vector[PyObject*] _handlers # type baseHandler
-    cdef double[4] _p1
-    cdef double[4] _p2
+    cdef double[2] _p1
+    cdef double[2] _p2
     cdef imgui.ImVec2 initial_mouse_position
 
 cdef class ViewportDrawList_(baseItem):
@@ -1248,6 +1239,19 @@ ctypedef fused point_type:
     double
 
 cdef inline void read_point(point_type* dst, src):
+    if not(hasattr(src, '__len__')):
+        raise TypeError("Point data must be an array of up to 2 coordinates")
+    cdef int src_size = len(src)
+    if src_size > 2:
+        raise TypeError("Point data must be an array of up to 2 coordinates")
+    dst[0] = <point_type>0.
+    dst[1] = <point_type>0.
+    if src_size > 0:
+        dst[0] = <point_type>src[0]
+    if src_size > 1:
+        dst[1] = <point_type>src[1]
+
+cdef inline void read_vec4(point_type* dst, src):
     if not(hasattr(src, '__len__')):
         raise TypeError("Point data must be an array of up to 4 coordinates")
     cdef int src_size = len(src)

@@ -2488,7 +2488,7 @@ def draw_layer(*, label: str =None, user_data: Any =None, show: bool =True, pers
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawLayer(DCG_CONTEXT, label=label, user_data=user_data, show=show, perspective_divide=perspective_divide, depth_clipping=depth_clipping, cull_mode=cull_mode, **kwargs)
+    #return dcg.DrawLayer(DCG_CONTEXT, label=label, user_data=user_data, show=show, perspective_divide=perspective_divide, depth_clipping=depth_clipping, cull_mode=cull_mode, **kwargs)
 
 def draw_node(*, label: str =None, user_data: Any =None, show: bool =True, **kwargs) -> Union[int, str]:
     """     New in 1.1. Creates a drawing node to associate a transformation matrix. Child node matricies will concatenate.
@@ -2509,7 +2509,7 @@ def draw_node(*, label: str =None, user_data: Any =None, show: bool =True, **kwa
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.DrawLayer(DCG_CONTEXT, label=label, user_data=user_data, show=show, **kwargs)
+    #return dcg.DrawLayer(DCG_CONTEXT, label=label, user_data=user_data, show=show, **kwargs)
 
 def drawlist(width : int, height : int, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, **kwargs) -> Union[int, str]:
     """     Adds a drawing canvas.

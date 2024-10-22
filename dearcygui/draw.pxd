@@ -3,12 +3,6 @@ from .core cimport *
 cdef class ViewportDrawList(ViewportDrawList_):
     pass
 
-cdef class DrawLayer(DrawLayer_):
-    pass
-
-# Draw Node ? Seems to be exactly like Drawlayer, but with only
-# the matrix settable (via apply_transform). -> merge to drawlayer
-
 cdef class DrawArrow(DrawArrow_):
     pass
 
