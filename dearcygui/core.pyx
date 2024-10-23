@@ -904,6 +904,9 @@ cdef class baseItem:
             print("Unused configure parameters: ", remaining)
         return
 
+    def __dealloc__(self):
+        clear_obj_vector(self._handlers)
+
     @property
     def context(self):
         """
@@ -1480,6 +1483,11 @@ cdef class baseItem:
         self._parent = None
         self._prev_sibling = None
         self._next_sibling = None
+        # Mark as hidden. Useful for OtherItemHandler
+        # when we want to detect loss of hover, render, etc
+        # If the item is reattached and never gets hidden,
+        # the states are overwritten.
+        self.set_hidden_and_propagate_to_siblings_no_handlers()
 
     cpdef void detach_item(self):
         """
@@ -1506,9 +1514,6 @@ cdef class baseItem:
         self.__detach_item_and_lock(m)
         # retaining the lock enables to ensure the item is
         # still detached
-
-        if self.context is None:
-            raise ValueError("Trying to delete a deleted item")
 
         # Remove this item from the list of elements
         if self._prev_sibling is not None:
@@ -1553,8 +1558,6 @@ cdef class baseItem:
             (<baseItem>self.last_handler_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
-        # Free references
-        self.context = None
         # TODO: free item specific references (themes, font, etc)
         self.last_window_child = None
         self.last_widgets_child = None
@@ -1563,11 +1566,14 @@ cdef class baseItem:
         self.last_plot_element_child = None
         self.last_handler_child = None
         self.last_theme_child = None
+        # Note we don't free self.context, nor
+        # destroy anything else: the item might
+        # still be referenced for instance in handlers,
+        # and thus should be valid.
 
     cdef void __delete_and_siblings(self):
         # Must only be called from delete_item or itself.
         # Assumes the parent mutex is already held
-        # and that we don't need to edit the parent last_*_child fields
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # delete all its children recursively
@@ -1589,7 +1595,6 @@ cdef class baseItem:
         if self._prev_sibling is not None:
             (<baseItem>self._prev_sibling).__delete_and_siblings()
         # Free references
-        self.context = None
         self._parent = None
         self._prev_sibling = None
         self._next_sibling = None
@@ -1600,6 +1605,137 @@ cdef class baseItem:
         self.last_plot_element_child = None
         self.last_handler_child = None
         self.last_theme_child = None
+
+    @cython.final # The final is for performance, to avoid a virtual function and thus allow inlining
+    cdef void run_handlers_and_copy(self) noexcept nogil:
+        cdef int i
+        if not(self._handlers.empty()):
+            for i in range(<int>self._handlers.size()):
+                (<baseHandler>(self._handlers[i])).run_handler(self)
+        # Move current state to previous state
+        if self.p_state != NULL:
+            memcpy(<void*>&self.p_state.prev, <void*>&self.p_state.cur, sizeof(self.p_state.cur))
+
+    @cython.final
+    cdef void update_current_state_as_hidden(self) noexcept nogil:
+        """
+        Indicates the object is hidden
+        """
+        if (self.p_state == NULL):
+            # No state
+            return
+        cdef bint open = self.p_state.cur.open
+        memset(<void*>&self.p_state.cur, 0, sizeof(self.p_state.cur))
+        # being open/closed is unaffected by being hidden
+        self.p_state.cur.open = open
+
+    @cython.final
+    cdef void propagate_hidden_state_to_children_with_handlers(self) noexcept nogil:
+        """
+        Called during rendering only.
+        The item has children, but will not render them
+        (closed window, etc). The item itself might, or
+        might not be rendered.
+        Propagate the hidden state to children and call
+        their handlers.
+
+        Used also to avoid duplication in the functions below.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.last_window_child is not None:
+            (<baseItem>self.last_window_child).set_hidden_and_propagate_to_siblings_with_handlers()
+        if self.last_widgets_child is not None:
+            (<baseItem>self.last_widgets_child).set_hidden_and_propagate_to_siblings_with_handlers()
+        if self.last_drawings_child is not None:
+            (<baseItem>self.last_drawings_child).set_hidden_and_propagate_to_siblings_with_handlers()
+        if self.last_plot_element_child is not None:
+            (<baseItem>self.last_plot_element_child).set_hidden_and_propagate_to_siblings_with_handlers()
+        # handlers, themes, payloads, have no states and no children that can have some.
+        # TODO: plotAxis
+
+    @cython.final
+    cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept nogil:
+        """
+        Same as above, but will not call any handlers. Used as helper for functions below
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self.last_window_child is not None:
+            (<baseItem>self.last_window_child).set_hidden_and_propagate_to_siblings_no_handlers()
+        if self.last_widgets_child is not None:
+            (<baseItem>self.last_widgets_child).set_hidden_and_propagate_to_siblings_no_handlers()
+        if self.last_drawings_child is not None:
+            (<baseItem>self.last_drawings_child).set_hidden_and_propagate_to_siblings_no_handlers()
+        if self.last_plot_element_child is not None:
+            (<baseItem>self.last_plot_element_child).set_hidden_and_propagate_to_siblings_no_handlers()
+
+    @cython.final
+    cdef void set_hidden_and_propagate_to_siblings_with_handlers(self) noexcept nogil:
+        """
+        A parent item is hidden. Propagate to children and siblings.
+        Called during rendering, thus we call the handlers, in order to help
+        users catch an item getting hidden.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+
+        # Skip propagating and handlers if already hidden.
+        if self.p_state == NULL or \
+            self.p_state.cur.rendered:
+            self.update_current_state_as_hidden()
+            self.propagate_hidden_state_to_children_with_handlers()
+            self.run_handlers_and_copy()
+        if self._prev_sibling is not None:
+            self._prev_sibling.set_hidden_and_propagate_to_siblings_with_handlers()
+
+    @cython.final
+    cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept nogil:
+        """
+        Same as above, version without calling handlers:
+        Item is programmatically made hidden, but outside rendering,
+        for instance by detaching it.
+
+        The item might still be shown the next frame, and have been
+        shown the frame before.
+
+        What this function does is set the current state of item and
+        its children to a hidden state, but not running any handler.
+        This has these effects:
+        . If item was shown the frame before and is still shown,
+          there will be no jump in the item status (for example
+          it won't go from rendered, to not rendered, to rendered),
+          as the current state will be overwritten when frame is rendered.
+        . Possibly undesired effect, but with limited implications:
+          when the item states will be read by the user before the frame
+          is rendered, it will show the default hidden values.
+        . The main reason we are doing this: if the item is not rendered,
+          the states are correct (else they would remain as rendered forever),
+          and thus we can have handlers attached to other items using
+          OtherItemHandler to catch this item being not rendered. This is
+          required for instance for items that should destroy when
+          an item is not rendered anymore. 
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+
+        # Skip propagating and handlers if already hidden.
+        if self.p_state == NULL or \
+            self.p_state.cur.rendered:
+            self.update_current_state_as_hidden()
+            self.propagate_hidden_state_to_children_no_handlers()
+        if self._prev_sibling is not None:
+            self._prev_sibling.set_hidden_and_propagate_to_siblings_no_handlers()
+
+    @cython.final
+    cdef void set_hidden_no_handler_and_propagate_to_children_with_handlers(self) noexcept nogil:
+        """
+        The item is hidden, wants its state to be set to hidden, but
+        doesn't want its handlers to be run right away.
+        """
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+
+        # Skip propagating and handlers if already hidden.
+        if self.p_state == NULL or \
+            self.p_state.cur.rendered:
+            self.update_current_state_as_hidden()
+            self.propagate_hidden_state_to_children_with_handlers()
 
     def lock_mutex(self, wait=False):
         """
@@ -1785,6 +1921,7 @@ cdef class Viewport(baseItem):
         self.last_t_after_swapping = self.last_t_before_event_handling
         self.frame_count = 0
         self.state.cur.rendered = True # For compatibility with RenderHandlers
+        self.p_state = &self.state
         self._cursor = imgui.ImGuiMouseCursor_Arrow
         self.viewport = mvCreateViewport(internal_render_callback,
                                          internal_resize_callback,
@@ -1806,7 +1943,6 @@ cdef class Viewport(baseItem):
             mvCleanupViewport(dereference(self.viewport))
             #self.viewport is freed by mvCleanupViewport
             self.viewport = NULL
-        clear_obj_vector(self._handlers)
 
     def initialize(self, minimized=False, maximized=False, **kwargs):
         """
@@ -2117,7 +2253,7 @@ cdef class Viewport(baseItem):
             if not(isinstance(value[i], baseHandler)):
                 raise TypeError(f"{value[i]} is not a handler")
             # Check the handlers can use our states. Else raise error
-            (<baseHandler>value[i]).check_bind(self, self.state)
+            (<baseHandler>value[i]).check_bind(self)
             items.append(value[i])
         # Success: bind
         clear_obj_vector(self._handlers)
@@ -2412,7 +2548,7 @@ cdef class Viewport(baseItem):
             self._theme.pop()
         if self._font is not None:
             self._font.pop()
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
@@ -2766,24 +2902,6 @@ cdef class PlaceHolderParent(baseItem):
 """
 States used by many items
 """
-
-cdef void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil:
-    if handlers.empty():
-        return
-    cdef int i
-    for i in range(<int>handlers.size()):
-        (<baseHandler>(handlers[i])).run_handler(item, state)
-    # Move current state to previous state
-    memcpy(<void*>&state.prev, <void*>&state.cur, sizeof(state.cur))
-
-cdef void update_current_state_as_hidden(itemState& state) noexcept nogil:
-    """
-    Indicates the object is hidden
-    """
-    cdef bint open = state.cur.open
-    memset(<void*>&state.cur, 0, sizeof(state.cur))
-    # being open/closed is unaffected by being hidden
-    state.cur.open = open
 
 cdef void update_current_mouse_states(itemState& state) noexcept nogil:
     """
@@ -3751,14 +3869,12 @@ cdef class DrawInvisibleButton(drawingItem):
         self.state.cap.can_be_hovered = True
         self.state.cap.has_rect_size = True
         self.state.cap.has_position = True
+        self.p_state = &self.state
         self.can_have_drawing_child = True
         self._min_side = 0
         self._max_side = INFINITY
         self._capture_mouse = True
         self._no_input = False
-
-    def __dealloc__(self):
-        clear_obj_vector(self._handlers)
 
     @property
     def button(self):
@@ -3892,7 +4008,7 @@ cdef class DrawInvisibleButton(drawingItem):
             if not(isinstance(value[i], baseHandler)):
                 raise TypeError(f"{value[i]} is not a handler")
             # Check the handlers can use our states. Else raise error
-            (<baseHandler>value[i]).check_bind(self, self.state)
+            (<baseHandler>value[i]).check_bind(self)
             items.append(value[i])
         # Success: bind
         clear_obj_vector(self._handlers)
@@ -4209,7 +4325,7 @@ cdef class DrawInvisibleButton(drawingItem):
                 self.state.cur.clicked[i] = False
                 self.state.cur.double_clicked[i] = False
 
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
 
 """
@@ -4261,7 +4377,7 @@ cdef class DrawInWindow(uiItem):
             clip_width = imgui.CalcItemWidth()
         cdef float clip_height = self.requested_size.y
         if clip_height <= 0 or clip_width == 0:
-            self.set_hidden_and_propagate_to_children(False) # won't propagate though
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers() # won't propagate though
             return False
         cdef imgui.ImDrawList* drawlist = imgui.GetWindowDrawList()
 
@@ -4340,7 +4456,7 @@ cdef class KeyDownHandler_(baseHandler):
     def __cinit__(self):
         self._key = imgui.ImGuiKey_None
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         cdef imgui.ImGuiKeyData *key_info
         if self._key == 0:
@@ -4354,12 +4470,12 @@ cdef class KeyDownHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef imgui.ImGuiKeyData *key_info
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self._key == 0:
@@ -4377,7 +4493,7 @@ cdef class KeyPressHandler_(baseHandler):
         self._key = imgui.ImGuiKey_None
         self._repeat = True
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         if self._key == 0:
             for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
@@ -4388,11 +4504,11 @@ cdef class KeyPressHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self._key == 0:
@@ -4407,7 +4523,7 @@ cdef class KeyReleaseHandler_(baseHandler):
     def __cinit__(self):
         self._key = imgui.ImGuiKey_None
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         if self._key == 0:
             for i in range(imgui.ImGuiKey_NamedKey_BEGIN, imgui.ImGuiKey_AppForward):
@@ -4418,11 +4534,11 @@ cdef class KeyReleaseHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self._key == 0:
@@ -4439,7 +4555,7 @@ cdef class MouseClickHandler_(baseHandler):
         self._button = -1
         self._repeat = False
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
@@ -4448,11 +4564,11 @@ cdef class MouseClickHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4465,7 +4581,7 @@ cdef class MouseDoubleClickHandler_(baseHandler):
     def __cinit__(self):
         self._button = -1
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
@@ -4474,11 +4590,11 @@ cdef class MouseDoubleClickHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4492,7 +4608,7 @@ cdef class MouseDownHandler_(baseHandler):
     def __cinit__(self):
         self._button = -1
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
@@ -4501,11 +4617,11 @@ cdef class MouseDownHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4519,7 +4635,7 @@ cdef class MouseDragHandler_(baseHandler):
         self._button = -1
         self._threshold = -1 # < 0. means use default
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
@@ -4528,12 +4644,12 @@ cdef class MouseDragHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         cdef imgui.ImVec2 delta
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4545,17 +4661,17 @@ cdef class MouseDragHandler_(baseHandler):
 
 
 cdef class MouseMoveHandler(baseHandler):
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef imgui.ImGuiIO io = imgui.GetIO()
         if io.MousePos.x != io.MousePosPrev.x or \
            io.MousePos.y != io.MousePosPrev.y:
             return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -4568,7 +4684,7 @@ cdef class MouseReleaseHandler_(baseHandler):
     def __cinit__(self):
         self._button = -1
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef int i
         for i in range(imgui.ImGuiMouseButton_COUNT):
             if self._button >= 0 and self._button != i:
@@ -4577,11 +4693,11 @@ cdef class MouseReleaseHandler_(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4610,7 +4726,7 @@ cdef class MouseWheelHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         self._horizontal = value
 
-    cdef bint check_state(self, baseItem item, itemState& state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef imgui.ImGuiIO io = imgui.GetIO()
         if self._horizontal:
             if abs(io.MouseWheelH) > 0.:
@@ -4620,10 +4736,10 @@ cdef class MouseWheelHandler(baseHandler):
                 return True
         return False
 
-    cdef void run_handler(self, baseItem item, itemState& state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -5041,22 +5157,17 @@ cdef class baseHandler(baseItem):
         lock_gil_friendly(m, self.mutex)
         self._callback = value if isinstance(value, Callback) or value is None else Callback(value)
 
-    cdef void check_bind(self, baseItem item, itemState &state):
+    cdef void check_bind(self, baseItem item):
         """
         Must raise en error if the handler cannot be bound for the
-        target item. We pass both item and state because
-        state might not be positioned at the same space for all
-        items, thus it is better to rely on state for the checks.
-        However to allow subclassing handlers, having item enables
-        to check for specific target classes and read fields that
-        are not in itemState.
+        target item.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).check_bind(item, state)
+            (<baseHandler>self._prev_sibling).check_bind(item)
 
-    cdef bint check_state(self, baseItem item, itemState &state) noexcept nogil:
+    cdef bint check_state(self, baseItem item) noexcept nogil:
         """
         Returns whether the target state it True.
         Is called by the default implementation of run_handler,
@@ -5066,13 +5177,13 @@ cdef class baseHandler(baseItem):
         """
         return False
 
-    cdef void run_handler(self, baseItem item, itemState &state) noexcept nogil:
+    cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item, state)
+            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
-        if self.check_state(item, state):
+        if self.check_state(item):
             self.run_callback(item)
 
     cdef void run_callback(self, baseItem item) noexcept nogil:
@@ -5120,6 +5231,7 @@ cdef class uiItem(baseItem):
         self.element_child_category = child_type.cat_widget
         self.state.cap.has_position = True # ALL widgets have position
         self.state.cap.has_rect_size = True # ALL items have a rectangle size
+        self.p_state = &self.state
         self._pos_policy = [positioning.DEFAULT, positioning.DEFAULT]
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.tracked = False
@@ -5129,7 +5241,6 @@ cdef class uiItem(baseItem):
 
     def __dealloc__(self):
         clear_obj_vector(self._callbacks)
-        clear_obj_vector(self._handlers)
 
     def configure(self, **kwargs):
         # Map old attribute names (the new names are handled in uiItem)
@@ -5169,7 +5280,7 @@ cdef class uiItem(baseItem):
             self.state.cur.rect_size = imgui.GetItemRectSize()
         self.state.cur.rendered = imgui.IsItemVisible()
         #if not(self.state.cur.rendered):
-        #    self.propagate_hidden_state_to_children()
+        #    self.propagate_hidden_state_to_children_with_handlers()
 
     cdef void update_current_state_subset(self) noexcept nogil:
         """
@@ -5186,48 +5297,7 @@ cdef class uiItem(baseItem):
             self.state.cur.rect_size = imgui.GetItemRectSize()
         self.state.cur.rendered = imgui.IsItemVisible()
         #if not(self.state.cur.rendered):
-        #    self.propagate_hidden_state_to_children()
-
-    cdef void propagate_hidden_state_to_children(self) noexcept nogil:
-        """
-        The item is hidden (closed window, etc).
-        Propagate the hidden state to children
-        """
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if not(self.state.cur.rendered):
-            # Skip propagating if we were already not visible
-            return
-        if self.last_widgets_child is not None:
-            self.last_widgets_child.set_hidden_and_propagate_to_siblings()
-
-    cdef void set_hidden_and_propagate_to_siblings(self) noexcept nogil:
-        """
-        A parent item is hidden. Propagate to children and siblings
-        """
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self.last_widgets_child is not None:
-            self.last_widgets_child.set_hidden_and_propagate_to_siblings()
-        if self._prev_sibling is not None:
-            (<uiItem>self._prev_sibling).set_hidden_and_propagate_to_siblings()
-        # Skip handlers if we were already not visible
-        update_current_state_as_hidden(self.state)
-        run_handlers(self, self._handlers, self.state)
-
-    cdef void set_hidden_and_propagate_to_children(self, bint call_handlers) noexcept nogil:
-        """
-        We are hidden. Propagate to children if the state changed
-        The first call doesn't call the handlers because usually this is done outside
-        this function
-        """
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if not(self.state.cur.rendered):
-            # Skip propagating if we were already not visible
-            return
-        if self.last_widgets_child is not None:
-            self.last_widgets_child.set_hidden_and_propagate_to_children(True)
-        update_current_state_as_hidden(self.state)
-        if call_handlers:
-            run_handlers(self, self._handlers, self.state)
+        #    self.propagate_hidden_state_to_children_with_handlers()
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
     def __dir__(self):
@@ -5617,7 +5687,7 @@ cdef class uiItem(baseItem):
             if not(isinstance(value[i], baseHandler)):
                 raise TypeError(f"{value[i]} is not a handler")
             # Check the handlers can use our states. Else raise error
-            (<baseHandler>value[i]).check_bind(self, self.state)
+            (<baseHandler>value[i]).check_bind(self)
             items.append(value[i])
         # Success: bind
         clear_obj_vector(self._handlers)
@@ -6041,7 +6111,8 @@ cdef class uiItem(baseItem):
 
         if not(self._show):
             if self.show_update_requested:
-                self.set_hidden_and_propagate_to_children(True)
+                self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
+                self.run_handlers_and_copy()
                 self.show_update_requested = False
             return
 
@@ -6153,7 +6224,7 @@ cdef class uiItem(baseItem):
             policy[1] == positioning.DEFAULT):
             imgui.SameLine(0., -1.)
 
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
 
     cdef bint draw_item(self) noexcept nogil:
@@ -8841,7 +8912,7 @@ cdef class MenuBar(uiItem):
         else:
             # We should hit this only if window is invisible
             # or has no menu bar
-            self.set_hidden_and_propagate_to_children(False)
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
         return self.state.cur.active and not(self.state.prev.active)
 
 
@@ -8879,7 +8950,7 @@ cdef class Menu(uiItem):
                 self.context._viewport.parent_pos = pos_p
             imgui.EndMenu()
         else:
-            self.propagate_hidden_state_to_children()
+            self.propagate_hidden_state_to_children_with_handlers()
         SharedBool.set(<SharedBool>self._value, menu_open)
         return self.state.cur.active and not(self.state.prev.active)
 
@@ -8918,19 +8989,13 @@ cdef class Tooltip(uiItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._target = None
-        cdef bint success = True
-        if isinstance(target, uiItem):
-            self.target_state = &(<uiItem>target).state
-        elif isinstance(target, PlotAxisConfig):
-            self.target_state = &(<PlotAxisConfig>target).state
-        elif isinstance(target, plotElement):
-            self.target_state = &(<plotElement>target).state
-        elif isinstance(target, DrawInvisibleButton):
-            self.target_state = &(<DrawInvisibleButton>target).state
-        else:
-            success = False
-        if not(self.target_state.cap.can_be_hovered) or not(success):
-            raise TypeError(f"Unsupported target instance {target}")
+        if target is None:
+            return
+        if self.secondary_handler is not None:
+            self.secondary_handler.check_bind(target)
+        # TODO: Raise a warning ?
+        #elif target.p_state == NULL or not(target.p_state.cap.can_be_hovered):
+        #    raise TypeError(f"Unsupported target instance {target}")
         self._target = target
 
     @property
@@ -8938,7 +9003,8 @@ cdef class Tooltip(uiItem):
         """
         When set, the handler referenced in
         this field will be used to replace
-        the target hovering check.
+        the target hovering check. It will
+        apply to target, which must be set.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -8948,6 +9014,8 @@ cdef class Tooltip(uiItem):
     def condition_from_handler(self, baseHandler handler):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
+        if self._target is not None:
+            handler.check_bind(self._target)
         self.secondary_handler = handler
 
     @property
@@ -8985,7 +9053,7 @@ cdef class Tooltip(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef float hoverDelay_backup
-        cdef bint display_condition
+        cdef bint display_condition = False
         if self.secondary_handler is None:
             if self._target is None or self._target is self._prev_sibling:
                 if self._delay > 0.:
@@ -8997,10 +9065,10 @@ cdef class Tooltip(uiItem):
                     display_condition = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
                 else:
                     display_condition = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_ForTooltip)
-            else:
-                display_condition = self.target_state.cur.hovered
-        else:
-            display_condition = self.secondary_handler.check_state(self._target, dereference(self.target_state))
+            elif self._target.p_state != NULL:
+                display_condition = self._target.p_state.cur.hovered
+        elif self._target is not None:
+            display_condition = self.secondary_handler.check_state(self._target)
 
         if self._hide_on_activity and imgui.GetIO().MouseDelta.x != 0. and \
            imgui.GetIO().MouseDelta.y != 0.:
@@ -9021,7 +9089,7 @@ cdef class Tooltip(uiItem):
             imgui.EndTooltip()
             self.update_current_state()
         else:
-            self.set_hidden_and_propagate_to_children(False)
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             # NOTE: we could also set the rects. DPG does it.
         if self.state.cur.rendered != was_visible:
             self.context._viewport.viewport.needs_refresh.store(True)
@@ -9246,7 +9314,7 @@ cdef class Tab(uiItem):
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTabItem()
         else:
-            self.propagate_hidden_state_to_children()
+            self.propagate_hidden_state_to_children_with_handlers()
         SharedBool.set(<SharedBool>self._value, menu_open)
         return self.state.cur.active and not(self.state.prev.active)
 
@@ -9433,7 +9501,7 @@ cdef class TabBar(uiItem):
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTabBar()
         else:
-            self.propagate_hidden_state_to_children()
+            self.propagate_hidden_state_to_children_with_handlers()
         imgui.EndGroup()
         imgui.PopID()
         return self.state.cur.active and not(self.state.prev.active)
@@ -9509,7 +9577,7 @@ cdef class Layout(uiItem):
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
-            #self.set_hidden_and_propagate_to_children(False)
+            #self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             return False
         cdef bint changed = self.check_change()
         imgui.PushID(self.uuid)
@@ -9751,7 +9819,7 @@ cdef class HorizontalLayout(Layout):
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
-            # self.set_hidden_and_propagate_to_children(False)
+            # self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             return False
         cdef bint changed = self.check_change()
         changed = True
@@ -10003,7 +10071,7 @@ cdef class VerticalLayout(Layout):
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
-            # self.set_hidden_and_propagate_to_children(False)
+            # self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             return False
         cdef bint changed = self.check_change()
         changed = True
@@ -10202,7 +10270,7 @@ cdef class TreeNode(uiItem):
         elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
             SharedBool.set(<SharedBool>self._value, False)
             self.state.cur.open = False
-            self.propagate_hidden_state_to_children()
+            self.propagate_hidden_state_to_children_with_handlers()
         cdef imgui.ImVec2 pos_p
         if open_and_visible:
             if self.last_widgets_child is not None:
@@ -10337,7 +10405,7 @@ cdef class CollapsingHeader(uiItem):
         elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
             SharedBool.set(<SharedBool>self._value, False)
             self.state.cur.open = False
-            self.propagate_hidden_state_to_children()
+            self.propagate_hidden_state_to_children_with_handlers()
         cdef imgui.ImVec2 pos_p
         if open_and_visible:
             if self.last_widgets_child is not None:
@@ -10674,7 +10742,7 @@ cdef class ChildWindow(uiItem):
             self.state.cur.rect_size = imgui.GetWindowSize()
             # TODO scrolling
         else:
-            self.set_hidden_and_propagate_to_children(False)
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
         imgui.EndChild()
         return False # maybe True when visible ?
 
@@ -11696,7 +11764,7 @@ cdef class Window(uiItem):
 
         if not(self._show):
             if self.show_update_requested:
-                self.set_hidden_and_propagate_to_children(False)
+                self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
                 self.show_update_requested = False
             return
 
@@ -11822,7 +11890,7 @@ cdef class Window(uiItem):
             self.state.cur.pos_to_parent = self.state.cur.pos_to_viewport
         else:
             # Window is hidden or closed
-            self.set_hidden_and_propagate_to_children(False)
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
 
         self.state.cur.open = not(imgui.IsWindowCollapsed())
         self.scroll_x = imgui.GetScrollX()
@@ -11872,7 +11940,7 @@ cdef class Window(uiItem):
                                               self)
         self.show_update_requested = False
 
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
 
 """
@@ -12310,6 +12378,7 @@ cdef class PlotAxisConfig(baseItem):
     def __cinit__(self):
         self.state.cap.can_be_hovered = True
         self.state.cap.can_be_clicked = True
+        self.p_state = &self.state
         self._enabled = True
         self._scale = AxisScale.linear
         self._tick_format = b""
@@ -12321,9 +12390,6 @@ cdef class PlotAxisConfig(baseItem):
         self._constraint_max = INFINITY
         self._zoom_min = 0
         self._zoom_max = INFINITY
-
-    def __dealloc__(self):
-        clear_obj_vector(self._handlers)
 
     @property
     def enabled(self):
@@ -12817,7 +12883,7 @@ cdef class PlotAxisConfig(baseItem):
             if not(isinstance(value[i], baseHandler)):
                 raise TypeError(f"{value[i]} is not a handler")
             # Check the handlers can use our states. Else raise error
-            (<baseHandler>value[i]).check_bind(self, self.state)
+            (<baseHandler>value[i]).check_bind(self)
             items.append(value[i])
         # Success: bind
         clear_obj_vector(self._handlers)
@@ -12996,7 +13062,7 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
         cdef bint backup_hovered = self.state.cur.hovered
         self.state.cur.hovered = hovered
-        run_handlers(self, self._handlers, self.state) # TODO FIX multiple configs tied. Maybe just not support ?
+        self.run_handlers_and_copy() # TODO FIX multiple configs tied. Maybe just not support ?
         if not(backup_hovered) or self.state.cur.hovered:
             return
         # Restore correct states
@@ -13013,7 +13079,7 @@ cdef class PlotAxisConfig(baseItem):
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
             self.state.cur.clicked[i] = False
             self.state.cur.double_clicked[i] = False
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
 
 cdef class PlotLegendConfig(baseItem):
@@ -13738,7 +13804,7 @@ cdef class Plot(uiItem):
             self.flags = GetPlotConfig()
             implot.EndPlot()
         elif self.state.cur.rendered:
-            self.set_hidden_and_propagate_to_children(False) # TODO: propagate to plotElement
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             self._X1.set_hidden()
             self._X2.set_hidden()
             self._X3.set_hidden()
@@ -13876,15 +13942,13 @@ cdef class plotElementWithLegend(plotElement):
     """
     def __cinit__(self):
         self.state.cap.can_be_hovered = True # The legend only
+        self.p_state = &self.state
         self._enabled = True
         self.enabled_dirty = True
         self._legend_button = imgui.ImGuiMouseButton_Right
         self._legend = True
         self.state.cap.can_be_hovered = True
         self.can_have_widget_child = True
-
-    def __dealloc__(self):
-        clear_obj_vector(self._handlers)
 
     @property
     def no_legend(self):
@@ -14012,7 +14076,7 @@ cdef class plotElementWithLegend(plotElement):
             if not(isinstance(value[i], baseHandler)):
                 raise TypeError(f"{value[i]} is not a handler")
             # Check the handlers can use our states. Else raise error
-            (<baseHandler>value[i]).check_bind(self, self.state)
+            (<baseHandler>value[i]).check_bind(self)
             items.append(value[i])
         # Success: bind
         clear_obj_vector(self._handlers)
@@ -14041,8 +14105,7 @@ cdef class plotElementWithLegend(plotElement):
            not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.state.cur.rendered = False
             self.state.cur.hovered = False
-            if self.last_widgets_child is not None:
-                self.last_widgets_child.set_hidden_and_propagate_to_siblings()
+            self.propagate_hidden_state_to_children_with_handlers()
             return
 
         # push theme, font
@@ -14099,7 +14162,7 @@ cdef class plotElementWithLegend(plotElement):
         if self._font is not None:
             self._font.pop()
 
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
     cdef void draw_element(self) noexcept nogil:
         return
@@ -14831,9 +14894,6 @@ cdef class plotDraggable(plotElement):
         self.state.cap.can_be_active = True
         self.flags = implot.ImPlotDragToolFlags_None
 
-    def __dealloc__(self):
-        clear_obj_vector(self._handlers)
-
     @property
     def color(self):
         """
@@ -14986,8 +15046,7 @@ cdef class plotDraggable(plotElement):
             for i in range(imgui.ImGuiMouseButton_COUNT):
                 self.state.cur.clicked[i] = False
                 self.state.cur.double_clicked[i] = False
-            if self.last_widgets_child is not None:
-                self.last_widgets_child.set_hidden_and_propagate_to_siblings()
+            self.propagate_hidden_state_to_children_with_handlers()
             return
 
         # push theme, font
@@ -15009,7 +15068,7 @@ cdef class plotDraggable(plotElement):
 
         self.context._viewport.pop_applied_pending_theme_actions()
 
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
     cdef void draw_element(self) noexcept nogil:
         return
@@ -15054,8 +15113,7 @@ cdef class DrawInPlot(plotElementWithLegend):
            not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.state.cur.rendered = False
             self.state.cur.hovered = False
-            if self.last_widgets_child is not None:
-                self.last_widgets_child.set_hidden_and_propagate_to_siblings()
+            self.propagate_hidden_state_to_children_with_handlers()
             return
 
         # push theme, font
@@ -15130,7 +15188,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         if self._font is not None:
             self._font.pop()
 
-        run_handlers(self, self._handlers, self.state)
+        self.run_handlers_and_copy()
 
 
 """

@@ -167,6 +167,15 @@ cdef class baseItem:
     # Type of child for the parent
     cdef int element_child_category
 
+    # States
+    # p_state: pointer to the itemState inside
+    # the item structure for fast access if needed.
+    # Set to NULL if the item doesn't have
+    # an itemState field
+    cdef itemState* p_state
+    # Always empty if p_state is NULL.
+    cdef vector[PyObject*] _handlers # type baseHandler
+
     # Relationships
     cdef baseItem _parent
     # It is not possible to access an array of children without the gil
@@ -192,6 +201,13 @@ cdef class baseItem:
     cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
+    cdef void run_handlers_and_copy(self) noexcept nogil
+    cdef void update_current_state_as_hidden(self) noexcept nogil
+    cdef void propagate_hidden_state_to_children_with_handlers(self) noexcept nogil
+    cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept nogil
+    cdef void set_hidden_and_propagate_to_siblings_with_handlers(self) noexcept nogil
+    cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept nogil
+    cdef void set_hidden_no_handler_and_propagate_to_children_with_handlers(self) noexcept nogil
 
 cdef enum child_type:
     cat_drawing
@@ -243,7 +259,6 @@ cdef struct itemState:
     itemStateValues prev
     itemStateValues cur
 
-cdef void update_current_state_as_hidden(itemState&) noexcept nogil
 cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 
@@ -269,7 +284,6 @@ cdef class Viewport(baseItem):
     cdef Font _font
     cdef baseTheme _theme
     cdef itemState state # Unused. Just for compatibility with handlers
-    cdef vector[PyObject*] _handlers # type baseHandler
     cdef imgui.ImGuiMouseCursor _cursor
     # For timing stats
     cdef long long last_t_before_event_handling
@@ -477,7 +491,6 @@ cdef class DrawInvisibleButton(drawingItem):
     cdef float _max_side
     cdef bint _no_input
     cdef bint _capture_mouse
-    cdef vector[PyObject*] _handlers # type baseHandler
     cdef double[2] _p1
     cdef double[2] _p2
     cdef imgui.ImVec2 initial_mouse_position
@@ -581,54 +594,52 @@ A drawable item with various UI states
 cdef class baseHandler(baseItem):
     cdef bint _enabled
     cdef Callback _callback
-    cdef void check_bind(self, baseItem, itemState&)
-    cdef bint check_state(self, baseItem, itemState&) noexcept nogil
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void check_bind(self, baseItem)
+    cdef bint check_state(self, baseItem) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
     cdef void run_callback(self, baseItem) noexcept nogil
-
-cdef void run_handlers(baseItem item, vector[PyObject*] &handlers, itemState &state) noexcept nogil
 
 cdef class KeyDownHandler_(baseHandler):
     cdef int _key
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class KeyPressHandler_(baseHandler):
     cdef int _key
     cdef bint _repeat
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class KeyReleaseHandler_(baseHandler):
     cdef int _key
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseClickHandler_(baseHandler):
     cdef int _button
     cdef bint _repeat
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseDoubleClickHandler_(baseHandler):
     cdef int _button
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseDownHandler_(baseHandler):
     cdef int _button
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseDragHandler_(baseHandler):
     cdef int _button
     cdef float _threshold
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseMoveHandler(baseHandler):
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseReleaseHandler_(baseHandler):
     cdef int _button
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cdef class MouseWheelHandler(baseHandler):
     cdef bint _horizontal
-    cdef void run_handler(self, baseItem, itemState&) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
 cpdef enum positioning:
     DEFAULT,
@@ -668,14 +679,10 @@ cdef class uiItem(baseItem):
     cdef Callback dragCallback
     cdef Callback dropCallback
     cdef Font _font
-    cdef vector[PyObject*] _handlers # type baseHandler
     cdef baseTheme _theme
     cdef vector[PyObject*] _callbacks # type Callback
     cdef SharedValue _value
 
-    cdef void propagate_hidden_state_to_children(self) noexcept nogil
-    cdef void set_hidden_and_propagate_to_siblings(self) noexcept nogil
-    cdef void set_hidden_and_propagate_to_children(self, bint) noexcept nogil
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_subset(self) noexcept nogil
     cdef void draw(self) noexcept nogil
@@ -819,7 +826,6 @@ cdef class Tooltip(uiItem):
     cdef bint _only_if_previous_item_hovered
     cdef bint _only_if_
     cdef baseItem _target
-    cdef itemState *target_state
     cdef baseHandler secondary_handler
     cdef bint draw_item(self) noexcept nogil
 
@@ -1101,7 +1107,6 @@ cdef class PlotAxisConfig(baseItem):
     cdef double _mouse_coord
     cdef bint to_fit
     cdef itemState state
-    cdef vector[PyObject*] _handlers # type baseHandler
     cdef Callback _resize_callback
     cdef string _label
     cdef string _format
@@ -1144,15 +1149,14 @@ cdef class Plot(uiItem):
 cdef class plotElement(baseItem):
     cdef string imgui_label
     cdef str user_label
-    cdef itemState state
     cdef int flags
     cdef bint _show
     cdef int[2] _axes
     cdef baseTheme _theme
-    cdef vector[PyObject*] _handlers # type baseHandler
     cdef void draw(self) noexcept nogil
 
 cdef class plotElementWithLegend(plotElement):
+    cdef itemState state
     cdef bint _legend
     cdef int _legend_button
     cdef Font _font
