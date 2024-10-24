@@ -4202,21 +4202,21 @@ cdef class DrawInvisibleButton(drawingItem):
         size.y = bottom_right.y - top_left.y
         cdef float ratio = 1e30
         if size.y != 0.:
-            if size.x == 0.:
-                ratio = 1.
-            else:
-                ratio = size.x/size.y
+            ratio = size.x/size.y
+        elif size.x == 0:
+            ratio = 1.
+
         if size.x < self._min_side:
-            size.y += (self._min_side - size.x) / ratio
+            #size.y += (self._min_side - size.x) / ratio
             size.x = self._min_side
         if size.y < self._min_side:
-            size.x += (self._min_side - size.y) * ratio
+            #size.x += (self._min_side - size.y) * ratio
             size.y = self._min_side
         if size.x > self._max_side:
-            size.y = max(0., size.y - (size.x - self._max_side) / ratio)
+            #size.y = max(0., size.y - (size.x - self._max_side) / ratio)
             size.x = self._max_side
         if size.y > self._max_side:
-            size.x += max(0., size.x - (size.y - self._max_side) * ratio)
+            #size.x += max(0., size.x - (size.y - self._max_side) * ratio)
             size.y = self._max_side
         top_left.x = center.x - size.x * 0.5
         bottom_right.x = top_left.x + size.x * 0.5
