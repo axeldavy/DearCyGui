@@ -195,6 +195,7 @@ cdef class baseItem:
     cdef void lock_parent_and_item_mutex(self, unique_lock[recursive_mutex]&, unique_lock[recursive_mutex]&)
     cdef void lock_and_previous_siblings(self) noexcept nogil
     cdef void unlock_and_previous_siblings(self) noexcept nogil
+    cdef bint __check_rendered(self)
     cpdef void attach_to_parent(self, target_parent)
     cpdef void attach_before(self, target_before)
     cdef void __detach_item_and_lock(self, unique_lock[recursive_mutex]&)

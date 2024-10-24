@@ -1223,6 +1223,21 @@ cdef class baseItem:
             self._prev_sibling.unlock_and_previous_siblings()
         self.mutex.unlock()
 
+    cdef bint __check_rendered(self):
+        """
+        When if an item is rendered
+        """
+        cdef baseItem item = self
+        # Find a parent with state
+        # Not perfect because we do not hold the mutexes,
+        # but should be ok enough to fail in a few cases.
+        while item is not None and item.p_state == NULL:
+            item = item._parent
+        if item is None:
+            return False
+        return self.p_state.cur.rendered
+
+
     cpdef void attach_to_parent(self, target):
         """
         Same as item.parent = target, but
@@ -1374,6 +1389,8 @@ cdef class baseItem:
                 target_parent.last_window_child = <Window>self
                 attached = True
         assert(attached) # because we checked before compatibility
+        if not(self._parent.__check_rendered()): # TODO: could be optimized. Also not totally correct (attaching to a menu for instance)
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
 
     cpdef void attach_before(self, target):
         """
@@ -1437,6 +1454,8 @@ cdef class baseItem:
         self._prev_sibling = _prev_sibling
         self._next_sibling = target_before
         target_before._prev_sibling = self
+        if not(self._parent.__check_rendered()):
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
 
     cdef void __detach_item_and_lock(self, unique_lock[recursive_mutex]& m):
         # NOTE: the mutex is not locked if we raise an exception.
@@ -1483,19 +1502,22 @@ cdef class baseItem:
         self._parent = None
         self._prev_sibling = None
         self._next_sibling = None
-        # Mark as hidden. Useful for OtherItemHandler
-        # when we want to detect loss of hover, render, etc
-        # If the item is reattached and never gets hidden,
-        # the states are overwritten.
-        self.set_hidden_and_propagate_to_siblings_no_handlers()
 
     cpdef void detach_item(self):
         """
         Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
         """
         cdef unique_lock[recursive_mutex] m0
         cdef unique_lock[recursive_mutex] m
         self.__detach_item_and_lock(m)
+        # Mark as hidden. Useful for OtherItemHandler
+        # when we want to detect loss of hover, render, etc
+        self.set_hidden_and_propagate_to_siblings_no_handlers()
 
     cpdef void delete_item(self):
         """
