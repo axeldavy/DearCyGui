@@ -201,7 +201,8 @@ cdef class baseItem:
     cpdef void detach_item(self)
     cpdef void delete_item(self)
     cdef void __delete_and_siblings(self)
-    cdef void run_handlers_and_copy(self) noexcept nogil
+    cdef void set_previous_states(self) noexcept nogil
+    cdef void run_handlers(self) noexcept nogil
     cdef void update_current_state_as_hidden(self) noexcept nogil
     cdef void propagate_hidden_state_to_children_with_handlers(self) noexcept nogil
     cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept nogil

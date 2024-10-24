@@ -1607,14 +1607,17 @@ cdef class baseItem:
         self.last_theme_child = None
 
     @cython.final # The final is for performance, to avoid a virtual function and thus allow inlining
-    cdef void run_handlers_and_copy(self) noexcept nogil:
+    cdef void set_previous_states(self) noexcept nogil:
+        # Move current state to previous state
+        if self.p_state != NULL:
+            memcpy(<void*>&self.p_state.prev, <void*>&self.p_state.cur, sizeof(self.p_state.cur))
+
+    @cython.final
+    cdef void run_handlers(self) noexcept nogil:
         cdef int i
         if not(self._handlers.empty()):
             for i in range(<int>self._handlers.size()):
                 (<baseHandler>(self._handlers[i])).run_handler(self)
-        # Move current state to previous state
-        if self.p_state != NULL:
-            memcpy(<void*>&self.p_state.prev, <void*>&self.p_state.cur, sizeof(self.p_state.cur))
 
     @cython.final
     cdef void update_current_state_as_hidden(self) noexcept nogil:
@@ -1671,7 +1674,8 @@ cdef class baseItem:
     @cython.final
     cdef void set_hidden_and_propagate_to_siblings_with_handlers(self) noexcept nogil:
         """
-        A parent item is hidden. Propagate to children and siblings.
+        A parent item is hidden and this item is not going to be rendered.
+        Propagate to children and siblings.
         Called during rendering, thus we call the handlers, in order to help
         users catch an item getting hidden.
         """
@@ -1680,9 +1684,10 @@ cdef class baseItem:
         # Skip propagating and handlers if already hidden.
         if self.p_state == NULL or \
             self.p_state.cur.rendered:
+            self.set_previous_states()
             self.update_current_state_as_hidden()
             self.propagate_hidden_state_to_children_with_handlers()
-            self.run_handlers_and_copy()
+            self.run_handlers()
         if self._prev_sibling is not None:
             self._prev_sibling.set_hidden_and_propagate_to_siblings_with_handlers()
 
@@ -1699,7 +1704,7 @@ cdef class baseItem:
         What this function does is set the current state of item and
         its children to a hidden state, but not running any handler.
         This has these effects:
-        . If item was shown the frame before and is still shown,
+        TODO . If item was shown the frame before and is still shown,
           there will be no jump in the item status (for example
           it won't go from rendered, to not rendered, to rendered),
           as the current state will be overwritten when frame is rendered.
@@ -1727,7 +1732,7 @@ cdef class baseItem:
     cdef void set_hidden_no_handler_and_propagate_to_children_with_handlers(self) noexcept nogil:
         """
         The item is hidden, wants its state to be set to hidden, but
-        doesn't want its handlers to be run right away.
+        manages itself his previous state and his handlers.
         """
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
 
@@ -2526,6 +2531,7 @@ cdef class Viewport(baseItem):
         # Initialize drawing state
         imgui.SetMouseCursor(self._cursor)
         self._cursor = imgui.ImGuiMouseCursor_Arrow
+        self.set_previous_states()
         if self._font is not None:
             self._font.push()
         if self._theme is not None: # maybe apply in render_frame instead ?
@@ -2548,7 +2554,7 @@ cdef class Viewport(baseItem):
             self._theme.pop()
         if self._font is not None:
             self._font.pop()
-        self.run_handlers_and_copy()
+        self.run_handlers()
         self.last_t_after_rendering = ctime.monotonic_ns()
         return
 
@@ -2962,6 +2968,8 @@ cdef class drawingItem(baseItem):
     def show(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
+        if not(value) and self._show:
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
         self._show = value
 
     cdef void draw_prev_siblings(self, imgui.ImDrawList* l) noexcept nogil:
@@ -4183,6 +4191,8 @@ cdef class DrawInvisibleButton(drawingItem):
         if not(self._show):
             return
 
+        self.set_previous_states()
+
         # Get button position in screen space
         cdef float[2] p1
         cdef float[2] p2
@@ -4325,7 +4335,7 @@ cdef class DrawInvisibleButton(drawingItem):
                 self.state.cur.clicked[i] = False
                 self.state.cur.double_clicked[i] = False
 
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
 
 """
@@ -5651,6 +5661,8 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         if self._show == value:
             return
+        if not(value) and self._show:
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
         self.show_update_requested = True
         self._show = value
 
@@ -6111,10 +6123,13 @@ cdef class uiItem(baseItem):
 
         if not(self._show):
             if self.show_update_requested:
+                self.set_previous_states()
                 self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
-                self.run_handlers_and_copy()
+                self.run_handlers()
                 self.show_update_requested = False
             return
+
+        self.set_previous_states()
 
         if self.focus_update_requested:
             if self.state.cur.focused:
@@ -6224,7 +6239,7 @@ cdef class uiItem(baseItem):
             policy[1] == positioning.DEFAULT):
             imgui.SameLine(0., -1.)
 
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
 
     cdef bint draw_item(self) noexcept nogil:
@@ -11764,9 +11779,13 @@ cdef class Window(uiItem):
 
         if not(self._show):
             if self.show_update_requested:
+                self.set_previous_states()
                 self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
+                self.run_handlers()
                 self.show_update_requested = False
             return
+
+        self.set_previous_states()
 
         if self.focus_update_requested:
             if self.state.cur.focused:
@@ -11940,7 +11959,7 @@ cdef class Window(uiItem):
                                               self)
         self.show_update_requested = False
 
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
 
 """
@@ -12979,6 +12998,7 @@ cdef class PlotAxisConfig(baseItem):
         Apply the config to the target axis during plot
         setup
         """
+        self.set_previous_states()
         self.state.cur.hovered = False
         self.state.cur.rendered = False
 
@@ -13062,7 +13082,7 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
         cdef bint backup_hovered = self.state.cur.hovered
         self.state.cur.hovered = hovered
-        self.run_handlers_and_copy() # TODO FIX multiple configs tied. Maybe just not support ?
+        self.run_handlers() # TODO FIX multiple configs tied. Maybe just not support ?
         if not(backup_hovered) or self.state.cur.hovered:
             return
         # Restore correct states
@@ -13073,13 +13093,14 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.double_clicked[i] = self.state.cur.hovered and imgui.IsMouseDoubleClicked(i)
 
     cdef void set_hidden(self) noexcept nogil:
+        self.set_previous_states()
         self.state.cur.hovered = False
         self.state.cur.rendered = False
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
             self.state.cur.clicked[i] = False
             self.state.cur.double_clicked[i] = False
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
 
 cdef class PlotLegendConfig(baseItem):
@@ -13101,6 +13122,8 @@ cdef class PlotLegendConfig(baseItem):
     def show(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
+        if not(value) and self._show:
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
         self._show = value
 
     @property
@@ -13855,6 +13878,8 @@ cdef class plotElement(baseItem):
     def show(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
+        if not(value) and self._show:
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
         self._show = value
 
     @property
@@ -14103,10 +14128,14 @@ cdef class plotElementWithLegend(plotElement):
         if not(self._show) or \
            not(self.context._viewport.enabled_axes[self._axes[0]]) or \
            not(self.context._viewport.enabled_axes[self._axes[1]]):
+            self.set_previous_states()
             self.state.cur.rendered = False
             self.state.cur.hovered = False
             self.propagate_hidden_state_to_children_with_handlers()
+            self.run_handlers()
             return
+
+        self.set_previous_states()
 
         # push theme, font
         if self._font is not None:
@@ -14162,7 +14191,7 @@ cdef class plotElementWithLegend(plotElement):
         if self._font is not None:
             self._font.pop()
 
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
     cdef void draw_element(self) noexcept nogil:
         return
@@ -15068,7 +15097,7 @@ cdef class plotDraggable(plotElement):
 
         self.context._viewport.pop_applied_pending_theme_actions()
 
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
     cdef void draw_element(self) noexcept nogil:
         return
@@ -15111,10 +15140,14 @@ cdef class DrawInPlot(plotElementWithLegend):
         if not(self._show) or \
            not(self.context._viewport.enabled_axes[self._axes[0]]) or \
            not(self.context._viewport.enabled_axes[self._axes[1]]):
+            self.set_previous_states()
             self.state.cur.rendered = False
             self.state.cur.hovered = False
             self.propagate_hidden_state_to_children_with_handlers()
+            self.run_handlers()
             return
+
+        self.set_previous_states()
 
         # push theme, font
         if self._font is not None:
@@ -15188,7 +15221,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         if self._font is not None:
             self._font.pop()
 
-        self.run_handlers_and_copy()
+        self.run_handlers()
 
 
 """

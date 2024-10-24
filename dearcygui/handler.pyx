@@ -295,7 +295,7 @@ cdef class OtherItemHandler(HandlerList):
             (<baseHandler>self.last_handler_child).check_bind(self._target)
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
-        return check_state_from_list(self.last_handler_child, self._op, item)
+        return check_state_from_list(self.last_handler_child, self._op, self._target)
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -304,8 +304,8 @@ cdef class OtherItemHandler(HandlerList):
         if not(self._enabled):
             return
         if self.last_handler_child is not None:
-            # Here we use item, and not self._target
-            (<baseHandler>self.last_handler_child).run_handler(item)
+            # TODO: reintroduce that feature. Here we use item, and not self._target. Idem above
+            (<baseHandler>self.last_handler_child).run_handler(self._target)
         if self._callback is not None:
             if self.check_state(item):
                 self.run_callback(item)
