@@ -10,7 +10,7 @@ import sys
 from glob import glob
 import numpy as np
 
-wip_version = "0.0.1"
+wip_version = "0.0.2"
 
 def version_number():
     """This function reads the version number which is populated by github actions"""

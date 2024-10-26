@@ -233,6 +233,8 @@ mvCreateViewport(render_fun render,
     glfwMakeContextCurrent(secondary_handle);
     if (gl3wInit() != GL3W_OK)
         return nullptr;
+    // All our uploads have no holes
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glfwMakeContextCurrent(NULL);
     mvViewport* viewport = new mvViewport();
     viewport->render = render;
