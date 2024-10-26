@@ -35,6 +35,7 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 from concurrent.futures import Executor, ThreadPoolExecutor
 from libcpp.algorithm cimport swap
 from libcpp.cmath cimport atan, sin, cos, trunc, floor
+from libcpp.set cimport set as cpp_set
 from libcpp.vector cimport vector
 from libc.math cimport M_PI, INFINITY
 cimport dearcygui.backends.time as ctime
@@ -1128,20 +1129,43 @@ cdef class baseItem:
         cdef unique_lock[recursive_mutex] item_m
         cdef unique_lock[recursive_mutex] child_m
         lock_gil_friendly(item_m, self.mutex)
-        for child in self.children: # release previous children
-            child.detach_item()
+        cdef long long uuid, prev_uuid
+        cdef cpp_set[long long] already_attached
         for child in value:
             if not(isinstance(child, baseItem)):
                 raise TypeError(f"{child} is not a compatible item instance")
+            # Find children that are already attached
+            # and in the right order
+            uuid = (<baseItem>child).uuid
+            if (<baseItem>child)._parent is self:
+                if (<baseItem>child)._prev_sibling is None:
+                    already_attached.insert(uuid)
+                    continue
+                prev_uuid = (<baseItem>child)._prev_sibling.uuid
+                if already_attached.find(prev_uuid) != already_attached.end():
+                    already_attached.insert(uuid)
+                    continue
+            # New children.
+
             # Note: it is fine here to hold the mutex to item_m
             # and call attach_parent, as item_m is the target
             # parent.
             # It is also fine to retain the lock to child_m
             # as it has no parent
             lock_gil_friendly(child_m, (<baseItem>child).mutex)
-            if (<baseItem>child)._parent is not None:
+            if (<baseItem>child)._parent is not None and \
+               (<baseItem>child)._parent is not self:
+                # Probable programming mistake and potential deadlock
                 raise ValueError(f"{child} already has a parent")
             (<baseItem>child).attach_to_parent(self)
+
+            # Detach any previous sibling that are not in the
+            # already_attached list, and thus should either
+            # be removed, or their order changed.
+            while (<baseItem>child)._prev_sibling is not None and \
+                already_attached.find((<baseItem>child)._prev_sibling.uuid) == already_attached.end():
+                (<baseItem>child)._prev_sibling.detach_item()
+            already_attached.insert(uuid)
 
     def __enter__(self):
         # Mutexes not needed
@@ -8492,6 +8516,7 @@ cdef class Text(uiItem):
             imgui.TextUnformatted(self.imgui_label.c_str(), NULL)
         if self._show_label or self._bullet:
             # Group enables to share the states for all items
+            # And have correct rect_size
             imgui.EndGroup()
 
         self.update_current_state()
@@ -10320,6 +10345,7 @@ cdef class TreeNode(uiItem):
             imgui.TreePop()
 
         imgui.EndGroup()
+        # TODO; rect size from group ?
         imgui.PopID()
 
 cdef class CollapsingHeader(uiItem):
@@ -10452,6 +10478,7 @@ cdef class CollapsingHeader(uiItem):
                 swap(pos_p, self.context._viewport.parent_pos)
                 self.last_widgets_child.draw()
                 self.context._viewport.parent_pos = pos_p
+        # TODO: rect_size from group ?
         return not(was_open) and self.state.cur.open
 
 cdef class ChildWindow(uiItem):
