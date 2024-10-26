@@ -423,6 +423,35 @@ class MouseCursorHandler(baseHandler):
     
 
 
+class AxesResizeHandler(baseHandler):
+    """
+    Handler that can only be bound to a plot,
+    and that triggers the callback whenever the
+    axes min/max OR the plot region box changes.
+    Basically whenever the size
+    of a pixel within plot coordinate has likely changed.
+
+    The data field passed to the callback contains
+    ((min, max, scale), (min, max, scale)) where
+    scale = (max-min) / num_real_pixels
+    and the first tuple is for the target X axis (default X1),
+    and the second tuple for the target Y axis (default Y1)
+    """
+    @property
+    def axes(self): # -> tuple[int, int]:
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this handler.
+        Default is (X1, Y1)
+        """
+        ...
+    
+    @axes.setter
+    def axes(self, value): # -> None:
+        ...
+    
+
+
 class KeyDownHandler(KeyDownHandler_):
     @property
     def key(self): # -> int:

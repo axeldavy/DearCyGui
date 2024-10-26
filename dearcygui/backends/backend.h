@@ -61,7 +61,7 @@ struct mvViewport
 	bool shown = false;
 	bool resized = false;
 
-	std::string title = "Dear PyGui";
+	std::string title = "Dear CyGui";
 	std::string small_icon;
 	std::string large_icon;
 	mvColor     clearColor = mvColor(0, 0, 0, 255);

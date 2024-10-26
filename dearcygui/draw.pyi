@@ -31,44 +31,6 @@ class ViewportDrawList(ViewportDrawList_):
     
 
 
-class DrawLayer(DrawLayer_):
-    @property
-    def perspective_divide(self): # -> bint:
-        ...
-    
-    @perspective_divide.setter
-    def perspective_divide(self, value: bool): # -> None:
-        ...
-    
-    @property
-    def depth_clipping(self): # -> bint:
-        ...
-    
-    @depth_clipping.setter
-    def depth_clipping(self, value: bool): # -> None:
-        ...
-    
-    @property
-    def cull_mode(self): # -> long:
-        ...
-    
-    @cull_mode.setter
-    def cull_mode(self, value: int): # -> None:
-        ...
-    
-    @property
-    def transform(self): # -> list[list[float]]:
-        ...
-    
-    @transform.setter
-    def transform(self, value): # -> None:
-        ...
-    
-    def clip_space(self, topleftx: float, toplefty: float, width: float, height: float, mindepth: float, maxdepth: float): # -> None:
-        ...
-    
-
-
 class DrawArrow(DrawArrow_):
     @property
     def p1(self): # -> list:
