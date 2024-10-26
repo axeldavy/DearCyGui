@@ -1043,7 +1043,7 @@ cdef class AxesResizeHandler(baseHandler):
             (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
-        if self._callback is not None or not(self.check_state(item)):
+        if self._callback is None or not(self.check_state(item)):
             return
         cdef double x_min = 0., x_max = 0., x_scale = 0.
         cdef double y_min = 0., y_max = 0., y_scale = 0.

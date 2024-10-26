@@ -3349,8 +3349,6 @@ cdef class DrawEllipse_(drawingItem):
         cdef int i
         # vector needs double4 rather than double[4]
         cdef double4 p
-        p.p[2] = self.pmax[2]
-        p.p[3] = self.pmax[3]
         width = abs(width)
         height = abs(height)
         for i in range(segments):
@@ -7765,7 +7763,7 @@ cdef class InputText(uiItem):
         cdef bint changed = False
         if not(self._enabled):
             flags |= imgui.ImGuiInputTextFlags_ReadOnly
-        if current_value.size() != (self._max_characters+1):
+        if <int>current_value.size() != (self._max_characters+1):
             # TODO: avoid the copies that occur
             # In theory the +1 is not needed here
             current_value.resize(self._max_characters+1)
@@ -12455,6 +12453,7 @@ cdef class PlotAxisConfig(baseItem):
         self.flags = 0
         self._min = 0
         self._max = 1
+        self.to_fit = True
         self.dirty_minmax = False
         self._constraint_min = -INFINITY
         self._constraint_max = INFINITY
@@ -12684,6 +12683,7 @@ cdef class PlotAxisConfig(baseItem):
         self.flags &= ~implot.ImPlotAxisFlags_NoInitialFit
         if value:
             self.flags |= implot.ImPlotAxisFlags_NoInitialFit
+            self.to_fit = False
 
     @property
     def no_menus(self):
@@ -12963,6 +12963,8 @@ cdef class PlotAxisConfig(baseItem):
         """
         Request for a fit of min/max to the data the next time the plot is drawn
         """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
         self.to_fit = True
 
     @property
@@ -13062,11 +13064,11 @@ cdef class PlotAxisConfig(baseItem):
         cdef implot.ImPlotAxisFlags flags = self.flags
         if self.to_fit:
             flags |= implot.ImPlotAxisFlags_AutoFit
-            self.to_fit = False
         if <int>self._label.size() > 0:
             implot.SetupAxis(axis, self._label.c_str(), flags)
         else:
             implot.SetupAxis(axis, NULL, flags)
+        """
         if self.dirty_minmax:
             # enforce min < max
             self._max = max(self._max, self._min + 1e-12)
@@ -13074,6 +13076,13 @@ cdef class PlotAxisConfig(baseItem):
                                    self._min,
                                    self._max,
                                    implot.ImPlotCond_Always)
+        """
+        self.prev_min = self._min
+        self.prev_max = self._max
+        # We use SetupAxisLinks to get the min/max update
+        # right away during EndPlot(), rather than the
+        # next frame
+        implot.SetupAxisLinks(axis, &self._min, &self._max)
 
         implot.SetupAxisScale(axis, self._scale)
 
@@ -13093,7 +13102,7 @@ cdef class PlotAxisConfig(baseItem):
             implot.SetupAxisZoomConstraints(axis,
                                             self._zoom_min,
                                             self._zoom_max)
-        cdef int label_count = min(<int>self._labels_coord.size(), self._labels_cstr.size())
+        cdef int label_count = min(<int>self._labels_coord.size(), <int>self._labels_cstr.size())
         if label_count > 0:
             implot.SetupAxisTicks(axis,
                                   self._labels_coord.data(),
@@ -13109,22 +13118,27 @@ cdef class PlotAxisConfig(baseItem):
                 self.set_hidden()
             return
         cdef implot.ImPlotRect rect
-        self.prev_min = self._min
-        self.prev_max = self._max
+        #self.prev_min = self._min
+        #self.prev_max = self._max
         self.dirty_minmax = False
         if axis <= implot.ImAxis_X3:
             rect = implot.GetPlotLimits(axis, implot.IMPLOT_AUTO)
-            self._min = rect.X.Min
-            self._max = rect.X.Max
+            #self._min = rect.X.Min
+            #self._max = rect.X.Max
             self._mouse_coord = implot.GetPlotMousePos(axis, implot.IMPLOT_AUTO).x
         else:
             rect = implot.GetPlotLimits(implot.IMPLOT_AUTO, axis)
-            self._min = rect.Y.Min
-            self._max = rect.Y.Max
+            #self._min = rect.Y.Min
+            #self._max = rect.Y.Max
             self._mouse_coord = implot.GetPlotMousePos(implot.IMPLOT_AUTO, axis).y
 
         # Take into accounts flags changed by user interactions
-        self.flags = GetAxisConfig(<int>axis)
+        cdef implot.ImPlotAxisFlags flags = GetAxisConfig(<int>axis)
+        if self.to_fit and (self.flags & implot.ImPlotAxisFlags_AutoFit) == 0:
+            # Remove Autofit flag introduced for to_fit
+            flags &= ~implot.ImPlotAxisFlags_AutoFit
+            self.to_fit = False
+        self.flags = flags
 
         cdef bint hovered = implot.IsAxisHovered(axis)
         cdef int i
@@ -13143,6 +13157,11 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.clicked[i] = self.state.cur.hovered and imgui.IsMouseClicked(i, False)
             self.state.cur.double_clicked[i] = self.state.cur.hovered and imgui.IsMouseDoubleClicked(i)
 
+    cdef void after_plot(self, implot.ImAxis axis) noexcept nogil:
+        # The fit only impacts the next frame
+        if self._min != self.prev_min or self._max != self.prev_max:
+            self.context._viewport.viewport.needs_refresh.store(True)
+
     cdef void set_hidden(self) noexcept nogil:
         self.set_previous_states()
         self.state.cur.hovered = False
@@ -13160,6 +13179,8 @@ cdef class PlotLegendConfig(baseItem):
         self._location = LegendLocation.northwest
         self.flags = 0
 
+    '''
+    # Probable doesn't work. Use instead plot no_legend
     @property
     def show(self):
         """
@@ -13176,6 +13197,7 @@ cdef class PlotLegendConfig(baseItem):
         if not(value) and self._show:
             self.set_hidden_and_propagate_to_siblings_no_handlers()
         self._show = value
+    '''
 
     @property
     def location(self):
@@ -13877,6 +13899,12 @@ cdef class Plot(uiItem):
             # configuration with the mouse
             self.flags = GetPlotConfig()
             implot.EndPlot()
+            self._X1.after_plot(implot.ImAxis_X1)
+            self._X2.after_plot(implot.ImAxis_X2)
+            self._X3.after_plot(implot.ImAxis_X3)
+            self._Y1.after_plot(implot.ImAxis_Y1)
+            self._Y2.after_plot(implot.ImAxis_Y2)
+            self._Y3.after_plot(implot.ImAxis_Y3)
         elif self.state.cur.rendered:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             self._X1.set_hidden()

@@ -1117,6 +1117,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef vector[double] _labels_coord
     cdef void setup(self, implot.ImAxis) noexcept nogil
     cdef void after_setup(self, implot.ImAxis) noexcept nogil
+    cdef void after_plot(self, implot.ImAxis) noexcept nogil
     cdef void set_hidden(self) noexcept nogil
 
 cdef class PlotLegendConfig(baseItem):

@@ -274,7 +274,7 @@ class MetricsWindow(dcg.Window):
         DT0 = current_time - self.start_time - self.history.value
         self.history_bounds[1] = DT1
         self.history_bounds[0] = DT0
-        self.main_plot.X1.min = DT0
+        self.main_plot.X1.min = DT0 # TODO: do that in a thread to avoid waking
         self.main_plot.X1.max = DT1
         self.secondary_plot.X1.min = DT0
         self.secondary_plot.X1.max = DT1
