@@ -6,10 +6,8 @@ import distutils.cmd
 from codecs import open
 import os
 from os import path
-import textwrap
 import sys
-import shutil
-import subprocess
+from glob import glob
 import numpy as np
 
 wip_version = "0.0.1"
@@ -147,7 +145,6 @@ def setup_package():
         name='dearcygui',                                      # Required
         version=version_number(),                              # Required
         author="Axel Davy",                                    # Optional
-        author_email="jonathanhoffstadt@yahoo.com",            # Optional
         description='DearCyGui: A simple and customizable Python GUI Toolkit coded in Cython',  # Required
         long_description=long_description,                     # Optional
         long_description_content_type='text/markdown',         # Optional
@@ -155,7 +152,7 @@ def setup_package():
         license = 'MIT',
         python_requires='>=3.10',
         classifiers=[
-                'Development Status :: 5 - Production/Stable',
+                'Development Status :: 2 - Pre-Alpha',
                 'Intended Audience :: Education',
                 'Intended Audience :: Developers',
                 'Intended Audience :: Science/Research',
@@ -164,14 +161,8 @@ def setup_package():
                 'Operating System :: Microsoft :: Windows :: Windows 10',
                 'Operating System :: POSIX',
                 'Operating System :: Unix',
-                'Programming Language :: Python :: 3.7',
-                'Programming Language :: Python :: 3.8',
-                'Programming Language :: Python :: 3.9',
-                'Programming Language :: Python :: 3.10',
-                'Programming Language :: Python :: 3.11',
-                'Programming Language :: Python :: 3.12',
-                'Programming Language :: Python :: Implementation :: CPython',
-                'Programming Language :: Python :: 3 :: Only',
+                'Programming Language :: Cython',
+                'Programming Language :: Python :: 3',
                 'Topic :: Software Development :: User Interfaces',
                 'Topic :: Software Development :: Libraries :: Python Modules',
             ],
