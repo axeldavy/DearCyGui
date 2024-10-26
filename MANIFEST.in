@@ -1,0 +1,10 @@
+recursive-include dearcygui/backend/ *.h
+recursive-include thirdparty/gl3w/ *.h
+recursive-include thirdparty/imgui/ *
+recursive-include thirdparty/imnodes/ *
+recursive-include thirdparty/implot/ *
+recursive-include thirdparty/ImGuiFileDialog/ *
+recursive-include dearcygui/ *.pyx
+recursive-include dearcygui/ *.pxd
+include src/mvImGuiLinuxConfig.h
+include src/mvTypes.h
