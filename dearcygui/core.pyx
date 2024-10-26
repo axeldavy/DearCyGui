@@ -1225,7 +1225,7 @@ cdef class baseItem:
 
     cdef bint __check_rendered(self):
         """
-        When if an item is rendered
+        Returns if an item is rendered
         """
         cdef baseItem item = self
         # Find a parent with state
@@ -1233,9 +1233,9 @@ cdef class baseItem:
         # but should be ok enough to fail in a few cases.
         while item is not None and item.p_state == NULL:
             item = item._parent
-        if item is None:
+        if item is None or item.p_state == NULL:
             return False
-        return self.p_state.cur.rendered
+        return item.p_state.cur.rendered
 
 
     cpdef void attach_to_parent(self, target):
@@ -5684,7 +5684,7 @@ cdef class uiItem(baseItem):
         if self._show == value:
             return
         if not(value) and self._show:
-            self.set_hidden_and_propagate_to_siblings_no_handlers()
+            self.set_hidden_and_propagate_to_siblings_no_handlers() # TODO: already handled in draw() ?
         self.show_update_requested = True
         self._show = value
 
@@ -9557,16 +9557,18 @@ cdef class Layout(uiItem):
     For example setting indent will shift all
     the items of the Layout.
 
-    The function update_layout() is defined by this
-    class and subclasses to manually update the layout.
-    If the main Layout() class is used, the callback
-    is called and it is expected the callback function
-    implements the intended update of the layout.
+    Subclassing Layout:
+    For custom layouts, you can use Layout with
+    a callback. The callback is called whenever
+    the layout should be updated.
 
-    The function update_layout is automatically called
-    when the item detects a change in the size of the
-    remaining content area available locally within
-    the window, or if the last item has changed.
+    If the automated update detection is not
+    sufficient, update_layout() can be called
+    to force a recomputation of the layout.
+
+    Currently the update detection detects a change in
+    the size of the remaining content area available
+    locally within the window, or if the last item has changed.
 
     The layout item works by changing the positioning
     policy and the target position of its children, and
@@ -9592,7 +9594,7 @@ cdef class Layout(uiItem):
     def update_layout(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.context.queue_callback_arg1value(self._callback, self, self, self._value)
+        self.context.queue_callback_arg1value(self._callback, self, self, self._value) # TODO: callbacks ?
 
     cdef bint check_change(self) noexcept nogil:
         cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
@@ -9610,7 +9612,7 @@ cdef class Layout(uiItem):
         return changed
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
+        cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail() # TODO: pass to the callback ? Or set as state ?
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
