@@ -1,11 +1,9 @@
 from dearcygui.wrapper cimport imgui, implot, imnodes, double4
 from dearcygui.backends.backend cimport mvViewport, mvGraphics
-from libc.time cimport tm
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 from libcpp.atomic cimport atomic
-from libcpp.map cimport map
 from libcpp.vector cimport vector
 from cpython.ref cimport PyObject
 cimport numpy as cnp
@@ -955,6 +953,7 @@ cdef class Texture(baseItem):
     cdef int _width
     cdef int _height
     cdef int _num_chans
+    cdef int _buffer_type
     cdef int filtering_mode
     cdef bint readonly
     cdef void set_content(self, cnp.ndarray content)

@@ -12025,6 +12025,7 @@ cdef class Texture(baseItem):
         self._width = 0
         self._height = 0
         self._num_chans = 0
+        self._buffer_type = 0
         self.filtering_mode = 0
 
     def __delalloc__(self):
@@ -12100,6 +12101,7 @@ cdef class Texture(baseItem):
         The currently native formats are:
         - data type: uint8 or float32.
             Anything else will be converted to float32
+            float32 data must be normalized between 0 and 1.
         - number of channels: 1 (R), 2 (RG), 3 (RGB), 4 (RGBA)
 
         In the case of single channel textures, during rendering, R is
@@ -12160,8 +12162,9 @@ cdef class Texture(baseItem):
 
         cdef bint reuse = self.allocated_texture != NULL
         cdef bint success
-        reuse = reuse and (self._width != width or self._height != height or self._num_chans != num_chans)
         cdef unsigned buffer_type = 1 if content.dtype == np.uint8 else 0
+        reuse = reuse and not(self._width != width or self._height != height or self._num_chans != num_chans or self._buffer_type != buffer_type)
+
         with nogil:
             if self.allocated_texture != NULL and not(reuse):
                 # We must wait there is no rendering since the current rendering might reference the texture
@@ -12190,6 +12193,7 @@ cdef class Texture(baseItem):
             self._width = width
             self._height = height
             self._num_chans = num_chans
+            self._buffer_type = buffer_type
 
             if not(reuse):
                 self.dynamic = self._hint_dynamic
