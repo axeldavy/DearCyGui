@@ -95,13 +95,15 @@ cdef extern from "backend.h" nogil:
                                 unsigned height,
                                 unsigned num_chans,
                                 unsigned type,
-                                void* data)
+                                void* data,
+                                unsigned src_stride)
     bint mvUpdateStaticTexture(void* texture,
                                unsigned width,
                                unsigned height,
                                unsigned num_chans,
                                unsigned type,
-                               void* data)
+                               void* data,
+                               unsigned src_stride)
 
 cdef inline mvColor colorFromInts(int r, int g, int b, int a):
     cdef mvColor color

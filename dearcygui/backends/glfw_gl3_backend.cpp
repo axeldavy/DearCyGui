@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include "backend.h"
@@ -527,7 +528,9 @@ void mvReleaseUploadContext(mvViewport& viewport)
     viewport.needs_refresh.store(true);
 }
 
+// TODO this should probably be part of viewport structure, not static.
 static std::unordered_map<GLuint, GLuint> PBO_ids;
+static std::unordered_set<GLuint> Allocated_ids;
 
 void* mvAllocateTexture(unsigned width, unsigned height, unsigned num_chans, unsigned dynamic, unsigned type, unsigned filtering_mode)
 {
@@ -574,7 +577,16 @@ void* mvAllocateTexture(unsigned width, unsigned height, unsigned num_chans, uns
         mvFreeTexture((void*)(size_t)(GLuint)image_texture);
         return NULL;
     }
+    // Allocate a PBO with the texture
+    // Doing glBufferData only here gives significant speed gains
+    // Note we could be sharing PBOs between textures,
+    // Here we simplify buffer management (no offset and alignment
+    // management) but double memory usage.
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * num_chans * type_size, 0, GL_STREAM_DRAW);
+
+    // Unbind texture and PBO
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     return (void*)(size_t)(GLuint)image_texture;
 }
 
@@ -588,11 +600,19 @@ void mvFreeTexture(void* texture)
         glDeleteBuffers(1, &pboid);
         PBO_ids.erase(out_srv);
     }
+    if (Allocated_ids.find(out_srv) != Allocated_ids.end())
+        Allocated_ids.erase(out_srv);
 
     glDeleteTextures(1, &out_srv);
 }
 
-bool mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data)
+bool mvUpdateDynamicTexture(void* texture,
+                            unsigned width,
+                            unsigned height,
+                            unsigned num_chans,
+                            unsigned type,
+                            void* data,
+                            unsigned src_stride)
 {
     auto textureId = (GLuint)(size_t)texture;
     unsigned gl_format = GL_RGBA;
@@ -627,18 +647,23 @@ bool mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsi
     if (glGetError() != GL_NO_ERROR)
         goto error;
 
-    // allocate a new buffer
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * num_chans * type_size, 0, GL_STREAM_DRAW);
-    if (glGetError() != GL_NO_ERROR)
-        goto error;
-
-    // tequest access to the buffer
-    ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    // Request access to the buffer
+    // We get significant speed gains compared to using glBufferData/glMapBuffer
+    ptr = (GLubyte*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0,
+                                     width * height * num_chans * type_size,
+                                     GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
     if (ptr)
     {
-        // update data directly on the mapped buffer
-        memcpy(ptr, data, width * height * num_chans * type_size);
-
+        // write data directly on the mapped buffer
+        if (src_stride == (width * num_chans * type_size))
+            memcpy(ptr, data, width * height * num_chans * type_size);
+        else {
+            for (unsigned row = 0; row < height; row++) {
+                memcpy(ptr, data, width * num_chans * type_size);
+                ptr = (GLubyte*)(((unsigned char*)ptr) + width * num_chans * type_size);
+                data = (void*)(((unsigned char*)data) + src_stride);
+            }
+        }
         glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
     } else
         goto error;
@@ -649,11 +674,23 @@ bool mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsi
         goto error;
 
     // copy pixels from PBO to texture object
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format, gl_type, NULL);
+    if (Allocated_ids.find(textureId) == Allocated_ids.end()) {
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format, gl_type, NULL);
+        Allocated_ids.insert(textureId);
+    } else {
+        // Reuse previous allocation. Slightly faster.
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, gl_format, gl_type, NULL);
+    }
+
     if (glGetError() != GL_NO_ERROR)
         goto error;
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    if (glGetError() != GL_NO_ERROR)
+        goto error;
+
+    // Unbind the texture
+    glBindTexture(GL_TEXTURE_2D, 0);
     if (glGetError() != GL_NO_ERROR)
         goto error;
 
@@ -664,7 +701,7 @@ error:
     return false;
 }
 
-bool mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data)
+bool mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data, unsigned src_stride)
 {
-    return mvUpdateDynamicTexture(texture, width, height, num_chans, type, data);
+    return mvUpdateDynamicTexture(texture, width, height, num_chans, type, data, src_stride);
 }

@@ -12119,7 +12119,7 @@ cdef class Texture(baseItem):
         bound. The objects will automatically take
         the updated texture.
         """
-        self.set_content(np.ascontiguousarray(value))
+        self.set_content(np.asarray(value))
 
     cdef void set_content(self, cnp.ndarray content): # TODO: deadlock when held by external lock
         # The write mutex is to ensure order of processing of set_content
@@ -12128,26 +12128,35 @@ cdef class Texture(baseItem):
         cdef unique_lock[recursive_mutex] m2
         lock_gil_friendly(m, self.write_mutex)
         lock_gil_friendly(m2, self.mutex)
-        if content.ndim > 3 or content.ndim == 0:
+        cdef int ndim = cnp.PyArray_NDIM(content)
+        if ndim > 3 or ndim == 0:
             raise ValueError("Invalid number of texture dimensions")
         if self.readonly: # set for fonts
             raise ValueError("Target texture is read-only")
         cdef int height = 1
         cdef int width = 1
         cdef int num_chans = 1
-        assert(content.flags['C_CONTIGUOUS'])
-        if content.ndim >= 1:
-            height = content.shape[0]
-        if content.ndim >= 2:
-            width = content.shape[1]
-        if content.ndim >= 3:
-            num_chans = content.shape[2]
+        cdef int stride = 1
+
+        if ndim >= 1:
+            height = cnp.PyArray_DIM(content, 0)
+        if ndim >= 2:
+            width = cnp.PyArray_DIM(content, 1)
+        if ndim >= 3:
+            num_chans = cnp.PyArray_DIM(content, 2)
         if width * height * num_chans == 0:
             raise ValueError("Cannot set empty texture")
 
         # TODO: there must be a faster test
         if not(content.dtype == np.float32 or content.dtype == np.uint8):
-            content = np.ascontiguousarray(content, dtype=np.float32)
+            content = np.asarray(content, dtype=np.float32)
+
+        # rows must be contiguous
+        if ndim >= 2 and cnp.PyArray_STRIDE(content, 1) != (num_chans * (1 if content.dtype == np.uint8 else 4)):
+            content = np.ascontiguousarray(content, dtype=content.dtype)
+
+        stride = cnp.PyArray_STRIDE(content, 0)
+
 
         cdef bint reuse = self.allocated_texture != NULL
         cdef bint success
@@ -12189,9 +12198,21 @@ cdef class Texture(baseItem):
             success = self.allocated_texture != NULL
             if success:
                 if self.dynamic:
-                    success = mvUpdateDynamicTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
+                    success = mvUpdateDynamicTexture(self.allocated_texture,
+                                                     width,
+                                                     height,
+                                                     num_chans,
+                                                     buffer_type,
+                                                     cnp.PyArray_DATA(content),
+                                                     stride)
                 else:
-                    success = mvUpdateStaticTexture(self.allocated_texture, width, height, num_chans, buffer_type, <void*>content.data)
+                    success = mvUpdateStaticTexture(self.allocated_texture,
+                                                    width,
+                                                    height,
+                                                    num_chans,
+                                                    buffer_type,
+                                                    cnp.PyArray_DATA(content),
+                                                    stride)
             mvReleaseUploadContext(dereference(self.context._viewport.viewport))
             m.unlock()
             m2.unlock() # Release before we get gil again
