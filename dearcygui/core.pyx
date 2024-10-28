@@ -1131,6 +1131,7 @@ cdef class baseItem:
         lock_gil_friendly(item_m, self.mutex)
         cdef long long uuid, prev_uuid
         cdef cpp_set[long long] already_attached
+        cdef baseItem sibling
         for child in value:
             if not(isinstance(child, baseItem)):
                 raise TypeError(f"{child} is not a compatible item instance")
@@ -1163,7 +1164,10 @@ cdef class baseItem:
             # be removed, or their order changed.
             while (<baseItem>child)._prev_sibling is not None and \
                 already_attached.find((<baseItem>child)._prev_sibling.uuid) == already_attached.end():
-                (<baseItem>child)._prev_sibling.detach_item()
+                # Setting sibling here rather than calling detach_item directly avoids
+                # crash due to refcounting bug.
+                sibling = (<baseItem>child)._prev_sibling
+                sibling.detach_item()
             already_attached.insert(uuid)
 
         # if no children were attached, the previous code to
