@@ -1145,7 +1145,6 @@ cdef class baseItem:
                 if already_attached.find(prev_uuid) != already_attached.end():
                     already_attached.insert(uuid)
                     continue
-            # New children.
 
             # Note: it is fine here to hold the mutex to item_m
             # and call attach_parent, as item_m is the target
@@ -1166,6 +1165,59 @@ cdef class baseItem:
                 already_attached.find((<baseItem>child)._prev_sibling.uuid) == already_attached.end():
                 (<baseItem>child)._prev_sibling.detach_item()
             already_attached.insert(uuid)
+
+        # if no children were attached, the previous code to
+        # remove outdated children didn't execute.
+        # Same for child lists where we didn't append
+        # new items. Clean now.
+        child = self.last_theme_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_theme_child
+        child = self.last_handler_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_handler_child
+        child = self.last_plot_element_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_plot_element_child
+        child = self.last_payloads_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_payloads_child
+        child = self.last_drawings_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_drawings_child
+        child = self.last_widgets_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_widgets_child
+        child = self.last_window_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_window_child
+        child = self.last_menubar_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_menubar_child
 
     def __enter__(self):
         # Mutexes not needed
