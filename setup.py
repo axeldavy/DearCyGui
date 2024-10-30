@@ -9,6 +9,8 @@ from os import path
 import sys
 from glob import glob
 import numpy as np
+import shutil
+import subprocess
 
 wip_version = "0.0.2"
 
@@ -44,6 +46,28 @@ def get_platform():
     
     return platforms[sys.platform]
 
+def build_SDL3():
+    src_path = os.path.dirname(os.path.abspath(__file__))
+    cmake_config_args = [
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DSDL_SHARED=OFF',
+        '-DSDL_STATIC=ON',
+        '-DSDL_EXAMPLES=OFF',
+        '-DSDL_TESTS=OFF',
+        '-DSDL_TEST_LIBRARY=OFF',
+        '-DSDL_DISABLE_INSTALL=OFF',
+        '-DSDL_DISABLE_INSTALL_DOCS=OFF',
+        '-DCMAKE_POSITION_INDEPENDENT_CODE=ON'
+    ]
+    command = 'cmake -S thirdparty/SDL/ -B build ' + ' '.join(cmake_config_args)
+    subprocess.check_call(command, shell=True)
+    cur_path = os.getcwd()
+    os.chdir("build")
+    command = 'make'
+    subprocess.check_call(command, shell=True)
+    os.chdir(cur_path)
+    return os.path.abspath(os.path.join("build", "libSDL3.a"))
+
 def setup_package():
 
     src_path = os.path.dirname(os.path.abspath(__file__))
@@ -51,22 +75,27 @@ def setup_package():
     os.chdir(src_path)
     sys.path.insert(0, src_path)
 
+    # Build dependencies
+    sdl3_lib = build_SDL3()
+
     # import readme content
     with open("./README.md", encoding='utf-8') as f:
         long_description = f.read()
 
-    include_dirs = ["src",
+    include_dirs = ["dearcygui",
+                    "src",
                     "thirdparty/imgui",
                     "thirdparty/imgui/backends",
                     "thirdparty/ImGuiFileDialog",
                     "thirdparty/imnodes",
                     "thirdparty/implot",
-                    "thirdparty/gl3w"]
+                    "thirdparty/gl3w",
+                    "thirdparty/SDL/include"]
     include_dirs += [np.get_include()]
     include_dirs += ["/usr/include/freetype2/"] # TODO
 
     cpp_sources = [
-        "dearcygui/backends/glfw_gl3_backend.cpp",
+        "dearcygui/backends/sdl3_gl3_backend.cpp",
         "thirdparty/imnodes/imnodes.cpp",
         "thirdparty/implot/implot.cpp",
         "thirdparty/implot/implot_items.cpp",
@@ -78,7 +107,7 @@ def setup_package():
         "thirdparty/imgui/imgui_draw.cpp",
         "thirdparty/imgui/imgui_widgets.cpp",
         "thirdparty/imgui/imgui_tables.cpp",
-        "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
+        "thirdparty/imgui/backends/imgui_impl_sdl3.cpp",
         "thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
         "thirdparty/imgui/misc/freetype/imgui_freetype.cpp",
         "thirdparty/gl3w/GL/gl3w.c"
@@ -90,7 +119,7 @@ def setup_package():
                     "-D_USE_MATH_DEFINES",
                     "-DMV_DPG_MAJOR_VERSION=1",
                     "-DMV_DPG_MINOR_VERSION=0",
-                    "-DIMGUI_IMPL_OPENGL_LOADER_GL3W",
+                    "-DIMGUI_IMPL_OPENGL_LOADER_SDL3",
                     "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",
                     "-DMV_SANDBOX_VERSION=\"master\""]
     linking_args = ['-O3']
@@ -99,14 +128,11 @@ def setup_package():
     if get_platform() == "Linux":
         compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
-        libraries += ["crypt", "pthread", "dl", "util", "m", "GL", "glfw"]
+        libraries += ["crypt", "pthread", "dl", "util", "m", "GL"]
     elif get_platform() == "OS X":
         compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
                          "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\"", \
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
-        linking_args += [
-            "-lglfw"
-        ]
 
     else:
         raise ValueError("Unsupported plateform")
@@ -119,7 +145,8 @@ def setup_package():
             include_dirs=include_dirs,
             extra_compile_args=compile_args,
             libraries=libraries,
-            extra_link_args=linking_args
+            extra_link_args=linking_args,
+            extra_objects=[sdl3_lib]
         )
     ]
     secondary_cython_sources = [
@@ -136,7 +163,7 @@ def setup_package():
                 [cython_source],
                 language="c++",
                 include_dirs=include_dirs,
-                extra_compile_args=compile_args,
+                extra_compile_args=compile_args
             )
         )
     print(extensions)

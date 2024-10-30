@@ -4,8 +4,6 @@
 
 #include <imgui.h>
 
-struct GLFWwindow;
-
 typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);

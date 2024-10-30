@@ -3,26 +3,26 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <GL/gl3w.h>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include "backend.h"
 
 #include "implot.h"
 #include "imgui.h"
 #include "imnodes.h"
 #include "imgui_internal.h"
-#include "imgui_impl_glfw.h"
+#include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 
 #include <functional>
 #include <mutex>
 
-struct GLFWwindow;
-
 struct mvViewportData
 {
-    GLFWwindow* handle = nullptr;
-    GLFWwindow* secondary_handle = nullptr;
+    SDL_Window* handle = nullptr;
+    SDL_Window* secondary_handle = nullptr;
+    SDL_GLContext gl_handle = nullptr;
+    SDL_GLContext secondary_gl_handle = nullptr;
     std::mutex primary_gl_context;
     std::mutex secondary_gl_context;
 };
@@ -32,11 +32,11 @@ setup_graphics(mvViewport& viewport)
 {
     mvGraphics graphics{};
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    const char* glsl_version = "#version 130";
+    const char* glsl_version = "#version 150";
     viewportData->primary_gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
+    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
     ImGui_ImplOpenGL3_Init(glsl_version);
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
     return graphics;
 }
@@ -58,21 +58,34 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
-    //glfwGetWindowPos(viewportData->handle, &viewport->xpos, &viewport->ypos);
+    SDL_GetWindowPosition(viewportData->handle, &viewport->xpos, &viewport->ypos);
 
     // Rendering
     ImGui::Render();
     int display_w, display_h;
     viewportData->primary_gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
-    glfwGetFramebufferSize(viewportData->handle, &display_w, &display_h);
+    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
+    SDL_GetWindowSizeInPixels(viewportData->handle, &display_w, &display_h);
+    //SDL_GetWindowSize(bd->Window, &w, &h);
+    // It's best not to separate actual and client width
+    // as the actual width/height advertised is very OS dependent
+    // for the same visual result.
+    viewport->actualWidth = display_w;
+    viewport->actualHeight = display_h;
+    viewport->clientWidth = display_w;
+    viewport->clientHeight = display_h;
+    SDL_GetWindowSizeInPixels(viewportData->handle, &display_w, &display_h);
 
-    glfwSwapInterval(viewport->vsync ? 1 : 0); // Enable vsync
+    int current_interval, desired_interval;
+    SDL_GL_GetSwapInterval(&current_interval);
+    desired_interval = viewport->vsync ? 1 : 0;
+    if (desired_interval != current_interval)
+        SDL_GL_SetSwapInterval(desired_interval);
     glViewport(0, 0, display_w, display_h);
     glClearColor(viewport->clearColor.r, viewport->clearColor.g, viewport->clearColor.b, viewport->clearColor.a);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
 }
 
@@ -80,91 +93,11 @@ void mvPresent(mvViewport* viewport)
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
     viewportData->primary_gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
-    glfwSwapBuffers(viewportData->handle);
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
+    SDL_GL_SwapWindow(viewportData->handle);
+    viewport->dpi = SDL_GetWindowDisplayScale(viewportData->handle);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
-}
-
-static void handle_refresh_request(GLFWwindow* window)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->needs_refresh.store(true);
-}
-
-static void handle_window_resize(GLFWwindow *window, int width, int height)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->on_resize(viewport->callback_data, width, height);
-    viewport->needs_refresh.store(true);
-}
-
-static void handle_window_close(GLFWwindow *window)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->needs_refresh.store(true);
-    viewport->on_close(viewport->callback_data);
-}
-
-
-static void handle_mouse_button(GLFWwindow* window, int button, int action, int mods)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    //viewport->activity.store(true);
-    viewport->needs_refresh.store(true); // conservative choice
-}
-
-static void handle_scroll(GLFWwindow* window, double xoffset, double yoffset)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->needs_refresh.store(true); // Hard to detect when we do not need to render for scroll
-}
-
-static void handle_key(GLFWwindow* window, int keycode, int scancode, int action, int mods)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    //viewport->activity.store(true);
-    viewport->needs_refresh.store(true); // editable fields, etc might get updated
-}
-
-static void handle_focus(GLFWwindow* window, int focused)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->activity.store(true);
-}
-
-static void handle_cursor_pos(GLFWwindow* window, double x, double y)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->activity.store(true);
-}
-
-static void handle_cursor_enter(GLFWwindow* window, int entered)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->activity.store(true);
-}
-
-static void handle_char(GLFWwindow* window, unsigned int c)
-{
-    mvViewport* viewport = (mvViewport*)glfwGetWindowUserPointer(window);
-
-    viewport->needs_refresh.store(true);
-}
-
-static void
-glfw_error_callback(int error, const char* description)
-{
-    fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
 void
@@ -172,32 +105,32 @@ mvProcessEvents(mvViewport* viewport)
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
-    viewport->running = !glfwWindowShouldClose(viewportData->handle);
-
-    if (viewport->posDirty && 0)
+    if (viewport->posDirty)
     {
-        glfwSetWindowPos(viewportData->handle, viewport->xpos, viewport->ypos);
+        SDL_SetWindowPosition(viewportData->handle, viewport->xpos, viewport->ypos);
         viewport->posDirty = false;
     }
 
     if (viewport->sizeDirty)
     {
-        glfwSetWindowSizeLimits(viewportData->handle, (int)viewport->minwidth, (int)viewport->minheight, (int)viewport->maxwidth, (int)viewport->maxheight);
-        glfwSetWindowSize(viewportData->handle, viewport->actualWidth, viewport->actualHeight);
+        float dpi = SDL_GetWindowPixelDensity(viewportData->handle);
+        SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport->maxwidth/dpi), (int)(viewport->maxheight/dpi));
+        SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport->minwidth/dpi), (int)(viewport->minheight/dpi));
+        SDL_SetWindowSize(viewportData->handle, (viewport->actualWidth/dpi), (viewport->actualHeight/dpi));
         viewport->sizeDirty = false;
     }
 
     if (viewport->modesDirty)
     {
-        glfwSetWindowAttrib(viewportData->handle, GLFW_RESIZABLE, viewport->resizable ? GLFW_TRUE : GLFW_FALSE);
-        glfwSetWindowAttrib(viewportData->handle, GLFW_DECORATED, viewport->decorated ? GLFW_TRUE : GLFW_FALSE);
-        glfwSetWindowAttrib(viewportData->handle, GLFW_FLOATING, viewport->alwaysOnTop ? GLFW_TRUE : GLFW_FALSE);
+        SDL_SetWindowResizable(viewportData->handle, viewport->resizable);
+        SDL_SetWindowBordered(viewportData->handle, viewport->decorated);
+        SDL_SetWindowAlwaysOnTop(viewportData->handle, viewport->alwaysOnTop);
         viewport->modesDirty = false;
     }
 
     if (viewport->titleDirty)
     {
-        glfwSetWindowTitle(viewportData->handle, viewport->title.c_str());
+        SDL_SetWindowTitle(viewportData->handle, viewport->title.c_str());
         viewport->titleDirty = false;
     }
 
@@ -209,11 +142,64 @@ mvProcessEvents(mvViewport* viewport)
 
     // Activity: input activity. Needs to render to check impact
     // Needs refresh: if the content has likely changed and we must render and present
-    if (viewport->waitForEvents || glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
-        while (!viewport->activity.load() && !viewport->needs_refresh.load())
-            glfwWaitEventsTimeout(0.001);
+    SDL_Event event;
+    while (true) {
+        bool new_events = SDL_PollEvent(&event);
+        if (!new_events) {
+            if(viewport->activity.load() || viewport->needs_refresh.load())
+                break;
+            else
+                SDL_WaitEventTimeout(NULL, 0.001);
+        }
+
+        ImGui_ImplSDL3_ProcessEvent(&event);
+        switch (event.type) {
+            case SDL_EVENT_WINDOW_MOUSE_ENTER:
+            case SDL_EVENT_WINDOW_FOCUS_GAINED:
+            case SDL_EVENT_WINDOW_FOCUS_LOST:
+            case SDL_EVENT_WINDOW_MOVED:
+            case SDL_EVENT_WINDOW_SHOWN:
+            case SDL_EVENT_MOUSE_MOTION:
+                viewport->activity.store(true);
+                break;
+            case SDL_EVENT_MOUSE_WHEEL:
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+            case SDL_EVENT_TEXT_EDITING:
+            case SDL_EVENT_TEXT_INPUT:
+            case SDL_EVENT_KEY_DOWN:
+            case SDL_EVENT_KEY_UP:
+            case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
+            case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+            case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+            case SDL_EVENT_WINDOW_EXPOSED:
+            case SDL_EVENT_WINDOW_RESIZED:
+            case SDL_EVENT_WINDOW_DESTROYED:
+                viewport->needs_refresh.store(true);
+                break;
+            case SDL_EVENT_WINDOW_MINIMIZED:
+                //viewport->minimized = true;
+                break;
+            case SDL_EVENT_WINDOW_MAXIMIZED:
+                //viewport->maximized = true;
+                break;
+            case SDL_EVENT_WINDOW_RESTORED:
+                break;
+                //viewport->minimized = false;
+                //viewport->maximized = false;
+            case SDL_EVENT_QUIT:
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED: // && event.window.windowID == SDL_GetWindowID(viewportData->handle)
+                viewport->running = false;
+                viewport->on_close(viewport->callback_data);
+            /* TODO: drag&drop, etc*/
+            default:
+                break;
+        }
+    }
+    //if (viewport->waitForEvents || glfwGetWindowAttrib(viewportData->handle, GLFW_ICONIFIED))
+    //    while (!viewport->activity.load() && !viewport->needs_refresh.load())
+    //        glfwWaitEventsTimeout(0.001);
     viewport->activity.store(false);
-    glfwPollEvents();
 }
 
  mvViewport*
@@ -222,23 +208,29 @@ mvCreateViewport(render_fun render,
 		         on_close_fun on_close,
 				 void *callback_data)
 {
-    // Setup window
-    glfwSetErrorCallback(glfw_error_callback);
-    if (glfwInit() != GLFW_TRUE)
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
+    {
+        printf("Error: SDL_Init(): %s\n", SDL_GetError());
         return nullptr;
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
+    // Setup window
     /* The secondary handle enables multithreading and
      * Starting uploading textures right away*/
-    auto secondary_handle = glfwCreateWindow(640, 480, "", NULL, NULL);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    auto secondary_handle = SDL_CreateWindow("DearCyGui upload context", 640, 480, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_UTILITY);
     if (secondary_handle == nullptr)
         return nullptr;
-    glfwMakeContextCurrent(secondary_handle);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    auto secondary_gl_handle = SDL_GL_CreateContext(secondary_handle);
+    if (secondary_gl_handle == nullptr)
+        return nullptr;
     if (gl3wInit() != GL3W_OK)
         return nullptr;
     // All our uploads have no holes
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(secondary_handle, NULL);
     mvViewport* viewport = new mvViewport();
     viewport->render = render;
     viewport->on_resize = on_resize;
@@ -247,10 +239,9 @@ mvCreateViewport(render_fun render,
     viewport->platformSpecifics = new mvViewportData();
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
     viewportData->secondary_handle = secondary_handle;
-    float xscale, yscale;
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    glfwGetMonitorContentScale(monitor, &xscale, &yscale);
-    viewport->dpi = xscale;
+    viewportData->secondary_gl_handle = secondary_gl_handle;
+    auto primary_display = SDL_GetPrimaryDisplay();
+    //viewport->dpi = SDL_GetDisplayContentScale(primary_display);
     return viewport;
 }
 
@@ -261,15 +252,17 @@ mvCleanupViewport(mvViewport& viewport)
 
     // Cleanup
     viewportData->primary_gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
+    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
     ImGui_ImplOpenGL3_Shutdown();
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
-    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
 
-    glfwDestroyWindow(viewportData->handle);
-    glfwDestroyWindow(viewportData->secondary_handle);
-    glfwTerminate();
+    SDL_GL_DestroyContext(viewportData->gl_handle);
+    SDL_GL_DestroyContext(viewportData->secondary_gl_handle);
+    SDL_DestroyWindow(viewportData->handle);
+    SDL_DestroyWindow(viewportData->secondary_handle);
+    SDL_Quit();
 
     delete viewportData;
     viewportData = nullptr;
@@ -282,38 +275,54 @@ mvShowViewport(mvViewport& viewport,
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
-    if (!viewport.resizable)
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    SDL_WindowFlags creation_flags = 0;
+    if (viewport.resizable)
+        creation_flags |= SDL_WINDOW_RESIZABLE;
     if (viewport.alwaysOnTop)
-        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+        creation_flags |= SDL_WINDOW_ALWAYS_ON_TOP;
     if (maximized)
-        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+        creation_flags |= SDL_WINDOW_MAXIMIZED;
     else if (minimized)
-        glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
+        creation_flags |= SDL_WINDOW_MINIMIZED;
     if (!viewport.decorated)
-        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    // Automated DPI management doesn't look good
-    #ifdef GLFW_SCALE_FRAMEBUFFER
-    glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GL_FALSE);
-    #endif
+        creation_flags |= SDL_WINDOW_BORDERLESS;
 
     // Create window with graphics context
-    // GL 3.0 + GLSL 130
-    // const char* glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     viewportData->secondary_gl_context.lock();
-    viewportData->handle = glfwCreateWindow(viewport.actualWidth, viewport.actualHeight, viewport.title.c_str(), nullptr, viewportData->secondary_handle);
-    viewportData->secondary_gl_context.unlock();
-    glfwSetWindowUserPointer(viewportData->handle, &viewport);
-    //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos);
-    glfwSetWindowSizeLimits(viewportData->handle, (int)viewport.minwidth, (int)viewport.minheight, (int)viewport.maxwidth, (int)viewport.maxheight);
+    // Set current to allow sharing
+    SDL_GL_MakeCurrent(viewportData->secondary_handle, viewportData->secondary_gl_handle);
+    viewportData->handle = SDL_CreateWindow(viewport.title.c_str(), viewport.actualWidth, viewport.actualHeight,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
+    viewportData->gl_handle = SDL_GL_CreateContext(viewportData->handle);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
+    SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
+    //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos); // SDL_SetWindowPosition
+    float dpi = SDL_GetWindowPixelDensity(viewportData->handle);
+    if (dpi != 1.)
+        SDL_SetWindowSize(viewportData->handle, (viewport.actualWidth/dpi), (viewport.actualHeight/dpi));
+    SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth/dpi), (int)(viewport.maxheight/dpi));
+    SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth/dpi), (int)(viewport.minheight/dpi));
+    SDL_ShowWindow(viewportData->handle);
+    if (dpi != SDL_GetWindowPixelDensity(viewportData->handle)) {
+        SDL_SetWindowSize(viewportData->handle, (viewport.actualWidth/dpi), (viewport.actualHeight/dpi));
+        SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth/dpi), (int)(viewport.maxheight/dpi));
+        SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth/dpi), (int)(viewport.minheight/dpi));
+    }
 
-    // This is only True because we set GLFW_SCALE_FRAMEBUFFER to False
     viewport.clientHeight = viewport.actualHeight;
     viewport.clientWidth = viewport.actualWidth;
+    // Not the same as previous dpi
+    viewport.dpi = SDL_GetWindowDisplayScale(viewportData->handle);
 
-    std::vector<GLFWimage> images;
+    //std::vector<GLFWimage> images;
 
     /*
     if (!viewport.small_icon.empty())
@@ -343,27 +352,12 @@ mvShowViewport(mvViewport& viewport,
     // A single thread can use a context at a time
     viewportData->primary_gl_context.lock();
 
-    glfwMakeContextCurrent(viewportData->handle);
-
-    // Bind them before imgui does his, as it chains them.
-    glfwSetWindowSizeCallback(viewportData->handle,
-                              handle_window_resize);
-    glfwSetWindowCloseCallback(viewportData->handle,
-                               handle_window_close);
-    glfwSetWindowRefreshCallback(viewportData->handle,
-                               handle_refresh_request);
-    glfwSetCharCallback(viewportData->handle, handle_char);
-    glfwSetCursorEnterCallback(viewportData->handle, handle_cursor_enter);
-    glfwSetCursorPosCallback(viewportData->handle, handle_cursor_pos);
-    glfwSetWindowFocusCallback(viewportData->handle, handle_focus);
-    glfwSetKeyCallback(viewportData->handle, handle_key);
-    glfwSetMouseButtonCallback(viewportData->handle, handle_mouse_button);
-    glfwSetScrollCallback(viewportData->handle, handle_scroll);
+    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
 
     // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(viewportData->handle, true);
+    ImGui_ImplSDL3_InitForOpenGL(viewportData->handle, viewportData->gl_handle);
 
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
 }
     
@@ -371,21 +365,21 @@ void
 mvMaximizeViewport(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    glfwMaximizeWindow(viewportData->handle);
+    SDL_MaximizeWindow(viewportData->handle);
 }
 
 void
 mvMinimizeViewport(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    glfwIconifyWindow(viewportData->handle);
+    SDL_MinimizeWindow(viewportData->handle);
 }
 
 void
 mvRestoreViewport(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    glfwRestoreWindow(viewportData->handle);
+    SDL_RestoreWindow(viewportData->handle);
 }
 
 static bool FastActivityCheck()
@@ -422,16 +416,15 @@ mvRenderFrame(mvViewport& viewport,
               bool can_skip_presenting)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    (void)viewportData;
 
     viewportData->primary_gl_context.lock();
-    glfwMakeContextCurrent(viewportData->handle);
+    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
     if (GImGui->CurrentWindow == nullptr)
@@ -483,49 +476,33 @@ mvToggleFullScreen(mvViewport& viewport)
     static int    storedYPos = 0;
 
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    int framerate = -1;
-    if (viewport.vsync)
-    {
-        framerate = mode->refreshRate;
-    }
-
-    if (viewport.fullScreen)
-    {
-        glfwSetWindowMonitor(viewportData->handle, nullptr, storedXPos, storedYPos, storedWidth, storedHeight, framerate);
-        viewport.fullScreen = false;
-    }
-    else
-    {
+    SDL_SetWindowFullscreen(viewportData->handle, viewport.fullScreen);
+    /*
         storedWidth = (size_t)viewport.actualWidth;
         storedHeight = (size_t)viewport.actualHeight;
         storedXPos = viewport.xpos;
         storedYPos = viewport.ypos;
-        glfwSetWindowMonitor(viewportData->handle, monitor, 0, 0, mode->width, mode->height, framerate);
-        viewport.fullScreen = true;
-    }
+    */
 }
 
 void mvWakeRendering(mvViewport& viewport)
 {
     viewport.needs_refresh.store(true);
-    glfwPostEmptyEvent();
+    //glfwPostEmptyEvent(); TODO
 }
 
 void mvMakeUploadContextCurrent(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     viewportData->secondary_gl_context.lock();
-    glfwMakeContextCurrent(viewportData->secondary_handle);
+    SDL_GL_MakeCurrent(viewportData->secondary_handle, viewportData->secondary_gl_handle);
 }
 
 void mvReleaseUploadContext(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     glFlush();
-    glfwMakeContextCurrent(NULL);
+    SDL_GL_MakeCurrent(viewportData->secondary_handle, viewportData->gl_handle);
     viewportData->secondary_gl_context.unlock();
     viewport.needs_refresh.store(true);
 }
