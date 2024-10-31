@@ -74,7 +74,6 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
     viewport->actualHeight = display_h;
     viewport->clientWidth = display_w;
     viewport->clientHeight = display_h;
-    SDL_GetWindowSizeInPixels(viewportData->handle, &display_w, &display_h);
 
     int current_interval, desired_interval;
     SDL_GL_GetSwapInterval(&current_interval);
@@ -116,7 +115,7 @@ mvProcessEvents(mvViewport* viewport)
         float dpi = SDL_GetWindowPixelDensity(viewportData->handle);
         SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport->maxwidth/dpi), (int)(viewport->maxheight/dpi));
         SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport->minwidth/dpi), (int)(viewport->minheight/dpi));
-        SDL_SetWindowSize(viewportData->handle, (viewport->actualWidth/dpi), (viewport->actualHeight/dpi));
+        SDL_SetWindowSize(viewportData->handle, (int)(viewport->actualWidth/dpi), (int)(viewport->actualHeight/dpi));
         viewport->sizeDirty = false;
     }
 
@@ -304,15 +303,16 @@ mvShowViewport(mvViewport& viewport,
     viewportData->gl_handle = SDL_GL_CreateContext(viewportData->handle);
     SDL_GL_MakeCurrent(viewportData->handle, NULL);
     SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
+    viewportData->secondary_gl_context.unlock();
     //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos); // SDL_SetWindowPosition
     float dpi = SDL_GetWindowPixelDensity(viewportData->handle);
     if (dpi != 1.)
-        SDL_SetWindowSize(viewportData->handle, (viewport.actualWidth/dpi), (viewport.actualHeight/dpi));
+        SDL_SetWindowSize(viewportData->handle, (int)(viewport.actualWidth/dpi), (int)(viewport.actualHeight/dpi));
     SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth/dpi), (int)(viewport.maxheight/dpi));
     SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth/dpi), (int)(viewport.minheight/dpi));
     SDL_ShowWindow(viewportData->handle);
     if (dpi != SDL_GetWindowPixelDensity(viewportData->handle)) {
-        SDL_SetWindowSize(viewportData->handle, (viewport.actualWidth/dpi), (viewport.actualHeight/dpi));
+        SDL_SetWindowSize(viewportData->handle, (int)(viewport.actualWidth/dpi), (int)(viewport.actualHeight/dpi));
         SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth/dpi), (int)(viewport.maxheight/dpi));
         SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth/dpi), (int)(viewport.minheight/dpi));
     }
@@ -504,7 +504,7 @@ void mvReleaseUploadContext(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     glFlush();
-    SDL_GL_MakeCurrent(viewportData->secondary_handle, viewportData->gl_handle);
+    SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
     viewportData->secondary_gl_context.unlock();
     viewport.needs_refresh.store(true);
 }
