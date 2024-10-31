@@ -320,7 +320,9 @@ mvShowViewport(mvViewport& viewport,
     viewport.clientHeight = viewport.actualHeight;
     viewport.clientWidth = viewport.actualWidth;
     // Not the same as previous dpi
-    viewport.dpi = SDL_GetWindowDisplayScale(viewportData->handle);
+    dpi = SDL_GetWindowDisplayScale(viewportData->handle);
+    if (dpi > viewport.dpi)
+        viewport.dpi = dpi;
 
     //std::vector<GLFWimage> images;
 

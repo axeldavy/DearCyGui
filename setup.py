@@ -55,18 +55,27 @@ def build_SDL3():
         '-DSDL_EXAMPLES=OFF',
         '-DSDL_TESTS=OFF',
         '-DSDL_TEST_LIBRARY=OFF',
-        '-DSDL_DISABLE_INSTALL=OFF',
-        '-DSDL_DISABLE_INSTALL_DOCS=OFF',
+        '-DSDL_DISABLE_INSTALL=ON',
+        '-DSDL_DISABLE_INSTALL_DOCS=OON',
         '-DCMAKE_POSITION_INDEPENDENT_CODE=ON'
     ]
-    command = 'cmake -S thirdparty/SDL/ -B build ' + ' '.join(cmake_config_args)
+    command = 'cmake -S thirdparty/SDL/ -B build_SDL ' + ' '.join(cmake_config_args)
     subprocess.check_call(command, shell=True)
-    cur_path = os.getcwd()
-    os.chdir("build")
-    command = 'make'
+    command = 'cmake --build build_SDL'
     subprocess.check_call(command, shell=True)
-    os.chdir(cur_path)
-    return os.path.abspath(os.path.join("build", "libSDL3.a"))
+    return os.path.abspath(os.path.join("build_SDL", "libSDL3.a"))
+
+def build_FREETYPE():
+    src_path = os.path.dirname(os.path.abspath(__file__))
+    cmake_config_args = [
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_POSITION_INDEPENDENT_CODE=ON'
+    ]
+    command = 'cmake -S thirdparty/freetype/ -B build_FT ' + ' '.join(cmake_config_args)
+    subprocess.check_call(command, shell=True)
+    command = 'cmake --build build_FT'
+    subprocess.check_call(command, shell=True)
+    return os.path.abspath(os.path.join("build_FT", "libfreetype.a"))
 
 def setup_package():
 
@@ -77,6 +86,7 @@ def setup_package():
 
     # Build dependencies
     sdl3_lib = build_SDL3()
+    FT_lib = build_FREETYPE()
 
     # import readme content
     with open("./README.md", encoding='utf-8') as f:
@@ -90,9 +100,9 @@ def setup_package():
                     "thirdparty/imnodes",
                     "thirdparty/implot",
                     "thirdparty/gl3w",
+                    "thirdparty/freetype/include",
                     "thirdparty/SDL/include"]
     include_dirs += [np.get_include()]
-    include_dirs += ["/usr/include/freetype2/"] # TODO
 
     cpp_sources = [
         "dearcygui/backends/sdl3_gl3_backend.cpp",
@@ -123,16 +133,16 @@ def setup_package():
                     "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",
                     "-DMV_SANDBOX_VERSION=\"master\""]
     linking_args = ['-O3']
-    libraries = ['freetype']
 
     if get_platform() == "Linux":
         compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
-        libraries += ["crypt", "pthread", "dl", "util", "m", "GL"]
+        libraries = ["crypt", "pthread", "dl", "util", "m", "GL"]
     elif get_platform() == "OS X":
         compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
                          "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\"", \
                          "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+        libraries = []
 
     else:
         raise ValueError("Unsupported plateform")
@@ -146,7 +156,7 @@ def setup_package():
             extra_compile_args=compile_args,
             libraries=libraries,
             extra_link_args=linking_args,
-            extra_objects=[sdl3_lib]
+            extra_objects=[sdl3_lib, FT_lib]
         )
     ]
     secondary_cython_sources = [
