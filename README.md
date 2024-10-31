@@ -27,3 +27,7 @@ This means performance gains can be obtained even using only Python on the appli
 - There will be a small performance boost since Cython generates more optimized code to access the input arguments
 - Using the objects instead of the tags in application code will give a more significant boost. For example ```my_python_object.show = True``` will directly call a function that sets the value of ```show```. Unlike with ```dpg.configure_item(tag, show=True)``` which has to check the kwargs dictionnary passed to find which fields need to be updated. Fewer CPython calls are generated.
 - The simplicity brought by using Cython means multithreading can be handled more simply on DearCyGui side. We should be able to manipulate several objects from several Python threads without a global DearPyGui lock.
+
+
+Portions of this software are copyright © 2024 The FreeType
+Project (www.freetype.org).  All rights reserved.

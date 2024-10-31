@@ -3470,7 +3470,7 @@ cdef class DrawImage_(drawingItem):
         cdef imgui.ImVec2 ipmax = imgui.ImVec2(pmax[0], pmax[1])
         cdef imgui.ImVec2 uvmin = imgui.ImVec2(self.uv[0], self.uv[1])
         cdef imgui.ImVec2 uvmax = imgui.ImVec2(self.uv[2], self.uv[3])
-        drawlist.AddImage(self.texture.allocated_texture, ipmin, ipmax, uvmin, uvmax, self.color_multiplier)
+        drawlist.AddImage(<imgui.ImTextureID>self.texture.allocated_texture, ipmin, ipmax, uvmin, uvmax, self.color_multiplier)
 
 
 cdef class DrawImageQuad_(drawingItem):
@@ -3514,7 +3514,7 @@ cdef class DrawImageQuad_(drawingItem):
         cdef imgui.ImVec2 iuv2 = imgui.ImVec2(self.uv2[0], self.uv2[1])
         cdef imgui.ImVec2 iuv3 = imgui.ImVec2(self.uv3[0], self.uv3[1])
         cdef imgui.ImVec2 iuv4 = imgui.ImVec2(self.uv4[0], self.uv4[1])
-        drawlist.AddImageQuad(self.texture.allocated_texture, \
+        drawlist.AddImageQuad(<imgui.ImTextureID>self.texture.allocated_texture, \
             ip1, ip2, ip3, ip4, iuv1, iuv2, iuv3, iuv4, self.color_multiplier)
 
 
@@ -8834,7 +8834,7 @@ cdef class Image(uiItem):
             size.y = self._texture._height
 
         imgui.PushID(self.uuid)
-        imgui.Image(self._texture.allocated_texture,
+        imgui.Image(<imgui.ImTextureID>self._texture.allocated_texture,
                     size,
                     imgui.ImVec2(self._uv[0], self._uv[1]),
                     imgui.ImVec2(self._uv[2], self._uv[3]),
@@ -8934,7 +8934,7 @@ cdef class ImageButton(uiItem):
                                             <float>self._frame_padding))
         cdef bint activated
         activated = imgui.ImageButton(self.imgui_label.c_str(),
-                                      self._texture.allocated_texture,
+                                      <imgui.ImTextureID>self._texture.allocated_texture,
                                       size,
                                       imgui.ImVec2(self._uv[0], self._uv[1]),
                                       imgui.ImVec2(self._uv[2], self._uv[3]),
@@ -10537,7 +10537,7 @@ cdef class CollapsingHeader(uiItem):
 
 cdef class ChildWindow(uiItem):
     def __cinit__(self):
-        self.child_flags = imgui.ImGuiChildFlags_Border | imgui.ImGuiChildFlags_NavFlattened
+        self.child_flags = imgui.ImGuiChildFlags_Borders | imgui.ImGuiChildFlags_NavFlattened
         self.window_flags = imgui.ImGuiWindowFlags_NoSavedSettings
         # TODO scrolling
         self.can_have_widget_child = True
@@ -10687,15 +10687,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_Border) != 0
+        return (self.child_flags & imgui.ImGuiChildFlags_Borders) != 0
 
     @border.setter
     def border(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_Border
+        self.child_flags &= ~imgui.ImGuiChildFlags_Borders
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_Border
+            self.child_flags |= imgui.ImGuiChildFlags_Borders
 
     @property
     def always_auto_resize(self):
@@ -12454,7 +12454,7 @@ cdef class FontTexture(baseItem):
         self._texture.set_value(np.asarray(data_array, dtype=np.uint8))
         assert(self._texture.allocated_texture != NULL)
         self._texture.readonly = True
-        self.atlas.SetTexID(self._texture.allocated_texture)
+        self.atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
 
         # Release temporary CPU memory
         self.atlas.ClearInputData()

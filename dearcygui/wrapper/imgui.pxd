@@ -1,35 +1,35 @@
 
 #generated with pxdgen thirdparty/imgui/imgui.h -x c++ -f defines -f includerefs -f importall -w ImGui 
 
+
+
 cdef extern from "imgui.h" nogil:
-    struct ImGuiContext:
-        pass
     struct ImFontBuilderIO:
         pass
     struct ImDrawListSharedData:
         pass
+    struct ImGuiContext:
+        pass
     int IMGUI_VERSION
-    long IMGUI_VERSION_NUM = 19100
+    long IMGUI_VERSION_NUM = 19140
     int IMGUI_HAS_TABLE
-    int IMGUI_HAS_VIEWPORT
-    int IMGUI_HAS_DOCK
     int IMGUI_API
     int IMGUI_IMPL_API
-    int IM_ASSERT(...)
-    int IM_ARRAYSIZE(...)
-    int IM_UNUSED(...)
-    int IMGUI_CHECKVERSION(...)
-    int IM_FMTARGS(...)
-    int IM_FMTLIST(...)
+    const int IM_ASSERT(...)
+    const int IM_ARRAYSIZE(...)
+    const int IM_UNUSED(...)
+    const int IMGUI_CHECKVERSION(...)
+    const int IM_FMTARGS(...)
+    const int IM_FMTLIST(...)
     int IM_MSVC_RUNTIME_CHECKS_OFF
     int IM_MSVC_RUNTIME_CHECKS_RESTORE
     int IMGUI_PAYLOAD_TYPE_COLOR_3F
     int IMGUI_PAYLOAD_TYPE_COLOR_4F
-    int IMGUI_DEBUG_LOG(...)
-    int IM_ALLOC(...)
-    int IM_FREE(...)
-    int IM_PLACEMENT_NEW(...)
-    int IM_NEW(...)
+    const int IMGUI_DEBUG_LOG(...)
+    const int IM_ALLOC(...)
+    const int IM_FREE(...)
+    const int IM_PLACEMENT_NEW(...)
+    const int IM_NEW(...)
     unsigned long IM_UNICODE_CODEPOINT_INVALID = 0xFFFD
     unsigned long IM_UNICODE_CODEPOINT_MAX = 0xFFFF
     long IM_COL32_R_SHIFT = 0
@@ -37,13 +37,13 @@ cdef extern from "imgui.h" nogil:
     long IM_COL32_B_SHIFT = 16
     long IM_COL32_A_SHIFT = 24
     unsigned long IM_COL32_A_MASK = 0xFF000000
-    int IM_COL32(...)
+    const int IM_COL32(...)
     int IM_COL32_WHITE
     int IM_COL32_BLACK
     int IM_COL32_BLACK_TRANS
     int IM_DRAWLIST_TEX_LINES_WIDTH_MAX
     int ImDrawCallback_ResetRenderState
-    int IM_OFFSETOF(...)
+    const int IM_OFFSETOF(...)
     ctypedef unsigned int ImGuiID
     ctypedef signed char ImS8
     ctypedef unsigned char ImU8
@@ -69,7 +69,6 @@ cdef extern from "imgui.h" nogil:
     ctypedef int ImGuiColorEditFlags
     ctypedef int ImGuiConfigFlags
     ctypedef int ImGuiComboFlags
-    ctypedef int ImGuiDockNodeFlags
     ctypedef int ImGuiDragDropFlags
     ctypedef int ImGuiFocusedFlags
     ctypedef int ImGuiHoveredFlags
@@ -89,7 +88,7 @@ cdef extern from "imgui.h" nogil:
     ctypedef int ImGuiTreeNodeFlags
     ctypedef int ImGuiViewportFlags
     ctypedef int ImGuiWindowFlags
-    ctypedef void* ImTextureID
+    ctypedef ImU64 ImTextureID
     ctypedef unsigned short ImDrawIdx
     ctypedef unsigned int ImWchar32
     ctypedef unsigned short ImWchar16
@@ -97,15 +96,15 @@ cdef extern from "imgui.h" nogil:
     ctypedef ImS64 ImGuiSelectionUserData
     ctypedef int (*ImGuiInputTextCallback)(ImGuiInputTextCallbackData*)
     ctypedef void (*ImGuiSizeCallback)(ImGuiSizeCallbackData*)
-    ctypedef void* (*ImGuiMemAllocFunc)(size_t, void*)
+    ctypedef void* (*ImGuiMemAllocFunc)(int, void*)
     ctypedef void (*ImGuiMemFreeFunc)(void*, void*)
     cppclass ImVec2:
         float x
         float y
         ImVec2()
         ImVec2(float, float)
-        float& operator[](size_t)
-        float operator[](size_t)
+        float& operator[](int)
+        float operator[](int)
     cppclass ImVec4:
         float x
         float y
@@ -134,7 +133,6 @@ cdef extern from "imgui.h" nogil:
         ImGuiWindowFlags_NoNavInputs = 65536
         ImGuiWindowFlags_NoNavFocus = 131072
         ImGuiWindowFlags_UnsavedDocument = 262144
-        ImGuiWindowFlags_NoDocking = 524288
         ImGuiWindowFlags_NoNav = 196608
         ImGuiWindowFlags_NoDecoration = 43
         ImGuiWindowFlags_NoInputs = 197120
@@ -143,12 +141,11 @@ cdef extern from "imgui.h" nogil:
         ImGuiWindowFlags_Popup = 67108864
         ImGuiWindowFlags_Modal = 134217728
         ImGuiWindowFlags_ChildMenu = 268435456
-        ImGuiWindowFlags_DockNodeHost = 536870912
         ImGuiWindowFlags_AlwaysUseWindowPadding = 1073741824
         ImGuiWindowFlags_NavFlattened = -2147483648
     enum ImGuiChildFlags_:
         ImGuiChildFlags_None = 0
-        ImGuiChildFlags_Border = 1
+        ImGuiChildFlags_Borders = 1
         ImGuiChildFlags_AlwaysUseWindowPadding = 2
         ImGuiChildFlags_ResizeX = 4
         ImGuiChildFlags_ResizeY = 8
@@ -157,6 +154,7 @@ cdef extern from "imgui.h" nogil:
         ImGuiChildFlags_AlwaysAutoResize = 64
         ImGuiChildFlags_FrameStyle = 128
         ImGuiChildFlags_NavFlattened = 256
+        ImGuiChildFlags_Border = 1
     enum ImGuiItemFlags_:
         ImGuiItemFlags_None = 0
         ImGuiItemFlags_NoTabStop = 1
@@ -164,6 +162,7 @@ cdef extern from "imgui.h" nogil:
         ImGuiItemFlags_NoNavDefaultFocus = 4
         ImGuiItemFlags_ButtonRepeat = 8
         ImGuiItemFlags_AutoClosePopups = 16
+        ImGuiItemFlags_AllowDuplicateId = 32
     enum ImGuiInputTextFlags_:
         ImGuiInputTextFlags_None = 0
         ImGuiInputTextFlags_CharsDecimal = 1
@@ -273,7 +272,6 @@ cdef extern from "imgui.h" nogil:
         ImGuiFocusedFlags_RootWindow = 2
         ImGuiFocusedFlags_AnyWindow = 4
         ImGuiFocusedFlags_NoPopupHierarchy = 8
-        ImGuiFocusedFlags_DockHierarchy = 16
         ImGuiFocusedFlags_RootAndChildWindows = 3
     enum ImGuiHoveredFlags_:
         ImGuiHoveredFlags_None = 0
@@ -281,7 +279,6 @@ cdef extern from "imgui.h" nogil:
         ImGuiHoveredFlags_RootWindow = 2
         ImGuiHoveredFlags_AnyWindow = 4
         ImGuiHoveredFlags_NoPopupHierarchy = 8
-        ImGuiHoveredFlags_DockHierarchy = 16
         ImGuiHoveredFlags_AllowWhenBlockedByPopup = 32
         ImGuiHoveredFlags_AllowWhenBlockedByActiveItem = 128
         ImGuiHoveredFlags_AllowWhenOverlappedByItem = 256
@@ -297,17 +294,6 @@ cdef extern from "imgui.h" nogil:
         ImGuiHoveredFlags_DelayShort = 32768
         ImGuiHoveredFlags_DelayNormal = 65536
         ImGuiHoveredFlags_NoSharedDelay = 131072
-    enum ImGuiDockNodeFlags_:
-        ImGuiDockNodeFlags_None = 0
-        ImGuiDockNodeFlags_KeepAliveOnly = 1
-        ImGuiDockNodeFlags_NoDockingOverCentralNode = 4
-        ImGuiDockNodeFlags_PassthruCentralNode = 8
-        ImGuiDockNodeFlags_NoDockingSplit = 16
-        ImGuiDockNodeFlags_NoResize = 32
-        ImGuiDockNodeFlags_AutoHideTabBar = 64
-        ImGuiDockNodeFlags_NoUndocking = 128
-        ImGuiDockNodeFlags_NoSplit = 16
-        ImGuiDockNodeFlags_NoDockingInCentralNode = 4
     enum ImGuiDragDropFlags_:
         ImGuiDragDropFlags_None = 0
         ImGuiDragDropFlags_SourceNoPreviewTooltip = 1
@@ -554,26 +540,19 @@ cdef extern from "imgui.h" nogil:
         ImGuiConfigFlags_None = 0
         ImGuiConfigFlags_NavEnableKeyboard = 1
         ImGuiConfigFlags_NavEnableGamepad = 2
-        ImGuiConfigFlags_NavEnableSetMousePos = 4
-        ImGuiConfigFlags_NavNoCaptureKeyboard = 8
         ImGuiConfigFlags_NoMouse = 16
         ImGuiConfigFlags_NoMouseCursorChange = 32
         ImGuiConfigFlags_NoKeyboard = 64
-        ImGuiConfigFlags_DockingEnable = 128
-        ImGuiConfigFlags_ViewportsEnable = 1024
-        ImGuiConfigFlags_DpiEnableScaleViewports = 16384
-        ImGuiConfigFlags_DpiEnableScaleFonts = 32768
         ImGuiConfigFlags_IsSRGB = 1048576
         ImGuiConfigFlags_IsTouchScreen = 2097152
+        ImGuiConfigFlags_NavEnableSetMousePos = 4
+        ImGuiConfigFlags_NavNoCaptureKeyboard = 8
     enum ImGuiBackendFlags_:
         ImGuiBackendFlags_None = 0
         ImGuiBackendFlags_HasGamepad = 1
         ImGuiBackendFlags_HasMouseCursors = 2
         ImGuiBackendFlags_HasSetMousePos = 4
         ImGuiBackendFlags_RendererHasVtxOffset = 8
-        ImGuiBackendFlags_PlatformHasViewports = 1024
-        ImGuiBackendFlags_HasMouseHoveredViewport = 2048
-        ImGuiBackendFlags_RendererHasViewports = 4096
     enum ImGuiCol_:
         ImGuiCol_Text = 0
         ImGuiCol_TextDisabled = 1
@@ -615,28 +594,27 @@ cdef extern from "imgui.h" nogil:
         ImGuiCol_TabDimmed = 37
         ImGuiCol_TabDimmedSelected = 38
         ImGuiCol_TabDimmedSelectedOverline = 39
-        ImGuiCol_DockingPreview = 40
-        ImGuiCol_DockingEmptyBg = 41
-        ImGuiCol_PlotLines = 42
-        ImGuiCol_PlotLinesHovered = 43
-        ImGuiCol_PlotHistogram = 44
-        ImGuiCol_PlotHistogramHovered = 45
-        ImGuiCol_TableHeaderBg = 46
-        ImGuiCol_TableBorderStrong = 47
-        ImGuiCol_TableBorderLight = 48
-        ImGuiCol_TableRowBg = 49
-        ImGuiCol_TableRowBgAlt = 50
-        ImGuiCol_TextLink = 51
-        ImGuiCol_TextSelectedBg = 52
-        ImGuiCol_DragDropTarget = 53
-        ImGuiCol_NavHighlight = 54
-        ImGuiCol_NavWindowingHighlight = 55
-        ImGuiCol_NavWindowingDimBg = 56
-        ImGuiCol_ModalWindowDimBg = 57
-        ImGuiCol_COUNT = 58
+        ImGuiCol_PlotLines = 40
+        ImGuiCol_PlotLinesHovered = 41
+        ImGuiCol_PlotHistogram = 42
+        ImGuiCol_PlotHistogramHovered = 43
+        ImGuiCol_TableHeaderBg = 44
+        ImGuiCol_TableBorderStrong = 45
+        ImGuiCol_TableBorderLight = 46
+        ImGuiCol_TableRowBg = 47
+        ImGuiCol_TableRowBgAlt = 48
+        ImGuiCol_TextLink = 49
+        ImGuiCol_TextSelectedBg = 50
+        ImGuiCol_DragDropTarget = 51
+        ImGuiCol_NavCursor = 52
+        ImGuiCol_NavWindowingHighlight = 53
+        ImGuiCol_NavWindowingDimBg = 54
+        ImGuiCol_ModalWindowDimBg = 55
+        ImGuiCol_COUNT = 56
         ImGuiCol_TabActive = 35
         ImGuiCol_TabUnfocused = 37
         ImGuiCol_TabUnfocusedActive = 38
+        ImGuiCol_NavHighlight = 52
     enum ImGuiStyleVar_:
         ImGuiStyleVar_Alpha = 0
         ImGuiStyleVar_DisabledAlpha = 1
@@ -671,14 +649,14 @@ cdef extern from "imgui.h" nogil:
         ImGuiStyleVar_SeparatorTextBorderSize = 30
         ImGuiStyleVar_SeparatorTextAlign = 31
         ImGuiStyleVar_SeparatorTextPadding = 32
-        ImGuiStyleVar_DockingSeparatorSize = 33
-        ImGuiStyleVar_COUNT = 34
+        ImGuiStyleVar_COUNT = 33
     enum ImGuiButtonFlags_:
         ImGuiButtonFlags_None = 0
         ImGuiButtonFlags_MouseButtonLeft = 1
         ImGuiButtonFlags_MouseButtonRight = 2
         ImGuiButtonFlags_MouseButtonMiddle = 4
         ImGuiButtonFlags_MouseButtonMask_ = 7
+        ImGuiButtonFlags_EnableNav = 8
     enum ImGuiColorEditFlags_:
         ImGuiColorEditFlags_None = 0
         ImGuiColorEditFlags_NoAlpha = 2
@@ -711,11 +689,13 @@ cdef extern from "imgui.h" nogil:
         ImGuiColorEditFlags_InputMask_ = 402653184
     enum ImGuiSliderFlags_:
         ImGuiSliderFlags_None = 0
-        ImGuiSliderFlags_AlwaysClamp = 16
         ImGuiSliderFlags_Logarithmic = 32
         ImGuiSliderFlags_NoRoundToFormat = 64
         ImGuiSliderFlags_NoInput = 128
         ImGuiSliderFlags_WrapAround = 256
+        ImGuiSliderFlags_ClampOnInput = 512
+        ImGuiSliderFlags_ClampZeroRange = 1024
+        ImGuiSliderFlags_AlwaysClamp = 1536
         ImGuiSliderFlags_InvalidMask_ = 1879048207
     enum ImGuiMouseButton_:
         ImGuiMouseButton_Left = 0
@@ -833,7 +813,7 @@ cdef extern from "imgui.h" nogil:
         ImGuiTableColumnSortSpecs()
     struct ImNewWrapper:
         pass
-    #void* operator new(size_t, ImNewWrapper, void*)
+    #void* operator new(int, ImNewWrapper, void*)
     #void operator delete(void*, ImNewWrapper, void*)
     void IM_DELETE[T](T*)
     cppclass ImVector[T]:
@@ -927,14 +907,13 @@ cdef extern from "imgui.h" nogil:
         ImVec2 SeparatorTextPadding
         ImVec2 DisplayWindowPadding
         ImVec2 DisplaySafeAreaPadding
-        float DockingSeparatorSize
         float MouseCursorScale
         bint AntiAliasedLines
         bint AntiAliasedLinesUseTex
         bint AntiAliasedFill
         float CurveTessellationTol
         float CircleTessellationMaxError
-        ImVec4 Colors[58]
+        ImVec4 Colors[56]
         float HoverStationaryDelay
         float HoverDelayShort
         float HoverDelayNormal
@@ -963,30 +942,34 @@ cdef extern from "imgui.h" nogil:
         bint FontAllowUserScaling
         ImFont* FontDefault
         ImVec2 DisplayFramebufferScale
-        bint ConfigDockingNoSplit
-        bint ConfigDockingWithShift
-        bint ConfigDockingAlwaysTabBar
-        bint ConfigDockingTransparentPayload
-        bint ConfigViewportsNoAutoMerge
-        bint ConfigViewportsNoTaskBarIcon
-        bint ConfigViewportsNoDecoration
-        bint ConfigViewportsNoDefaultParent
+        bint ConfigNavSwapGamepadButtons
+        bint ConfigNavMoveSetMousePos
+        bint ConfigNavCaptureKeyboard
+        bint ConfigNavEscapeClearFocusItem
+        bint ConfigNavEscapeClearFocusWindow
+        bint ConfigNavCursorVisibleAuto
+        bint ConfigNavCursorVisibleAlways
         bint MouseDrawCursor
         bint ConfigMacOSXBehaviors
-        bint ConfigNavSwapGamepadButtons
         bint ConfigInputTrickleEventQueue
         bint ConfigInputTextCursorBlink
         bint ConfigInputTextEnterKeepActive
         bint ConfigDragClickToInputText
         bint ConfigWindowsResizeFromEdges
         bint ConfigWindowsMoveFromTitleBarOnly
+        bint ConfigScrollbarScrollByPage
         float ConfigMemoryCompactTimer
         float MouseDoubleClickTime
         float MouseDoubleClickMaxDist
         float MouseDragThreshold
         float KeyRepeatDelay
         float KeyRepeatRate
+        bint ConfigErrorRecovery
+        bint ConfigErrorRecoveryEnableAssert
+        bint ConfigErrorRecoveryEnableDebugLog
+        bint ConfigErrorRecoveryEnableTooltip
         bint ConfigDebugIsDebuggerPresent
+        bint ConfigDebugHighlightIdConflicts
         bint ConfigDebugBeginReturnValueOnce
         bint ConfigDebugBeginReturnValueLoop
         bint ConfigDebugIgnoreFocusLoss
@@ -996,20 +979,12 @@ cdef extern from "imgui.h" nogil:
         void* BackendPlatformUserData
         void* BackendRendererUserData
         void* BackendLanguageUserData
-        const char* (*GetClipboardTextFn)(void*)
-        void (*SetClipboardTextFn)(void*, const char*)
-        void* ClipboardUserData
-        bint (*PlatformOpenInShellFn)(ImGuiContext*, const char*)
-        void* PlatformOpenInShellUserData
-        void (*PlatformSetImeDataFn)(ImGuiContext*, ImGuiViewport*, ImGuiPlatformImeData*)
-        ImWchar PlatformLocaleDecimalPoint
         void AddKeyEvent(ImGuiKey, bint)
         void AddKeyAnalogEvent(ImGuiKey, bint, float)
         void AddMousePosEvent(float, float)
         void AddMouseButtonEvent(int, bint)
         void AddMouseWheelEvent(float, float)
         void AddMouseSourceEvent(ImGuiMouseSource)
-        void AddMouseViewportEvent(ImGuiID)
         void AddFocusEvent(bint)
         void AddInputCharacter(unsigned int)
         void AddInputCharacterUTF16(ImWchar16)
@@ -1039,7 +1014,6 @@ cdef extern from "imgui.h" nogil:
         float MouseWheel
         float MouseWheelH
         ImGuiMouseSource MouseSource
-        ImGuiID MouseHoveredViewport
         bint KeyCtrl
         bint KeyShift
         bint KeyAlt
@@ -1061,7 +1035,6 @@ cdef extern from "imgui.h" nogil:
         bint MouseCtrlLeftAsRightClick
         float MouseDownDuration[5]
         float MouseDownDurationPrev[5]
-        ImVec2 MouseDragMaxDistanceAbs[5]
         float MouseDragMaxDistanceSqr[5]
         float PenPressure
         bint AppFocusLost
@@ -1073,6 +1046,9 @@ cdef extern from "imgui.h" nogil:
         int KeyMap[666]
         bint KeysDown[666]
         float NavInputs[16]
+        const char* (*GetClipboardTextFn)(void*)
+        void (*SetClipboardTextFn)(void*, const char*)
+        void* ClipboardUserData
         ImGuiIO()
     struct ImGuiContext:
         pass
@@ -1102,17 +1078,6 @@ cdef extern from "imgui.h" nogil:
         ImVec2 Pos
         ImVec2 CurrentSize
         ImVec2 DesiredSize
-    cppclass ImGuiWindowClass:
-        ImGuiID ClassId
-        ImGuiID ParentViewportId
-        ImGuiID FocusRouteParentWindowId
-        ImGuiViewportFlags ViewportFlagsOverrideSet
-        ImGuiViewportFlags ViewportFlagsOverrideClear
-        ImGuiTabItemFlags TabItemFlagsOverrideSet
-        ImGuiDockNodeFlags DockNodeFlagsOverrideSet
-        bint DockingAlwaysTabBar
-        bint DockingAllowUnclassed
-        ImGuiWindowClass()
     cppclass ImGuiPayload:
         void* Data
         int DataSize
@@ -1165,7 +1130,7 @@ cdef extern from "imgui.h" nogil:
         void append(const char*)
         void append(const char*, const char*)
         void appendf(const char*)
-        void appendfv(const char*, va_list)
+        void appendfv(const char*, int)
     union pxdgen_anon_ImGuiStoragePair_0:
         int val_i
         float val_f
@@ -1287,6 +1252,8 @@ cdef extern from "imgui.h" nogil:
         unsigned int ElemCount
         ImDrawCallback UserCallback
         void* UserCallbackData
+        int UserCallbackDataSize
+        int UserCallbackDataOffset
         ImDrawCmd()
         ImTextureID GetTexID()
     struct ImDrawVert:
@@ -1347,6 +1314,7 @@ cdef extern from "imgui.h" nogil:
         ImDrawListSplitter _Splitter
         ImVector[ImVec4] _ClipRectStack
         ImVector[ImTextureID] _TextureIdStack
+        ImVector[ImU8] _CallbacksDataBuf
         float _FringeScale
         const char* _OwnerName
         ImDrawList(ImDrawListSharedData*)
@@ -1405,7 +1373,7 @@ cdef extern from "imgui.h" nogil:
         void PathBezierCubicCurveTo(ImVec2&, ImVec2&, ImVec2&, int)
         void PathBezierQuadraticCurveTo(ImVec2&, ImVec2&, int)
         void PathRect(ImVec2&, ImVec2&, float, ImDrawFlags)
-        void AddCallback(ImDrawCallback, void*)
+        void AddCallback(ImDrawCallback, void*, int)
         void AddDrawCmd()
         ImDrawList* CloneOutput()
         void ChannelsSplit(int)
@@ -1426,6 +1394,7 @@ cdef extern from "imgui.h" nogil:
         void _OnChangedClipRect()
         void _OnChangedTextureID()
         void _OnChangedVtxOffset()
+        void _SetTextureID(ImTextureID)
         int _CalcCircleAutoSegmentCount(float)
         void _PathArcToFastEx(ImVec2&, float, int, int, int)
         void _PathArcToN(ImVec2&, float, float, float, int)
@@ -1483,8 +1452,8 @@ cdef extern from "imgui.h" nogil:
         ImVector[ImU32] UsedChars
         ImFontGlyphRangesBuilder()
         void Clear()
-        bint GetBit(size_t)
-        void SetBit(size_t)
+        bint GetBit(int)
+        void SetBit(int)
         void AddChar(ImWchar)
         void AddText(const char*)
         void AddText(const char*, const char*)
@@ -1618,17 +1587,6 @@ cdef extern from "imgui.h" nogil:
         ImGuiViewportFlags_IsPlatformWindow = 1
         ImGuiViewportFlags_IsPlatformMonitor = 2
         ImGuiViewportFlags_OwnedByApp = 4
-        ImGuiViewportFlags_NoDecoration = 8
-        ImGuiViewportFlags_NoTaskBarIcon = 16
-        ImGuiViewportFlags_NoFocusOnAppearing = 32
-        ImGuiViewportFlags_NoFocusOnClick = 64
-        ImGuiViewportFlags_NoInputs = 128
-        ImGuiViewportFlags_NoRendererClear = 256
-        ImGuiViewportFlags_NoAutoMerge = 512
-        ImGuiViewportFlags_TopMost = 1024
-        ImGuiViewportFlags_CanHostOtherWindows = 2048
-        ImGuiViewportFlags_IsMinimized = 4096
-        ImGuiViewportFlags_IsFocused = 8192
     cppclass ImGuiViewport:
         ImGuiID ID
         ImGuiViewportFlags Flags
@@ -1636,55 +1594,22 @@ cdef extern from "imgui.h" nogil:
         ImVec2 Size
         ImVec2 WorkPos
         ImVec2 WorkSize
-        float DpiScale
-        ImGuiID ParentViewportId
-        ImDrawData* DrawData
-        void* RendererUserData
-        void* PlatformUserData
         void* PlatformHandle
         void* PlatformHandleRaw
-        bint PlatformWindowCreated
-        bint PlatformRequestMove
-        bint PlatformRequestResize
-        bint PlatformRequestClose
         ImGuiViewport()
         ImVec2 GetCenter()
         ImVec2 GetWorkCenter()
     cppclass ImGuiPlatformIO:
-        void (*Platform_CreateWindow)(ImGuiViewport*)
-        void (*Platform_DestroyWindow)(ImGuiViewport*)
-        void (*Platform_ShowWindow)(ImGuiViewport*)
-        void (*Platform_SetWindowPos)(ImGuiViewport*, ImVec2)
-        ImVec2 (*Platform_GetWindowPos)(ImGuiViewport*)
-        void (*Platform_SetWindowSize)(ImGuiViewport*, ImVec2)
-        ImVec2 (*Platform_GetWindowSize)(ImGuiViewport*)
-        void (*Platform_SetWindowFocus)(ImGuiViewport*)
-        bint (*Platform_GetWindowFocus)(ImGuiViewport*)
-        bint (*Platform_GetWindowMinimized)(ImGuiViewport*)
-        void (*Platform_SetWindowTitle)(ImGuiViewport*, const char*)
-        void (*Platform_SetWindowAlpha)(ImGuiViewport*, float)
-        void (*Platform_UpdateWindow)(ImGuiViewport*)
-        void (*Platform_RenderWindow)(ImGuiViewport*, void*)
-        void (*Platform_SwapBuffers)(ImGuiViewport*, void*)
-        float (*Platform_GetWindowDpiScale)(ImGuiViewport*)
-        void (*Platform_OnChangedViewport)(ImGuiViewport*)
-        int (*Platform_CreateVkSurface)(ImGuiViewport*, ImU64, const void*, ImU64*)
-        void (*Renderer_CreateWindow)(ImGuiViewport*)
-        void (*Renderer_DestroyWindow)(ImGuiViewport*)
-        void (*Renderer_SetWindowSize)(ImGuiViewport*, ImVec2)
-        void (*Renderer_RenderWindow)(ImGuiViewport*, void*)
-        void (*Renderer_SwapBuffers)(ImGuiViewport*, void*)
-        ImVector[ImGuiPlatformMonitor] Monitors
-        ImVector[ImGuiViewport] Viewports
         ImGuiPlatformIO()
-    cppclass ImGuiPlatformMonitor:
-        ImVec2 MainPos
-        ImVec2 MainSize
-        ImVec2 WorkPos
-        ImVec2 WorkSize
-        float DpiScale
-        void* PlatformHandle
-        ImGuiPlatformMonitor()
+        const char* (*Platform_GetClipboardTextFn)(ImGuiContext*)
+        void (*Platform_SetClipboardTextFn)(ImGuiContext*, const char*)
+        void* Platform_ClipboardUserData
+        bint (*Platform_OpenInShellFn)(ImGuiContext*, const char*)
+        void* Platform_OpenInShellUserData
+        void (*Platform_SetImeDataFn)(ImGuiContext*, ImGuiViewport*, ImGuiPlatformImeData*)
+        void* Platform_ImeUserData
+        ImWchar Platform_LocaleDecimalPoint
+        void* Renderer_RenderState
     cppclass ImGuiPlatformImeData:
         bint WantVisible
         ImVec2 InputPos
@@ -1693,14 +1618,10 @@ cdef extern from "imgui.h" nogil:
 
 
 
-
-cdef extern from "imgui.h" namespace "ImGuiTextBuffer":
-    char EmptyString[1]
-
 cdef extern from "imgui.h" namespace "ImGui" nogil:
-    struct ImGuiContext:
-        pass
     struct ImDrawListSharedData:
+        pass
+    struct ImGuiContext:
         pass
     ImGuiContext* CreateContext()
     ImGuiContext* CreateContext(ImFontAtlas*)
@@ -1709,6 +1630,7 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     ImGuiContext* GetCurrentContext()
     void SetCurrentContext(ImGuiContext*)
     ImGuiIO& GetIO()
+    ImGuiPlatformIO& GetPlatformIO()
     ImGuiStyle& GetStyle()
     void NewFrame()
     void EndFrame()
@@ -1754,24 +1676,21 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     bint IsWindowFocused(ImGuiFocusedFlags)
     bint IsWindowHovered(ImGuiHoveredFlags)
     ImDrawList* GetWindowDrawList()
-    float GetWindowDpiScale()
     ImVec2 GetWindowPos()
     ImVec2 GetWindowSize()
     float GetWindowWidth()
     float GetWindowHeight()
-    ImGuiViewport* GetWindowViewport()
     void SetNextWindowPos(ImVec2&, ImGuiCond)
-    #void SetNextWindowPos(ImVec2&, ImGuiCond, ImVec2&)
+    void SetNextWindowPos(ImVec2&, ImGuiCond, ImVec2&)
     void SetNextWindowSize(ImVec2&, ImGuiCond)
     void SetNextWindowSizeConstraints(ImVec2&, ImVec2&)
-    #void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback)
-    #void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback, void*)
+    void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback)
+    void SetNextWindowSizeConstraints(ImVec2&, ImVec2&, ImGuiSizeCallback, void*)
     void SetNextWindowContentSize(ImVec2&)
     void SetNextWindowCollapsed(bint, ImGuiCond)
     void SetNextWindowFocus()
     void SetNextWindowScroll(ImVec2&)
     void SetNextWindowBgAlpha(float)
-    void SetNextWindowViewport(ImGuiID)
     void SetWindowPos(ImVec2&, ImGuiCond)
     void SetWindowSize(ImVec2&, ImGuiCond)
     void SetWindowCollapsed(bint, ImGuiCond)
@@ -1798,6 +1717,8 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void PopStyleColor(int)
     void PushStyleVar(ImGuiStyleVar, float)
     void PushStyleVar(ImGuiStyleVar, ImVec2&)
+    void PushStyleVarX(ImGuiStyleVar, float)
+    void PushStyleVarY(ImGuiStyleVar, float)
     void PopStyleVar(int)
     void PushItemFlag(ImGuiItemFlags, bint)
     void PopItemFlag()
@@ -1850,17 +1771,17 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void TextUnformatted(const char*)
     void TextUnformatted(const char*, const char*)
     void Text(const char*)
-    void TextV(const char*, va_list)
+    void TextV(const char*, int)
     void TextColored(ImVec4&, const char*)
-    void TextColoredV(ImVec4&, const char*, va_list)
+    void TextColoredV(ImVec4&, const char*, int)
     void TextDisabled(const char*)
-    void TextDisabledV(const char*, va_list)
+    void TextDisabledV(const char*, int)
     void TextWrapped(const char*)
-    void TextWrappedV(const char*, va_list)
+    void TextWrappedV(const char*, int)
     void LabelText(const char*, const char*)
-    void LabelTextV(const char*, const char*, va_list)
+    void LabelTextV(const char*, const char*, int)
     void BulletText(const char*)
-    void BulletTextV(const char*, va_list)
+    void BulletTextV(const char*, int)
     void SeparatorText(const char*)
     bint Button(const char*)
     bint Button(const char*, ImVec2&)
@@ -1978,17 +1899,17 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     bint VSliderScalar(const char*, ImVec2&, ImGuiDataType, void*, const void*, const void*)
     bint VSliderScalar(const char*, ImVec2&, ImGuiDataType, void*, const void*, const void*, const char*)
     bint VSliderScalar(const char*, ImVec2&, ImGuiDataType, void*, const void*, const void*, const char*, ImGuiSliderFlags)
-    bint InputText(const char*, char*, size_t, ImGuiInputTextFlags)
-    bint InputText(const char*, char*, size_t, ImGuiInputTextFlags, ImGuiInputTextCallback)
-    bint InputText(const char*, char*, size_t, ImGuiInputTextFlags, ImGuiInputTextCallback, void*)
-    bint InputTextMultiline(const char*, char*, size_t)
-    bint InputTextMultiline(const char*, char*, size_t, ImVec2&)
-    bint InputTextMultiline(const char*, char*, size_t, ImVec2&, ImGuiInputTextFlags)
-    bint InputTextMultiline(const char*, char*, size_t, ImVec2&, ImGuiInputTextFlags, ImGuiInputTextCallback)
-    bint InputTextMultiline(const char*, char*, size_t, ImVec2&, ImGuiInputTextFlags, ImGuiInputTextCallback, void*)
-    bint InputTextWithHint(const char*, const char*, char*, size_t, ImGuiInputTextFlags)
-    bint InputTextWithHint(const char*, const char*, char*, size_t, ImGuiInputTextFlags, ImGuiInputTextCallback)
-    bint InputTextWithHint(const char*, const char*, char*, size_t, ImGuiInputTextFlags, ImGuiInputTextCallback, void*)
+    bint InputText(const char*, char*, int, ImGuiInputTextFlags)
+    bint InputText(const char*, char*, int, ImGuiInputTextFlags, ImGuiInputTextCallback)
+    bint InputText(const char*, char*, int, ImGuiInputTextFlags, ImGuiInputTextCallback, void*)
+    bint InputTextMultiline(const char*, char*, int)
+    bint InputTextMultiline(const char*, char*, int, ImVec2&)
+    bint InputTextMultiline(const char*, char*, int, ImVec2&, ImGuiInputTextFlags)
+    bint InputTextMultiline(const char*, char*, int, ImVec2&, ImGuiInputTextFlags, ImGuiInputTextCallback)
+    bint InputTextMultiline(const char*, char*, int, ImVec2&, ImGuiInputTextFlags, ImGuiInputTextCallback, void*)
+    bint InputTextWithHint(const char*, const char*, char*, int, ImGuiInputTextFlags)
+    bint InputTextWithHint(const char*, const char*, char*, int, ImGuiInputTextFlags, ImGuiInputTextCallback)
+    bint InputTextWithHint(const char*, const char*, char*, int, ImGuiInputTextFlags, ImGuiInputTextCallback, void*)
     bint InputFloat(const char*, float*, float, float)
     bint InputFloat(const char*, float*, float, float, const char*)
     bint InputFloat(const char*, float*, float, float, const char*, ImGuiInputTextFlags)
@@ -2029,13 +1950,13 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     bint TreeNode(const char*)
     bint TreeNode(const char*, const char*)
     bint TreeNode(const void*, const char*)
-    bint TreeNodeV(const char*, const char*, va_list)
-    bint TreeNodeV(const void*, const char*, va_list)
+    bint TreeNodeV(const char*, const char*, int)
+    bint TreeNodeV(const void*, const char*, int)
     bint TreeNodeEx(const char*, ImGuiTreeNodeFlags)
     bint TreeNodeEx(const char*, ImGuiTreeNodeFlags, const char*)
     bint TreeNodeEx(const void*, ImGuiTreeNodeFlags, const char*)
-    bint TreeNodeExV(const char*, ImGuiTreeNodeFlags, const char*, va_list)
-    bint TreeNodeExV(const void*, ImGuiTreeNodeFlags, const char*, va_list)
+    bint TreeNodeExV(const char*, ImGuiTreeNodeFlags, const char*, int)
+    bint TreeNodeExV(const void*, ImGuiTreeNodeFlags, const char*, int)
     void TreePush(const char*)
     void TreePush(const void*)
     void TreePop()
@@ -2098,10 +2019,10 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     bint BeginTooltip()
     void EndTooltip()
     void SetTooltip(const char*)
-    void SetTooltipV(const char*, va_list)
+    void SetTooltipV(const char*, int)
     bint BeginItemTooltip()
     void SetItemTooltip(const char*)
-    void SetItemTooltipV(const char*, va_list)
+    void SetItemTooltipV(const char*, int)
     bint BeginPopup(const char*, ImGuiWindowFlags)
     bint BeginPopupModal(const char*)
     bint BeginPopupModal(const char*, bint*)
@@ -2163,19 +2084,6 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void EndTabItem()
     bint TabItemButton(const char*, ImGuiTabItemFlags)
     void SetTabItemClosed(const char*)
-    ImGuiID DockSpace(ImGuiID)
-    ImGuiID DockSpace(ImGuiID, ImVec2&)
-    ImGuiID DockSpace(ImGuiID, ImVec2&, ImGuiDockNodeFlags)
-    ImGuiID DockSpace(ImGuiID, ImVec2&, ImGuiDockNodeFlags, ImGuiWindowClass*)
-    ImGuiID DockSpaceOverViewport()
-    ImGuiID DockSpaceOverViewport(ImGuiID)
-    ImGuiID DockSpaceOverViewport(ImGuiID, ImGuiViewport*)
-    ImGuiID DockSpaceOverViewport(ImGuiID, ImGuiViewport*, ImGuiDockNodeFlags)
-    ImGuiID DockSpaceOverViewport(ImGuiID, ImGuiViewport*, ImGuiDockNodeFlags, ImGuiWindowClass*)
-    void SetNextWindowDockID(ImGuiID, ImGuiCond)
-    void SetNextWindowClass(ImGuiWindowClass*)
-    ImGuiID GetWindowDockID()
-    bint IsWindowDocked()
     void LogToTTY(int)
     void LogToFile(int)
     void LogToFile(int, const char*)
@@ -2183,9 +2091,9 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void LogFinish()
     void LogButtons()
     void LogText(const char*)
-    void LogTextV(const char*, va_list)
+    void LogTextV(const char*, int)
     bint BeginDragDropSource(ImGuiDragDropFlags)
-    bint SetDragDropPayload(const char*, const void*, size_t, ImGuiCond)
+    bint SetDragDropPayload(const char*, const void*, int, ImGuiCond)
     void EndDragDropSource()
     bint BeginDragDropTarget()
     ImGuiPayload* AcceptDragDropPayload(const char*, ImGuiDragDropFlags)
@@ -2197,6 +2105,7 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void PopClipRect()
     void SetItemDefaultFocus()
     void SetKeyboardFocusHere(int)
+    void SetNavCursorVisible(bint)
     void SetNextItemAllowOverlap()
     bint IsItemHovered(ImGuiHoveredFlags)
     bint IsItemActive()
@@ -2217,9 +2126,7 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     ImVec2 GetItemRectSize()
     ImGuiViewport* GetMainViewport()
     ImDrawList* GetBackgroundDrawList()
-    ImDrawList* GetBackgroundDrawList(ImGuiViewport*)
     ImDrawList* GetForegroundDrawList()
-    ImDrawList* GetForegroundDrawList(ImGuiViewport*)
     bint IsRectVisible(ImVec2&)
     bint IsRectVisible(ImVec2&, ImVec2&)
     double GetTime()
@@ -2266,30 +2173,21 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     const char* GetClipboardText()
     void SetClipboardText(const char*)
     void LoadIniSettingsFromDisk(const char*)
-    void LoadIniSettingsFromMemory(const char*)
-    void LoadIniSettingsFromMemory(const char*, size_t)
+    void LoadIniSettingsFromMemory(const char*, int)
     void SaveIniSettingsToDisk(const char*)
     const char* SaveIniSettingsToMemory()
-    const char* SaveIniSettingsToMemory(size_t*)
+    const char* SaveIniSettingsToMemory(int*)
     void DebugTextEncoding(const char*)
     void DebugFlashStyleColor(ImGuiCol)
     void DebugStartItemPicker()
-    bint DebugCheckVersionAndDataLayout(const char*, size_t, size_t, size_t, size_t, size_t, size_t)
+    bint DebugCheckVersionAndDataLayout(const char*, int, int, int, int, int, int)
     void DebugLog(const char*)
-    void DebugLogV(const char*, va_list)
+    void DebugLogV(const char*, int)
     void SetAllocatorFunctions(ImGuiMemAllocFunc, ImGuiMemFreeFunc)
     void SetAllocatorFunctions(ImGuiMemAllocFunc, ImGuiMemFreeFunc, void*)
     void GetAllocatorFunctions(ImGuiMemAllocFunc*, ImGuiMemFreeFunc*, void**)
-    void* MemAlloc(size_t)
+    void* MemAlloc(int)
     void MemFree(void*)
-    ImGuiPlatformIO& GetPlatformIO()
-    void UpdatePlatformWindows()
-    void RenderPlatformWindowsDefault()
-    void RenderPlatformWindowsDefault(void*)
-    void RenderPlatformWindowsDefault(void*, void*)
-    void DestroyPlatformWindows()
-    ImGuiViewport* FindViewportByID(ImGuiID)
-    ImGuiViewport* FindViewportByPlatformHandle(void*)
     void PushButtonRepeat(bint)
     void PopButtonRepeat()
     void PushTabStop(bint)
@@ -2306,13 +2204,8 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void SetItemAllowOverlap()
     void PushAllowKeyboardFocus(bint)
     void PopAllowKeyboardFocus()
-    bint ImageButton(ImTextureID, ImVec2&)
-    bint ImageButton(ImTextureID, ImVec2&, ImVec2&)
-    bint ImageButton(ImTextureID, ImVec2&, ImVec2&, ImVec2&)
-    bint ImageButton(ImTextureID, ImVec2&, ImVec2&, ImVec2&, int)
-    bint ImageButton(ImTextureID, ImVec2&, ImVec2&, ImVec2&, int, ImVec4&)
-    bint ImageButton(ImTextureID, ImVec2&, ImVec2&, ImVec2&, int, ImVec4&, ImVec4&)
     ImGuiKey GetKeyIndex(ImGuiKey)
+
 
 
 

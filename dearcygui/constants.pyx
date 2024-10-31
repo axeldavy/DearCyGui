@@ -330,8 +330,6 @@ class constants:
     mvThemeCol_TabActive = imgui.ImGuiCol_TabActive
     mvThemeCol_TabUnfocused = imgui.ImGuiCol_TabUnfocused
     mvThemeCol_TabUnfocusedActive = imgui.ImGuiCol_TabUnfocusedActive
-    mvThemeCol_DockingPreview = imgui.ImGuiCol_DockingPreview
-    mvThemeCol_DockingEmptyBg = imgui.ImGuiCol_DockingEmptyBg
     mvThemeCol_PlotLines = imgui.ImGuiCol_PlotLines
     mvThemeCol_PlotLinesHovered = imgui.ImGuiCol_PlotLinesHovered
     mvThemeCol_PlotHistogram = imgui.ImGuiCol_PlotHistogram
@@ -438,7 +436,6 @@ class constants:
     mvStyleVar_SeparatorTextBorderSize = imgui.ImGuiStyleVar_SeparatorTextBorderSize	# float     SeparatorTextBorderSize
     mvStyleVar_SeparatorTextAlign = imgui.ImGuiStyleVar_SeparatorTextAlign        # ImVec2    SeparatorTextAlign
     mvStyleVar_SeparatorTextPadding = imgui.ImGuiStyleVar_SeparatorTextPadding    	# ImVec2    SeparatorTextPadding
-    mvStyleVar_DockingSeparatorSize = imgui.ImGuiStyleVar_DockingSeparatorSize    	# float     DockingSeparatorSize    
 
     # item styling variables
     mvPlotStyleVar_LineWeight =         implot.ImPlotStyleVar_LineWeight         # float,  plot item line weight in pixels

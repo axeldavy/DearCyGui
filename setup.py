@@ -69,7 +69,12 @@ def build_FREETYPE():
     src_path = os.path.dirname(os.path.abspath(__file__))
     cmake_config_args = [
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_POSITION_INDEPENDENT_CODE=ON'
+        '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+        '-D FT_DISABLE_ZLIB=TRUE',
+        '-D FT_DISABLE_BZIP2=TRUE',
+        '-D FT_DISABLE_PNG=TRUE',
+        '-D FT_DISABLE_HARFBUZZ=TRUE',
+        '-D FT_DISABLE_BROTLI=TRUE'
     ]
     command = 'cmake -S thirdparty/freetype/ -B build_FT ' + ' '.join(cmake_config_args)
     subprocess.check_call(command, shell=True)
