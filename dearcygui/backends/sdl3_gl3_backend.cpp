@@ -62,14 +62,15 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
 
     // Rendering
     ImGui::Render();
-    int display_w, display_h;
+    int display_w, display_h, w, h;
     viewportData->primary_gl_context.lock();
     SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
     SDL_GetWindowSizeInPixels(viewportData->handle, &display_w, &display_h);
-    //SDL_GetWindowSize(bd->Window, &w, &h);
+    SDL_GetWindowSize(viewportData->handle, &w, &h);
     // It's best not to separate actual and client width
     // as the actual width/height advertised is very OS dependent
     // for the same visual result.
+    printf("DPI: %d %d %d %d\n", w, h, display_w, display_h);
     viewport->actualWidth = display_w;
     viewport->actualHeight = display_h;
     viewport->clientWidth = display_w;
