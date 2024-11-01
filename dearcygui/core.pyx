@@ -7465,7 +7465,6 @@ cdef class RadioButton(uiItem):
         cdef bool selected_backup
         # we push an ID because we didn't append ###uuid to the items
         
-        imgui.PushID(self.uuid)
         for i in range(<int>self._items.size()):
             imgui.PushID(i)
             if (self._horizontal and i != 0):
