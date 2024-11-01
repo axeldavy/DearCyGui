@@ -650,7 +650,6 @@ cdef class ThemeStyleImGui(baseTheme):
             b"SeparatorTextBorderSize",  # float     SeparatorTextBorderSize
             b"SeparatorTextAlign",       # ImVec2    SeparatorTextAlign
             b"SeparatorTextPadding",     # ImVec2    SeparatorTextPadding
-            b"DockingSeparatorSize"     # float
         ]
         cdef int i
         cdef string name_str
