@@ -312,6 +312,8 @@ cdef class Viewport(baseItem):
     cdef vector[int] applied_theme_actions_count # managed by viewport
     cdef theme_enablers current_theme_activation_condition_enabled
     cdef theme_categories current_theme_activation_condition_category
+    cdef float _scale
+    cdef float global_scale
 
     cdef void __check_initialized(self)
     cdef void __check_not_initialized(self)
@@ -972,6 +974,7 @@ cdef class FontTexture(baseItem):
     cdef imgui.ImFontAtlas atlas
     cdef Texture _texture
     cdef bint _built
+    cdef list fonts_files # content of the font files
     cdef list fonts
 
 cdef enum theme_types:
@@ -1228,14 +1231,14 @@ cdef const char* implot_GetStyleColorName(int) noexcept nogil
 cdef void implot_PushStyleColor(int, imgui.ImU32) noexcept nogil
 cdef void implot_PopStyleColor(int) noexcept nogil
 cdef void imgui_PushStyleVar1(int i, float val) noexcept nogil
-cdef void imgui_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
+cdef void imgui_PushStyleVar2(int i, float[2] val) noexcept nogil
 cdef void imgui_PopStyleVar(int count) noexcept nogil
 cdef void implot_PushStyleVar0(int i, int val) noexcept nogil
 cdef void implot_PushStyleVar1(int i, float val) noexcept nogil
-cdef void implot_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
+cdef void implot_PushStyleVar2(int i, float[2] val) noexcept nogil
 cdef void implot_PopStyleVar(int count) noexcept nogil
 cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil
-cdef void imnodes_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil
+cdef void imnodes_PushStyleVar2(int i, float[2] val) noexcept nogil
 cdef void imnodes_PopStyleVar(int count) noexcept nogil
 cdef void imgui_SetMouseCursor(int) noexcept nogil
 

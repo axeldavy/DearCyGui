@@ -1,4 +1,5 @@
 
+from libcpp.cmath cimport round
 from libcpp.unordered_map cimport unordered_map, pair
 from libcpp.string cimport string
 from dearcygui.wrapper cimport imgui, implot, imnodes
@@ -573,223 +574,181 @@ cdef class ThemeColorImNodes(baseTheme):
             (<baseTheme>self._prev_sibling).pop()
         self.mutex.unlock()
 
-cdef extern from * nogil:
-    """
-    const int styles_imgui_sizes[34] = {
-    1,
-    1,
-    2,
-    1,
-    1,
-    2,
-    2,
-    1,
-    1,
-    1,
-    1,
-    2,
-    1,
-    1,
-    2,
-    2,
-    1,
-    2,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    2,
-    2,
-    2,
-    1,
-    2,
-    2,
-    1
-    };
-    """
-    cdef int[34] styles_imgui_sizes
 
-cdef class ThemeStyleImGui(baseTheme):
+cdef class baseThemeStyle(baseTheme):
     def __cinit__(self):
-        self.names = [
-            b"Alpha",                    # float     Alpha
-            b"DisabledAlpha",            # float     DisabledAlpha
-            b"WindowPadding",            # ImVec2    WindowPadding
-            b"WindowRounding",           # float     WindowRounding
-            b"WindowBorderSize",         # float     WindowBorderSize
-            b"WindowMinSize",            # ImVec2    WindowMinSize
-            b"WindowTitleAlign",         # ImVec2    WindowTitleAlign
-            b"ChildRounding",            # float     ChildRounding
-            b"ChildBorderSize",          # float     ChildBorderSize
-            b"PopupRounding",            # float     PopupRounding
-            b"PopupBorderSize",          # float     PopupBorderSize
-            b"FramePadding",             # ImVec2    FramePadding
-            b"FrameRounding",            # float     FrameRounding
-            b"FrameBorderSize",          # float     FrameBorderSize
-            b"ItemSpacing",              # ImVec2    ItemSpacing
-            b"ItemInnerSpacing",         # ImVec2    ItemInnerSpacing
-            b"IndentSpacing",            # float     IndentSpacing
-            b"CellPadding",              # ImVec2    CellPadding
-            b"ScrollbarSize",            # float     ScrollbarSize
-            b"ScrollbarRounding",        # float     ScrollbarRounding
-            b"GrabMinSize",              # float     GrabMinSize
-            b"GrabRounding",             # float     GrabRounding
-            b"TabRounding",              # float     TabRounding
-            b"TabBorderSize",            # float     TabBorderSize
-            b"TabBarBorderSize",         # float     TabBarBorderSize
-            b"TabBarOverlineSize",       # float     TabBarOverlineSize
-            b"TableAngledHeadersAngle",  # float     TableAngledHeadersAngle
-            b"TableAngledHeadersTextAlign",# ImVec2  TableAngledHeadersTextAlign
-            b"ButtonTextAlign",          # ImVec2    ButtonTextAlign
-            b"SelectableTextAlign",      # ImVec2    SelectableTextAlign
-            b"SeparatorTextBorderSize",  # float     SeparatorTextBorderSize
-            b"SeparatorTextAlign",       # ImVec2    SeparatorTextAlign
-            b"SeparatorTextPadding",     # ImVec2    SeparatorTextPadding
-        ]
-        cdef int i
-        cdef string name_str
-        for i, name in enumerate(self.names):
-            name_str = name
-            self.name_to_index[name_str] = i
+        self.dpi = -1.
+        self.backend = theme_backends.t_imgui
 
-    def __dir__(self):
-        return self.names + dir(baseTheme)
-
-    def __getattr__(self, name):
+    @property
+    def no_scaling(self):
+        """
+        boolean. Defaults to False.
+        If set, disables the automated scaling to the dpi
+        scale value for this theme
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Element %s not found" % name)
-        cdef int style_index = dereference(element).second
-        cdef unordered_map[int, imgui.ImVec2].iterator element_content = self.index_to_value.find(style_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImVec2 value = dereference(element_content).second
-        if styles_imgui_sizes[style_index] == 2:
-            return (value.x, value.y)
-        return value.x
+        return not(self.dpi_scaling)
+
+    @no_scaling.setter
+    def no_scaling(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.dpi_scaling = not(value)
+
+    @property
+    def no_rounding(self):
+        """
+        boolean. Defaults to False.
+        If set, disables rounding (after scaling) to the
+        closest integer the parameters. The rounding is only
+        applied to parameters which impact item positioning
+        in a way that would prevent a pixel perfect result.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return not(self.round_after_scale)
+
+    @no_rounding.setter
+    def no_rounding(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.round_after_scale = not(value)
 
     def __getitem__(self, key):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
         cdef int style_index
-        cdef unordered_map[int, imgui.ImVec2].iterator element_content
-        cdef string name_str
         if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Element %s not found" % key)
-            style_index = dereference(element).second
+            return getattr(self, key)
         elif isinstance(key, int):
             style_index = key
-            if style_index < 0 or style_index >= imgui.ImGuiStyleVar_COUNT:
+            if style_index < 0 or style_index >= len(self.names):
                 raise KeyError("No element of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        element_content = self.index_to_value.find(style_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImVec2 value = dereference(element_content).second
-        if styles_imgui_sizes[style_index] == 2:
-            return (value.x, value.y)
-        return value.x
-
-    def __setattr__(self, name, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef bint found
-        cdef string name_str
-        cdef unordered_map[string, int].iterator element
-        try:
-            name_str = bytes(name, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            found = element != self.name_to_index.end()
-        except Exception:
-            found = False
-        if not(found):
-            PyObject_GenericSetAttr(self, name, value)
-            return
-        cdef int style_index = dereference(element).second
-        if value is None:
-            self.index_to_value.erase(style_index)
-            return
-        cdef imgui.ImVec2 value_to_store
-        try:
-            if styles_imgui_sizes[style_index] == 1:
-                value_to_store.x = value
-                value_to_store.y = 0.
-            else:
-                value_to_store.x = value[0]
-                value_to_store.y = value[1]
-        except Exception as e:
-            if styles_imgui_sizes[style_index] == 1:
-                raise ValueError("Expected type float for style " + name)
-            raise ValueError("Expected type (float, float) for style " + name)
-
-        self.index_to_value[style_index] = value_to_store
+            return getattr(self, self.names[style_index])
+        raise TypeError("%s is an invalid index type" % str(type(key)))
 
     def __setitem__(self, key, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
         cdef int style_index
-        cdef string name_str
         if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Element %s not found" % key)
-            style_index = dereference(element).second
+            setattr(self, key, value)
         elif isinstance(key, int):
             style_index = key
-            if style_index < 0 or style_index >= imgui.ImGuiStyleVar_COUNT:
+            if style_index < 0 or style_index >= len(self.names):
                 raise KeyError("No element of index %d" % key)
+            setattr(self, self.names[style_index], value)
         else:
             raise TypeError("%s is an invalid index type" % str(type(key)))
-        if value is None:
-            self.index_to_value.erase(style_index)
-            return
-
-        cdef imgui.ImVec2 value_to_store
-        try:
-            if styles_imgui_sizes[style_index] == 1:
-                value_to_store.x = value
-                value_to_store.y = 0.
-            else:
-                value_to_store.x = value[0]
-                value_to_store.y = value[1]
-        except Exception as e:
-            if styles_imgui_sizes[style_index] == 1:
-                raise ValueError("Expected type float for style " + self.names[style_index])
-            raise ValueError("Expected type (float, float) for style " + self.names[style_index])
-
-        self.index_to_value[style_index] = value_to_store
 
     def __iter__(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef list result = []
-        cdef pair[int, imgui.ImVec2] element_content
+        cdef pair[int, theme_value_info] element_content
         for element_content in self.index_to_value:
             name = self.names[element_content.first]
-            if styles_imgui_sizes[element_content.first] == 1:
-                result.append((name, element_content.second.x))
-            else:
-                result.append((name,
-                               (element_content.second.x,
-                                element_content.second.y)))
+            if element_content.second.value_type == theme_value_types.t_int:
+                result.append((name, element_content.second.value.value_int))
+            elif element_content.second.value_type == theme_value_types.t_float:
+                result.append((name, element_content.second.value.value_float))
+            elif element_content.second.value_type == theme_value_types.t_float2:
+                result.append((name, element_content.second.value.value_float2))
+            elif element_content.second.value_type == theme_value_types.t_u32:
+                result.append((name, element_content.second.value.value_u32))
         return iter(result)
+
+    cdef object __common_getter(self, int index, theme_value_types type):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef unordered_map[int, theme_value_info].iterator element_content = self.index_to_value.find(index)
+        if element_content == self.index_to_value.end():
+            # None: default
+            return None
+        cdef theme_value_info value = dereference(element_content).second
+        if value.value_type == theme_value_types.t_int:
+            return value.value.value_int
+        elif value.value_type == theme_value_types.t_float:
+            return value.value.value_float
+        elif value.value_type == theme_value_types.t_float2:
+            return value.value.value_float2
+        elif value.value_type == theme_value_types.t_u32:
+            return value.value.value_u32
+        return None
+
+    cdef void __common_setter(self, int index, theme_value_types type, bint should_scale, bint should_round, py_value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if py_value is None:
+            # Delete the value
+            self.index_to_value.erase(index)
+            self.dpi = -1 # regenerate the scaled dpi array
+            return
+        cdef theme_value_info value
+        if type == theme_value_types.t_float:
+            value.value.value_float = float(py_value)
+        elif type == theme_value_types.t_float2:
+            if not(hasattr(py_value, '__len__')) or len(py_value) != 2:
+                raise ValueError(f"Expected a tuple, got {py_value}")
+            value.value.value_float2[0] = float(py_value[0])
+            value.value.value_float2[1] = float(py_value[1])
+        elif type == theme_value_types.t_int:
+            value.value.value_int = int(py_value)
+        elif type == theme_value_types.t_u32:
+            value.value.value_u32 = <unsigned>int(py_value)
+        value.value_type = type
+        value.should_scale = should_scale
+        value.should_round = should_round
+        self.index_to_value[index] = value
+        self.dpi = -1 # regenerate the scaled dpi array
+
+    cdef void __compute_for_dpi(self) noexcept nogil:
+        cdef float dpi = self.context._viewport.global_scale
+        cdef bint should_scale = self.dpi_scaling
+        cdef bint should_round = self.round_after_scale
+        self.dpi = dpi
+        self.index_to_value_for_dpi.clear()
+        cdef pair[int, theme_value_info] element_content
+        for element_content in self.index_to_value:
+            if should_scale and element_content.second.should_scale:
+                if element_content.second.value_type == theme_value_types.t_int:
+                    element_content.second.value.value_int = <int>(round(element_content.second.value.value_int * dpi))
+                elif element_content.second.value_type == theme_value_types.t_float:
+                    element_content.second.value.value_float *= dpi
+                elif element_content.second.value_type == theme_value_types.t_float2:
+                    element_content.second.value.value_float2[0] *= dpi
+                    element_content.second.value.value_float2[1] *= dpi
+                elif element_content.second.value_type == theme_value_types.t_u32:
+                    element_content.second.value.value_u32 = <unsigned>(round(element_content.second.value.value_int * dpi))
+            if should_round and element_content.second.should_round:
+                if element_content.second.value_type == theme_value_types.t_float:
+                    element_content.second.value.value_float = round(element_content.second.value.value_float)
+                elif element_content.second.value_type == theme_value_types.t_float2:
+                    element_content.second.value.value_float2[0] = round(element_content.second.value.value_float2[0])
+                    element_content.second.value.value_float2[1] = round(element_content.second.value.value_float2[1])
+            self.index_to_value_for_dpi.insert(element_content)
+
+    cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef pair[int, theme_value_info] element_content
+        cdef theme_action action
+        if self._prev_sibling is not None:
+            (<baseTheme>self._prev_sibling).push_to_list(v)
+        if not(self.enabled):
+            return
+        if self.context._viewport.global_scale != self.dpi:
+            self.__compute_for_dpi()
+        for element_content in self.index_to_value_for_dpi:
+            action.activation_condition_enabled = theme_enablers.t_enabled_any
+            action.activation_condition_category = theme_categories.t_any
+            action.type = theme_types.t_style
+            action.backend = self.backend
+            action.theme_index = element_content.first
+            action.value_type = element_content.second.value_type
+            action.value = element_content.second.value
+            v.push_back(action)
 
     cdef void push(self) noexcept nogil:
         self.mutex.lock()
@@ -798,313 +757,906 @@ cdef class ThemeStyleImGui(baseTheme):
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
-        cdef pair[int, imgui.ImVec2] element_content
-        for element_content in self.index_to_value:
-            if styles_imgui_sizes[element_content.first] == 1:
-                imgui_PushStyleVar1(element_content.first, element_content.second.x)
-            else:
-                imgui_PushStyleVar2(element_content.first, element_content.second)
-        self.last_push_size.push_back(<int>self.index_to_value.size())
-
-    cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef pair[int, imgui.ImVec2] element_content
-        cdef theme_action action
-        if self._prev_sibling is not None:
-            (<baseTheme>self._prev_sibling).push_to_list(v)
-        if not(self.enabled):
-            return
-        for element_content in self.index_to_value:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
-            action.type = theme_types.t_style
-            action.backend = theme_backends.t_imgui
-            action.theme_index = element_content.first
-            if styles_imgui_sizes[element_content.first] == 1:
-                action.value_type = theme_value_types.t_float
-                action.value.value_float = element_content.second.x
-            else:
-                action.value_type = theme_value_types.t_float2
-                action.value.value_float2[0] = element_content.second.x
-                action.value.value_float2[1] = element_content.second.y
-            v.push_back(action)
+        if self.context._viewport.global_scale != self.dpi:
+            self.__compute_for_dpi()
+        cdef pair[int, theme_value_info] element_content
+        if self.backend == theme_backends.t_imgui:
+            for element_content in self.index_to_value_for_dpi:
+                if element_content.second.value_type == theme_value_types.t_float:
+                    imgui_PushStyleVar1(element_content.first, element_content.second.value.value_float)
+                else:
+                    imgui_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
+        elif self.backend == theme_backends.t_implot:
+            for element_content in self.index_to_value_for_dpi:
+                if element_content.second.value_type == theme_value_types.t_float:
+                    implot_PushStyleVar1(element_content.first, element_content.second.value.value_float)
+                elif element_content.second.value_type == theme_value_types.t_int:
+                    implot_PushStyleVar0(element_content.first, element_content.second.value.value_int)
+                else:
+                    implot_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
+        elif self.backend == theme_backends.t_imnodes:
+            for element_content in self.index_to_value_for_dpi:
+                if element_content.second.value_type == theme_value_types.t_float:
+                    imnodes_PushStyleVar1(element_content.first, element_content.second.value.value_float)
+                else:
+                    imnodes_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
+        self.last_push_size.push_back(<int>self.index_to_value_for_dpi.size())
 
     cdef void pop(self) noexcept nogil:
         cdef int count = self.last_push_size.back()
         self.last_push_size.pop_back()
         if count > 0:
-            imgui_PopStyleVar(count)
+            if self.backend == theme_backends.t_imgui:
+                imgui_PopStyleVar(count)
+            elif self.backend == theme_backends.t_implot:
+                implot_PopStyleVar(count)
+            elif self.backend == theme_backends.t_imnodes:
+                imnodes_PopStyleVar(count)
         if self._prev_sibling is not None:
             (<baseTheme>self._prev_sibling).pop()
         self.mutex.unlock()
 
-# 0 used to mean int
-cdef extern from * nogil:
-    """
-    const int styles_implot_sizes[27] = {
-    1,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2
-    };
-    """
-    cdef int[27] styles_implot_sizes
 
-cdef class ThemeStyleImPlot(baseTheme):
+cdef class ThemeStyleImGui(baseThemeStyle):
     def __cinit__(self):
         self.names = [
-            b"LineWeight",         # float,  plot item line weight in pixels
-            b"Marker",             # int,    marker specification
-            b"MarkerSize",         # float,  marker size in pixels (roughly the marker's "radius")
-            b"MarkerWeight",       # float,  plot outline weight of markers in pixels
-            b"FillAlpha",          # float,  alpha modifier applied to all plot item fills
-            b"ErrorBarSize",       # float,  error bar whisker width in pixels
-            b"ErrorBarWeight",     # float,  error bar whisker weight in pixels
-            b"DigitalBitHeight",   # float,  digital channels bit height (at 1) in pixels
-            b"DigitalBitGap",      # float,  digital channels bit padding gap in pixels
-            b"PlotBorderSize",     # float,  thickness of border around plot area
-            b"MinorAlpha",         # float,  alpha multiplier applied to minor axis grid lines
-            b"MajorTickLen",       # ImVec2, major tick lengths for X and Y axes
-            b"MinorTickLen",       # ImVec2, minor tick lengths for X and Y axes
-            b"MajorTickSize",      # ImVec2, line thickness of major ticks
-            b"MinorTickSize",      # ImVec2, line thickness of minor ticks
-            b"MajorGridSize",      # ImVec2, line thickness of major grid lines
-            b"MinorGridSize",      # ImVec2, line thickness of minor grid lines
-            b"PlotPadding",        # ImVec2, padding between widget frame and plot area, labels, or outside legends (i.e. main padding)
-            b"LabelPadding",       # ImVec2, padding between axes labels, tick labels, and plot edge
-            b"LegendPadding",      # ImVec2, legend padding from plot edges
-            b"LegendInnerPadding", # ImVec2, legend inner padding from legend edges
-            b"LegendSpacing",      # ImVec2, spacing between legend entries
-            b"MousePosPadding",    # ImVec2, padding between plot edge and interior info text
-            b"AnnotationPadding",  # ImVec2, text padding around annotation labels
-            b"FitPadding",         # ImVec2, additional fit padding as a percentage of the fit extents (e.g. ImVec2(0.1f,0.1f) adds 10% to the fit extents of X and Y)
-            b"PlotDefaultSize",    # ImVec2, default size used when ImVec2(0,0) is passed to BeginPlot
-            b"PlotMinSize",        # ImVec2, minimum size plot frame can be when shrunk
+            "Alpha",                    # float     Alpha
+            "DisabledAlpha",            # float     DisabledAlpha
+            "WindowPadding",            # ImVec2    WindowPadding
+            "WindowRounding",           # float     WindowRounding
+            "WindowBorderSize",         # float     WindowBorderSize
+            "WindowMinSize",            # ImVec2    WindowMinSize
+            "WindowTitleAlign",         # ImVec2    WindowTitleAlign
+            "ChildRounding",            # float     ChildRounding
+            "ChildBorderSize",          # float     ChildBorderSize
+            "PopupRounding",            # float     PopupRounding
+            "PopupBorderSize",          # float     PopupBorderSize
+            "FramePadding",             # ImVec2    FramePadding
+            "FrameRounding",            # float     FrameRounding
+            "FrameBorderSize",          # float     FrameBorderSize
+            "ItemSpacing",              # ImVec2    ItemSpacing
+            "ItemInnerSpacing",         # ImVec2    ItemInnerSpacing
+            "IndentSpacing",            # float     IndentSpacing
+            "CellPadding",              # ImVec2    CellPadding
+            "ScrollbarSize",            # float     ScrollbarSize
+            "ScrollbarRounding",        # float     ScrollbarRounding
+            "GrabMinSize",              # float     GrabMinSize
+            "GrabRounding",             # float     GrabRounding
+            "TabRounding",              # float     TabRounding
+            "TabBorderSize",            # float     TabBorderSize
+            "TabBarBorderSize",         # float     TabBarBorderSize
+            "TabBarOverlineSize",       # float     TabBarOverlineSize
+            "TableAngledHeadersAngle",  # float     TableAngledHeadersAngle
+            "TableAngledHeadersTextAlign",# ImVec2  TableAngledHeadersTextAlign
+            "ButtonTextAlign",          # ImVec2    ButtonTextAlign
+            "SelectableTextAlign",      # ImVec2    SelectableTextAlign
+            "SeparatorTextBorderSize",  # float     SeparatorTextBorderSize
+            "SeparatorTextAlign",       # ImVec2    SeparatorTextAlign
+            "SeparatorTextPadding",     # ImVec2    SeparatorTextPadding
         ]
-        cdef int i
-        cdef string name_str
-        for i, name in enumerate(self.names):
-            name_str = name
-            self.name_to_index[name_str] = i
+        self.backend = theme_backends.t_imgui
 
-    def __dir__(self):
-        return self.names + dir(baseTheme)
+    @property
+    def Alpha(self):
+        """
+        Global alpha applied to everything in Dear ImGui.
 
-    def __getattr__(self, name):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Element %s not found" % name)
-        cdef int style_index = dereference(element).second
-        cdef unordered_map[int, imgui.ImVec2].iterator element_content = self.index_to_value.find(style_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImVec2 value = dereference(element_content).second
-        if styles_implot_sizes[style_index] == 2:
-            return (value.x, value.y)
-        if styles_implot_sizes[style_index] == 0:
-            return int(value.x)
-        return value.x
+        The value is in the range [0, 1]. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 0, theme_value_types.t_float)
 
-    def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
-        cdef int style_index
-        cdef unordered_map[int, imgui.ImVec2].iterator element_content
-        cdef string name_str
-        if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Element %s not found" % key)
-            style_index = dereference(element).second
-        elif isinstance(key, int):
-            style_index = key
-            if style_index < 0 or style_index >= implot.ImPlotStyleVar_COUNT:
-                raise KeyError("No element of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        element_content = self.index_to_value.find(style_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImVec2 value = dereference(element_content).second
-        if styles_implot_sizes[style_index] == 2:
-            return (value.x, value.y)
-        if styles_implot_sizes[style_index] == 0:
-            return int(value.x)
-        return value.x
+    @Alpha.setter
+    def Alpha(self, value):
+        baseThemeStyle.__common_setter(self, 0, theme_value_types.t_float, False, False, value)
 
-    def __setattr__(self, name, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef bint found
-        cdef string name_str
-        cdef unordered_map[string, int].iterator element
-        try:
-            name_str = bytes(name, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            found = element != self.name_to_index.end()
-        except Exception:
-            found = False
-        if not(found):
-            PyObject_GenericSetAttr(self, name, value)
-            return
-        cdef int style_index = dereference(element).second
-        if value is None:
-            self.index_to_value.erase(style_index)
-            return
-        cdef imgui.ImVec2 value_to_store
-        try:
-            if styles_implot_sizes[style_index] <= 1:
-                value_to_store.x = value
-                value_to_store.y = 0.
-            else:
-                value_to_store.x = value[0]
-                value_to_store.y = value[1]
-        except Exception as e:
-            if styles_implot_sizes[style_index] == 1:
-                raise ValueError("Expected type float for style " + name)
-            if styles_implot_sizes[style_index] == 0:
-                raise ValueError("Expected type int for style " + name)
-            raise ValueError("Expected type (float, float) for style " + name)
+    @property
+    def DisabledAlpha(self):
+        """
+        Unused currently.
 
-        self.index_to_value[style_index] = value_to_store
+        The value is in the range [0, 1]. Defaults to 0.6
+        """
+        return baseThemeStyle.__common_getter(self, 1, theme_value_types.t_float)
 
-    def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
-        cdef int style_index
-        cdef string name_str
-        if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Element %s not found" % key)
-            style_index = dereference(element).second
-        elif isinstance(key, int):
-            style_index = key
-            if style_index < 0 or style_index >= implot.ImPlotStyleVar_COUNT:
-                raise KeyError("No element of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        if value is None:
-            self.index_to_value.erase(style_index)
-            return
+    @DisabledAlpha.setter
+    def DisabledAlpha(self, value):
+        baseThemeStyle.__common_setter(self, 1, theme_value_types.t_float, False, False, value)
 
-        cdef imgui.ImVec2 value_to_store
-        try:
-            if styles_implot_sizes[style_index] <= 1:
-                value_to_store.x = value
-                value_to_store.y = 0.
-            else:
-                value_to_store.x = value[0]
-                value_to_store.y = value[1]
-        except Exception as e:
-            if styles_implot_sizes[style_index] == 1:
-                raise ValueError("Expected type float for style " + self.names[style_index])
-            if styles_implot_sizes[style_index] == 0:
-                raise ValueError("Expected type int for style " + self.names[style_index])
-            raise ValueError("Expected type (float, float) for style " + self.names[style_index])
+    @property
+    def WindowPadding(self):
+        """
+        Padding within a window.
 
-        self.index_to_value[style_index] = value_to_store
+        The value is a pair of float (dx, dy). Defaults to (8, 8)
+        """
+        return baseThemeStyle.__common_getter(self, 2, theme_value_types.t_float2)
 
-    def __iter__(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef list result = []
-        cdef pair[int, imgui.ImVec2] element_content
-        for element_content in self.index_to_value:
-            name = self.names[element_content.first]
-            if styles_implot_sizes[element_content.first] == 1:
-                result.append((name, element_content.second.x))
-            else:
-                result.append((name,
-                               (element_content.second.x,
-                                element_content.second.y)))
-        return iter(result)
+    @WindowPadding.setter
+    def WindowPadding(self, value):
+        baseThemeStyle.__common_setter(self, 2, theme_value_types.t_float2, True, True, value)
 
-    cdef void push(self) noexcept nogil:
-        self.mutex.lock()
-        if self._prev_sibling is not None:
-            (<baseTheme>self._prev_sibling).push()
-        if not(self.enabled):
-            self.last_push_size.push_back(0)
-            return
-        cdef pair[int, imgui.ImVec2] element_content
-        for element_content in self.index_to_value:
-            if styles_implot_sizes[element_content.first] == 1:
-                implot_PushStyleVar1(element_content.first, element_content.second.x)
-            elif styles_implot_sizes[element_content.first] == 0:
-                implot_PushStyleVar0(element_content.first, <int>element_content.second.x)
-            else:
-                implot_PushStyleVar2(element_content.first, element_content.second)
-        self.last_push_size.push_back(<int>self.index_to_value.size())
+    @property
+    def WindowRounding(self):
+        """
+        Radius of window corners rounding. Set to 0.0 to have rectangular windows. Large values tend to lead to variety of artifacts and are not recommended.
 
-    cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef pair[int, imgui.ImVec2] element_content
-        cdef theme_action action
-        if self._prev_sibling is not None:
-            (<baseTheme>self._prev_sibling).push_to_list(v)
-        if not(self.enabled):
-            return
-        for element_content in self.index_to_value:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
-            action.type = theme_types.t_style
-            action.backend = theme_backends.t_implot
-            action.theme_index = element_content.first
-            if styles_imgui_sizes[element_content.first] == 1:
-                action.value_type = theme_value_types.t_float
-                action.value.value_float = element_content.second.x
-            elif styles_imgui_sizes[element_content.first] == 0:
-                action.value_type = theme_value_types.t_int
-                action.value.value_int = <int>element_content.second.x
-            else:
-                action.value_type = theme_value_types.t_float2
-                action.value.value_float2[0] = element_content.second.x
-                action.value.value_float2[1] = element_content.second.y
-            v.push_back(action)
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 3, theme_value_types.t_float)
 
-    cdef void pop(self) noexcept nogil:
-        cdef int count = self.last_push_size.back()
-        self.last_push_size.pop_back()
-        if count > 0:
-            implot_PopStyleVar(count)
-        if self._prev_sibling is not None:
-            (<baseTheme>self._prev_sibling).pop()
-        self.mutex.unlock()
+    @WindowRounding.setter
+    def WindowRounding(self, value):
+        baseThemeStyle.__common_setter(self, 3, theme_value_types.t_float, True, False, value)
+
+    @property
+    def WindowBorderSize(self):
+        """
+        Thickness of border around windows. Generally set to 0.0 or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 4, theme_value_types.t_float)
+
+    @WindowBorderSize.setter
+    def WindowBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 4, theme_value_types.t_float, True, True, value)
+
+    @property
+    def WindowMinSize(self):
+        """
+        Minimum window size
+
+        The value is a pair of float (dx, dy). Defaults to (32, 32)
+        """
+        return baseThemeStyle.__common_getter(self, 5, theme_value_types.t_float2)
+
+    @WindowMinSize.setter
+    def WindowMinSize(self, value):
+        baseThemeStyle.__common_setter(self, 5, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def WindowTitleAlign(self):
+        """
+        Alignment for window title bar text in percentages
+
+        The value is a pair of float (dx, dy). Defaults to (0., 0.5), which means left-aligned, vertical centering on the row
+        """
+        return baseThemeStyle.__common_getter(self, 6, theme_value_types.t_float2)
+
+    @WindowTitleAlign.setter
+    def WindowTitleAlign(self, value):
+        baseThemeStyle.__common_setter(self, 6, theme_value_types.t_float2, False, False, value)
+
+    @property
+    def ChildRounding(self):
+        """
+        Radius of child window corners rounding. Set to 0.0 to have rectangular child windows.
+
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 7, theme_value_types.t_float)
+
+    @ChildRounding.setter
+    def ChildRounding(self, value):
+        baseThemeStyle.__common_setter(self, 7, theme_value_types.t_float, True, False, value)
+
+    @property
+    def ChildBorderSize(self):
+        """
+        Thickness of border around child windows. Generally set to 0.0f or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 8, theme_value_types.t_float)
+
+    @ChildBorderSize.setter
+    def ChildBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 8, theme_value_types.t_float, True, True, value)
+
+    @property
+    def PopupRounding(self):
+        """
+        Radius of popup or tooltip window corners rounding. Set to 0.0 to have rectangular popup or tooltip windows.
+
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 9, theme_value_types.t_float)
+
+    @PopupRounding.setter
+    def PopupRounding(self, value):
+        baseThemeStyle.__common_setter(self, 9, theme_value_types.t_float, True, False, value)
+
+    @property
+    def PopupBorderSize(self):
+        """
+        Thickness of border around popup or tooltip windows. Generally set to 0.0f or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 10, theme_value_types.t_float)
+
+    @PopupBorderSize.setter
+    def PopupBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 10, theme_value_types.t_float, True, True, value)
+
+    @property
+    def FramePadding(self):
+        """
+        Padding within a framed rectangle (used by most widgets)
+
+        The value is a pair of floats. Defaults to (4,3).
+        """
+        return baseThemeStyle.__common_getter(self, 11, theme_value_types.t_float2)
+
+    @FramePadding.setter
+    def FramePadding(self, value):
+        baseThemeStyle.__common_setter(self, 11, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def FrameRounding(self):
+        """
+        Radius of frame corners rounding. Set to 0.0 to have rectangular frame (most widgets).
+
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 12, theme_value_types.t_float)
+
+    @FrameRounding.setter
+    def FrameRounding(self, value):
+        baseThemeStyle.__common_setter(self, 12, theme_value_types.t_float, True, False, value)
+
+    @property
+    def FrameBorderSize(self):
+        """
+        Thickness of border around frames (most widgets). Generally set to 0.0f or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 13, theme_value_types.t_float)
+
+    @FrameBorderSize.setter
+    def FrameBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 13, theme_value_types.t_float, True, True, value)
+
+    @property
+    def ItemSpacing(self):
+        """
+        Horizontal and vertical spacing between widgets/lines.
+
+        The value is a pair of floats. Defaults to (8, 4).
+        """
+        return baseThemeStyle.__common_getter(self, 14, theme_value_types.t_float2)
+
+    @ItemSpacing.setter
+    def ItemSpacing(self, value):
+        baseThemeStyle.__common_setter(self, 14, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def ItemInnerSpacing(self):
+        """
+        Horizontal and vertical spacing between elements inside of a composed widget.
+
+        The value is a pair of floats. Defaults to (4, 4).
+        """
+        return baseThemeStyle.__common_getter(self, 15, theme_value_types.t_float2)
+
+    @ItemInnerSpacing.setter
+    def ItemInnerSpacing(self, value):
+        baseThemeStyle.__common_setter(self, 15, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def IndentSpacing(self):
+        """
+        Default horizontal spacing for indentations. For instance when entering a tree node.
+        A good value is Generally == (FontSize + FramePadding.x*2).
+
+        The value is a float. Defaults to 21.
+        """
+        return baseThemeStyle.__common_getter(self, 16, theme_value_types.t_float)
+
+    @IndentSpacing.setter
+    def IndentSpacing(self, value):
+        baseThemeStyle.__common_setter(self, 16, theme_value_types.t_float, True, True, value)
+
+    @property
+    def CellPadding(self):
+        """
+        Tables: padding between cells.
+        The x padding is applied for the whole Table,
+        while y can be different for every row.
+
+        The value is a pair of floats. Defaults to (4, 2).
+        """
+        return baseThemeStyle.__common_getter(self, 17, theme_value_types.t_float2)
+
+    @CellPadding.setter
+    def CellPadding(self, value):
+        baseThemeStyle.__common_setter(self, 17, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def ScrollbarSize(self):
+        """
+        Width of the vertical scrollbar, Height of the horizontal scrollbar
+
+        The value is a float. Defaults to 14.
+        """
+        return baseThemeStyle.__common_getter(self, 18, theme_value_types.t_float)
+
+    @ScrollbarSize.setter
+    def ScrollbarSize(self, value):
+        baseThemeStyle.__common_setter(self, 18, theme_value_types.t_float, True, True, value)
+
+    @property
+    def ScrollbarRounding(self):
+        """
+        Radius of grab corners rounding for scrollbar.
+
+        The value is a float. Defaults to 9.
+        """
+        return baseThemeStyle.__common_getter(self, 19, theme_value_types.t_float)
+
+    @ScrollbarRounding.setter
+    def ScrollbarRounding(self, value):
+        baseThemeStyle.__common_setter(self, 19, theme_value_types.t_float, True, True, value)
+
+    @property
+    def GrabMinSize(self):
+        """
+        Minimum width/height of a grab box for slider/scrollbar.
+
+        The value is a float. Defaults to 12.
+        """
+        return baseThemeStyle.__common_getter(self, 20, theme_value_types.t_float)
+
+    @GrabMinSize.setter
+    def GrabMinSize(self, value):
+        baseThemeStyle.__common_setter(self, 20, theme_value_types.t_float, True, True, value)
+
+    @property
+    def GrabRounding(self):
+        """
+        Radius of grabs corners rounding. Set to 0.0f to have rectangular slider grabs.
+
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 21, theme_value_types.t_float)
+
+    @GrabRounding.setter
+    def GrabRounding(self, value):
+        baseThemeStyle.__common_setter(self, 21, theme_value_types.t_float, True, False, value)
+
+    @property
+    def TabRounding(self):
+        """
+        Radius of upper corners of a tab. Set to 0.0f to have rectangular tabs.
+
+        The value is a float. Defaults to 4.
+        """
+        return baseThemeStyle.__common_getter(self, 22, theme_value_types.t_float)
+
+    @TabRounding.setter
+    def TabRounding(self, value):
+        baseThemeStyle.__common_setter(self, 22, theme_value_types.t_float, True, False, value)
+
+    @property
+    def TabBorderSize(self):
+        """
+        Thickness of borders around tabs.
+
+        The value is a float. Defaults to 0.
+        """
+        return baseThemeStyle.__common_getter(self, 23, theme_value_types.t_float)
+
+    @TabBorderSize.setter
+    def TabBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 23, theme_value_types.t_float, True, True, value)
+
+    @property
+    def TabBarBorderSize(self):
+        """
+        Thickness of tab-bar separator, which takes on the tab active color to denote focus.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 24, theme_value_types.t_float)
+
+    @TabBarBorderSize.setter
+    def TabBarBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 24, theme_value_types.t_float, True, True, value)
+
+    @property
+    def TabBarOverlineSize(self):
+        """
+        Thickness of tab-bar overline, which highlights the selected tab-bar.
+
+        The value is a float. Defaults to 2.
+        """
+        return baseThemeStyle.__common_getter(self, 25, theme_value_types.t_float)
+
+    @TabBarOverlineSize.setter
+    def TabBarOverlineSize(self, value):
+        baseThemeStyle.__common_setter(self, 25, theme_value_types.t_float, True, True, value)
+
+    @property
+    def TableAngledHeadersAngle(self):
+        """
+        Tables: Angle of angled headers (supported values range from -50 degrees to +50 degrees).
+
+        The value is a float. Defaults to 35.0f * (IM_PI / 180.0f).
+        """
+        return baseThemeStyle.__common_getter(self, 26, theme_value_types.t_float)
+
+    @TableAngledHeadersAngle.setter
+    def TableAngledHeadersAngle(self, value):
+        baseThemeStyle.__common_setter(self, 26, theme_value_types.t_float, False, False, value)
+
+    @property
+    def TableAngledHeadersTextAlign(self):
+        """
+        Tables: Alignment (percentages) of angled headers within the cell
+    
+        The value is a pair of floats. Defaults to (0.5, 0.), i.e. top-centered
+        """
+        return baseThemeStyle.__common_getter(self, 27, theme_value_types.t_float2)
+
+    @TableAngledHeadersTextAlign.setter
+    def TableAngledHeadersTextAlign(self, value):
+        baseThemeStyle.__common_setter(self, 27, theme_value_types.t_float2, False, False, value)
+
+    @property
+    def ButtonTextAlign(self):
+        """
+        Alignment of button text when button is larger than text.
+    
+        The value is a pair of floats. Defaults to (0.5, 0.5), i.e. centered
+        """
+        return baseThemeStyle.__common_getter(self, 28, theme_value_types.t_float2)
+
+    @ButtonTextAlign.setter
+    def ButtonTextAlign(self, value):
+        baseThemeStyle.__common_setter(self, 28, theme_value_types.t_float2, False, False, value)
+
+    @property
+    def SelectableTextAlign(self):
+        """
+        Alignment of selectable text (in percentages).
+    
+        The value is a pair of floats. Defaults to (0., 0.), i.e. top-left. It is advised to keep the default.
+        """
+        return baseThemeStyle.__common_getter(self, 29, theme_value_types.t_float2)
+
+    @SelectableTextAlign.setter
+    def SelectableTextAlign(self, value):
+        baseThemeStyle.__common_setter(self, 29, theme_value_types.t_float2, False, False, value)
+
+    @property
+    def SeparatorTextBorderSize(self):
+        """
+        Thickness of border in Separator() text.
+    
+        The value is a float. Defaults to 3.
+        """
+        return baseThemeStyle.__common_getter(self, 30, theme_value_types.t_float)
+
+    @SeparatorTextBorderSize.setter
+    def SeparatorTextBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 30, theme_value_types.t_float, True, True, value)
+
+    @property
+    def SelectableTextAlign(self):
+        """
+        Alignment of text within the separator in percentages.
+    
+        The value is a pair of floats. Defaults to (0., 0.5), i.e. left-centered
+        """
+        return baseThemeStyle.__common_getter(self, 31, theme_value_types.t_float2)
+
+    @SelectableTextAlign.setter
+    def SelectableTextAlign(self, value):
+        baseThemeStyle.__common_setter(self, 31, theme_value_types.t_float2, False, False, value)
+
+    @property
+    def SeparatorTextPadding(self):
+        """
+        Horizontal offset of text from each edge of the separator + spacing on other axis. Generally small values. .y is recommended to be == FramePadding.y.
+    
+        The value is a pair of floats. Defaults to (20., 3.).
+        """
+        return baseThemeStyle.__common_getter(self, 32, theme_value_types.t_float2)
+
+    @SeparatorTextPadding.setter
+    def SeparatorTextPadding(self, value):
+        baseThemeStyle.__common_setter(self, 32, theme_value_types.t_float2, True, True, value)
 
 
+cdef class ThemeStyleImPlot(baseThemeStyle):
+    def __cinit__(self):
+        self.names = [
+            "LineWeight",         # float,  plot item line weight in pixels
+            "Marker",             # int,    marker specification
+            "MarkerSize",         # float,  marker size in pixels (roughly the marker's "radius")
+            "MarkerWeight",       # float,  plot outline weight of markers in pixels
+            "FillAlpha",          # float,  alpha modifier applied to all plot item fills
+            "ErrorBarSize",       # float,  error bar whisker width in pixels
+            "ErrorBarWeight",     # float,  error bar whisker weight in pixels
+            "DigitalBitHeight",   # float,  digital channels bit height (at 1) in pixels
+            "DigitalBitGap",      # float,  digital channels bit padding gap in pixels
+            "PlotBorderSize",     # float,  thickness of border around plot area
+            "MinorAlpha",         # float,  alpha multiplier applied to minor axis grid lines
+            "MajorTickLen",       # ImVec2, major tick lengths for X and Y axes
+            "MinorTickLen",       # ImVec2, minor tick lengths for X and Y axes
+            "MajorTickSize",      # ImVec2, line thickness of major ticks
+            "MinorTickSize",      # ImVec2, line thickness of minor ticks
+            "MajorGridSize",      # ImVec2, line thickness of major grid lines
+            "MinorGridSize",      # ImVec2, line thickness of minor grid lines
+            "PlotPadding",        # ImVec2, padding between widget frame and plot area, labels, or outside legends (i.e. main padding)
+            "LabelPadding",       # ImVec2, padding between axes labels, tick labels, and plot edge
+            "LegendPadding",      # ImVec2, legend padding from plot edges
+            "LegendInnerPadding", # ImVec2, legend inner padding from legend edges
+            "LegendSpacing",      # ImVec2, spacing between legend entries
+            "MousePosPadding",    # ImVec2, padding between plot edge and interior info text
+            "AnnotationPadding",  # ImVec2, text padding around annotation labels
+            "FitPadding",         # ImVec2, additional fit padding as a percentage of the fit extents (e.g. ImVec2(0.1f,0.1f) adds 10% to the fit extents of X and Y)
+            "PlotDefaultSize",    # ImVec2, default size used when ImVec2(0,0) is passed to BeginPlot
+            "PlotMinSize",        # ImVec2, minimum size plot frame can be when shrunk
+        ]
+        self.backend = theme_backends.t_implot
+
+    @property
+    def LineWeight(self):
+        """
+        Plot item line weight in pixels.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 0, theme_value_types.t_float)
+
+    @LineWeight.setter
+    def LineWeight(self, value):
+        baseThemeStyle.__common_setter(self, 0, theme_value_types.t_float, True, False, value)
+
+    @property
+    def Marker(self):
+        """
+        Marker specification.
+
+        The value is an integer. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 1, theme_value_types.t_int)
+
+    @Marker.setter
+    def Marker(self, value):
+        baseThemeStyle.__common_setter(self, 1, theme_value_types.t_int, False, False, value)
+
+    @property
+    def MarkerSize(self):
+        """
+        Marker size in pixels (roughly the marker's "radius").
+
+        The value is a float. Defaults to 4.
+        """
+        return baseThemeStyle.__common_getter(self, 2, theme_value_types.t_float)
+
+    @MarkerSize.setter
+    def MarkerSize(self, value):
+        baseThemeStyle.__common_setter(self, 2, theme_value_types.t_float, True, False, value)
+
+    @property
+    def MarkerWeight(self):
+        """
+        Plot outline weight of markers in pixels.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 3, theme_value_types.t_float)
+
+    @MarkerWeight.setter
+    def MarkerWeight(self, value):
+        baseThemeStyle.__common_setter(self, 3, theme_value_types.t_float, True, False, value)
+
+    @property
+    def FillAlpha(self):
+        """
+        Alpha modifier applied to all plot item fills.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 4, theme_value_types.t_float)
+
+    @FillAlpha.setter
+    def FillAlpha(self, value):
+        baseThemeStyle.__common_setter(self, 4, theme_value_types.t_float, False, False, value)
+
+    @property
+    def ErrorBarSize(self):
+        """
+        Error bar whisker width in pixels.
+
+        The value is a float. Defaults to 5.
+        """
+        return baseThemeStyle.__common_getter(self, 5, theme_value_types.t_float)
+
+    @ErrorBarSize.setter
+    def ErrorBarSize(self, value):
+        baseThemeStyle.__common_setter(self, 5, theme_value_types.t_float, True, True, value)
+
+    @property
+    def ErrorBarWeight(self):
+        """
+        Error bar whisker weight in pixels.
+
+        The value is a float. Defaults to 1.5.
+        """
+        return baseThemeStyle.__common_getter(self, 6, theme_value_types.t_float)
+
+    @ErrorBarWeight.setter
+    def ErrorBarWeight(self, value):
+        baseThemeStyle.__common_setter(self, 6, theme_value_types.t_float, True, False, value)
+
+    @property
+    def DigitalBitHeight(self):
+        """
+        Digital channels bit height (at 1) in pixels.
+
+        The value is a float. Defaults to 8.
+        """
+        return baseThemeStyle.__common_getter(self, 7, theme_value_types.t_float)
+
+    @DigitalBitHeight.setter
+    def DigitalBitHeight(self, value):
+        baseThemeStyle.__common_setter(self, 7, theme_value_types.t_float, True, True, value)
+
+    @property
+    def DigitalBitGap(self):
+        """
+        Digital channels bit padding gap in pixels.
+
+        The value is a float. Defaults to 4.
+        """
+        return baseThemeStyle.__common_getter(self, 8, theme_value_types.t_float)
+
+    @DigitalBitGap.setter
+    def DigitalBitGap(self, value):
+        baseThemeStyle.__common_setter(self, 8, theme_value_types.t_float, True, True, value)
+
+    @property
+    def PlotBorderSize(self):
+        """
+        Thickness of border around plot area.
+
+        The value is a float. Defaults to 1.
+        """
+        return baseThemeStyle.__common_getter(self, 9, theme_value_types.t_float)
+
+    @PlotBorderSize.setter
+    def PlotBorderSize(self, value):
+        baseThemeStyle.__common_setter(self, 9, theme_value_types.t_float, True, True, value)
+
+    @property
+    def MinorAlpha(self):
+        """
+        Alpha multiplier applied to minor axis grid lines.
+
+        The value is a float. Defaults to 0.25.
+        """
+        return baseThemeStyle.__common_getter(self, 10, theme_value_types.t_float)
+
+    @MinorAlpha.setter
+    def MinorAlpha(self, value):
+        baseThemeStyle.__common_setter(self, 10, theme_value_types.t_float, False, False, value)
+
+    @property
+    def MajorTickLen(self):
+        """
+        Major tick lengths for X and Y axes.
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        return baseThemeStyle.__common_getter(self, 11, theme_value_types.t_float2)
+
+    @MajorTickLen.setter
+    def MajorTickLen(self, value):
+        baseThemeStyle.__common_setter(self, 11, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def MinorTickLen(self):
+        """
+        Minor tick lengths for X and Y axes.
+
+        The value is a pair of floats. Defaults to (5, 5).
+        """
+        return baseThemeStyle.__common_getter(self, 12, theme_value_types.t_float2)
+
+    @MinorTickLen.setter
+    def MinorTickLen(self, value):
+        baseThemeStyle.__common_setter(self, 12, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def MajorTickSize(self):
+        """
+        Line thickness of major ticks.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        return baseThemeStyle.__common_getter(self, 13, theme_value_types.t_float2)
+
+    @MajorTickSize.setter
+    def MajorTickSize(self, value):
+        baseThemeStyle.__common_setter(self, 13, theme_value_types.t_float2, True, False, value)
+
+    @property
+    def MinorTickSize(self):
+        """
+        Line thickness of minor ticks.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        return baseThemeStyle.__common_getter(self, 14, theme_value_types.t_float2)
+
+    @MinorTickSize.setter
+    def MinorTickSize(self, value):
+        baseThemeStyle.__common_setter(self, 14, theme_value_types.t_float2, True, False, value)
+
+    @property
+    def MajorGridSize(self):
+        """
+        Line thickness of major grid lines.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        return baseThemeStyle.__common_getter(self, 15, theme_value_types.t_float2)
+
+    @MajorGridSize.setter
+    def MajorGridSize(self, value):
+        baseThemeStyle.__common_setter(self, 15, theme_value_types.t_float2, True, False, value)
+
+    @property
+    def MinorGridSize(self):
+        """
+        Line thickness of minor grid lines.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        return baseThemeStyle.__common_getter(self, 16, theme_value_types.t_float2)
+
+    @MinorGridSize.setter
+    def MinorGridSize(self, value):
+        baseThemeStyle.__common_setter(self, 16, theme_value_types.t_float2, True, False, value)
+
+    @property
+    def PlotPadding(self):
+        """
+        Padding between widget frame and plot area, labels, or outside legends (i.e. main padding).
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        return baseThemeStyle.__common_getter(self, 17, theme_value_types.t_float2)
+
+    @PlotPadding.setter
+    def PlotPadding(self, value):
+        baseThemeStyle.__common_setter(self, 17, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def LabelPadding(self):
+        """
+        Padding between axes labels, tick labels, and plot edge.
+
+        The value is a pair of floats. Defaults to (5, 5).
+        """
+        return baseThemeStyle.__common_getter(self, 18, theme_value_types.t_float2)
+
+    @LabelPadding.setter
+    def LabelPadding(self, value):
+        baseThemeStyle.__common_setter(self, 18, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def LegendPadding(self):
+        """
+        Legend padding from plot edges.
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        return baseThemeStyle.__common_getter(self, 19, theme_value_types.t_float2)
+
+    @LegendPadding.setter
+    def LegendPadding(self, value):
+        baseThemeStyle.__common_setter(self, 19, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def LegendInnerPadding(self):
+        """
+        Legend inner padding from legend edges.
+
+        The value is a pair of floats. Defaults to (5, 5).
+        """
+        return baseThemeStyle.__common_getter(self, 20, theme_value_types.t_float2)
+
+    @LegendInnerPadding.setter
+    def LegendInnerPadding(self, value):
+        baseThemeStyle.__common_setter(self, 20, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def LegendSpacing(self):
+        """
+        Spacing between legend entries.
+
+        The value is a pair of floats. Defaults to (5, 0).
+        """
+        return baseThemeStyle.__common_getter(self, 21, theme_value_types.t_float2)
+
+    @LegendSpacing.setter
+    def LegendSpacing(self, value):
+        baseThemeStyle.__common_setter(self, 21, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def MousePosPadding(self):
+        """
+        Padding between plot edge and interior info text.
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        return baseThemeStyle.__common_getter(self, 22, theme_value_types.t_float2)
+
+    @MousePosPadding.setter
+    def MousePosPadding(self, value):
+        baseThemeStyle.__common_setter(self, 22, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def AnnotationPadding(self):
+        """
+        Text padding around annotation labels.
+
+        The value is a pair of floats. Defaults to (2, 2).
+        """
+        return baseThemeStyle.__common_getter(self, 23, theme_value_types.t_float2)
+
+    @AnnotationPadding.setter
+    def AnnotationPadding(self, value):
+        baseThemeStyle.__common_setter(self, 23, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def FitPadding(self):
+        """
+        Additional fit padding as a percentage of the fit extents (e.g. (0.1,0.1) adds 10% to the fit extents of X and Y).
+
+        The value is a pair of floats. Defaults to (0, 0).
+        """
+        return baseThemeStyle.__common_getter(self, 24, theme_value_types.t_float2)
+
+    @FitPadding.setter
+    def FitPadding(self, value):
+        baseThemeStyle.__common_setter(self, 24, theme_value_types.t_float2, False, False, value)
+
+    @property
+    def PlotDefaultSize(self):
+        """
+        Default size used for plots
+
+        The value is a pair of floats. Defaults to (400, 300).
+        """
+        return baseThemeStyle.__common_getter(self, 25, theme_value_types.t_float2)
+
+    @PlotDefaultSize.setter
+    def PlotDefaultSize(self, value):
+        baseThemeStyle.__common_setter(self, 25, theme_value_types.t_float2, True, True, value)
+
+    @property
+    def PlotMinSize(self):
+        """
+        Minimum size plot frame can be when shrunk.
+
+        The value is a pair of floats. Defaults to (200, 150).
+        """
+        return baseThemeStyle.__common_getter(self, 26, theme_value_types.t_float2)
+
+    @PlotMinSize.setter
+    def PlotMinSize(self, value):
+        baseThemeStyle.__common_setter(self, 26, theme_value_types.t_float2, True, True, value)
+
+cdef class ThemeStyleImNodes(baseThemeStyle):
+    pass # TODO
+
+'''
 cdef extern from * nogil:
     """
     const int styles_imnodes_sizes[15] = {
@@ -1127,7 +1679,7 @@ cdef extern from * nogil:
     """
     cdef int[15] styles_imnodes_sizes
 
-cdef class ThemeStyleImNodes(baseTheme):
+cdef class ThemeStyleImNodes(baseThemeStyle):
     def __cinit__(self):
         self.names = [
             b"GridSpacing",
@@ -1151,6 +1703,7 @@ cdef class ThemeStyleImNodes(baseTheme):
         for i, name in enumerate(self.names):
             name_str = name
             self.name_to_index[name_str] = i
+        self.backend = theme_backends.t_imnodes
 
     def __dir__(self):
         return self.names + dir(baseTheme)
@@ -1317,7 +1870,7 @@ cdef class ThemeStyleImNodes(baseTheme):
             action.type = theme_types.t_style
             action.backend = theme_backends.t_imnodes
             action.theme_index = element_content.first
-            if styles_imgui_sizes[element_content.first] == 1:
+            if styles_imnodes_sizes[element_content.first] == 1:
                 action.value_type = theme_value_types.t_float
                 action.value.value_float = element_content.second.x
             else:
@@ -1334,7 +1887,7 @@ cdef class ThemeStyleImNodes(baseTheme):
         if self._prev_sibling is not None:
             (<baseTheme>self._prev_sibling).pop()
         self.mutex.unlock()
-
+'''
 
 cdef class ThemeList(baseTheme):
     def __cinit__(self):

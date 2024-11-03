@@ -70,7 +70,6 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
     // It's best not to separate actual and client width
     // as the actual width/height advertised is very OS dependent
     // for the same visual result.
-    printf("DPI: %d %d %d %d\n", w, h, display_w, display_h);
     viewport->actualWidth = display_w;
     viewport->actualHeight = display_h;
     viewport->clientWidth = display_w;
@@ -491,7 +490,12 @@ mvToggleFullScreen(mvViewport& viewport)
 void mvWakeRendering(mvViewport& viewport)
 {
     viewport.needs_refresh.store(true);
-    //glfwPostEmptyEvent(); TODO
+    SDL_Event user_event;
+    user_event.type = SDL_EVENT_USER;
+    user_event.user.code = 2;
+    user_event.user.data1 = NULL;
+    user_event.user.data2 = NULL;
+    SDL_PushEvent(&user_event);
 }
 
 void mvMakeUploadContextCurrent(mvViewport& viewport)

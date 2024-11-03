@@ -25,29 +25,35 @@ cdef class ThemeColorImNodes(baseTheme):
     cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
     cdef void pop(self) noexcept nogil
 
-cdef class ThemeStyleImGui(baseTheme):
+ctypedef struct theme_value_info:
+    theme_value value
+    theme_value_types value_type
+    bint should_round
+    bint should_scale
+
+cdef class baseThemeStyle(baseTheme):
     cdef list names
-    cdef unordered_map[string, int] name_to_index
-    cdef unordered_map[int, imgui.ImVec2] index_to_value
-    cdef void push(self) noexcept nogil
+    cdef theme_backends backend
+    cdef unordered_map[int, theme_value_info] index_to_value
+    cdef unordered_map[int, theme_value_info] index_to_value_for_dpi
+    cdef float dpi
+    cdef bint dpi_scaling
+    cdef bint round_after_scale
+    cdef object __common_getter(self, int, theme_value_types)
+    cdef void __common_setter(self, int, theme_value_types, bint, bint, py_value)
+    cdef void __compute_for_dpi(self) noexcept nogil
     cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
+    cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
 
-cdef class ThemeStyleImPlot(baseTheme):
-    cdef list names
-    cdef unordered_map[string, int] name_to_index
-    cdef unordered_map[int, imgui.ImVec2] index_to_value
-    cdef void push(self) noexcept nogil
-    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
-    cdef void pop(self) noexcept nogil
+cdef class ThemeStyleImGui(baseThemeStyle):
+    pass
 
-cdef class ThemeStyleImNodes(baseTheme):
-    cdef list names
-    cdef unordered_map[string, int] name_to_index
-    cdef unordered_map[int, imgui.ImVec2] index_to_value
-    cdef void push(self) noexcept nogil
-    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
-    cdef void pop(self) noexcept nogil
+cdef class ThemeStyleImPlot(baseThemeStyle):
+    pass
+
+cdef class ThemeStyleImNodes(baseThemeStyle):
+    pass
 
 cdef class ThemeList(baseTheme):
     """

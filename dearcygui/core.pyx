@@ -34,7 +34,7 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from libcpp.algorithm cimport swap
-from libcpp.cmath cimport atan, sin, cos, trunc, floor
+from libcpp.cmath cimport atan, sin, cos, trunc, floor, round as cround
 from libcpp.set cimport set as cpp_set
 from libcpp.vector cimport vector
 from libc.math cimport M_PI, INFINITY
@@ -2030,6 +2030,7 @@ cdef class Viewport(baseItem):
         self.state.cur.rendered = True # For compatibility with RenderHandlers
         self.p_state = &self.state
         self._cursor = imgui.ImGuiMouseCursor_Arrow
+        self._scale = 1.
         self.viewport = mvCreateViewport(internal_render_callback,
                                          internal_resize_callback,
                                          internal_close_callback,
@@ -2231,23 +2232,40 @@ cdef class Viewport(baseItem):
     @property
     def dpi(self) -> float:
         """
-        DPI scaling of the main monitor, which
-        will be used to scale all UI elements and fonts.
-        Write to override the value.
-        A value of 1. will disable scaling.
-        Setting the dpi only has an impact if done
-        after initialize()
+        Requested scaling (DPI) from the OS for
+        this window. The value is valid after
+        initialize() and might change over time,
+        for instance if the window is moved to another
+        monitor.
+
+        The DPI is used to scale all items automatically.
+        From the developper point of view, everything behaves
+        as if the DPI is 1. This behaviour can be disabled
+        using the related scaling settings.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.viewport.dpi
 
-    @dpi.setter
-    def dpi(self, float value):
+    @property
+    def scale(self) -> float:
+        """
+        Multiplicative scale that, multiplied by
+        the value of dpi, is used to scale
+        automatically all items.
+
+        Defaults to 1.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._scale
+
+    @scale.setter
+    def scale(self, float value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.__check_not_initialized()
-        self.viewport.dpi = value
+        self._scale = value
 
     @property
     def min_width(self):
@@ -2839,6 +2857,60 @@ cdef class Viewport(baseItem):
         self.__check_initialized()
         self.last_t_before_event_handling = ctime.monotonic_ns()
         cdef bint should_present
+        cdef float gs = self.global_scale
+        self.global_scale = self.viewport.dpi * self._scale
+        cdef imgui.ImGuiStyle style = imgui.GetStyle()
+        cdef implot.ImPlotStyle style_p = implot.GetStyle()
+        # Handle scaling
+        if gs != self.global_scale:
+            gs = self.global_scale
+            style.WindowPadding = imgui.ImVec2(cround(gs*8), cround(gs*8))
+            #style.WindowRounding = cround(gs*0.)
+            style.WindowMinSize = imgui.ImVec2(cround(gs*32), cround(gs*32))
+            #style.ChildRounding = cround(gs*0.)
+            #style.PopupRounding = cround(gs*0.)
+            style.FramePadding = imgui.ImVec2(cround(gs*4.), cround(gs*3.))
+            #style.FrameRounding = cround(gs*0.)
+            style.ItemSpacing = imgui.ImVec2(cround(gs*8.), cround(gs*4.))
+            style.ItemInnerSpacing = imgui.ImVec2(cround(gs*4.), cround(gs*4.))
+            style.CellPadding = imgui.ImVec2(cround(gs*4.), cround(gs*2.))
+            #style.TouchExtraPadding = imgui.ImVec2(cround(gs*0.), cround(gs*0.))
+            style.IndentSpacing = cround(gs*21.)
+            style.ColumnsMinSpacing = cround(gs*6.)
+            style.ScrollbarSize = cround(gs*14.)
+            style.ScrollbarRounding = cround(gs*9.)
+            style.GrabMinSize = cround(gs*12.)
+            #style.GrabRounding = cround(gs*0.)
+            style.LogSliderDeadzone = cround(gs*4.)
+            style.TabRounding = cround(gs*4.)
+            #style.TabMinWidthForCloseButton = cround(gs*0.)
+            style.TabBarOverlineSize = cround(gs*2.)
+            style.SeparatorTextPadding = imgui.ImVec2(cround(gs*20.), cround(gs*3.))
+            style.DisplayWindowPadding = imgui.ImVec2(cround(gs*19.), cround(gs*19.))
+            style.DisplaySafeAreaPadding = imgui.ImVec2(cround(gs*3.), cround(gs*3.))
+            style.MouseCursorScale = gs*1.
+            style_p.LineWeight = gs*1.
+            style_p.MarkerSize = gs*4.
+            style_p.MarkerWeight = gs*1
+            style_p.ErrorBarSize = cround(gs*5.)
+            style_p.ErrorBarWeight = gs * 1.5
+            style_p.DigitalBitHeight = cround(gs * 8.)
+            style_p.DigitalBitGap = cround(gs * 4.)
+            style_p.MajorTickLen = imgui.ImVec2(gs*10, gs*10)
+            style_p.MinorTickLen = imgui.ImVec2(gs*5, gs*5)
+            style_p.MajorTickSize = imgui.ImVec2(gs*1, gs*1)
+            style_p.MinorTickSize = imgui.ImVec2(gs*1, gs*1)
+            style_p.MajorGridSize = imgui.ImVec2(gs*1, gs*1)
+            style_p.MinorGridSize = imgui.ImVec2(gs*1, gs*1)
+            style_p.PlotPadding = imgui.ImVec2(cround(gs*10), cround(gs*10))
+            style_p.LabelPadding = imgui.ImVec2(cround(gs*5), cround(gs*5))
+            style_p.LegendPadding = imgui.ImVec2(cround(gs*10), cround(gs*10))
+            style_p.LegendInnerPadding = imgui.ImVec2(cround(gs*5), cround(gs*5))
+            style_p.LegendSpacing = imgui.ImVec2(cround(gs*5), cround(gs*0))
+            style_p.MousePosPadding = imgui.ImVec2(cround(gs*10), cround(gs*10))
+            style_p.AnnotationPadding = imgui.ImVec2(cround(gs*2), cround(gs*2))
+            style_p.PlotDefaultSize = imgui.ImVec2(cround(gs*400), cround(gs*300))
+            style_p.PlotMinSize = imgui.ImVec2(cround(gs*200), cround(gs*150))
         with nogil:
             backend_m.lock()
             self_m.unlock()
@@ -12349,6 +12421,7 @@ cdef class FontTexture(baseItem):
         self.can_have_sibling = False
         self.atlas = imgui.ImFontAtlas()
         self._texture = Texture(context)
+        self.fonts_files = []
         self.fonts = []
 
     def __delalloc__(self):
@@ -12376,13 +12449,19 @@ cdef class FontTexture(baseItem):
         config.OversampleV = 3 if subpixel else 1
         if not(subpixel):
             config.PixelSnapH = True
+        with open(path, 'rb') as fp:
+            font_data = fp.read()
+        cdef const unsigned char[:] font_data_u8 = font_data
         config.SizePixels = size
         config.RasterizerDensity = density_scale
         config.FontNo = index_in_file
-        cdef string path_string = bytes(path, 'utf-8')
+        config.FontDataOwnedByAtlas = False
         cdef imgui.ImFont *font = \
-            self.atlas.AddFontFromFileTTF(path_string.c_str(), size,
-		                                  &config, NULL)
+            self.atlas.AddFontFromMemoryTTF(<void*>&font_data_u8[0],
+                                            font_data_u8.shape[0],
+                                            size,
+                                            &config,
+                                            NULL)
         if font == NULL:
             raise ValueError(f"Failed to load target Font file {path}")
         cdef Font font_object = Font(self.context)
@@ -15422,8 +15501,8 @@ cdef void implot_PopStyleColor(int count) noexcept nogil:
 cdef void imgui_PushStyleVar1(int i, float val) noexcept nogil:
     imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, val)
 
-cdef void imgui_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
-    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, val)
+cdef void imgui_PushStyleVar2(int i, float[2] val) noexcept nogil:
+    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, imgui.ImVec2(val[0], val[1]))
 
 cdef void imgui_PopStyleVar(int count) noexcept nogil:
     imgui.PopStyleVar(count)
@@ -15434,8 +15513,8 @@ cdef void implot_PushStyleVar0(int i, int val) noexcept nogil:
 cdef void implot_PushStyleVar1(int i, float val) noexcept nogil:
     implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
 
-cdef void implot_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
-    implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
+cdef void implot_PushStyleVar2(int i, float[2] val) noexcept nogil:
+    implot.PushStyleVar(<implot.ImPlotStyleVar>i, imgui.ImVec2(val[0], val[1]))
 
 cdef void implot_PopStyleVar(int count) noexcept nogil:
     implot.PopStyleVar(count)
@@ -15443,8 +15522,8 @@ cdef void implot_PopStyleVar(int count) noexcept nogil:
 cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil:
     imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, val)
 
-cdef void imnodes_PushStyleVar2(int i, imgui.ImVec2 val) noexcept nogil:
-    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, val)
+cdef void imnodes_PushStyleVar2(int i, float[2] val) noexcept nogil:
+    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, imgui.ImVec2(val[0], val[1]))
 
 cdef void imnodes_PopStyleVar(int count) noexcept nogil:
     imnodes.PopStyleVar(count)

@@ -140,17 +140,36 @@ class ThemeColorImNodes(baseTheme):
     
 
 
-class ThemeStyleImGui(baseTheme):
-    def __dir__(self): # -> list:
+class baseThemeStyle(baseTheme):
+    @property
+    def no_scaling(self): # -> bool:
+        """
+        boolean. Defaults to False.
+        If set, disables the automated scaling to the dpi
+        scale value for this theme
+        """
         ...
     
-    def __getattr__(self, name): # -> tuple[float, float] | float | None:
+    @no_scaling.setter
+    def no_scaling(self, value: bool): # -> None:
         ...
     
-    def __getitem__(self, key): # -> tuple[float, float] | float | None:
+    @property
+    def no_rounding(self): # -> bool:
+        """
+        boolean. Defaults to False.
+        If set, disables rounding (after scaling) to the
+        closest integer the parameters. The rounding is only
+        applied to parameters which impact item positioning
+        in a way that would prevent a pixel perfect result.
+        """
         ...
     
-    def __setattr__(self, name, value): # -> None:
+    @no_rounding.setter
+    def no_rounding(self, value: bool): # -> None:
+        ...
+    
+    def __getitem__(self, key): # -> Any:
         ...
     
     def __setitem__(self, key, value): # -> None:
@@ -161,7 +180,442 @@ class ThemeStyleImGui(baseTheme):
     
 
 
-class ThemeStyleImPlot(baseTheme):
+class ThemeStyleImGui(baseThemeStyle):
+    @property
+    def Alpha(self): # -> object:
+        """
+        Global alpha applied to everything in Dear ImGui.
+
+        The value is in the range [0, 1]. Defaults to 1.
+        """
+        ...
+    
+    @Alpha.setter
+    def Alpha(self, value): # -> None:
+        ...
+    
+    @property
+    def DisabledAlpha(self): # -> object:
+        """
+        Unused currently.
+
+        The value is in the range [0, 1]. Defaults to 0.6
+        """
+        ...
+    
+    @DisabledAlpha.setter
+    def DisabledAlpha(self, value): # -> None:
+        ...
+    
+    @property
+    def WindowPadding(self): # -> object:
+        """
+        Padding within a window.
+
+        The value is a pair of float (dx, dy). Defaults to (8, 8)
+        """
+        ...
+    
+    @WindowPadding.setter
+    def WindowPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def WindowRounding(self): # -> object:
+        """
+        Radius of window corners rounding. Set to 0.0 to have rectangular windows. Large values tend to lead to variety of artifacts and are not recommended.
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @WindowRounding.setter
+    def WindowRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def WindowBorderSize(self): # -> object:
+        """
+        Thickness of border around windows. Generally set to 0.0 or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @WindowBorderSize.setter
+    def WindowBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def WindowMinSize(self): # -> object:
+        """
+        Minimum window size
+
+        The value is a pair of float (dx, dy). Defaults to (32, 32)
+        """
+        ...
+    
+    @WindowMinSize.setter
+    def WindowMinSize(self, value): # -> None:
+        ...
+    
+    @property
+    def WindowTitleAlign(self): # -> object:
+        """
+        Alignment for window title bar text in percentages
+
+        The value is a pair of float (dx, dy). Defaults to (0., 0.5), which means left-aligned, vertical centering on the row
+        """
+        ...
+    
+    @WindowTitleAlign.setter
+    def WindowTitleAlign(self, value): # -> None:
+        ...
+    
+    @property
+    def ChildRounding(self): # -> object:
+        """
+        Radius of child window corners rounding. Set to 0.0 to have rectangular child windows.
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @ChildRounding.setter
+    def ChildRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def ChildBorderSize(self): # -> object:
+        """
+        Thickness of border around child windows. Generally set to 0.0f or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @ChildBorderSize.setter
+    def ChildBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def PopupRounding(self): # -> object:
+        """
+        Radius of popup or tooltip window corners rounding. Set to 0.0 to have rectangular popup or tooltip windows.
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @PopupRounding.setter
+    def PopupRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def PopupBorderSize(self): # -> object:
+        """
+        Thickness of border around popup or tooltip windows. Generally set to 0.0f or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @PopupBorderSize.setter
+    def PopupBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def FramePadding(self): # -> object:
+        """
+        Padding within a framed rectangle (used by most widgets)
+
+        The value is a pair of floats. Defaults to (4,3).
+        """
+        ...
+    
+    @FramePadding.setter
+    def FramePadding(self, value): # -> None:
+        ...
+    
+    @property
+    def FrameRounding(self): # -> object:
+        """
+        Radius of frame corners rounding. Set to 0.0 to have rectangular frame (most widgets).
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @FrameRounding.setter
+    def FrameRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def FrameBorderSize(self): # -> object:
+        """
+        Thickness of border around frames (most widgets). Generally set to 0.0f or 1.0f. Other values not well tested.
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @FrameBorderSize.setter
+    def FrameBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def ItemSpacing(self): # -> object:
+        """
+        Horizontal and vertical spacing between widgets/lines.
+
+        The value is a pair of floats. Defaults to (8, 4).
+        """
+        ...
+    
+    @ItemSpacing.setter
+    def ItemSpacing(self, value): # -> None:
+        ...
+    
+    @property
+    def ItemInnerSpacing(self): # -> object:
+        """
+        Horizontal and vertical spacing between elements inside of a composed widget.
+
+        The value is a pair of floats. Defaults to (4, 4).
+        """
+        ...
+    
+    @ItemInnerSpacing.setter
+    def ItemInnerSpacing(self, value): # -> None:
+        ...
+    
+    @property
+    def IndentSpacing(self): # -> object:
+        """
+        Default horizontal spacing for indentations. For instance when entering a tree node.
+        A good value is Generally == (FontSize + FramePadding.x*2).
+
+        The value is a float. Defaults to 21.
+        """
+        ...
+    
+    @IndentSpacing.setter
+    def IndentSpacing(self, value): # -> None:
+        ...
+    
+    @property
+    def CellPadding(self): # -> object:
+        """
+        Tables: padding between cells.
+        The x padding is applied for the whole Table,
+        while y can be different for every row.
+
+        The value is a pair of floats. Defaults to (4, 2).
+        """
+        ...
+    
+    @CellPadding.setter
+    def CellPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def ScrollbarSize(self): # -> object:
+        """
+        Width of the vertical scrollbar, Height of the horizontal scrollbar
+
+        The value is a float. Defaults to 14.
+        """
+        ...
+    
+    @ScrollbarSize.setter
+    def ScrollbarSize(self, value): # -> None:
+        ...
+    
+    @property
+    def ScrollbarRounding(self): # -> object:
+        """
+        Radius of grab corners rounding for scrollbar.
+
+        The value is a float. Defaults to 9.
+        """
+        ...
+    
+    @ScrollbarRounding.setter
+    def ScrollbarRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def GrabMinSize(self): # -> object:
+        """
+        Minimum width/height of a grab box for slider/scrollbar.
+
+        The value is a float. Defaults to 12.
+        """
+        ...
+    
+    @GrabMinSize.setter
+    def GrabMinSize(self, value): # -> None:
+        ...
+    
+    @property
+    def GrabRounding(self): # -> object:
+        """
+        Radius of grabs corners rounding. Set to 0.0f to have rectangular slider grabs.
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @GrabRounding.setter
+    def GrabRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def TabRounding(self): # -> object:
+        """
+        Radius of upper corners of a tab. Set to 0.0f to have rectangular tabs.
+
+        The value is a float. Defaults to 4.
+        """
+        ...
+    
+    @TabRounding.setter
+    def TabRounding(self, value): # -> None:
+        ...
+    
+    @property
+    def TabBorderSize(self): # -> object:
+        """
+        Thickness of borders around tabs.
+
+        The value is a float. Defaults to 0.
+        """
+        ...
+    
+    @TabBorderSize.setter
+    def TabBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def TabBarBorderSize(self): # -> object:
+        """
+        Thickness of tab-bar separator, which takes on the tab active color to denote focus.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @TabBarBorderSize.setter
+    def TabBarBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def TabBarOverlineSize(self): # -> object:
+        """
+        Thickness of tab-bar overline, which highlights the selected tab-bar.
+
+        The value is a float. Defaults to 2.
+        """
+        ...
+    
+    @TabBarOverlineSize.setter
+    def TabBarOverlineSize(self, value): # -> None:
+        ...
+    
+    @property
+    def TableAngledHeadersAngle(self): # -> object:
+        """
+        Tables: Angle of angled headers (supported values range from -50 degrees to +50 degrees).
+
+        The value is a float. Defaults to 35.0f * (IM_PI / 180.0f).
+        """
+        ...
+    
+    @TableAngledHeadersAngle.setter
+    def TableAngledHeadersAngle(self, value): # -> None:
+        ...
+    
+    @property
+    def TableAngledHeadersTextAlign(self): # -> object:
+        """
+        Tables: Alignment (percentages) of angled headers within the cell
+    
+        The value is a pair of floats. Defaults to (0.5, 0.), i.e. top-centered
+        """
+        ...
+    
+    @TableAngledHeadersTextAlign.setter
+    def TableAngledHeadersTextAlign(self, value): # -> None:
+        ...
+    
+    @property
+    def ButtonTextAlign(self): # -> object:
+        """
+        Alignment of button text when button is larger than text.
+    
+        The value is a pair of floats. Defaults to (0.5, 0.5), i.e. centered
+        """
+        ...
+    
+    @ButtonTextAlign.setter
+    def ButtonTextAlign(self, value): # -> None:
+        ...
+    
+    @property
+    def SelectableTextAlign(self): # -> object:
+        """
+        Alignment of selectable text (in percentages).
+    
+        The value is a pair of floats. Defaults to (0., 0.), i.e. top-left. It is advised to keep the default.
+        """
+        ...
+    
+    @SelectableTextAlign.setter
+    def SelectableTextAlign(self, value): # -> None:
+        ...
+    
+    @property
+    def SeparatorTextBorderSize(self): # -> object:
+        """
+        Thickness of border in Separator() text.
+    
+        The value is a float. Defaults to 3.
+        """
+        ...
+    
+    @SeparatorTextBorderSize.setter
+    def SeparatorTextBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def SelectableTextAlign(self): # -> object:
+        """
+        Alignment of text within the separator in percentages.
+    
+        The value is a pair of floats. Defaults to (0., 0.5), i.e. left-centered
+        """
+        ...
+    
+    @SelectableTextAlign.setter
+    def SelectableTextAlign(self, value): # -> None:
+        ...
+    
+    @property
+    def SeparatorTextPadding(self): # -> object:
+        """
+        Horizontal offset of text from each edge of the separator + spacing on other axis. Generally small values. .y is recommended to be == FramePadding.y.
+    
+        The value is a pair of floats. Defaults to (20., 3.).
+        """
+        ...
+    
+    @SeparatorTextPadding.setter
+    def SeparatorTextPadding(self, value): # -> None:
+        ...
+    
+
+
+class ThemeStyleImPlot(baseThemeStyle):
     def __dir__(self): # -> list:
         ...
     
@@ -182,7 +636,7 @@ class ThemeStyleImPlot(baseTheme):
     
 
 
-class ThemeStyleImNodes(baseTheme):
+class ThemeStyleImNodes(baseThemeStyle):
     def __dir__(self): # -> list:
         ...
     
