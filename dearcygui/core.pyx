@@ -12395,11 +12395,30 @@ cdef class Font(baseItem):
             raise ValueError(f"Invalid scale {value}")
         self._scale = value
 
+    @property
+    def no_scaling(self):
+        """
+        boolean. Defaults to False.
+        If set, disables the automated scaling to the dpi
+        scale value for this theme.
+        The manual user-set scale is still applied.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return not(self.dpi_scaling)
+
+    @no_scaling.setter
+    def no_scaling(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.dpi_scaling = not(value)
+
     cdef void push(self) noexcept nogil:
         if self.font == NULL:
             return
         self.mutex.lock()
-        self.font.Scale = self.context._viewport.global_scale * self._scale
+        self.font.Scale = \
+            (self.context._viewport.global_scale if self.dpi_scaling else 1.) * self._scale
         imgui.PushFont(self.font)
 
     cdef void pop(self) noexcept nogil:

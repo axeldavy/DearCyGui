@@ -963,6 +963,7 @@ cdef class Texture(baseItem):
 cdef class Font(baseItem):
     cdef imgui.ImFont *font
     cdef FontTexture container
+    cdef bint dpi_scaling
     cdef float _scale
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
