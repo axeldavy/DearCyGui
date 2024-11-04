@@ -2264,7 +2264,6 @@ cdef class Viewport(baseItem):
     def scale(self, float value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.__check_not_initialized()
         self._scale = value
 
     @property
@@ -12368,6 +12367,7 @@ cdef class Font(baseItem):
         self.can_have_sibling = False
         self.font = NULL
         self.container = None
+        self._scale = 1.
 
     @property
     def texture(self):
@@ -12385,24 +12385,21 @@ cdef class Font(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         """Writable attribute: multiplicative factor to scale the font when used"""
-        if self.font == NULL:
-            raise ValueError("Uninitialized font")
-        return self.font.Scale
+        return self._scale
 
     @scale.setter
     def scale(self, float value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if self.font == NULL:
-            raise ValueError("Uninitialized font")
         if value <= 0.:
             raise ValueError(f"Invalid scale {value}")
-        self.font.Scale = value
+        self._scale = value
 
     cdef void push(self) noexcept nogil:
         if self.font == NULL:
             return
         self.mutex.lock()
+        self.font.Scale = self.context._viewport.global_scale * self._scale
         imgui.PushFont(self.font)
 
     cdef void pop(self) noexcept nogil:
@@ -12431,10 +12428,20 @@ cdef class FontTexture(baseItem):
                       str path,
                       float size=13.,
                       int index_in_file=0,
-                      float density_scale=1.,
-                      bint subpixel=True):
+                      float density_scale=2.,
+                      bint align_to_pixel=False):
         """
         Prepare the target font file to be added to the FontTexture
+
+        path: path to the input font file (ttf, otf, etc).
+        size: Target pixel size at which the font will be rendered by default.
+        index_in_file: index of the target font in the font file.
+        density_scale: rasterizer oversampling to better render when
+            the font scale is not 1.
+        align_to_pixel: For sharp fonts, will prevent blur by
+            aligning font rendering to the pixel. The spacing
+            between characters might appear slightly odd as
+            a result, so don't enable when not needed.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -12445,10 +12452,11 @@ cdef class FontTexture(baseItem):
         if size <= 0. or density_scale <= 0.:
             raise ValueError("Invalid texture size")
         cdef imgui.ImFontConfig config = imgui.ImFontConfig()
-        config.OversampleH = 3 if subpixel else 1
-        config.OversampleV = 3 if subpixel else 1
-        if not(subpixel):
-            config.PixelSnapH = True
+        # Unused with freetype
+        #config.OversampleH = 3 if subpixel else 1
+        #config.OversampleV = 3 if subpixel else 1
+        #if not(subpixel):
+        config.PixelSnapH = align_to_pixel
         with open(path, 'rb') as fp:
             font_data = fp.read()
         cdef const unsigned char[:] font_data_u8 = font_data
