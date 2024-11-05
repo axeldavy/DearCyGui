@@ -4577,7 +4577,8 @@ cdef class DrawInWindow(uiItem):
         self.context._viewport.parent_pos = imgui.GetCursorScreenPos()
         self.context._viewport.shifts[0] = <double>startx
         self.context._viewport.shifts[1] = <double>starty
-        self.context._viewport.scales = [1., 1.]
+        cdef double scale = <double>self.context._viewport.global_scale if self.dpi_scaling else 1.
+        self.context._viewport.scales = [scale, scale]
 
         imgui.PushClipRect(imgui.ImVec2(startx, starty),
                            imgui.ImVec2(startx + clip_width,
@@ -8606,6 +8607,8 @@ cdef class Text(uiItem):
         """
         Writable attribute: wrap width in pixels
         -1 for no wrapping
+        The width is multiplied by the global scale
+        unless the no_scaling option is set.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -8656,7 +8659,7 @@ cdef class Text(uiItem):
         if self._wrap == 0:
             imgui.PushTextWrapPos(0.)
         elif self._wrap > 0:
-            imgui.PushTextWrapPos(imgui.GetCursorPosX() + <float>self._wrap)
+            imgui.PushTextWrapPos(imgui.GetCursorPosX() + <float>self._wrap * (self.context._viewport.global_scale if self.dpi_scaling else 1.))
         if self._show_label or self._bullet:
             imgui.BeginGroup()
         if self._bullet:
