@@ -67,13 +67,10 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
     SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
     SDL_GetWindowSizeInPixels(viewportData->handle, &display_w, &display_h);
     SDL_GetWindowSize(viewportData->handle, &w, &h);
-    // It's best not to separate actual and client width
-    // as the actual width/height advertised is very OS dependent
-    // for the same visual result.
     viewport->actualWidth = display_w;
     viewport->actualHeight = display_h;
-    viewport->clientWidth = display_w;
-    viewport->clientHeight = display_h;
+    viewport->clientWidth = w;
+    viewport->clientHeight = h;
 
     int current_interval, desired_interval;
     SDL_GL_GetSwapInterval(&current_interval);
@@ -112,10 +109,11 @@ mvProcessEvents(mvViewport* viewport)
 
     if (viewport->sizeDirty)
     {
-        float dpi = SDL_GetWindowPixelDensity(viewportData->handle);
-        SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport->maxwidth/dpi), (int)(viewport->maxheight/dpi));
-        SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport->minwidth/dpi), (int)(viewport->minheight/dpi));
-        SDL_SetWindowSize(viewportData->handle, (int)(viewport->actualWidth/dpi), (int)(viewport->actualHeight/dpi));
+        float logical_to_pixel_factor = SDL_GetWindowPixelDensity(viewportData->handle);
+        float factor = viewport->dpi / logical_to_pixel_factor;
+        SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport->maxwidth * factor), (int)(viewport->maxheight * factor));
+        SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport->minwidth * factor), (int)(viewport->minheight * factor));
+        SDL_SetWindowSize(viewportData->handle, (int)(viewport->actualWidth * factor), (int)(viewport->actualHeight * factor));
         viewport->sizeDirty = false;
     }
 
@@ -161,6 +159,8 @@ mvProcessEvents(mvViewport* viewport)
             case SDL_EVENT_MOUSE_MOTION:
                 viewport->activity.store(true);
                 break;
+            case SDL_EVENT_WINDOW_RESIZED:
+                //viewport->on_resize(...) TODO
             case SDL_EVENT_MOUSE_WHEEL:
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
             case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -172,7 +172,6 @@ mvProcessEvents(mvViewport* viewport)
             case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
             case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
             case SDL_EVENT_WINDOW_EXPOSED:
-            case SDL_EVENT_WINDOW_RESIZED:
             case SDL_EVENT_WINDOW_DESTROYED:
                 viewport->needs_refresh.store(true);
                 break;
@@ -240,7 +239,7 @@ mvCreateViewport(render_fun render,
     viewportData->secondary_handle = secondary_handle;
     viewportData->secondary_gl_handle = secondary_gl_handle;
     auto primary_display = SDL_GetPrimaryDisplay();
-    //viewport->dpi = SDL_GetDisplayContentScale(primary_display);
+    viewport->dpi = SDL_GetDisplayContentScale(primary_display);
     return viewport;
 }
 
@@ -305,24 +304,25 @@ mvShowViewport(mvViewport& viewport,
     SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
     viewportData->secondary_gl_context.unlock();
     //glfwSetWindowPos(viewportData->handle, viewport.xpos, viewport.ypos); // SDL_SetWindowPosition
-    float dpi = SDL_GetWindowPixelDensity(viewportData->handle);
-    if (dpi != 1.)
-        SDL_SetWindowSize(viewportData->handle, (int)(viewport.actualWidth/dpi), (int)(viewport.actualHeight/dpi));
-    SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth/dpi), (int)(viewport.maxheight/dpi));
-    SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth/dpi), (int)(viewport.minheight/dpi));
+    viewport.dpi = SDL_GetWindowDisplayScale(viewportData->handle);
+    float logical_to_pixel_factor = SDL_GetWindowPixelDensity(viewportData->handle);
+    float factor = viewport.dpi / logical_to_pixel_factor;
+    SDL_SetWindowSize(viewportData->handle, (int)(viewport.actualWidth * factor), (int)(viewport.actualHeight * factor));
+    SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth * factor), (int)(viewport.maxheight * factor));
+    SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth * factor), (int)(viewport.minheight * factor));
     SDL_ShowWindow(viewportData->handle);
-    if (dpi != SDL_GetWindowPixelDensity(viewportData->handle)) {
-        SDL_SetWindowSize(viewportData->handle, (int)(viewport.actualWidth/dpi), (int)(viewport.actualHeight/dpi));
-        SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth/dpi), (int)(viewport.maxheight/dpi));
-        SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth/dpi), (int)(viewport.minheight/dpi));
+
+    viewport.dpi = SDL_GetWindowDisplayScale(viewportData->handle);
+    logical_to_pixel_factor = SDL_GetWindowPixelDensity(viewportData->handle);
+    float updated_factor = viewport.dpi / logical_to_pixel_factor;
+    if (factor != updated_factor) {
+        SDL_SetWindowSize(viewportData->handle, (int)(viewport.actualWidth * factor), (int)(viewport.actualHeight * factor));
+        SDL_SetWindowMaximumSize(viewportData->handle, (int)(viewport.maxwidth * factor), (int)(viewport.maxheight * factor));
+        SDL_SetWindowMinimumSize(viewportData->handle, (int)(viewport.minwidth * factor), (int)(viewport.minheight * factor));
     }
 
-    viewport.clientHeight = viewport.actualHeight;
-    viewport.clientWidth = viewport.actualWidth;
-    // Not the same as previous dpi
-    dpi = SDL_GetWindowDisplayScale(viewportData->handle);
-    if (dpi > viewport.dpi)
-        viewport.dpi = dpi;
+    SDL_GetWindowSizeInPixels(viewportData->handle, &viewport.actualWidth, &viewport.actualHeight);
+    SDL_GetWindowSize(viewportData->handle, &viewport.clientWidth, &viewport.clientHeight);
 
     //std::vector<GLFWimage> images;
 

@@ -672,6 +672,7 @@ cdef class uiItem(baseItem):
     #cdef string filter -> to move
     #cdef string alias
     cdef string payloadType
+    cdef bint dpi_scaling
     cdef imgui.ImVec2 requested_size
     cdef float _indent
     cdef theme_enablers theme_condition_enabled
@@ -687,6 +688,7 @@ cdef class uiItem(baseItem):
 
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_subset(self) noexcept nogil
+    cdef imgui.ImVec2 scaled_requested_size(self) noexcept nogil
     cdef void draw(self) noexcept nogil
     #cdef void draw_children(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil

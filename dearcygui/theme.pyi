@@ -616,45 +616,361 @@ class ThemeStyleImGui(baseThemeStyle):
 
 
 class ThemeStyleImPlot(baseThemeStyle):
-    def __dir__(self): # -> list:
+    @property
+    def LineWeight(self): # -> object:
+        """
+        Plot item line weight in pixels.
+
+        The value is a float. Defaults to 1.
+        """
         ...
     
-    def __getattr__(self, name): # -> tuple[float, float] | int | float | None:
+    @LineWeight.setter
+    def LineWeight(self, value): # -> None:
         ...
     
-    def __getitem__(self, key): # -> tuple[float, float] | int | float | None:
+    @property
+    def Marker(self): # -> object:
+        """
+        Marker specification.
+
+        The value is an integer. Defaults to 1.
+        """
         ...
     
-    def __setattr__(self, name, value): # -> None:
+    @Marker.setter
+    def Marker(self, value): # -> None:
         ...
     
-    def __setitem__(self, key, value): # -> None:
+    @property
+    def MarkerSize(self): # -> object:
+        """
+        Marker size in pixels (roughly the marker's "radius").
+
+        The value is a float. Defaults to 4.
+        """
         ...
     
-    def __iter__(self): # -> Iterator:
+    @MarkerSize.setter
+    def MarkerSize(self, value): # -> None:
+        ...
+    
+    @property
+    def MarkerWeight(self): # -> object:
+        """
+        Plot outline weight of markers in pixels.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @MarkerWeight.setter
+    def MarkerWeight(self, value): # -> None:
+        ...
+    
+    @property
+    def FillAlpha(self): # -> object:
+        """
+        Alpha modifier applied to all plot item fills.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @FillAlpha.setter
+    def FillAlpha(self, value): # -> None:
+        ...
+    
+    @property
+    def ErrorBarSize(self): # -> object:
+        """
+        Error bar whisker width in pixels.
+
+        The value is a float. Defaults to 5.
+        """
+        ...
+    
+    @ErrorBarSize.setter
+    def ErrorBarSize(self, value): # -> None:
+        ...
+    
+    @property
+    def ErrorBarWeight(self): # -> object:
+        """
+        Error bar whisker weight in pixels.
+
+        The value is a float. Defaults to 1.5.
+        """
+        ...
+    
+    @ErrorBarWeight.setter
+    def ErrorBarWeight(self, value): # -> None:
+        ...
+    
+    @property
+    def DigitalBitHeight(self): # -> object:
+        """
+        Digital channels bit height (at 1) in pixels.
+
+        The value is a float. Defaults to 8.
+        """
+        ...
+    
+    @DigitalBitHeight.setter
+    def DigitalBitHeight(self, value): # -> None:
+        ...
+    
+    @property
+    def DigitalBitGap(self): # -> object:
+        """
+        Digital channels bit padding gap in pixels.
+
+        The value is a float. Defaults to 4.
+        """
+        ...
+    
+    @DigitalBitGap.setter
+    def DigitalBitGap(self, value): # -> None:
+        ...
+    
+    @property
+    def PlotBorderSize(self): # -> object:
+        """
+        Thickness of border around plot area.
+
+        The value is a float. Defaults to 1.
+        """
+        ...
+    
+    @PlotBorderSize.setter
+    def PlotBorderSize(self, value): # -> None:
+        ...
+    
+    @property
+    def MinorAlpha(self): # -> object:
+        """
+        Alpha multiplier applied to minor axis grid lines.
+
+        The value is a float. Defaults to 0.25.
+        """
+        ...
+    
+    @MinorAlpha.setter
+    def MinorAlpha(self, value): # -> None:
+        ...
+    
+    @property
+    def MajorTickLen(self): # -> object:
+        """
+        Major tick lengths for X and Y axes.
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        ...
+    
+    @MajorTickLen.setter
+    def MajorTickLen(self, value): # -> None:
+        ...
+    
+    @property
+    def MinorTickLen(self): # -> object:
+        """
+        Minor tick lengths for X and Y axes.
+
+        The value is a pair of floats. Defaults to (5, 5).
+        """
+        ...
+    
+    @MinorTickLen.setter
+    def MinorTickLen(self, value): # -> None:
+        ...
+    
+    @property
+    def MajorTickSize(self): # -> object:
+        """
+        Line thickness of major ticks.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        ...
+    
+    @MajorTickSize.setter
+    def MajorTickSize(self, value): # -> None:
+        ...
+    
+    @property
+    def MinorTickSize(self): # -> object:
+        """
+        Line thickness of minor ticks.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        ...
+    
+    @MinorTickSize.setter
+    def MinorTickSize(self, value): # -> None:
+        ...
+    
+    @property
+    def MajorGridSize(self): # -> object:
+        """
+        Line thickness of major grid lines.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        ...
+    
+    @MajorGridSize.setter
+    def MajorGridSize(self, value): # -> None:
+        ...
+    
+    @property
+    def MinorGridSize(self): # -> object:
+        """
+        Line thickness of minor grid lines.
+
+        The value is a pair of floats. Defaults to (1, 1).
+        """
+        ...
+    
+    @MinorGridSize.setter
+    def MinorGridSize(self, value): # -> None:
+        ...
+    
+    @property
+    def PlotPadding(self): # -> object:
+        """
+        Padding between widget frame and plot area, labels, or outside legends (i.e. main padding).
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        ...
+    
+    @PlotPadding.setter
+    def PlotPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def LabelPadding(self): # -> object:
+        """
+        Padding between axes labels, tick labels, and plot edge.
+
+        The value is a pair of floats. Defaults to (5, 5).
+        """
+        ...
+    
+    @LabelPadding.setter
+    def LabelPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def LegendPadding(self): # -> object:
+        """
+        Legend padding from plot edges.
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        ...
+    
+    @LegendPadding.setter
+    def LegendPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def LegendInnerPadding(self): # -> object:
+        """
+        Legend inner padding from legend edges.
+
+        The value is a pair of floats. Defaults to (5, 5).
+        """
+        ...
+    
+    @LegendInnerPadding.setter
+    def LegendInnerPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def LegendSpacing(self): # -> object:
+        """
+        Spacing between legend entries.
+
+        The value is a pair of floats. Defaults to (5, 0).
+        """
+        ...
+    
+    @LegendSpacing.setter
+    def LegendSpacing(self, value): # -> None:
+        ...
+    
+    @property
+    def MousePosPadding(self): # -> object:
+        """
+        Padding between plot edge and interior info text.
+
+        The value is a pair of floats. Defaults to (10, 10).
+        """
+        ...
+    
+    @MousePosPadding.setter
+    def MousePosPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def AnnotationPadding(self): # -> object:
+        """
+        Text padding around annotation labels.
+
+        The value is a pair of floats. Defaults to (2, 2).
+        """
+        ...
+    
+    @AnnotationPadding.setter
+    def AnnotationPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def FitPadding(self): # -> object:
+        """
+        Additional fit padding as a percentage of the fit extents (e.g. (0.1,0.1) adds 10% to the fit extents of X and Y).
+
+        The value is a pair of floats. Defaults to (0, 0).
+        """
+        ...
+    
+    @FitPadding.setter
+    def FitPadding(self, value): # -> None:
+        ...
+    
+    @property
+    def PlotDefaultSize(self): # -> object:
+        """
+        Default size used for plots
+
+        The value is a pair of floats. Defaults to (400, 300).
+        """
+        ...
+    
+    @PlotDefaultSize.setter
+    def PlotDefaultSize(self, value): # -> None:
+        ...
+    
+    @property
+    def PlotMinSize(self): # -> object:
+        """
+        Minimum size plot frame can be when shrunk.
+
+        The value is a pair of floats. Defaults to (200, 150).
+        """
+        ...
+    
+    @PlotMinSize.setter
+    def PlotMinSize(self, value): # -> None:
         ...
     
 
 
 class ThemeStyleImNodes(baseThemeStyle):
-    def __dir__(self): # -> list:
-        ...
-    
-    def __getattr__(self, name): # -> tuple[float, float] | float | None:
-        ...
-    
-    def __getitem__(self, key): # -> tuple[float, float] | float | None:
-        ...
-    
-    def __setattr__(self, name, value): # -> None:
-        ...
-    
-    def __setitem__(self, key, value): # -> None:
-        ...
-    
-    def __iter__(self): # -> Iterator:
-        ...
-    
+    ...
 
 
 class ThemeList(baseTheme):

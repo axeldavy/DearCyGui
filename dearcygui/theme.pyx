@@ -579,6 +579,7 @@ cdef class baseThemeStyle(baseTheme):
     def __cinit__(self):
         self.dpi = -1.
         self.backend = theme_backends.t_imgui
+        self.dpi_scaling = True
 
     @property
     def no_scaling(self):

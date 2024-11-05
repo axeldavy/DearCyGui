@@ -2550,6 +2550,12 @@ cdef class Viewport(baseItem):
     def resize_callback(self):
         """
         Callback to be issued when the viewport is resized.
+
+        The data returned is a tuple containing:
+        . The width in pixels
+        . The height in pixels
+        . The width according to the OS (OS dependent)
+        . The height according to the OS (OS dependent)
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2858,8 +2864,8 @@ cdef class Viewport(baseItem):
         cdef bint should_present
         cdef float gs = self.global_scale
         self.global_scale = self.viewport.dpi * self._scale
-        cdef imgui.ImGuiStyle style = imgui.GetStyle()
-        cdef implot.ImPlotStyle style_p = implot.GetStyle()
+        cdef imgui.ImGuiStyle *style = &imgui.GetStyle()
+        cdef implot.ImPlotStyle *style_p = &implot.GetStyle()
         # Handle scaling
         if gs != self.global_scale:
             gs = self.global_scale
@@ -4291,7 +4297,7 @@ cdef class DrawInvisibleButton(drawingItem):
     @property
     def rect_size(self):
         """
-        Readonly attribute: actual (width, height) of the item on screen
+        Readonly attribute: actual (width, height) in pixels of the item on screen
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -4553,10 +4559,11 @@ cdef class DrawInWindow(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         # negative width is used to indicate UI alignment
-        cdef float clip_width = abs(self.requested_size.x)
+        cdef imgui.ImVec2 requested_size = self.scaled_requested_size()
+        cdef float clip_width = abs(requested_size.x)
         if clip_width == 0:
             clip_width = imgui.CalcItemWidth()
-        cdef float clip_height = self.requested_size.y
+        cdef float clip_height = requested_size.y
         if clip_height <= 0 or clip_width == 0:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers() # won't propagate though
             return False
@@ -5405,6 +5412,7 @@ cdef class uiItem(baseItem):
         #self.alias = b""
         self.payloadType = b"$$DPG_PAYLOAD"
         self.requested_size = imgui.ImVec2(0., 0.)
+        self.dpi_scaling = True
         self._indent = 0.
         self.theme_condition_enabled = theme_enablers.t_enabled_True
         self.theme_condition_category = theme_categories.t_any
@@ -5891,6 +5899,26 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         self._theme = value
 
+    @property
+    def no_scaling(self):
+        """
+        boolean. Defaults to False.
+        By default, the requested width and
+        height are multiplied internally by the global
+        scale which is defined by the dpi and the
+        viewport/window scale.
+        If set, disables this automated scaling.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return not(self.dpi_scaling)
+
+    @no_scaling.setter
+    def no_scaling(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.dpi_scaling = not(value)
+
     ### Positioning - layouts
 
     ### Current position states
@@ -6087,7 +6115,7 @@ cdef class uiItem(baseItem):
         Specific values:
             . 0 is meant to define the default size. For some items,
               such as windows, it triggers a fit to the content size.
-               For other items, there is a default size deduced from the
+              For other items, there is a default size deduced from the
               style policy. And for some items (such as child windows),
               it triggers a fit to the full size available within the
               parent window.
@@ -6287,6 +6315,14 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         self._no_newline = value
 
+    @cython.final
+    cdef imgui.ImVec2 scaled_requested_size(self) noexcept nogil:
+        cdef imgui.ImVec2 requested_size = self.requested_size
+        if self.dpi_scaling:
+            requested_size.x *= self.context._viewport.global_scale
+            requested_size.y *= self.context._viewport.global_scale
+        return requested_size
+
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self._prev_sibling is not None:
@@ -6309,7 +6345,8 @@ cdef class uiItem(baseItem):
 
         # Does not affect all items, but is cheap to set
         if self.requested_size.x != 0:
-            imgui.SetNextItemWidth(self.requested_size.x)
+            imgui.SetNextItemWidth(self.requested_size.x * \
+                                       (self.context._viewport.global_scale if self.dpi_scaling else 1.))
 
         cdef float indent = self._indent
         if indent > 0.:
@@ -6558,7 +6595,7 @@ cdef class SimplePlot(uiItem):
                                 self._overlay.c_str(),
                                 self._scale_min,
                                 self._scale_max,
-                                self.requested_size,
+                                self.scaled_requested_size(),
                                 sizeof(float))
         else:
             imgui.PlotLines(self.imgui_label.c_str(),
@@ -6568,7 +6605,7 @@ cdef class SimplePlot(uiItem):
                             self._overlay.c_str(),
                             self._scale_min,
                             self._scale_max,
-                            self.requested_size,
+                            self.scaled_requested_size(),
                             sizeof(float))
         self.update_current_state()
         return False
@@ -6660,7 +6697,7 @@ cdef class Button(uiItem):
             activated = imgui.ArrowButton(self.imgui_label.c_str(), self._direction)
         else:
             activated = imgui.Button(self.imgui_label.c_str(),
-                                     self.requested_size)
+                                     self.scaled_requested_size())
         imgui.PopItemFlag()
         self.update_current_state()
         SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
@@ -6851,7 +6888,7 @@ cdef class Combo(uiItem):
                     pressed |= imgui.Selectable(self._items[i].c_str(),
                                                 &selected,
                                                 imgui.ImGuiSelectableFlags_None,
-                                                self.requested_size)
+                                                self.scaled_requested_size())
                     if selected:
                         imgui.SetItemDefaultFocus()
                     if selected and selected != selected_backup:
@@ -6863,7 +6900,7 @@ cdef class Combo(uiItem):
                 imgui.Selectable(current_value.c_str(),
                                  &selected,
                                  imgui.ImGuiSelectableFlags_Disabled,
-                                 self.requested_size)
+                                 self.scaled_requested_size())
             imgui.PopID()
             imgui.EndCombo()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
@@ -7290,7 +7327,7 @@ cdef class Slider(uiItem):
             if self._size == 1:
                 if self._vertical:
                     modified = imgui.VSliderScalar(self.imgui_label.c_str(),
-                                                   GetDefaultItemSize(self.requested_size),
+                                                   GetDefaultItemSize(self.scaled_requested_size()),
                                                    type,
                                                    data,
                                                    data_min,
@@ -7441,7 +7478,7 @@ cdef class ListBox(uiItem):
                     pressed |= imgui.Selectable(self._items[i].c_str(),
                                                 &selected,
                                                 imgui.ImGuiSelectableFlags_None,
-                                                self.requested_size)
+                                                self.scaled_requested_size())
                     if selected:
                         imgui.SetItemDefaultFocus()
                     if selected and selected != selected_backup:
@@ -7454,7 +7491,7 @@ cdef class ListBox(uiItem):
                 imgui.Selectable(current_value.c_str(),
                                  &selected,
                                  imgui.ImGuiSelectableFlags_Disabled,
-                                 self.requested_size)
+                                 self.scaled_requested_size())
             imgui.PopID()
             imgui.EndListBox()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
@@ -7898,7 +7935,7 @@ cdef class InputText(uiItem):
             changed = imgui.InputTextMultiline(self.imgui_label.c_str(),
                                                data,
                                                self._max_characters+1,
-                                               self.requested_size,
+                                               self.scaled_requested_size(),
                                                self.flags,
                                                NULL, NULL)
         elif self._hint.empty():
@@ -8737,7 +8774,7 @@ cdef class Selectable(uiItem):
         cdef bint changed = imgui.Selectable(self.imgui_label.c_str(),
                                              &checked,
                                              flags,
-                                             self.requested_size)
+                                             self.scaled_requested_size())
         if self._enabled:
             SharedBool.set(<SharedBool>self._value, checked)
         self.update_current_state()
@@ -8826,7 +8863,7 @@ cdef class ProgressBar(uiItem):
         cdef const char *overlay_text = self._overlay.c_str()
         imgui.PushID(self.uuid)
         imgui.ProgressBar(current_value,
-                          self.requested_size,
+                          self.scaled_requested_size(),
                           <const char *>NULL if self._overlay.size() == 0 else overlay_text)
         imgui.PopID()
         self.update_current_state()
@@ -8897,11 +8934,11 @@ cdef class Image(uiItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self._texture.mutex)
         if self._texture.allocated_texture == NULL:
             return False
-        cdef imgui.ImVec2 size = self.requested_size
+        cdef imgui.ImVec2 size = self.scaled_requested_size()
         if size.x == 0.:
-            size.x = self._texture._width
+            size.x = self._texture._width * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
         if size.y == 0.:
-            size.y = self._texture._height
+            size.y = self._texture._height * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
 
         imgui.PushID(self.uuid)
         imgui.Image(<imgui.ImTextureID>self._texture.allocated_texture,
@@ -8991,11 +9028,11 @@ cdef class ImageButton(uiItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self._texture.mutex)
         if self._texture.allocated_texture == NULL:
             return False
-        cdef imgui.ImVec2 size = self.requested_size
+        cdef imgui.ImVec2 size = self.scaled_requested_size()
         if size.x == 0.:
-            size.x = self._texture._width
+            size.x = self._texture._width * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
         if size.y == 0.:
-            size.y = self._texture._height
+            size.y = self._texture._height * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
 
         imgui.PushID(self.uuid)
         if self._frame_padding >= 0:
@@ -9058,7 +9095,7 @@ cdef class Spacer(uiItem):
            self.requested_size.y == 0:
             imgui.Spacing()
         else:
-            imgui.Dummy(self.requested_size)
+            imgui.Dummy(self.scaled_requested_size())
         return False
 
 cdef class MenuBar(uiItem):
@@ -9898,11 +9935,11 @@ cdef class HorizontalLayout(Layout):
             child = <PyObject*>((<uiItem>child)._prev_sibling)
         self.last_widgets_child._no_newline = False
 
-        cdef float available_width = self.requested_size.x
-        if self.requested_size.x == 0:
+        cdef float available_width = self.scaled_requested_size().x
+        if available_width == 0:
             available_width = self.prev_content_area.x
-        elif self.requested_size.x < 0:
-            available_width = self.requested_size.x + self.prev_content_area.x
+        elif available_width < 0:
+            available_width = available_width + self.prev_content_area.x
 
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
@@ -10150,11 +10187,11 @@ cdef class VerticalLayout(Layout):
             child = <PyObject*>((<uiItem>child)._prev_sibling)
         self.last_widgets_child._no_newline = False
 
-        cdef float available_height = self.requested_size.y
-        if self.requested_size.y == 0:
+        cdef float available_height = self.scaled_requested_size().y
+        if available_height == 0:
             available_height = self.prev_content_area.y
-        elif self.requested_size.y < 0:
-            available_height = self.requested_size.y + self.prev_content_area.y
+        elif available_height < 0:
+            available_height = available_height + self.prev_content_area.y
 
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
@@ -10899,7 +10936,7 @@ cdef class ChildWindow(uiItem):
         if self.last_menubar_child is not None:
             flags |= imgui.ImGuiWindowFlags_MenuBar
         cdef imgui.ImVec2 pos_p
-        cdef imgui.ImVec2 requested_size = self.requested_size
+        cdef imgui.ImVec2 requested_size = self.scaled_requested_size()
         cdef imgui.ImGuiChildFlags child_flags = self.child_flags
         # Else they have no effect
         if child_flags & imgui.ImGuiChildFlags_AutoResizeX:
@@ -11023,7 +11060,7 @@ cdef class ColorButton(uiItem):
         activated = imgui.ColorButton(self.imgui_label.c_str(),
                                       col,
                                       self.flags,
-                                      self.requested_size)
+                                      self.scaled_requested_size())
         self.update_current_state()
         SharedColor.setF4(<SharedColor>self._value, col)
         return activated
@@ -11881,7 +11918,7 @@ cdef class Window(uiItem):
             # backup previous state
             self.backup_window_flags = self.window_flags
             self.backup_pos = self.state.cur.pos_to_viewport
-            self.backup_rect_size = self.state.cur.rect_size
+            self.backup_rect_size = self.requested_size # We should backup self.state.cur.rect_size, but the we have a dpi scaling issue
             # Make primary
             self.window_flags = \
                 imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
@@ -11972,7 +12009,7 @@ cdef class Window(uiItem):
             self.pos_update_requested = False
 
         if self.size_update_requested:
-            imgui.SetNextWindowSize(self.requested_size,
+            imgui.SetNextWindowSize(self.scaled_requested_size(),
                                     <imgui.ImGuiCond>0)
             self.size_update_requested = False
 
@@ -12004,8 +12041,8 @@ cdef class Window(uiItem):
             imgui.SetNextWindowBgAlpha(1.0)
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0) #to prevent main window corners from showing
             imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.viewport.clientWidth,
-                                           <float>self.context._viewport.viewport.clientHeight),
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.viewport.actualWidth,
+                                           <float>self.context._viewport.viewport.actualHeight),
                                     <imgui.ImGuiCond>0)
 
         # handle fonts
@@ -12368,6 +12405,7 @@ cdef class Font(baseItem):
         self.font = NULL
         self.container = None
         self._scale = 1.
+        self.dpi_scaling = True
 
     @property
     def texture(self):
@@ -12400,7 +12438,7 @@ cdef class Font(baseItem):
         """
         boolean. Defaults to False.
         If set, disables the automated scaling to the dpi
-        scale value for this theme.
+        scale value for this font.
         The manual user-set scale is still applied.
         """
         cdef unique_lock[recursive_mutex] m
@@ -14034,7 +14072,7 @@ cdef class Plot(uiItem):
         # Check at least one axis of each is enabled ?
 
         visible = implot.BeginPlot(self.imgui_label.c_str(),
-                                   self.requested_size,
+                                   self.scaled_requested_size(),
                                    self.flags)
         # BeginPlot created the imgui Item
         self.state.cur.rect_size = imgui.GetItemRectSize()
