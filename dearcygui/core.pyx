@@ -2669,12 +2669,14 @@ cdef class Viewport(baseItem):
         #    self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         self.parent_pos = imgui.ImVec2(0., 0.)
         self.window_pos = imgui.ImVec2(0., 0.)
+        imgui.PushID(self.uuid)
+        if self.last_menubar_child is not None:
+            self.last_menubar_child.draw()
         if self.last_window_child is not None:
             self.last_window_child.draw()
         #if self.last_viewport_drawlist_child is not None:
         #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
-        if self.last_menubar_child is not None:
-            self.last_menubar_child.draw()
+        imgui.PopID()
         if self._theme is not None:
             self._theme.pop()
         if self._font is not None:
@@ -3190,6 +3192,7 @@ cdef class DrawingListScale(drawingItem):
         self._scales = [1., 1.]
         self._shifts = [0., 0.]
         self._no_parent_scale = False
+        self.can_have_drawing_child = True
 
     @property
     def scales(self):
@@ -9112,7 +9115,36 @@ cdef class MenuBar(uiItem):
         self.state.cap.can_be_hovered = True
         self.state.cap.has_content_region = True # TODO
 
-    cdef bint draw_item(self) noexcept nogil:
+    cdef void draw(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if self._prev_sibling is not None:
+            (<uiItem>self._prev_sibling).draw()
+
+        if not(self._show):
+            if self.show_update_requested:
+                self.set_previous_states()
+                self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
+                self.run_handlers()
+                self.show_update_requested = False
+            return
+
+        self.set_previous_states()
+        # handle fonts
+        if self._font is not None:
+            self._font.push()
+
+        # themes
+        self.context._viewport.push_pending_theme_actions(
+            self.theme_condition_enabled,
+            self.theme_condition_category
+        )
+        if self._theme is not None:
+            self._theme.push()
+
+        cdef bint enabled = self._enabled
+        if not(enabled):
+            imgui.PushItemFlag(1 << 10, True) #ImGuiItemFlags_Disabled
+
         cdef bint menu_allowed
         cdef bint parent_viewport = self._parent is self.context._viewport
         if parent_viewport:
@@ -9139,7 +9171,23 @@ cdef class MenuBar(uiItem):
             # We should hit this only if window is invisible
             # or has no menu bar
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
-        return self.state.cur.active and not(self.state.prev.active)
+        cdef bint activated = self.state.cur.active and not(self.state.prev.active)
+        cdef int i
+        if activated and not(self._callbacks.empty()):
+            for i in range(<int>self._callbacks.size()):
+                self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)
+
+        if not(enabled):
+            imgui.PopItemFlag()
+
+        if self._theme is not None:
+            self._theme.pop()
+        self.context._viewport.pop_applied_pending_theme_actions()
+
+        if self._font is not None:
+            self._font.pop()
+
+        self.run_handlers()
 
 
 cdef class Menu(uiItem):

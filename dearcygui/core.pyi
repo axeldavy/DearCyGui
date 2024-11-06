@@ -427,6 +427,11 @@ class baseItem:
     def detach_item(self) -> Any:
         """
         Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
         """
         ...
     
@@ -659,17 +664,32 @@ class Viewport(baseItem):
     @property
     def dpi(self) -> float:
         """
-        DPI scaling of the main monitor, which
-        will be used to scale all UI elements and fonts.
-        Write to override the value.
-        A value of 1. will disable scaling.
-        Setting the dpi only has an impact if done
-        after initialize()
+        Requested scaling (DPI) from the OS for
+        this window. The value is valid after
+        initialize() and might change over time,
+        for instance if the window is moved to another
+        monitor.
+
+        The DPI is used to scale all items automatically.
+        From the developper point of view, everything behaves
+        as if the DPI is 1. This behaviour can be disabled
+        using the related scaling settings.
         """
         ...
     
-    @dpi.setter
-    def dpi(self, value: float): # -> None:
+    @property
+    def scale(self) -> float:
+        """
+        Multiplicative scale that, multiplied by
+        the value of dpi, is used to scale
+        automatically all items.
+
+        Defaults to 1.
+        """
+        ...
+    
+    @scale.setter
+    def scale(self, value: float): # -> None:
         ...
     
     @property
@@ -969,14 +989,57 @@ class DrawingList(drawingItem):
     ...
 
 
-class DrawLayer_(drawingItem):
+class DrawingListScale(drawingItem):
     """
     Similar to a DrawingList, but
-    can apply scene clipping, enable
-    perspective divide and/or a 4x4 matrix
-    transform.
+    can apply shift and scale to the data
     """
-    ...
+    @property
+    def scales(self): # -> double[]:
+        """
+        Scales applied to the x and y axes
+        Default is (1., 1.).
+        The scales multiply any previous scales
+        already set (including plot scales).
+        Use no_parent_scale to remove that behaviour.
+        """
+        ...
+    
+    @scales.setter
+    def scales(self, values): # -> None:
+        ...
+    
+    @property
+    def shifts(self): # -> double[]:
+        """
+        Shifts applied to the x and y axes.
+        Default is (0., 0.)
+        The shifts are applied any previous
+        shift and scale.
+        For instance on x, the transformation to
+        screen space is:
+        parent_x_transform(x * scales[0] + shifts[0])
+        """
+        ...
+    
+    @shifts.setter
+    def shifts(self, values): # -> None:
+        ...
+    
+    @property
+    def no_parent_scale(self): # -> bint:
+        """
+        Resets any previous scaling to screen space.
+        shifts are transformed to screen space using
+        the parent transform and serves as origin (0, 0)
+        for the child coordinates.
+        """
+        ...
+    
+    @no_parent_scale.setter
+    def no_parent_scale(self, value: bool): # -> None:
+        ...
+    
 
 
 class DrawArrow_(drawingItem):
@@ -1074,6 +1137,10 @@ class DrawInvisibleButton(drawingItem):
 
     If your Draw Button is not part of a window (ViewportDrawList),
     the hovering test might not be reliable (except specific case above).
+
+    DrawInvisibleButton accepts children. In that case, the children
+    are drawn relative to the coordinates of the DrawInvisibleButton,
+    where top left is (0, 0) and bottom right is (1, 1).
     """
     @property
     def button(self): # -> int:
@@ -1119,17 +1186,33 @@ class DrawInvisibleButton(drawingItem):
         ...
     
     @property
-    def min_side(self): # -> int:
+    def min_side(self): # -> float:
         """
         If the rectangle width or height after
         coordinate transform is lower than this,
         resize the screen space transformed coordinates
-        such that the width/height are at least min_side
+        such that the width/height are at least min_side.
+        Retains original ratio.
         """
         ...
     
     @min_side.setter
     def min_side(self, value: int): # -> None:
+        ...
+    
+    @property
+    def max_side(self): # -> float:
+        """
+        If the rectangle width or height after
+        coordinate transform is higher than this,
+        resize the screen space transformed coordinates
+        such that the width/height are at max max_side.
+        Retains original ratio.
+        """
+        ...
+    
+    @max_side.setter
+    def max_side(self, value: int): # -> None:
         ...
     
     @property
@@ -1544,7 +1627,7 @@ class SharedFloatVect(SharedValue):
         ...
     
     @property
-    def value(self): # -> NDArray | None:
+    def value(self): # -> None:
         ...
     
     @value.setter
@@ -3248,7 +3331,8 @@ class Tooltip(uiItem):
         """
         When set, the handler referenced in
         this field will be used to replace
-        the target hovering check.
+        the target hovering check. It will
+        apply to target, which must be set.
         """
         ...
     
@@ -3511,16 +3595,18 @@ class Layout(uiItem):
     For example setting indent will shift all
     the items of the Layout.
 
-    The function update_layout() is defined by this
-    class and subclasses to manually update the layout.
-    If the main Layout() class is used, the callback
-    is called and it is expected the callback function
-    implements the intended update of the layout.
+    Subclassing Layout:
+    For custom layouts, you can use Layout with
+    a callback. The callback is called whenever
+    the layout should be updated.
 
-    The function update_layout is automatically called
-    when the item detects a change in the size of the
-    remaining content area available locally within
-    the window, or if the last item has changed.
+    If the automated update detection is not
+    sufficient, update_layout() can be called
+    to force a recomputation of the layout.
+
+    Currently the update detection detects a change in
+    the size of the remaining content area available
+    locally within the window, or if the last item has changed.
 
     The layout item works by changing the positioning
     policy and the target position of its children, and
@@ -4649,6 +4735,7 @@ class Texture(baseItem):
         The currently native formats are:
         - data type: uint8 or float32.
             Anything else will be converted to float32
+            float32 data must be normalized between 0 and 1.
         - number of channels: 1 (R), 2 (RG), 3 (RGB), 4 (RGBA)
 
         In the case of single channel textures, during rendering, R is
@@ -4672,7 +4759,7 @@ class Texture(baseItem):
     
 
 
-def get_system_fonts(): # -> Set[str] | list:
+def get_system_fonts(): # -> list:
     """
     Returns a list of available fonts
     """
@@ -4690,7 +4777,6 @@ class Font(baseItem):
     
     @property
     def scale(self): # -> float:
-        """Writable attribute: multiplicative factor to scale the font when used"""
         ...
     
     @scale.setter
@@ -4707,9 +4793,19 @@ class FontTexture(baseItem):
     def __delalloc__(self): # -> None:
         ...
     
-    def add_font_file(self, path: str, size: float = ..., index_in_file: int = ..., density_scale: float = ..., subpixel: bool = ...): # -> None:
+    def add_font_file(self, path: str, size: float = ..., index_in_file: int = ..., density_scale: float = ..., align_to_pixel: bool = ...): # -> None:
         """
         Prepare the target font file to be added to the FontTexture
+
+        path: path to the input font file (ttf, otf, etc).
+        size: Target pixel size at which the font will be rendered by default.
+        index_in_file: index of the target font in the font file.
+        density_scale: rasterizer oversampling to better render when
+            the font scale is not 1.
+        align_to_pixel: For sharp fonts, will prevent blur by
+            aligning font rendering to the pixel. The spacing
+            between characters might appear slightly odd as
+            a result, so don't enable when not needed.
         """
         ...
     
@@ -5090,20 +5186,79 @@ class PlotAxisConfig(baseItem):
     def handlers(self, value): # -> None:
         ...
     
+    def fit(self): # -> None:
+        """
+        Request for a fit of min/max to the data the next time the plot is drawn
+        """
+        ...
+    
+    @property
+    def label(self): # -> str:
+        """
+        Writable attribute: axis name
+        """
+        ...
+    
+    @label.setter
+    def label(self, value): # -> None:
+        ...
+    
+    @property
+    def format(self): # -> str:
+        """
+        Writable attribute: format string to display axis values
+        """
+        ...
+    
+    @format.setter
+    def format(self, value): # -> None:
+        ...
+    
+    @property
+    def labels(self): # -> list[str]:
+        """
+        Writable attribute: array of strings to display as labels
+        """
+        ...
+    
+    @labels.setter
+    def labels(self, value): # -> None:
+        ...
+    
+    @property
+    def labels_coord(self): # -> list:
+        """
+        Writable attribute: coordinate for each label in labels at
+        which to display the labels
+        """
+        ...
+    
+    @labels_coord.setter
+    def labels_coord(self, value): # -> None:
+        ...
+    
 
 
 class PlotLegendConfig(baseItem):
+    '''
+    # Probable doesn't work. Use instead plot no_legend
     @property
-    def show(self): # -> bint:
+    def show(self):
         """
         Whether the legend is shown or hidden
         """
-        ...
-    
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._show
+
     @show.setter
-    def show(self, value: bool): # -> None:
-        ...
-    
+    def show(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if not(value) and self._show:
+            self.set_hidden_and_propagate_to_siblings_no_handlers()
+        self._show = value
+    '''
     @property
     def location(self): # -> LegendLocation:
         """

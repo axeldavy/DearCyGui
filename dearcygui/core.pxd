@@ -819,7 +819,7 @@ cdef class Spacer(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 cdef class MenuBar(uiItem):
-    cdef bint draw_item(self) noexcept nogil
+    cdef void draw(self) noexcept nogil
 
 cdef class Menu(uiItem):
     cdef bint draw_item(self) noexcept nogil
