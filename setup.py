@@ -182,6 +182,7 @@ def setup_package():
             )
         )
     print(extensions)
+    shutil.copy("thirdparty/latin-modern-roman/lmsans17-regular.otf", "dearcygui/")
 
     metadata = dict(
         name='dearcygui',                                      # Required
@@ -212,7 +213,7 @@ def setup_package():
         ext_modules = cythonize(extensions, compiler_directives={'language_level' : "3"}, nthreads=4)
     )
     metadata["package_data"] = {}
-    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi', '*ttf']
+    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf']
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')

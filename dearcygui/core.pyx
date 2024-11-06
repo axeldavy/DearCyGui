@@ -2086,7 +2086,10 @@ cdef class Viewport(baseItem):
         cdef FontTexture default_font_texture
         if self._font is None:
             default_font_texture = FontTexture(self.context)
-            path = os.path.join(os.path.dirname(__file__), 'ProggyClean.ttf')
+            # latin modern roman fonts look nice and behave well
+            # when scaled
+            default_font_path = os.path.join(os.path.dirname(__file__), "latin-modern-roman")
+            path = os.path.join(default_font_path, 'lmsans17-regular.otf')
             default_font_texture.add_font_file(path, size=int(round(13 * self.viewport.dpi)), density_scale=2.)
             default_font_texture.build()
             self._font = default_font_texture[0]
