@@ -101,7 +101,6 @@ def setup_package():
                     "src",
                     "thirdparty/imgui",
                     "thirdparty/imgui/backends",
-                    "thirdparty/ImGuiFileDialog",
                     "thirdparty/imnodes",
                     "thirdparty/implot",
                     "thirdparty/gl3w",
@@ -115,7 +114,6 @@ def setup_package():
         "thirdparty/implot/implot.cpp",
         "thirdparty/implot/implot_items.cpp",
         "thirdparty/implot/implot_demo.cpp",
-        "thirdparty/ImGuiFileDialog/ImGuiFileDialog.cpp",
         "thirdparty/imgui/misc/cpp/imgui_stdlib.cpp",
         "thirdparty/imgui/imgui.cpp",
         "thirdparty/imgui/imgui_demo.cpp",
@@ -140,13 +138,11 @@ def setup_package():
     linking_args = ['-O3']
 
     if get_platform() == "Linux":
-        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX",\
-                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX"]
         libraries = ["crypt", "pthread", "dl", "util", "m", "GL"]
     elif get_platform() == "OS X":
         compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
-                         "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\"", \
-                         "-DCUSTOM_IMGUIFILEDIALOG_CONFIG=\"ImGuiFileDialogConfigUnix.h\""]
+                         "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\""]
         libraries = []
 
     else:
