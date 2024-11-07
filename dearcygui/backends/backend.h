@@ -74,8 +74,8 @@ struct mvViewport
     bool fullScreen  = false;
 	bool disableClose = false;
 	bool waitForEvents = false;
-	std::atomic<bool> activity = std::atomic<bool>(true);
-	std::atomic<bool> needs_refresh = std::atomic<bool>(true);
+	std::atomic<bool> activity{true};
+	std::atomic<bool> needs_refresh{true};
 
 	// position/size
 	bool  sizeDirty    = false;

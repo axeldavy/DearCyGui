@@ -7937,7 +7937,7 @@ cdef class InputText(uiItem):
             # TODO: avoid the copies that occur
             # In theory the +1 is not needed here
             current_value.resize(self._max_characters+1)
-        cdef char* data = current_value.data()
+        cdef char* data = <char*><void*>current_value.data()
         if self._multiline:
             changed = imgui.InputTextMultiline(self.imgui_label.c_str(),
                                                data,
