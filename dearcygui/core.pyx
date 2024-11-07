@@ -12071,7 +12071,14 @@ cdef class Window(uiItem):
             imgui.SetNextWindowCollapsed(not(self.state.cur.open), <imgui.ImGuiCond>0)
             self.collapse_update_requested = False
 
-        imgui.SetNextWindowSizeConstraints(self.min_size, self.max_size)
+        cdef imgui.ImVec2 min_size = self.min_size
+        cdef imgui.ImVec2 max_size = self.max_size
+        if self.dpi_scaling:
+            min_size.x *= self.context._viewport.global_scale
+            min_size.y *= self.context._viewport.global_scale
+            max_size.x *= self.context._viewport.global_scale
+            max_size.y *= self.context._viewport.global_scale
+        imgui.SetNextWindowSizeConstraints(min_size, max_size)
 
         cdef imgui.ImVec2 scroll_requested
         if self.scroll_x_update_requested or self.scroll_y_update_requested:
