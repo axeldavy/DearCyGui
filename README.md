@@ -2,6 +2,16 @@
 
 DearPyGui (https://github.com/hoffstadt/DearPyGui) is a project for enabling easy use of Dear ImGui (https://github.com/ocornut/imgui) in Python.
 
+## Installing
+`pip install dearcygui` to install an old version
+
+To install the most up to date version:
+```
+git clone --recurse-submodules https://github.com/axeldavy/DearCyGui
+cd DearCyGui
+pip install .
+```
+
 ## The goal of DearCyGui
 
 DearPyGui is written in C++. This enables an efficient wrapping of Dear ImGui calls.
