@@ -1,0 +1,8 @@
+[build-system]
+requires = [
+    "Cython>=0.30",
+    "numpy",
+    "wheel",
+    "click",
+    "setuptools",
+]
