@@ -176,12 +176,15 @@ mvProcessEvents(mvViewport* viewport)
                 viewport->needs_refresh.store(true);
                 break;
             case SDL_EVENT_WINDOW_MINIMIZED:
+                viewport->activity.store(true);
                 //viewport->minimized = true;
                 break;
             case SDL_EVENT_WINDOW_MAXIMIZED:
+                 viewport->activity.store(true);
                 //viewport->maximized = true;
                 break;
             case SDL_EVENT_WINDOW_RESTORED:
+                 viewport->activity.store(true);
                 break;
                 //viewport->minimized = false;
                 //viewport->maximized = false;
@@ -189,6 +192,7 @@ mvProcessEvents(mvViewport* viewport)
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: // && event.window.windowID == SDL_GetWindowID(viewportData->handle)
                 viewport->running = false;
                 viewport->on_close(viewport->callback_data);
+                viewport->activity.store(true);
             /* TODO: drag&drop, etc*/
             default:
                 break;

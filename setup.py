@@ -12,25 +12,10 @@ import numpy as np
 import shutil
 import subprocess
 
-wip_version = "0.0.2"
+wip_version = "0.0.3"
 
 def version_number():
-    """This function reads the version number which is populated by github actions"""
-
-    if os.environ.get('READTHEDOCS') == 'True':
-        return wip_version
-    try:
-        with open('version_number.txt', encoding='utf-8') as f:
-            version = f.readline().rstrip()
-
-            # temporary fix fox CI issues with windows
-            if(version.startswith("ECHO")):
-                return "0.0.1"
-
-            return version
-
-    except IOError:
-        return wip_version
+    return wip_version
 
 def get_platform():
 
