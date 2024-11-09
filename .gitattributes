@@ -24,13 +24,7 @@
 .gitattributes export-ignore
 .gitignore     export-ignore
 
-# generated code
-dearpygui/dearpygui.py      linguist-generated
-dearpygui/_dearpygui.pyi    linguist-generated
-dearpygui/_dearpygui_RTD.py linguist-generated
 
 # vendored code
 thirdparty/* linguist-vendored
 
-# documentation
-docs/* linguist-documentation
