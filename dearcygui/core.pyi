@@ -577,15 +577,16 @@ class Viewport(baseItem):
     def initialize(self, minimized=..., maximized=..., **kwargs): # -> None:
         """
         Initialize the viewport for rendering and show it.
+
         Items can already be created and attached to the viewport
         before this call.
-        Creates the default font and attaches it to the viewport
-        if None is set already. This font is scaled by
-        the current value of viewport.dpi.
-        In addition all the default style spaces are scaled by
-        the current viewport.dpi.
-        The viewport.dpi content is not read after that, and
-        so changes will have no effect.
+
+        Initializes the default font and attaches it to the
+        viewport, if None is set already. This font size is scaled
+        to be sharp at the target value of viewport.dpi * viewport.scale.
+        See FontTexture for how to update the default font
+        to a different size or to account for viewport.dpi or
+        viewport.scale changes.
         """
         ...
     
@@ -856,6 +857,12 @@ class Viewport(baseItem):
     def resize_callback(self): # -> Callback:
         """
         Callback to be issued when the viewport is resized.
+
+        The data returned is a tuple containing:
+        . The width in pixels
+        . The height in pixels
+        . The width according to the OS (OS dependent)
+        . The height according to the OS (OS dependent)
         """
         ...
     
@@ -1309,7 +1316,7 @@ class DrawInvisibleButton(drawingItem):
     @property
     def rect_size(self): # -> object:
         """
-        Readonly attribute: actual (width, height) of the item on screen
+        Readonly attribute: actual (width, height) in pixels of the item on screen
         """
         ...
     
@@ -1627,7 +1634,7 @@ class SharedFloatVect(SharedValue):
         ...
     
     @property
-    def value(self): # -> None:
+    def value(self): # -> NDArray | None:
         ...
     
     @value.setter
@@ -1922,6 +1929,22 @@ class uiItem(baseItem):
         ...
     
     @property
+    def no_scaling(self): # -> bool:
+        """
+        boolean. Defaults to False.
+        By default, the requested width and
+        height are multiplied internally by the global
+        scale which is defined by the dpi and the
+        viewport/window scale.
+        If set, disables this automated scaling.
+        """
+        ...
+    
+    @no_scaling.setter
+    def no_scaling(self, value: bool): # -> None:
+        ...
+    
+    @property
     def pos_to_viewport(self): # -> object:
         """
         Writable attribute:
@@ -2095,7 +2118,7 @@ class uiItem(baseItem):
         Specific values:
             . 0 is meant to define the default size. For some items,
               such as windows, it triggers a fit to the content size.
-               For other items, there is a default size deduced from the
+              For other items, there is a default size deduced from the
               style policy. And for some items (such as child windows),
               it triggers a fit to the full size available within the
               parent window.
@@ -3086,6 +3109,8 @@ class Text(uiItem):
         """
         Writable attribute: wrap width in pixels
         -1 for no wrapping
+        The width is multiplied by the global scale
+        unless the no_scaling option is set.
         """
         ...
     
@@ -4759,7 +4784,7 @@ class Texture(baseItem):
     
 
 
-def get_system_fonts(): # -> list:
+def get_system_fonts(): # -> Set[str] | list:
     """
     Returns a list of available fonts
     """
@@ -4783,29 +4808,81 @@ class Font(baseItem):
     def scale(self, value: float): # -> None:
         ...
     
+    @property
+    def no_scaling(self): # -> bool:
+        """
+        boolean. Defaults to False.
+        If set, disables the automated scaling to the dpi
+        scale value for this font.
+        The manual user-set scale is still applied.
+        """
+        ...
+    
+    @no_scaling.setter
+    def no_scaling(self, value: bool): # -> None:
+        ...
+    
 
 
 class FontTexture(baseItem):
     """
     Packs one or several fonts into
     a texture for internal use by ImGui.
+
+    In order to have sharp fonts with various screen
+    dpi scalings, two options are available:
+    1) Handle scaling yourself:
+        Whenever the global scale changes, make
+        a new font using a scaled size, and
+        set no_scaling to True
+    2) Handle scaling yourself at init only:
+        In most cases it is reasonnable to
+        assume the dpi scale will not change.
+        In that case the easiest is to check
+        the viewport dpi scale after initialization,
+        load the scaled font size, and then set
+        font.scale to the inverse of the dpi scale.
+        This will render at the intended size
+        as long as the dpi scale is not changed,
+        and will scale if it changes (but will be
+        slightly blurry).
+
+    Currently the default font uses option 2). Call
+    fonts.make_extended_latin_font(your_size) and
+    add_custom_font to get the default font at a different
+    scale, and implement 1) or 2) yourself.
     """
     def __delalloc__(self): # -> None:
         ...
     
     def add_font_file(self, path: str, size: float = ..., index_in_file: int = ..., density_scale: float = ..., align_to_pixel: bool = ...): # -> None:
         """
-        Prepare the target font file to be added to the FontTexture
+        Prepare the target font file to be added to the FontTexture,
+        using ImGui's font loader.
 
         path: path to the input font file (ttf, otf, etc).
         size: Target pixel size at which the font will be rendered by default.
         index_in_file: index of the target font in the font file.
         density_scale: rasterizer oversampling to better render when
-            the font scale is not 1.
+            the font scale is not 1. Not a miracle solution though,
+            as it causes blurry inputs if the actual scale used
+            during rendering is less than density_scale.
         align_to_pixel: For sharp fonts, will prevent blur by
             aligning font rendering to the pixel. The spacing
             between characters might appear slightly odd as
             a result, so don't enable when not needed.
+        """
+        ...
+    
+    def add_custom_font(self, font_height, character_images, character_positioning): # -> None:
+        """
+        See fonts.py for a detailed explanation of
+        the input arguments.
+
+        Currently add_custom_font calls build()
+        and thus prevents adding new fonts, but
+        this might not be true in the future, thus
+        you should still call build().
         """
         ...
     
@@ -6081,6 +6158,57 @@ class DrawInPlot(plotElementWithLegend):
         ...
     
 
+
+result = ...
+if filelist != <Expression>:
+    result = ...
+if userdata == <Expression>:
+    ...
+callback = ...
+def show_open_file_dialog(callback, default_location: str = ..., allow_multiple_files: bool = ...): # -> None:
+    """
+    Open the OS file open selection dialog
+
+    callback is a function that will be called with a single
+    argument: a list of paths. Can be None or [] if the dialog
+    was cancelled or nothing was selected.
+
+    default_location: optional default location
+    allow_multiple_files (default to False): if True, allow
+        selecting several paths which will be passed to the list
+        given to the callback. If False, the list has maximum a
+        single argument.
+    """
+    ...
+
+def show_save_file_dialog(callback, default_location: str = ...): # -> None:
+    """
+    Open the OS file save selection dialog
+
+    callback is a function that will be called with a single
+    argument: a list of paths. Can be None or [] if the dialog
+    was cancelled or nothing was selected. else, the list
+    will contain a single path.
+
+    default_location: optional default location
+    """
+    ...
+
+def show_open_folder_dialog(callback, default_location: str = ..., allow_multiple_files: bool = ...): # -> None:
+    """
+    Open the OS directory open selection dialog
+
+    callback is a function that will be called with a single
+    argument: a list of paths. Can be None or [] if the dialog
+    was cancelled or nothing was selected.
+
+    default_location: optional default location
+    allow_multiple_files (default to False): if True, allow
+        selecting several paths which will be passed to the list
+        given to the callback. If False, the list has maximum a
+        single argument.
+    """
+    ...
 
 def color_as_int(val): # -> int:
     ...
