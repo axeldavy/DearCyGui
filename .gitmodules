@@ -6,14 +6,6 @@
 	path = thirdparty/implot
 	url = https://github.com/axeldavy/implot
 	branch = master
-[submodule "thirdparty/cpython"]
-	path = thirdparty/cpython
-	url = https://github.com/python/cpython
-	branch = master
-[submodule "thirdparty/glfw"]
-	path = thirdparty/glfw
-	url = https://github.com/glfw/glfw
-	branch = master
 [submodule "thirdparty/freetype"]
 	path = thirdparty/freetype
 	url = https://gitlab.freedesktop.org/freetype/freetype

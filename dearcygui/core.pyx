@@ -4006,7 +4006,7 @@ cdef extern from * nogil:
         return pressed;
     }
     """
-    bint InvisibleDrawButton(int, ImVec2&, ImVec2&, imgui.ImGuiButtonFlags, bint, bint *, bint *)
+    bint InvisibleDrawButton(int, imgui.ImVec2&, imgui.ImVec2&, imgui.ImGuiButtonFlags, bint, bint *, bint *)
 
 
 

@@ -6,8 +6,6 @@ recursive-include thirdparty/imnodes/ *
 recursive-include thirdparty/implot/ *
 recursive-include thirdparty/latin-modern-roman/ *
 recursive-include thirdparty/SDL/ *
-recursive-include thirdparty/ImGuiFileDialog/ *
 recursive-include dearcygui/ *.pyx
 recursive-include dearcygui/ *.pxd
-include src/mvImGuiLinuxConfig.h
-include src/mvTypes.h
+include dearcygui/imgui_config.h

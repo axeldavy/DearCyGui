@@ -98,7 +98,6 @@ def setup_package():
         long_description = f.read()
 
     include_dirs = ["dearcygui",
-                    "src",
                     "thirdparty/imgui",
                     "thirdparty/imgui/backends",
                     "thirdparty/imnodes",
@@ -127,14 +126,10 @@ def setup_package():
     ]
 
     compile_args = ["-DIMGUI_DEFINE_MATH_OPERATORS",
-                    "-DMVDIST_ONLY",
                     "-D_CRT_SECURE_NO_WARNINGS",
                     "-D_USE_MATH_DEFINES",
-                    "-DMV_DPG_MAJOR_VERSION=1",
-                    "-DMV_DPG_MINOR_VERSION=0",
                     "-DIMGUI_IMPL_OPENGL_LOADER_SDL3",
-                    "-DIMGUI_USER_CONFIG=\"mvImGuiLinuxConfig.h\"",
-                    "-DMV_SANDBOX_VERSION=\"master\""]
+                    "-DIMGUI_USER_CONFIG=\"imgui_config.h\""]
     linking_args = ['-O3']
 
     if get_platform() == "Linux":
@@ -142,10 +137,11 @@ def setup_package():
         libraries = ["crypt", "pthread", "dl", "util", "m", "GL"]
     elif get_platform() == "OS X":
         compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
-                         "-fwrapv" ,"-O3", "-DAPPLE", "-DMV_PLATFORM=\"apple\""]
+                         "-fwrapv" ,"-O3", "-DAPPLE"]
         libraries = []
 
     else:
+        # Please test and tell us what changes are needed to the build
         raise ValueError("Unsupported plateform")
 
     extensions = [
@@ -210,6 +206,11 @@ def setup_package():
                 'Topic :: Software Development :: Libraries :: Python Modules',
             ],
         packages=['dearcygui'],
+        install_requires=[
+          'numpy',
+          'freetype-py',
+          'scipy'
+        ],
         ext_modules = cythonize(extensions, compiler_directives={'language_level' : "3"}, nthreads=4)
     )
     metadata["package_data"] = {}
