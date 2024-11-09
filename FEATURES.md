@@ -44,12 +44,21 @@ Layouts replace Groups.
 - Support for R, RG, RGB, RGBA in both uint8 and float32 formats
 - Textures are uploaded only once when you set their value, rather than every frame rendered.
 
+# Fonts
+- Default font looks much nicer.
+- Support for bold, italics and bold-italics in the default font.
+- Helpers and documentation to make your own fonts.
+
 # Plots
 - Support for X2 and X3 axes
 - Support for handlers on the axes
 - Support for zero copy when passing plot data (requires int32, float32 or float64 data)
 - It is possible to fit the plot to contained drawing items
 - Extended Custom Plot functionnality (possibility to add legend to groups of drawing items drawn in plot space)
+
+# DPI scaling
+- Support for automated and manual handling of the screen requested dpi scaling
+- Possibility to set a global scale factor in addition to the dpi scaling
 
 ## Features that DearCyGui does not support yet
 - Tables

@@ -11,6 +11,7 @@
 #cython: infer_types=False
 #cython: initializedcheck=False
 #cython: c_line_in_traceback=False
+#cython: auto_pickle=False
 #distutils: language=c++
 
 from libcpp cimport bool
@@ -31,6 +32,7 @@ from dearcygui.backends.backend cimport *
 # the latter doesn't support nullary constructor
 # which causes trouble to cython
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
+from dearcygui.fonts import make_extended_latin_font
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from libcpp.algorithm cimport swap
@@ -2055,15 +2057,16 @@ cdef class Viewport(baseItem):
     def initialize(self, minimized=False, maximized=False, **kwargs):
         """
         Initialize the viewport for rendering and show it.
+
         Items can already be created and attached to the viewport
         before this call.
-        Creates the default font and attaches it to the viewport
-        if None is set already. This font is scaled by
-        the current value of viewport.dpi.
-        In addition all the default style spaces are scaled by
-        the current viewport.dpi.
-        The viewport.dpi content is not read after that, and
-        so changes will have no effect.
+
+        Initializes the default font and attaches it to the
+        viewport, if None is set already. This font size is scaled
+        to be sharp at the target value of viewport.dpi * viewport.scale.
+        See FontTexture for how to update the default font
+        to a different size or to account for viewport.dpi or
+        viewport.scale changes.
         """
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
@@ -2084,15 +2087,14 @@ cdef class Viewport(baseItem):
         imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
         imgui.GetStyle().ScaleAllSizes(self.viewport.dpi)
         cdef FontTexture default_font_texture
+        cdef float global_scale = self.viewport.dpi * self._scale
         if self._font is None:
             default_font_texture = FontTexture(self.context)
-            # latin modern roman fonts look nice and behave well
-            # when scaled
-            default_font_path = os.path.dirname(__file__)
-            path = os.path.join(default_font_path, 'lmsans17-regular.otf')
-            default_font_texture.add_font_file(path, size=int(round(17 * self.viewport.dpi)), density_scale=2.)
+            h, c_i, c_p = make_extended_latin_font(round(17*global_scale))
+            default_font_texture.add_custom_font(h, c_i, c_p)
             default_font_texture.build()
             self._font = default_font_texture[0]
+            self._font.scale = 1./global_scale
         self.initialized = True
         """
             # TODO if (GContext->IO.autoSaveIniFile). if (!GContext->IO.iniFile.empty())
@@ -12530,6 +12532,29 @@ cdef class FontTexture(baseItem):
     """
     Packs one or several fonts into
     a texture for internal use by ImGui.
+
+    In order to have sharp fonts with various screen
+    dpi scalings, two options are available:
+    1) Handle scaling yourself:
+        Whenever the global scale changes, make
+        a new font using a scaled size, and
+        set no_scaling to True
+    2) Handle scaling yourself at init only:
+        In most cases it is reasonnable to
+        assume the dpi scale will not change.
+        In that case the easiest is to check
+        the viewport dpi scale after initialization,
+        load the scaled font size, and then set
+        font.scale to the inverse of the dpi scale.
+        This will render at the intended size
+        as long as the dpi scale is not changed,
+        and will scale if it changes (but will be
+        slightly blurry).
+
+    Currently the default font uses option 2). Call
+    fonts.make_extended_latin_font(your_size) and
+    add_custom_font to get the default font at a different
+    scale, and implement 1) or 2) yourself.
     """
     def __cinit__(self, context, *args, **kwargs):
         self._built = False
@@ -12546,16 +12571,19 @@ cdef class FontTexture(baseItem):
                       str path,
                       float size=13.,
                       int index_in_file=0,
-                      float density_scale=2.,
+                      float density_scale=1.,
                       bint align_to_pixel=False):
         """
-        Prepare the target font file to be added to the FontTexture
+        Prepare the target font file to be added to the FontTexture,
+        using ImGui's font loader.
 
         path: path to the input font file (ttf, otf, etc).
         size: Target pixel size at which the font will be rendered by default.
         index_in_file: index of the target font in the font file.
         density_scale: rasterizer oversampling to better render when
-            the font scale is not 1.
+            the font scale is not 1. Not a miracle solution though,
+            as it causes blurry inputs if the actual scale used
+            during rendering is less than density_scale.
         align_to_pixel: For sharp fonts, will prevent blur by
             aligning font rendering to the pixel. The spacing
             between characters might appear slightly odd as
@@ -12575,6 +12603,8 @@ cdef class FontTexture(baseItem):
         #config.OversampleV = 3 if subpixel else 1
         #if not(subpixel):
         config.PixelSnapH = align_to_pixel
+        config.OversampleH = 1
+        config.OversampleV = 1
         with open(path, 'rb') as fp:
             font_data = fp.read()
         cdef const unsigned char[:] font_data_u8 = font_data
@@ -12594,6 +12624,106 @@ cdef class FontTexture(baseItem):
         font_object.container = self
         font_object.font = font
         self.fonts.append(font_object)
+
+    def add_custom_font(self,
+                        font_height,
+                        character_images,
+                        character_positioning):
+        """
+        See fonts.py for a detailed explanation of
+        the input arguments.
+
+        Currently add_custom_font calls build()
+        and thus prevents adding new fonts, but
+        this might not be true in the future, thus
+        you should still call build().
+        """
+        if self._built:
+            raise ValueError("Cannot add Font to built FontTexture")
+
+        cdef imgui.ImFontConfig config = imgui.ImFontConfig()
+        config.SizePixels = font_height
+        config.FontDataOwnedByAtlas = False
+        config.OversampleH = 1
+        config.OversampleV = 1
+
+        # Imgui currently requires a font
+        # to be able to add custom glyphs
+        cdef imgui.ImFont *font = \
+            self.atlas.AddFontDefault(&config)
+
+        keys = sorted(character_images.keys())
+        # TODO check keys are identical
+        cdef float x, y, advance
+        cdef int w, h, i, j
+        for i, key in enumerate(keys):
+            image = character_images[key]
+            h = image.shape[0] + 1
+            w = image.shape[1] + 1
+            (y, x, advance) = character_positioning[key]
+            j = self.atlas.AddCustomRectFontGlyph(font,
+                                             int(key),
+                                             w, h,
+                                             advance,
+                                             imgui.ImVec2(x, y))
+            assert(j == i)
+
+        cdef Font font_object = Font(self.context)
+        font_object.container = self
+        font_object.font = font
+        self.fonts.append(font_object)
+
+        # build
+        if not(self.atlas.Build()):
+            raise RuntimeError("Failed to build target texture data")
+        # Retrieve the target buffer
+        cdef unsigned char *data = NULL
+        cdef int width, height, bpp
+        cdef bint use_color = False
+        for image in character_images.values():
+            if len(image.shape) == 2 and image.shape[2] > 1:
+                if image.shape[2] != 4:
+                    raise ValueError("Color data must be rgba (4 channels)")
+                use_color = True
+        if self.atlas.TexPixelsUseColors or use_color:
+            self.atlas.GetTexDataAsRGBA32(&data, &width, &height, &bpp)
+        else:
+            self.atlas.GetTexDataAsAlpha8(&data, &width, &height, &bpp)
+
+        # write our font characters at the target location
+        cdef cython.view.array data_array = cython.view.array(shape=(height, width, bpp), itemsize=1, format='B', mode='c', allocate_buffer=False)
+        data_array.data = <char*>data
+        array = np.asarray(data_array, dtype=np.uint8)
+        cdef imgui.ImFontAtlasCustomRect *rect
+        cdef int ym, yM, xm, xM
+        if len(array.shape) == 2:
+            array = array[:,:,np.newaxis]
+        cdef unsigned char[:,:,:] array_view = array
+        cdef unsigned char[:,:,:] src_view
+        for i, key in enumerate(keys):
+            rect = self.atlas.GetCustomRectByIndex(i)
+            ym = rect.Y
+            yM = rect.Y + rect.Height
+            xm = rect.X
+            xM = rect.X + rect.Width
+            src_view = character_images[key]
+            array_view[ym:(yM-1), xm:(xM-1),:] = src_view[:,:,:]
+            array_view[yM-1, xm:xM,:] = 0
+            array_view[ym:yM, xM-1,:] = 0
+
+        # Upload texture
+        if use_color:
+            self._texture.filtering_mode = 0 # rgba bilinear
+        else:
+            self._texture.filtering_mode = 2 # 111A bilinear
+        self._texture.set_value(array)
+        assert(self._texture.allocated_texture != NULL)
+        self._texture.readonly = True
+        self.atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
+
+        # Release temporary CPU memory
+        self.atlas.ClearInputData()
+        self._built = True
 
     @property
     def built(self):

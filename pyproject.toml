@@ -1,6 +1,7 @@
 [build-system]
 requires = [
     "Cython>=0.30",
+    "freetype-py",
     "numpy",
     "wheel",
     "click",

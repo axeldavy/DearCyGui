@@ -4,3 +4,4 @@ from .draw import *
 from .handler import *
 from .theme import *
 from .utils import *
+from . import fonts

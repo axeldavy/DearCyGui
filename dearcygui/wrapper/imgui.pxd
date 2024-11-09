@@ -92,7 +92,7 @@ cdef extern from "imgui.h" nogil:
     ctypedef unsigned short ImDrawIdx
     ctypedef unsigned int ImWchar32
     ctypedef unsigned short ImWchar16
-    ctypedef ImWchar16 ImWchar
+    ctypedef ImWchar32 ImWchar
     ctypedef ImS64 ImGuiSelectionUserData
     ctypedef int (*ImGuiInputTextCallback)(ImGuiInputTextCallbackData*)
     ctypedef void (*ImGuiSizeCallback)(ImGuiSizeCallbackData*)

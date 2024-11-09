@@ -138,7 +138,7 @@ def setup_package():
     linking_args = ['-O3']
 
     if get_platform() == "Linux":
-        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX"]
+        compile_args += ["-DNDEBUG", "-fwrapv", "-O3", "-DUNIX", "-DLINUX", "-g1"]
         libraries = ["crypt", "pthread", "dl", "util", "m", "GL"]
     elif get_platform() == "OS X":
         compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
@@ -177,8 +177,12 @@ def setup_package():
                 extra_compile_args=compile_args
             )
         )
-    print(extensions)
+
     shutil.copy("thirdparty/latin-modern-roman/lmsans17-regular.otf", "dearcygui/")
+    shutil.copy("thirdparty/latin-modern-roman/lmromanslant17-regular.otf", "dearcygui/")
+    shutil.copy("thirdparty/latin-modern-roman/lmsans10-bold.otf", "dearcygui/")
+    shutil.copy("thirdparty/latin-modern-roman/lmromandemi10-oblique.otf", "dearcygui/")
+
 
     metadata = dict(
         name='dearcygui',                                      # Required
