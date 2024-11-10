@@ -9334,7 +9334,7 @@ cdef class Tooltip(uiItem):
         cdef float hoverDelay_backup
         cdef bint display_condition = False
         if self.secondary_handler is None:
-            if self._target is None or self._target is self._prev_sibling:
+            if self._target is None:# or self._target is self._prev_sibling: # disabled as doesn't work
                 if self._delay > 0.:
                     hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
                     imgui.GetStyle().HoverStationaryDelay = self._delay

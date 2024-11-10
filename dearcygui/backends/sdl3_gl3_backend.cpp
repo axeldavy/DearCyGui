@@ -302,7 +302,7 @@ mvShowViewport(mvViewport& viewport,
     // Set current to allow sharing
     SDL_GL_MakeCurrent(viewportData->secondary_handle, viewportData->secondary_gl_handle);
     viewportData->handle = SDL_CreateWindow(viewport.title.c_str(), viewport.actualWidth, viewport.actualHeight,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
+        creation_flags | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
     viewportData->gl_handle = SDL_GL_CreateContext(viewportData->handle);
     SDL_GL_MakeCurrent(viewportData->handle, NULL);
     SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
