@@ -11023,6 +11023,7 @@ cdef class ChildWindow(uiItem):
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
             self.state.cur.rect_size = imgui.GetWindowSize()
+            update_current_mouse_states(self.state)
             # TODO scrolling
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
