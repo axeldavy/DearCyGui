@@ -12102,8 +12102,12 @@ cdef class Window(uiItem):
             imgui.SetNextWindowScroll(scroll_requested)
 
         if self.main_window:
+            # No transparency
             imgui.SetNextWindowBgAlpha(1.0)
-            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0) #to prevent main window corners from showing
+            #to prevent main window corners from showing
+            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0)
+            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowPadding, imgui.ImVec2(0.0, 0.))
+            imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowBorderSize, 0.)
             imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
             imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.viewport.actualWidth,
                                            <float>self.context._viewport.viewport.actualHeight),
@@ -12145,8 +12149,14 @@ cdef class Window(uiItem):
                                   &self._show if self.has_close_button else <bool*>NULL,
                                   flags)
 
+        if self.main_window:
+            # To not affect children.
+            # the styles are used in Begin() only
+            imgui.PopStyleVar(3)
+
         # not(visible) means either closed or clipped
         # if has_close_button, show can be switched from True to False if closed
+
 
         if visible:
             # Retrieve the full region size before the cursor is moved.
@@ -12216,9 +12226,6 @@ cdef class Window(uiItem):
                 imgui.EndPopup()
         else:
             imgui.End()
-
-        if self.main_window:
-            imgui.PopStyleVar(1)
 
         if self._theme is not None:
             self._theme.pop()
