@@ -12063,16 +12063,16 @@ cdef class Window(uiItem):
             self.focus_update_requested = False
 
         if self.pos_update_requested:
-            imgui.SetNextWindowPos(self.state.cur.pos_to_viewport, <imgui.ImGuiCond>0)
+            imgui.SetNextWindowPos(self.state.cur.pos_to_viewport, imgui.ImGuiCond_Always)
             self.pos_update_requested = False
 
         if self.size_update_requested:
             imgui.SetNextWindowSize(self.scaled_requested_size(),
-                                    <imgui.ImGuiCond>0)
+                                    imgui.ImGuiCond_Always)
             self.size_update_requested = False
 
         if self.collapse_update_requested:
-            imgui.SetNextWindowCollapsed(not(self.state.cur.open), <imgui.ImGuiCond>0)
+            imgui.SetNextWindowCollapsed(not(self.state.cur.open), imgui.ImGuiCond_Always)
             self.collapse_update_requested = False
 
         cdef imgui.ImVec2 min_size = self.min_size
@@ -12109,10 +12109,10 @@ cdef class Window(uiItem):
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0)
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowPadding, imgui.ImVec2(0.0, 0.))
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowBorderSize, 0.)
-            imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), <imgui.ImGuiCond>0)
+            imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), imgui.ImGuiCond_Always)
             imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.viewport.actualWidth,
                                            <float>self.context._viewport.viewport.actualHeight),
-                                    <imgui.ImGuiCond>0)
+                                    imgui.ImGuiCond_Always)
 
         # handle fonts
         if self._font is not None:

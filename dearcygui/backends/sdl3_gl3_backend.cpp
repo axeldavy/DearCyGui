@@ -476,19 +476,8 @@ mvRenderFrame(mvViewport& viewport,
 void
 mvToggleFullScreen(mvViewport& viewport)
 {
-    static size_t storedWidth = 0;
-    static size_t storedHeight = 0;
-    static int    storedXPos = 0;
-    static int    storedYPos = 0;
-
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
     SDL_SetWindowFullscreen(viewportData->handle, viewport.fullScreen);
-    /*
-        storedWidth = (size_t)viewport.actualWidth;
-        storedHeight = (size_t)viewport.actualHeight;
-        storedXPos = viewport.xpos;
-        storedYPos = viewport.ypos;
-    */
 }
 
 void mvWakeRendering(mvViewport& viewport)
