@@ -2096,6 +2096,7 @@ cdef class Viewport(baseItem):
             self._font = default_font_texture[0]
             self._font.scale = 1./global_scale
         self.initialized = True
+        imgui.GetIO().IniFilename = NULL
         """
             # TODO if (GContext->IO.autoSaveIniFile). if (!GContext->IO.iniFile.empty())
 			# io.IniFilename = GContext->IO.iniFile.c_str();
