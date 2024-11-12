@@ -146,7 +146,7 @@ mvProcessEvents(mvViewport* viewport)
             if(viewport->activity.load() || viewport->needs_refresh.load())
                 break;
             else
-                SDL_WaitEventTimeout(NULL, 0.001);
+                SDL_WaitEventTimeout(NULL, 1);
         }
 
         ImGui_ImplSDL3_ProcessEvent(&event);
