@@ -12,6 +12,18 @@ cd DearCyGui
 pip install .
 ```
 
+## Demos
+
+Demos can be found here: [https://github.com/DearCyGui/Demos]
+
+
+## Documentation
+
+The Demos include a `documentation.py` script to see the demo,
+alternatively most of it is contained here:
+[https://github.com/DearCyGui/Demos/tree/main/docs]
+
+
 ## The goal of DearCyGui
 
 DearPyGui is written in C++. This enables an efficient wrapping of Dear ImGui calls.
