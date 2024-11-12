@@ -111,7 +111,7 @@ cdef class OpenHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
 
-cdef class CloseOpenHandler(baseHandler):
+cdef class CloseHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
 
