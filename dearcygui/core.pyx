@@ -6296,10 +6296,6 @@ cdef class uiItem(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.requested_size.y = <float>value
-        if value <= 0:
-            self.state.cur.rect_size.y = 0.
-        else:
-            self.state.cur.rect_size.y = <float>value
         self.size_update_requested = True
 
     @width.setter
@@ -6307,10 +6303,6 @@ cdef class uiItem(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.requested_size.x = <float>value
-        if value <= 0:
-            self.state.cur.rect_size.x = 0.
-        else:
-            self.state.cur.rect_size.x = <float>value
         self.size_update_requested = True
 
     @indent.setter
@@ -9067,7 +9059,7 @@ cdef class ImageButton(uiItem):
 
 cdef class Separator(uiItem):
     def __cinit__(self):
-        self.state.cap.has_rect_size = False
+        return
     # TODO: is label override really needed ?
     @property
     def label(self):
@@ -9096,18 +9088,20 @@ cdef class Separator(uiItem):
             imgui.Separator()
         else:
             imgui.SeparatorText(self.imgui_label.c_str())
+        self.state.cur.rect_size = imgui.GetItemRectSize()
         return False
 
 cdef class Spacer(uiItem):
     def __cinit__(self):
-        self.state.cap.has_rect_size = False
         self.can_be_disabled = False
     cdef bint draw_item(self) noexcept nogil:
         if self.requested_size.x == 0 and \
            self.requested_size.y == 0:
             imgui.Spacing()
+            # TODO rect_size
         else:
             imgui.Dummy(self.scaled_requested_size())
+        self.state.cur.rect_size = imgui.GetItemRectSize()
         return False
 
 cdef class MenuBar(uiItem):
