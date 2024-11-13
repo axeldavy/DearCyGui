@@ -9890,8 +9890,8 @@ cdef class HorizontalLayout(Layout):
         MANUAL: items are positionned at the requested
         positions
 
-        FOR LEFT/RIGHT/CENTER, spacing can be used
-        to add additional spacing between the items.
+        FOR LEFT/RIGHT/CENTER, ItemSpacing's style can
+        be used to control spacing between the items.
         Default is LEFT.
         """
         cdef unique_lock[recursive_mutex] m
@@ -9905,22 +9905,6 @@ cdef class HorizontalLayout(Layout):
         if value < 0 or value > alignment.MANUAL:
             raise ValueError("Invalid alignment value")
         self._alignment_mode = value
-
-    @property
-    def spacing(self):
-        """
-        Additional space to add between items.
-        Doesn't have effect with JUSTIFIED or MANUAL.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._alignment_mode
-
-    @spacing.setter
-    def spacing(self, float value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._spacing = value
 
     @property
     def positions(self):
@@ -9998,11 +9982,7 @@ cdef class HorizontalLayout(Layout):
         if self._alignment_mode == alignment.LEFT:
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
-                (<uiItem>child)._pos_policy[0] = positioning.REL_DEFAULT
-                if ((<uiItem>child)._prev_sibling) is not None:
-                    (<uiItem>child).state.cur.pos_to_default.x = self._spacing
-                else:
-                    (<uiItem>child).state.cur.pos_to_default.x = 0.
+                (<uiItem>child)._pos_policy[0] = positioning.DEFAULT
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.RIGHT:
             pos_end = available_width
@@ -10079,13 +10059,16 @@ cdef class HorizontalLayout(Layout):
         # horizontally content area changes
         cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
         cdef bint changed = False
+        cdef float cur_spacing = imgui.GetStyle().ItemSpacing.x
         if cur_content_area.x != self.prev_content_area.x or \
            self.previous_last_child != <PyObject*>self.last_widgets_child or \
            self.size_update_requested or \
+           self._spacing != cur_spacing or \
            self.force_update:
             changed = True
             self.prev_content_area = cur_content_area
             self.previous_last_child = <PyObject*>self.last_widgets_child
+            self._spacing = cur_spacing
             self.force_update = False
             self.size_update_requested = False
         return changed
@@ -10141,8 +10124,8 @@ cdef class VerticalLayout(Layout):
         MANUAL: items are positionned at the requested
         positions
 
-        FOR TOP/BOTTOM/CENTER, spacing can be used
-        to add additional spacing between the items.
+        FOR TOP/BOTTOM/CENTER, ItemSpacing's style can
+        be used to control spacing between the items.
         Default is TOP.
         """
         cdef unique_lock[recursive_mutex] m
@@ -10156,22 +10139,6 @@ cdef class VerticalLayout(Layout):
         if value < 0 or value > alignment.MANUAL:
             raise ValueError("Invalid alignment value")
         self._alignment_mode = value
-
-    @property
-    def spacing(self):
-        """
-        Additional space to add between items.
-        Doesn't have effect with JUSTIFIED or MANUAL.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._alignment_mode
-
-    @spacing.setter
-    def spacing(self, float value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._spacing = value
 
     @property
     def positions(self):
@@ -10251,10 +10218,6 @@ cdef class VerticalLayout(Layout):
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 (<uiItem>child)._pos_policy[1] = positioning.REL_DEFAULT
-                if ((<uiItem>child)._prev_sibling) is not None:
-                    (<uiItem>child).state.cur.pos_to_default.y = self._spacing
-                else:
-                    (<uiItem>child).state.cur.pos_to_default.y = 0.
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == alignment.RIGHT:
             pos_end = available_height
@@ -10330,14 +10293,17 @@ cdef class VerticalLayout(Layout):
         # Same as Layout check_change but ignores horizontal content
         # area changes
         cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
+        cdef float cur_spacing = imgui.GetStyle().ItemSpacing.y
         cdef bint changed = False
         if cur_content_area.y != self.prev_content_area.y or \
            self.previous_last_child != <PyObject*>self.last_widgets_child or \
            self.size_update_requested or \
+           self._spacing != cur_spacing or \
            self.force_update:
             changed = True
             self.prev_content_area = cur_content_area
             self.previous_last_child = <PyObject*>self.last_widgets_child
+            self._spacing = cur_spacing
             self.force_update = False
             self.size_update_requested = False
         return changed
