@@ -154,7 +154,6 @@ cdef class baseItem:
     # DOES NOT mean "bound" to an item
     cdef bint can_have_handler_child
     cdef bint can_have_menubar_child
-    cdef bint can_have_payload_child
     cdef bint can_have_plot_element_child
     cdef bint can_have_tab_child
     cdef bint can_have_theme_child
@@ -184,7 +183,6 @@ cdef class baseItem:
     cdef drawingItem last_drawings_child
     cdef baseHandler last_handler_child
     cdef uiItem last_menubar_child
-    cdef baseItem last_payloads_child
     cdef plotElement last_plot_element_child
     cdef uiItem last_tab_child
     cdef baseTheme last_theme_child
@@ -214,7 +212,6 @@ cdef enum child_type:
     cat_viewport_drawlist
     cat_handler
     cat_menubar
-    cat_payload
     cat_plot_element
     cat_tab
     cat_theme
@@ -671,7 +668,6 @@ cdef class uiItem(baseItem):
     # mvAppItemConfig
     #cdef string filter -> to move
     #cdef string alias
-    cdef string payloadType
     cdef bint dpi_scaling
     cdef imgui.ImVec2 requested_size
     cdef float _indent

@@ -311,7 +311,6 @@ cdef class Context:
            o.can_have_handler_child or \
            o.can_have_menubar_child or \
            o.can_have_plot_element_child or \
-           o.can_have_payload_child or \
            o.can_have_tab_child or \
            o.can_have_theme_child or \
            o.can_have_widget_child or \
@@ -852,7 +851,6 @@ cdef class baseItem:
         self.context.register_item(self, self.uuid)
         self.can_have_widget_child = False
         self.can_have_drawing_child = False
-        self.can_have_payload_child = False
         self.can_have_sibling = False
         self.element_child_category = -1
 
@@ -1101,7 +1099,7 @@ cdef class baseItem:
         while item is not None:
             result.append(item)
             item = item._prev_sibling
-        item = self.last_payloads_child
+        item = self.last_tab_child
         while item is not None:
             result.append(item)
             item = item._prev_sibling
@@ -1194,12 +1192,12 @@ cdef class baseItem:
                 break
             (<baseItem>child).detach_item()
             child = self.last_plot_element_child
-        child = self.last_payloads_child
+        child = self.last_tab_child
         while child is not None:
             if already_attached.find((<baseItem>child).uuid) != already_attached.end():
                 break
             (<baseItem>child).detach_item()
-            child = self.last_payloads_child
+            child = self.last_tab_child
         child = self.last_drawings_child
         while child is not None:
             if already_attached.find((<baseItem>child).uuid) != already_attached.end():
@@ -1231,7 +1229,6 @@ cdef class baseItem:
            self.can_have_handler_child or \
            self.can_have_menubar_child or \
            self.can_have_plot_element_child or \
-           self.can_have_payload_child or \
            self.can_have_tab_child or \
            self.can_have_theme_child or \
            self.can_have_widget_child or \
@@ -1566,20 +1563,22 @@ cdef class baseItem:
             # No next sibling. We might be referenced in the
             # parent
             if self._parent is not None:
-                if self._parent.last_window_child is self:
-                    self._parent.last_window_child = self._prev_sibling
-                elif self._parent.last_widgets_child is self:
-                    self._parent.last_widgets_child = self._prev_sibling
-                elif self._parent.last_drawings_child is self:
+                if self._parent.last_drawings_child is self:
                     self._parent.last_drawings_child = self._prev_sibling
-                elif self._parent.last_payloads_child is self:
-                    self._parent.last_payloads_child = self._prev_sibling
-                elif self._parent.last_plot_element_child is self:
-                    self._parent.last_plot_element_child = self._prev_sibling
                 elif self._parent.last_handler_child is self:
                     self._parent.last_handler_child = self._prev_sibling
+                elif self._parent.last_menubar_child is self:
+                    self._parent.last_menubar_child = self._prev_sibling
+                elif self._parent.last_plot_element_child is self:
+                    self._parent.last_plot_element_child = self._prev_sibling
+                elif self._parent.last_tab_child is self:
+                    self._parent.last_tab_child = self._prev_sibling
                 elif self._parent.last_theme_child is self:
                     self._parent.last_theme_child = self._prev_sibling
+                elif self._parent.last_widgets_child is self:
+                    self._parent.last_widgets_child = self._prev_sibling
+                elif self._parent.last_window_child is self:
+                    self._parent.last_window_child = self._prev_sibling
         # Free references
         self._parent = None
         self._prev_sibling = None
@@ -1619,57 +1618,32 @@ cdef class baseItem:
         # retaining the lock enables to ensure the item is
         # still detached
 
-        # Remove this item from the list of elements
-        if self._prev_sibling is not None:
-            lock_gil_friendly(sibling_m, self._prev_sibling.mutex)
-            self._prev_sibling._next_sibling = self._next_sibling
-            sibling_m.unlock()
-        if self._next_sibling is not None:
-            lock_gil_friendly(sibling_m, self._next_sibling.mutex)
-            self._next_sibling._prev_sibling = self._prev_sibling
-            sibling_m.unlock()
-        else:
-            # No next sibling. We might be referenced in the
-            # parent
-            if self._parent is not None:
-                if self._parent.last_window_child is self:
-                    self._parent.last_window_child = self._prev_sibling
-                elif self._parent.last_widgets_child is self:
-                    self._parent.last_widgets_child = self._prev_sibling
-                elif self._parent.last_drawings_child is self:
-                    self._parent.last_drawings_child = self._prev_sibling
-                elif self._parent.last_payloads_child is self:
-                    self._parent.last_payloads_child = self._prev_sibling
-                elif self._parent.last_plot_element_child is self:
-                    self._parent.last_plot_element_child = self._prev_sibling
-                elif self._parent.last_handler_child is self:
-                    self._parent.last_handler_child = self._prev_sibling
-                elif self._parent.last_theme_child is self:
-                    self._parent.last_theme_child = self._prev_sibling
-
         # delete all children recursively
-        if self.last_window_child is not None:
-            (<baseItem>self.last_window_child).__delete_and_siblings()
-        if self.last_widgets_child is not None:
-            (<baseItem>self.last_widgets_child).__delete_and_siblings()
         if self.last_drawings_child is not None:
             (<baseItem>self.last_drawings_child).__delete_and_siblings()
-        if self.last_payloads_child is not None:
-            (<baseItem>self.last_payloads_child).__delete_and_siblings()
-        if self.last_plot_element_child is not None:
-            (<baseItem>self.last_plot_element_child).__delete_and_siblings()
         if self.last_handler_child is not None:
             (<baseItem>self.last_handler_child).__delete_and_siblings()
+        if self.last_menubar_child is not None:
+            (<baseItem>self.last_menubar_child).__delete_and_siblings()
+        if self.last_plot_element_child is not None:
+            (<baseItem>self.last_plot_element_child).__delete_and_siblings()
+        if self.last_tab_child is not None:
+            (<baseItem>self.last_tab_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
+        if self.last_widgets_child is not None:
+            (<baseItem>self.last_widgets_child).__delete_and_siblings()
+        if self.last_window_child is not None:
+            (<baseItem>self.last_window_child).__delete_and_siblings()
         # TODO: free item specific references (themes, font, etc)
-        self.last_window_child = None
-        self.last_widgets_child = None
         self.last_drawings_child = None
-        self.last_payloads_child = None
-        self.last_plot_element_child = None
         self.last_handler_child = None
+        self.last_menubar_child = None
+        self.last_plot_element_child = None
+        self.last_tab_child = None
         self.last_theme_child = None
+        self.last_widgets_child = None
+        self.last_window_child = None
         # Note we don't free self.context, nor
         # destroy anything else: the item might
         # still be referenced for instance in handlers,
@@ -1681,20 +1655,20 @@ cdef class baseItem:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # delete all its children recursively
-        if self.last_window_child is not None:
-            (<baseItem>self.last_window_child).__delete_and_siblings()
-        if self.last_widgets_child is not None:
-            (<baseItem>self.last_widgets_child).__delete_and_siblings()
         if self.last_drawings_child is not None:
             (<baseItem>self.last_drawings_child).__delete_and_siblings()
-        if self.last_payloads_child is not None:
-            (<baseItem>self.last_payloads_child).__delete_and_siblings()
-        if self.last_plot_element_child is not None:
-            (<baseItem>self.last_plot_element_child).__delete_and_siblings()
         if self.last_handler_child is not None:
             (<baseItem>self.last_handler_child).__delete_and_siblings()
+        if self.last_plot_element_child is not None:
+            (<baseItem>self.last_plot_element_child).__delete_and_siblings()
+        if self.last_tab_child is not None:
+            (<baseItem>self.last_tab_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
+        if self.last_widgets_child is not None:
+            (<baseItem>self.last_widgets_child).__delete_and_siblings()
+        if self.last_window_child is not None:
+            (<baseItem>self.last_window_child).__delete_and_siblings()
         # delete previous sibling
         if self._prev_sibling is not None:
             (<baseItem>self._prev_sibling).__delete_and_siblings()
@@ -1702,13 +1676,14 @@ cdef class baseItem:
         self._parent = None
         self._prev_sibling = None
         self._next_sibling = None
-        self.last_window_child = None
-        self.last_widgets_child = None
         self.last_drawings_child = None
-        self.last_payloads_child = None
-        self.last_plot_element_child = None
         self.last_handler_child = None
+        self.last_menubar_child = None
+        self.last_plot_element_child = None
+        self.last_tab_child = None
         self.last_theme_child = None
+        self.last_widgets_child = None
+        self.last_window_child = None
 
     @cython.final # The final is for performance, to avoid a virtual function and thus allow inlining
     cdef void set_previous_states(self) noexcept nogil:
@@ -1757,7 +1732,7 @@ cdef class baseItem:
             (<baseItem>self.last_drawings_child).set_hidden_and_propagate_to_siblings_with_handlers()
         if self.last_plot_element_child is not None:
             (<baseItem>self.last_plot_element_child).set_hidden_and_propagate_to_siblings_with_handlers()
-        # handlers, themes, payloads, have no states and no children that can have some.
+        # handlers, themes, font have no states and no children that can have some.
         # TODO: plotAxis
 
     @cython.final
@@ -3085,7 +3060,7 @@ cdef class PlaceHolderParent(baseItem):
         self.can_have_drawing_child = True
         self.can_have_handler_child = True
         self.can_have_menubar_child = True
-        self.can_have_payload_child = True
+        self.can_have_plot_element_child = True
         self.can_have_tab_child = True
         self.can_have_theme_child = True
         self.can_have_widget_child = True
@@ -5420,7 +5395,6 @@ cdef class uiItem(baseItem):
         # mvAppItemConfig
         #self.filter = b""
         #self.alias = b""
-        self.payloadType = b"$$DPG_PAYLOAD"
         self.requested_size = imgui.ImVec2(0., 0.)
         self.dpi_scaling = True
         self._indent = 0.
@@ -11484,7 +11458,6 @@ cdef class Window(uiItem):
         self.can_have_widget_child = True
         #self.can_have_drawing_child = True
         self.can_have_menubar_child = True
-        self.can_have_payload_child = True
         self.element_child_category = child_type.cat_window
         self.state.cap.can_be_hovered = True
         self.state.cap.can_be_focused = True
