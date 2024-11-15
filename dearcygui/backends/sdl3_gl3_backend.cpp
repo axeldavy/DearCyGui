@@ -143,10 +143,11 @@ mvProcessEvents(mvViewport* viewport)
     while (true) {
         bool new_events = SDL_PollEvent(&event);
         if (!new_events) {
+            if (!viewport->waitForEvents)
+                break;
             if(viewport->activity.load() || viewport->needs_refresh.load())
                 break;
-            else
-                SDL_WaitEventTimeout(NULL, 1);
+            SDL_WaitEventTimeout(NULL, 1);
         }
 
         ImGui_ImplSDL3_ProcessEvent(&event);
@@ -461,6 +462,8 @@ mvRenderFrame(mvViewport& viewport,
 
     // The frame just after an activity might trigger some visual changes
     prev_needs_refresh = needs_refresh;
+    if (needs_refresh)
+        viewport.activity.store(true);
 
     if (can_skip_presenting) {
 

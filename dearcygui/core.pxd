@@ -294,6 +294,7 @@ cdef class Viewport(baseItem):
     cdef int frame_count # frame count
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
+    cdef bint refresh_needed
     cdef double[2] scales
     cdef double[2] shifts
     cdef imgui.ImVec2 window_pos

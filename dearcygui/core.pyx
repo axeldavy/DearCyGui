@@ -2642,6 +2642,7 @@ cdef class Viewport(baseItem):
             self._font.push()
         if self._theme is not None: # maybe apply in render_frame instead ?
             self._theme.push()
+        self.refresh_needed = False
         self.shifts = [0., 0.]
         self.scales = [1., 1.]
         self.in_plot = False
@@ -2664,6 +2665,8 @@ cdef class Viewport(baseItem):
             self._font.pop()
         self.run_handlers()
         self.last_t_after_rendering = ctime.monotonic_ns()
+        if self.refresh_needed:
+            self.viewport.needs_refresh.store(True)
         return
 
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil:
@@ -9345,8 +9348,11 @@ cdef class Tooltip(uiItem):
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             # NOTE: we could also set the rects. DPG does it.
-        if self.state.cur.rendered != was_visible:
-            self.context._viewport.viewport.needs_refresh.store(True)
+        # The sizing of a tooltip takes a few frames to converge
+        if self.state.cur.rendered != was_visible or \
+           self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+            self.context._viewport.refresh_needed = True
         return self.state.cur.rendered and not(was_visible)
 
 cdef class TabButton(uiItem):
@@ -10982,6 +10988,10 @@ cdef class ChildWindow(uiItem):
             self.state.cur.rect_size = imgui.GetWindowSize()
             update_current_mouse_states(self.state)
             # TODO scrolling
+            # The sizing of windows might not converge right away
+            if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+               self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+                self.context._viewport.refresh_needed = True
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
         imgui.EndChild()
@@ -12199,6 +12209,10 @@ cdef class Window(uiItem):
         self.show_update_requested = False
 
         self.run_handlers()
+        # The sizing of windows might not converge right away
+        if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+            self.context._viewport.refresh_needed = True
 
 
 """
@@ -13539,7 +13553,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef void after_plot(self, implot.ImAxis axis) noexcept nogil:
         # The fit only impacts the next frame
         if self._min != self.prev_min or self._max != self.prev_max:
-            self.context._viewport.viewport.needs_refresh.store(True)
+            self.context._viewport.refresh_needed = True
 
     cdef void set_hidden(self) noexcept nogil:
         self.set_previous_states()
