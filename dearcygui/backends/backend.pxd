@@ -30,6 +30,7 @@ cdef extern from "backend.h" nogil:
         bint fullScreen
         bint disableClose
         bint waitForEvents
+        bint shouldSkipPresenting
         atomic[bint] activity
         atomic[bint] needs_refresh
 

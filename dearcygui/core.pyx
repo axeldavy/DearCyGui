@@ -2642,7 +2642,7 @@ cdef class Viewport(baseItem):
             self._font.push()
         if self._theme is not None: # maybe apply in render_frame instead ?
             self._theme.push()
-        self.refresh_needed = False
+        self.redraw_needed = False
         self.shifts = [0., 0.]
         self.scales = [1., 1.]
         self.in_plot = False
@@ -2665,8 +2665,9 @@ cdef class Viewport(baseItem):
             self._font.pop()
         self.run_handlers()
         self.last_t_after_rendering = ctime.monotonic_ns()
-        if self.refresh_needed:
+        if self.redraw_needed:
             self.viewport.needs_refresh.store(True)
+            self.viewport.shouldSkipPresenting = True
         return
 
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil:
@@ -9352,7 +9353,7 @@ cdef class Tooltip(uiItem):
         if self.state.cur.rendered != was_visible or \
            self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
            self.state.cur.rect_size.y != self.state.prev.rect_size.y:
-            self.context._viewport.refresh_needed = True
+            self.context._viewport.redraw_needed = True
         return self.state.cur.rendered and not(was_visible)
 
 cdef class TabButton(uiItem):
@@ -10044,8 +10045,7 @@ cdef class HorizontalLayout(Layout):
                 n_items += 1
 
         if self.force_update:
-            # Prevent not refreshing
-            self.context._viewport.cwake()
+            self.context._viewport.redraw_needed = True
 
     cdef bint check_change(self) noexcept nogil:
         # Same as Layout check_change but only looks
@@ -10097,6 +10097,9 @@ cdef class HorizontalLayout(Layout):
         imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
+        if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+            self.context._viewport.redraw_needed = True
         return changed
 
 
@@ -10283,7 +10286,7 @@ cdef class VerticalLayout(Layout):
 
         if self.force_update:
             # Prevent not refreshing
-            self.context._viewport.cwake()
+            self.context._viewport.redraw_needed = True
 
     cdef bint check_change(self) noexcept nogil:
         # Same as Layout check_change but ignores horizontal content
@@ -10335,6 +10338,9 @@ cdef class VerticalLayout(Layout):
         imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
+        if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+            self.context._viewport.redraw_needed = True
         return changed
 
 cdef class TreeNode(uiItem):
@@ -10991,7 +10997,7 @@ cdef class ChildWindow(uiItem):
             # The sizing of windows might not converge right away
             if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
                self.state.cur.rect_size.y != self.state.prev.rect_size.y:
-                self.context._viewport.refresh_needed = True
+                self.context._viewport.redraw_needed = True
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
         imgui.EndChild()
@@ -12212,7 +12218,7 @@ cdef class Window(uiItem):
         # The sizing of windows might not converge right away
         if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
            self.state.cur.rect_size.y != self.state.prev.rect_size.y:
-            self.context._viewport.refresh_needed = True
+            self.context._viewport.redraw_needed = True
 
 
 """
@@ -13553,7 +13559,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef void after_plot(self, implot.ImAxis axis) noexcept nogil:
         # The fit only impacts the next frame
         if self._min != self.prev_min or self._max != self.prev_max:
-            self.context._viewport.refresh_needed = True
+            self.context._viewport.redraw_needed = True
 
     cdef void set_hidden(self) noexcept nogil:
         self.set_previous_states()

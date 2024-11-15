@@ -457,6 +457,16 @@ mvRenderFrame(mvViewport& viewport,
 
     static bool prev_needs_refresh = true;
 
+    // shouldSkipPresenting: When we need to redraw in order
+    // to improve positioning, and avoid bad frames.
+    // We still return in render_frame as the user
+    // might want that to handle callbacks right away.
+    // The advantage of shouldSkipPresenting though,
+    // is that we are not limited by vsync to
+    // do the recomputation.
+    if (!can_skip_presenting)
+        viewport.shouldSkipPresenting = false;
+
     // Maybe we could use some statistics like number of vertices
     can_skip_presenting &= !needs_refresh && !prev_needs_refresh;
 
@@ -465,8 +475,8 @@ mvRenderFrame(mvViewport& viewport,
     if (needs_refresh)
         viewport.activity.store(true);
 
-    if (can_skip_presenting) {
-
+    if (can_skip_presenting || viewport.shouldSkipPresenting) {
+        viewport.shouldSkipPresenting = false;
         ImGui::EndFrame();
         return false;
     }
