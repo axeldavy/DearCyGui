@@ -335,16 +335,6 @@ cdef class DrawEllipse(DrawEllipse_):
         read_point[double](self.pmax, value)
         self.__fill_points()
     @property
-    def radius(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return list(self.radius)
-    @radius.setter
-    def radius(self, float value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.radius = value
-    @property
     def color(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
