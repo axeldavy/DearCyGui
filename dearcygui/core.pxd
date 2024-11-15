@@ -287,6 +287,7 @@ cdef class Viewport(baseItem):
     cdef long long last_t_before_rendering
     cdef long long last_t_after_rendering
     cdef long long last_t_after_swapping
+    cdef long long t_first_skip
     cdef double delta_event_handling
     cdef double delta_rendering
     cdef double delta_swapping
@@ -295,6 +296,7 @@ cdef class Viewport(baseItem):
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
     cdef bint redraw_needed
+    cdef bint skipped_last_frame
     cdef double[2] scales
     cdef double[2] shifts
     cdef imgui.ImVec2 window_pos

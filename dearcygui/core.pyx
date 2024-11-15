@@ -2003,6 +2003,7 @@ cdef class Viewport(baseItem):
         self.last_t_before_rendering = self.last_t_before_event_handling
         self.last_t_after_rendering = self.last_t_before_event_handling
         self.last_t_after_swapping = self.last_t_before_event_handling
+        self.skipped_last_frame = False
         self.frame_count = 0
         self.state.cur.rendered = True # For compatibility with RenderHandlers
         self.p_state = &self.state
@@ -2668,6 +2669,20 @@ cdef class Viewport(baseItem):
         if self.redraw_needed:
             self.viewport.needs_refresh.store(True)
             self.viewport.shouldSkipPresenting = True
+            # Skip presenting frames if we can afford
+            # it and redraw fast hoping for convergence
+            if not(self.skipped_last_frame):
+                self.t_first_skip = self.last_t_after_rendering
+                self.skipped_last_frame = True
+            elif (self.last_t_after_rendering - self.t_first_skip) > 1e7:
+                # 10 ms elapsed, redraw even if might not be perfect
+                self.skipped_last_frame = False
+                self.viewport.shouldSkipPresenting = False
+        else:
+            if self.skipped_last_frame:
+                # probably not needed
+                self.viewport.needs_refresh.store(True)
+            self.skipped_last_frame = False
         return
 
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil:
@@ -9351,8 +9366,8 @@ cdef class Tooltip(uiItem):
             # NOTE: we could also set the rects. DPG does it.
         # The sizing of a tooltip takes a few frames to converge
         if self.state.cur.rendered != was_visible or \
-           self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+           self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
+           self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
             self.context._viewport.redraw_needed = True
         return self.state.cur.rendered and not(was_visible)
 
@@ -10995,8 +11010,8 @@ cdef class ChildWindow(uiItem):
             update_current_mouse_states(self.state)
             # TODO scrolling
             # The sizing of windows might not converge right away
-            if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-               self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+            if self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
+               self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
                 self.context._viewport.redraw_needed = True
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
@@ -12216,8 +12231,8 @@ cdef class Window(uiItem):
 
         self.run_handlers()
         # The sizing of windows might not converge right away
-        if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+        if self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
+           self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
             self.context._viewport.redraw_needed = True
 
 
