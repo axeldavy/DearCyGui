@@ -2655,8 +2655,7 @@ cdef class Viewport(baseItem):
         imgui.PushID(self.uuid)
         if self.last_menubar_child is not None:
             self.last_menubar_child.draw()
-        if self.last_window_child is not None:
-            self.last_window_child.draw()
+        draw_window_children(self)
         #if self.last_viewport_drawlist_child is not None:
         #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         imgui.PopID()
@@ -2992,6 +2991,42 @@ cdef class Viewport(baseItem):
         mvWakeRendering(dereference(self.viewport))
 
 
+# Rendering children
+
+cdef inline void draw_drawing_children(baseItem item,
+                                       imgui.ImDrawList* drawlist) noexcept nogil:
+    if item.last_drawings_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_drawings_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<drawingItem>child).draw(drawlist)
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_ui_children(baseItem item) noexcept nogil:
+    if item.last_widgets_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_widgets_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_window_children(baseItem item) noexcept nogil:
+    if item.last_window_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_window_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+# Callbacks
+
+
 cdef class Callback:
     """
     Wrapper class that automatically encapsulate
@@ -3156,17 +3191,6 @@ cdef class drawingItem(baseItem):
     cdef void draw(self, imgui.ImDrawList* l) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return
-
-cdef inline void draw_drawing_children(baseItem item,
-                                       imgui.ImDrawList* drawlist) noexcept nogil:
-    if item.last_drawings_child is None:
-        return
-    cdef PyObject *child = <PyObject*> item.last_drawings_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
-    while (<baseItem>child) is not None:
-        (<drawingItem>child).draw(drawlist)
-        child = <PyObject *>(<baseItem>child)._next_sibling
 
 cdef class DrawingList(drawingItem):
     """
@@ -6304,8 +6328,6 @@ cdef class uiItem(baseItem):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<uiItem>self._prev_sibling).draw()
 
         if not(self._show):
             if self.show_update_requested:
@@ -9100,8 +9122,6 @@ cdef class MenuBar(uiItem):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<uiItem>self._prev_sibling).draw()
 
         if not(self._show):
             if self.show_update_requested:
@@ -9143,7 +9163,7 @@ cdef class MenuBar(uiItem):
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_widgets_child.draw()
+                draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
             if parent_viewport:
@@ -9202,7 +9222,7 @@ cdef class Menu(uiItem):
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_widgets_child.draw()
+                draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
             imgui.EndMenu()
@@ -9340,7 +9360,7 @@ cdef class Tooltip(uiItem):
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_widgets_child.draw()
+                draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTooltip()
@@ -9570,7 +9590,7 @@ cdef class Tab(uiItem):
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_widgets_child.draw()
+                draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTabItem()
         else:
@@ -9852,7 +9872,7 @@ cdef class Layout(uiItem):
         if self.last_widgets_child is not None:
             pos_p = imgui.GetCursorScreenPos()
             swap(pos_p, self.context._viewport.parent_pos)
-            self.last_widgets_child.draw()
+            draw_ui_children(self)
             self.context._viewport.parent_pos = pos_p
         imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
                                imgui.ImVec2(0., 0.))
@@ -10083,7 +10103,7 @@ cdef class HorizontalLayout(Layout):
         if self.last_widgets_child is not None:
             pos_p = imgui.GetCursorScreenPos()
             swap(pos_p, self.context._viewport.parent_pos)
-            self.last_widgets_child.draw()
+            draw_ui_children(self)
             self.context._viewport.parent_pos = pos_p
         if changed:
             # We maintain the lock during the rendering
@@ -10324,7 +10344,7 @@ cdef class VerticalLayout(Layout):
         if self.last_widgets_child is not None:
             pos_p = imgui.GetCursorScreenPos()
             swap(pos_p, self.context._viewport.parent_pos)
-            self.last_widgets_child.draw()
+            draw_ui_children(self)
             self.context._viewport.parent_pos = pos_p
         if changed:
             # We maintain the lock during the rendering
@@ -10522,7 +10542,7 @@ cdef class TreeNode(uiItem):
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_widgets_child.draw()
+                draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
             imgui.TreePop()
 
@@ -10661,7 +10681,7 @@ cdef class CollapsingHeader(uiItem):
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_widgets_child.draw()
+                draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
         # TODO: rect_size from group ?
         return not(was_open) and self.state.cur.open
@@ -10982,8 +11002,7 @@ cdef class ChildWindow(uiItem):
             pos_p = imgui.GetCursorScreenPos()
             # TODO: since Child windows are ... windows, should we update window_pos ?
             swap(pos_p, self.context._viewport.parent_pos)
-            if self.last_widgets_child is not None:
-                self.last_widgets_child.draw()
+            draw_ui_children(self)
             if self.last_menubar_child is not None:
                 self.last_menubar_child.draw()
             self.context._viewport.parent_pos = pos_p
@@ -11389,22 +11408,21 @@ cdef class ColorPicker(uiItem):
 Complex ui items
 """
 
+
 cdef class TimeWatcher(uiItem):
     """
-    A placeholder uiItem that doesn't draw
+    A placeholder uiItem parent that doesn't draw
     or have any impact on rendering.
     This item calls the callback with times in ns.
     These times can be compared with the times in the metrics
     that can be obtained from the viewport in order to
     precisely figure out the time spent rendering specific items.
 
-    The first time corresponds to the time when the next sibling
-    requested this sibling to render. At this step, no sibling
-    of this item (previous or next) have rendered anything.
+    The first time corresponds to the time this item is called
+    for rendering
 
-    The second time corresponds to the time when the previous
-    siblings have finished rendering and it is now the turn
-    of this item to render. Next items have not rendered yet.
+    The second time corresponds to the time after the
+    children have finished rendering.
 
     The third time corresponds to the time when viewport
     started rendering items for this frame. It is a duplicate of
@@ -11424,12 +11442,12 @@ cdef class TimeWatcher(uiItem):
         self.state.cap.has_position = False
         self.state.cap.has_rect_size = False
         self.can_be_disabled = False
+        self.can_have_widget_child = True
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef long long time_start = ctime.monotonic_ns()
-        if self._prev_sibling is not None:
-            (<uiItem>self._prev_sibling).draw()
+        draw_ui_children(self)
         cdef long long time_end = ctime.monotonic_ns()
         cdef int i
         if not(self._callbacks.empty()):
@@ -12014,8 +12032,6 @@ cdef class Window(uiItem):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<uiItem>self._prev_sibling).draw()
 
         if not(self._show):
             if self.show_update_requested:
@@ -12139,8 +12155,7 @@ cdef class Window(uiItem):
             #if self.last_0_child is not None:
             #    self.last_0_child.draw(this_drawlist, startx, starty)
 
-            if self.last_widgets_child is not None:
-                self.last_widgets_child.draw()
+            draw_ui_children(self)
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
@@ -14646,7 +14661,7 @@ cdef class plotElementWithLegend(plotElement):
                         pos_p = pos_w
                         swap(pos_w, self.context._viewport.window_pos)
                         swap(pos_p, self.context._viewport.parent_pos)
-                        self.last_widgets_child.draw()
+                        draw_ui_children(self)
                         self.context._viewport.window_pos = pos_w
                         self.context._viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
@@ -15676,7 +15691,7 @@ cdef class DrawInPlot(plotElementWithLegend):
                         pos_p = pos_w
                         swap(pos_w, self.context._viewport.window_pos)
                         swap(pos_p, self.context._viewport.parent_pos)
-                        self.last_widgets_child.draw()
+                        draw_ui_children(self)
                         self.context._viewport.window_pos = pos_w
                         self.context._viewport.parent_pos = pos_p
                     implot.EndLegendPopup()

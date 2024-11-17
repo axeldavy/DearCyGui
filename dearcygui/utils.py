@@ -187,12 +187,18 @@ class MetricsWindow(dcg.Window):
         with dcg.Tooltip(c, target=self.secondary_plot.Y1, parent=self):
             dcg.Text(c, value=text_hints["Y"])
         
-        # Attach ourselves at the end of our children
-        # a TimeWatch Instance to measure the time
-        # spend rendering this item's children. We do
+        # Attach a TimeWatch Instance to measure the time
+        # spent rendering this item's children. We do
         # not measure the window itself, but it should
         # be small.
-        dcg.TimeWatcher(context, parent=self, callback=self.log_times)
+        children = self.children
+        tw = dcg.TimeWatcher(context, parent=self, callback=self.log_times)
+        # Move the ui children to TimeWatcher
+        for child in children:
+            try:
+                child.parent = tw
+            except TypeError:
+                pass
         self.metrics_window_rendering_time = 0
         self.start_time = 1e-9*self.context.viewport.metrics["last_time_before_rendering"]
         self.rendering_metrics = self.context.viewport.metrics
