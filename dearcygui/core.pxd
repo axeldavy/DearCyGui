@@ -955,7 +955,7 @@ cdef class Texture(baseItem):
     cdef int _width
     cdef int _height
     cdef int _num_chans
-    cdef int _buffer_type
+    cdef unsigned _buffer_type
     cdef int filtering_mode
     cdef bint readonly
     cdef void set_content(self, cnp.ndarray content)
