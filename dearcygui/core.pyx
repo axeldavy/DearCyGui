@@ -2653,8 +2653,7 @@ cdef class Viewport(baseItem):
         self.parent_pos = imgui.ImVec2(0., 0.)
         self.window_pos = imgui.ImVec2(0., 0.)
         imgui.PushID(self.uuid)
-        if self.last_menubar_child is not None:
-            self.last_menubar_child.draw()
+        draw_menubar_children(self)
         draw_window_children(self)
         #if self.last_viewport_drawlist_child is not None:
         #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
@@ -3012,6 +3011,26 @@ cdef inline void draw_plot_element_children(baseItem item) noexcept nogil:
         child = <PyObject *>(<baseItem>child)._prev_sibling
     while (<baseItem>child) is not None:
         (<plotElement>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_menubar_children(baseItem item) noexcept nogil:
+    if item.last_menubar_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_menubar_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_tab_children(baseItem item) noexcept nogil:
+    if item.last_tab_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_tab_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
         child = <PyObject *>(<baseItem>child)._next_sibling
 
 cdef inline void draw_ui_children(baseItem item) noexcept nogil:
@@ -9764,7 +9783,7 @@ cdef class TabBar(uiItem):
             if self.last_tab_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
-                self.last_tab_child.draw()
+                draw_tab_children(self)
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTabBar()
         else:
@@ -10990,8 +11009,7 @@ cdef class ChildWindow(uiItem):
             # TODO: since Child windows are ... windows, should we update window_pos ?
             swap(pos_p, self.context._viewport.parent_pos)
             draw_ui_children(self)
-            if self.last_menubar_child is not None:
-                self.last_menubar_child.draw()
+            draw_menubar_children(self)
             self.context._viewport.parent_pos = pos_p
             self.state.cur.rendered = True
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
@@ -12146,8 +12164,7 @@ cdef class Window(uiItem):
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
-            if self.last_menubar_child is not None:
-                self.last_menubar_child.draw()
+            draw_menubar_children(self)
 
         cdef imgui.ImVec2 rect_size
         if visible:
