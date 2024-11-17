@@ -3153,14 +3153,20 @@ cdef class drawingItem(baseItem):
             self.set_hidden_and_propagate_to_siblings_no_handlers()
         self._show = value
 
-    cdef void draw_prev_siblings(self, imgui.ImDrawList* l) noexcept nogil:
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<drawingItem>self._prev_sibling).draw(l)
-
     cdef void draw(self, imgui.ImDrawList* l) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(l)
+        return
+
+cdef inline void draw_drawing_children(baseItem item,
+                                       imgui.ImDrawList* drawlist) noexcept nogil:
+    if item.last_drawings_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_drawings_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<drawingItem>child).draw(drawlist)
+        child = <PyObject *>(<baseItem>child)._next_sibling
 
 cdef class DrawingList(drawingItem):
     """
@@ -3174,14 +3180,9 @@ cdef class DrawingList(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
-        if self.last_drawings_child is None:
-            return
-
-        # draw children
-        self.last_drawings_child.draw(drawlist)
+        draw_drawing_children(self, drawlist)
 
 cdef class DrawingListScale(drawingItem):
     """
@@ -3261,7 +3262,6 @@ cdef class DrawingListScale(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
         if self.last_drawings_child is None:
@@ -3291,7 +3291,7 @@ cdef class DrawingListScale(drawingItem):
             #    self.size_multiplier *= cur_scales[0]
 
         # draw children
-        self.last_drawings_child.draw(drawlist)
+        draw_drawing_children(self, drawlist)
 
         # restore states
         self.context._viewport.scales = cur_scales
@@ -3338,7 +3338,6 @@ cdef class DrawArrow_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3374,7 +3373,6 @@ cdef class DrawBezierCubic_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3407,7 +3405,6 @@ cdef class DrawBezierQuadratic_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3440,7 +3437,6 @@ cdef class DrawCircle_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3496,7 +3492,6 @@ cdef class DrawEllipse_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show) or self.points.size() < 3:
             return
 
@@ -3533,7 +3528,6 @@ cdef class DrawImage_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
         if self.texture is None:
@@ -3564,7 +3558,6 @@ cdef class DrawImageQuad_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
         if self.texture is None:
@@ -3608,7 +3601,6 @@ cdef class DrawLine_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3635,7 +3627,6 @@ cdef class DrawPolyline_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show) or self.points.size() < 2:
             return
 
@@ -3692,7 +3683,6 @@ cdef class DrawPolygon_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show) or self.points.size() < 2:
             return
 
@@ -3753,7 +3743,6 @@ cdef class DrawQuad_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3821,7 +3810,6 @@ cdef class DrawRect_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3886,7 +3874,6 @@ cdef class DrawText_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -3912,7 +3899,6 @@ cdef class DrawTriangle_(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -4367,7 +4353,6 @@ cdef class DrawInvisibleButton(drawingItem):
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        self.draw_prev_siblings(drawlist)
         if not(self._show):
             return
 
@@ -4439,7 +4424,7 @@ cdef class DrawInvisibleButton(drawingItem):
             self.context._viewport.shifts[1] = <double>top_left.y
             self.context._viewport.scales = [<double>size.x, <double>size.y]
             self.context._viewport.in_plot = False
-            self.last_drawings_child.draw(drawlist)
+            draw_drawing_children(self, drawlist)
 
         # restore states
         self.context._viewport.scales = cur_scales
@@ -4588,8 +4573,7 @@ cdef class DrawInWindow(uiItem):
                                         starty + clip_height),
                            True)
 
-        if self.last_drawings_child is not None:
-            self.last_drawings_child.draw(drawlist)
+        draw_drawing_children(self, drawlist)
 
         imgui.PopClipRect()
 
@@ -4631,7 +4615,7 @@ cdef class ViewportDrawList_(baseItem):
         cdef imgui.ImDrawList* internal_drawlist = \
             imgui.GetForegroundDrawList() if self._front else \
             imgui.GetBackgroundDrawList()
-        self.last_drawings_child.draw(internal_drawlist)
+        draw_drawing_children(self, internal_drawlist)
 
 """
 Global handlers
@@ -12160,12 +12144,6 @@ cdef class Window(uiItem):
             # TODO if self.children_widgets[i].tracked and show:
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
-            # Seems redundant with DrawInWindow
-            # DrawInWindow is more powerful
-            #self.context._viewport.in_plot = False
-            #if self.last_drawings_child is not None:
-            #    self.last_drawings_child.draw(imgui.GetWindowDrawList())
-
             if self.last_menubar_child is not None:
                 self.last_menubar_child.draw()
 
@@ -15674,8 +15652,7 @@ cdef class DrawInPlot(plotElementWithLegend):
             implot.PushPlotClipRect(0.)
 
         if render:
-            if self.last_drawings_child is not None:
-                self.last_drawings_child.draw(implot.GetPlotDrawList())
+            draw_drawing_children(self, implot.GetPlotDrawList())
 
             if self._legend:
                 implot.EndItem()

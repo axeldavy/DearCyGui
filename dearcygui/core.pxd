@@ -337,7 +337,6 @@ Drawing Items
 
 cdef class drawingItem(baseItem):
     cdef bint _show
-    cdef void draw_prev_siblings(self, imgui.ImDrawList*) noexcept nogil
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
     pass
 
