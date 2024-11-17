@@ -4674,8 +4674,6 @@ cdef class KeyDownHandler_(baseHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef imgui.ImGuiKeyData *key_info
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self._key == 0:
@@ -4707,8 +4705,6 @@ cdef class KeyPressHandler_(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self._key == 0:
@@ -4737,8 +4733,6 @@ cdef class KeyReleaseHandler_(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self._key == 0:
@@ -4767,8 +4761,6 @@ cdef class MouseClickHandler_(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4793,8 +4785,6 @@ cdef class MouseDoubleClickHandler_(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4820,8 +4810,6 @@ cdef class MouseDownHandler_(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4848,8 +4836,6 @@ cdef class MouseDragHandler_(baseHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
         cdef imgui.ImVec2 delta
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4870,8 +4856,6 @@ cdef class MouseMoveHandler(baseHandler):
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -4896,8 +4880,6 @@ cdef class MouseReleaseHandler_(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int i
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         for i in range(imgui.ImGuiMouseButton_COUNT):
@@ -4938,8 +4920,6 @@ cdef class MouseWheelHandler(baseHandler):
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
@@ -5364,8 +5344,7 @@ cdef class baseHandler(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).check_bind(item)
+        return
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
         """
@@ -5379,8 +5358,6 @@ cdef class baseHandler(baseItem):
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        if self._prev_sibling is not None:
-            (<baseHandler>self._prev_sibling).run_handler(item)
         if not(self._enabled):
             return
         if self.check_state(item):
