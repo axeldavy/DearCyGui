@@ -3004,6 +3004,16 @@ cdef inline void draw_drawing_children(baseItem item,
         (<drawingItem>child).draw(drawlist)
         child = <PyObject *>(<baseItem>child)._next_sibling
 
+cdef inline void draw_plot_element_children(baseItem item) noexcept nogil:
+    if item.last_plot_element_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_plot_element_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<plotElement>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
 cdef inline void draw_ui_children(baseItem item) noexcept nogil:
     if item.last_widgets_child is None:
         return
@@ -14275,8 +14285,7 @@ cdef class Plot(uiItem):
 
             implot.PushPlotClipRect(0.)
 
-            if self.last_plot_element_child is not None:
-                self.last_plot_element_child.draw()
+            draw_plot_element_children(self)
 
             implot.PopPlotClipRect()
             # The user can interact with the plot
@@ -14413,11 +14422,6 @@ cdef class plotElement(baseItem):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-
-        # Render siblings first
-        if self._prev_sibling is not None:
-            (<plotElement>self._prev_sibling).draw()
-
         return
 
 
@@ -14582,10 +14586,6 @@ cdef class plotElementWithLegend(plotElement):
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-
-        # Render siblings first
-        if self._prev_sibling is not None:
-            (<plotElement>self._prev_sibling).draw()
 
         # Check the axes are enabled
         if not(self._show) or \
@@ -15525,10 +15525,6 @@ cdef class plotDraggable(plotElement):
         cdef int i
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
 
-        # Render siblings first
-        if self._prev_sibling is not None:
-            (<plotElement>self._prev_sibling).draw()
-
         # Check the axes are enabled
         if not(self._show) or \
            not(self.context._viewport.enabled_axes[self._axes[0]]) or \
@@ -15595,9 +15591,6 @@ cdef class DrawInPlot(plotElementWithLegend):
         self._ignore_fit = value
 
     cdef void draw(self) noexcept nogil:
-        # Render siblings first
-        if self._prev_sibling is not None:
-            (<plotElement>self._prev_sibling).draw()
 
         # Check the axes are enabled
         if not(self._show) or \
