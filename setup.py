@@ -83,6 +83,7 @@ def setup_package():
         long_description = f.read()
 
     include_dirs = ["dearcygui",
+                    "dearcygui/backends",
                     "thirdparty/imgui",
                     "thirdparty/imgui/backends",
                     "thirdparty/imnodes",
@@ -128,11 +129,21 @@ def setup_package():
     else:
         # Please test and tell us what changes are needed to the build
         raise ValueError("Unsupported plateform")
+    cython_sources = [
+        "dearcygui/core.pyx",
+        "dearcygui/constants.pyx",
+        "dearcygui/draw.pyx",
+        "dearcygui/handler.pyx",
+        "dearcygui/theme.pyx"
+    ]
+
+    # We compile in a single extension because we want
+    # to link to the same static libraries
 
     extensions = [
         Extension(
-            "dearcygui.core",
-            ["dearcygui/core.pyx"] + cpp_sources,
+            "dearcygui.dearcygui",
+            ["dearcygui/dearcygui.pyx"] + cython_sources + cpp_sources,
             language="c++",
             include_dirs=include_dirs,
             extra_compile_args=compile_args,
@@ -141,23 +152,6 @@ def setup_package():
             extra_objects=[sdl3_lib, FT_lib]
         )
     ]
-    secondary_cython_sources = [
-        "dearcygui/constants.pyx",
-        "dearcygui/draw.pyx",
-        "dearcygui/handler.pyx",
-        "dearcygui/theme.pyx"
-    ]
-    for cython_source in secondary_cython_sources:
-        extension_name = cython_source.split("/")[-1].split(".")[0]
-        extensions.append(
-            Extension(
-                "dearcygui."+extension_name,
-                [cython_source],
-                language="c++",
-                include_dirs=include_dirs,
-                extra_compile_args=compile_args
-            )
-        )
 
     shutil.copy("thirdparty/latin-modern-roman/lmsans17-regular.otf", "dearcygui/")
     shutil.copy("thirdparty/latin-modern-roman/lmromanslant17-regular.otf", "dearcygui/")
