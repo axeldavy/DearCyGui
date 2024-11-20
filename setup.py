@@ -135,6 +135,7 @@ def setup_package():
         "dearcygui/draw.pyx",
         "dearcygui/handler.pyx",
         "dearcygui/layout.pyx",
+        "dearcygui/plot.pyx",
         "dearcygui/theme.pyx",
         "dearcygui/widget.pyx",
     ]
