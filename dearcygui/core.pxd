@@ -513,48 +513,6 @@ cdef class baseHandler(baseItem):
     cdef void run_handler(self, baseItem) noexcept nogil
     cdef void run_callback(self, baseItem) noexcept nogil
 
-cdef class KeyDownHandler_(baseHandler):
-    cdef int _key
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class KeyPressHandler_(baseHandler):
-    cdef int _key
-    cdef bint _repeat
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class KeyReleaseHandler_(baseHandler):
-    cdef int _key
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseClickHandler_(baseHandler):
-    cdef int _button
-    cdef bint _repeat
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseDoubleClickHandler_(baseHandler):
-    cdef int _button
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseDownHandler_(baseHandler):
-    cdef int _button
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseDragHandler_(baseHandler):
-    cdef int _button
-    cdef float _threshold
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseMoveHandler(baseHandler):
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseReleaseHandler_(baseHandler):
-    cdef int _button
-    cdef void run_handler(self, baseItem) noexcept nogil
-
-cdef class MouseWheelHandler(baseHandler):
-    cdef bint _horizontal
-    cdef void run_handler(self, baseItem) noexcept nogil
-
 cpdef enum positioning:
     DEFAULT,
     REL_DEFAULT,

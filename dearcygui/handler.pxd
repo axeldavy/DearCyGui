@@ -139,26 +139,54 @@ cdef class AxesResizeHandler(baseHandler):
     cdef bint check_state(self, baseItem) noexcept nogil
     cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class KeyDownHandler(KeyDownHandler_):
-    pass
+cdef class KeyDownHandler(baseHandler):
+    cdef int _key
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class KeyPressHandler(KeyPressHandler_):
-    pass
+cdef class KeyPressHandler(baseHandler):
+    cdef int _key
+    cdef bint _repeat
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class KeyReleaseHandler(KeyReleaseHandler_):
-    pass
+cdef class KeyReleaseHandler(baseHandler):
+    cdef int _key
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class MouseClickHandler(MouseClickHandler_):
-    pass
+cdef class MouseClickHandler(baseHandler):
+    cdef int _button
+    cdef bint _repeat
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class MouseDoubleClickHandler(MouseDoubleClickHandler_):
-    pass
+cdef class MouseDoubleClickHandler(baseHandler):
+    cdef int _button
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class MouseDownHandler(MouseDownHandler_):
-    pass
+cdef class MouseDownHandler(baseHandler):
+    cdef int _button
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class MouseDragHandler(MouseDragHandler_):
-    pass
+cdef class MouseDragHandler(baseHandler):
+    cdef int _button
+    cdef float _threshold
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
 
-cdef class MouseReleaseHandler(MouseReleaseHandler_):
-    pass
+cdef class MouseMoveHandler(baseHandler):
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
+
+cdef class MouseReleaseHandler(baseHandler):
+    cdef int _button
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
+
+cdef class MouseWheelHandler(baseHandler):
+    cdef bint _horizontal
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
