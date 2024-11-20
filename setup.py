@@ -134,7 +134,9 @@ def setup_package():
         "dearcygui/constants.pyx",
         "dearcygui/draw.pyx",
         "dearcygui/handler.pyx",
-        "dearcygui/theme.pyx"
+        "dearcygui/layout.pyx",
+        "dearcygui/theme.pyx",
+        "dearcygui/widget.pyx",
     ]
 
     # We compile in a single extension because we want
