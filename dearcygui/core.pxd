@@ -331,6 +331,69 @@ cdef class Callback:
     cdef object callback
     cdef int num_args
 
+# Rendering children
+
+cdef inline void draw_drawing_children(baseItem item,
+                                       imgui.ImDrawList* drawlist) noexcept nogil:
+    if item.last_drawings_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_drawings_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<drawingItem>child).draw(drawlist)
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_plot_element_children(baseItem item) noexcept nogil:
+    if item.last_plot_element_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_plot_element_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<plotElement>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_menubar_children(baseItem item) noexcept nogil:
+    if item.last_menubar_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_menubar_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_tab_children(baseItem item) noexcept nogil:
+    if item.last_tab_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_tab_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_ui_children(baseItem item) noexcept nogil:
+    if item.last_widgets_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_widgets_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_window_children(baseItem item) noexcept nogil:
+    if item.last_window_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_window_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
 """
 Drawing Items
 """
@@ -339,151 +402,6 @@ cdef class drawingItem(baseItem):
     cdef bint _show
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
     pass
-
-cdef class DrawingList(drawingItem):
-    pass
-
-cdef class DrawingListScale(drawingItem):
-    cdef double[2] _scales
-    cdef double[2] _shifts
-    cdef bint _no_parent_scale
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawArrow_(drawingItem):
-    cdef double[2] start
-    cdef double[2] end
-    cdef double[2] corner1
-    cdef double[2] corner2
-    cdef imgui.ImU32 color
-    cdef float thickness
-    cdef float size
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-    cdef void __compute_tip(self)
-
-cdef class DrawBezierCubic_(drawingItem):
-    cdef double[2] p1
-    cdef double[2] p2
-    cdef double[2] p3
-    cdef double[2] p4
-    cdef imgui.ImU32 color
-    cdef float thickness
-    cdef int segments
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawBezierQuadratic_(drawingItem):
-    cdef double[2] p1
-    cdef double[2] p2
-    cdef double[2] p3
-    cdef imgui.ImU32 color
-    cdef float thickness
-    cdef int segments
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawCircle_(drawingItem):
-    cdef double[2] center
-    cdef float radius
-    cdef imgui.ImU32 color
-    cdef imgui.ImU32 fill
-    cdef float thickness
-    cdef int segments
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawEllipse_(drawingItem):
-    cdef double[2] pmin
-    cdef double[2] pmax
-    cdef imgui.ImU32 color
-    cdef imgui.ImU32 fill
-    cdef float thickness
-    cdef int segments
-    cdef vector[double4] points
-    cdef void __fill_points(self)
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawImage_(drawingItem):
-    cdef double[2] pmin
-    cdef double[2] pmax
-    cdef float[4] uv
-    cdef imgui.ImU32 color_multiplier
-    cdef Texture texture
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawImageQuad_(drawingItem):
-    cdef double[2] p1
-    cdef double[2] p2
-    cdef double[2] p3
-    cdef double[2] p4
-    cdef float[2] uv1
-    cdef float[2] uv2
-    cdef float[2] uv3
-    cdef float[2] uv4
-    cdef imgui.ImU32 color_multiplier
-    cdef Texture texture
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawLine_(drawingItem):
-    cdef double[2] p1
-    cdef double[2] p2
-    cdef imgui.ImU32 color
-    cdef float thickness
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawPolyline_(drawingItem):
-    cdef imgui.ImU32 color
-    cdef float thickness
-    cdef bint closed
-    cdef vector[double4] points
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawPolygon_(drawingItem):
-    cdef imgui.ImU32 color
-    cdef imgui.ImU32 fill
-    cdef float thickness
-    cdef vector[double4] points
-    cdef int[:,:] triangulation_indices
-    cdef void __triangulate(self)
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawQuad_(drawingItem):
-    cdef double[2] p1
-    cdef double[2] p2
-    cdef double[2] p3
-    cdef double[2] p4
-    cdef imgui.ImU32 color
-    cdef imgui.ImU32 fill
-    cdef float thickness
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawRect_(drawingItem):
-    cdef double[2] pmin
-    cdef double[2] pmax
-    cdef imgui.ImU32 color
-    cdef imgui.ImU32 color_upper_left
-    cdef imgui.ImU32 color_upper_right
-    cdef imgui.ImU32 color_bottom_left
-    cdef imgui.ImU32 color_bottom_right
-    cdef imgui.ImU32 fill
-    cdef float rounding
-    cdef float thickness
-    cdef bint multicolor
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawText_(drawingItem):
-    cdef double[2] pos
-    cdef string text
-    cdef imgui.ImU32 color
-    cdef float size
-    cdef Font _font
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-
-cdef class DrawTriangle_(drawingItem):
-    cdef double[2] p1
-    cdef double[2] p2
-    cdef double[2] p3
-    cdef imgui.ImU32 color
-    cdef imgui.ImU32 fill
-    cdef float thickness
-    cdef int cull_mode
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawInvisibleButton(drawingItem):
     cdef itemState state
@@ -495,11 +413,6 @@ cdef class DrawInvisibleButton(drawingItem):
     cdef double[2] _p1
     cdef double[2] _p2
     cdef imgui.ImVec2 initial_mouse_position
-
-cdef class ViewportDrawList_(baseItem):
-    cdef bint _front
-    cdef bint _show
-    cdef void draw(self) noexcept nogil
 
 
 """
