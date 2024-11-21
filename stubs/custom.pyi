@@ -1,5 +1,31 @@
 from typing import Any
 from enum import IntEnum
+from typing import Protocol
+
+class DCGCallable0(Protocol):
+    def __call__(self, **kwargs) -> None:
+        ...
+
+class DCGCallable1(Protocol):
+    def __call__(self, sender : baseHandler | uiItem, **kwargs) -> None:
+        ...
+
+class DCGCallable2(Protocol):
+    def __call__(self,
+                 sender : baseHandler | uiItem,
+                 target : baseItem,
+                 **kwargs) -> None:
+        ...
+
+class DCGCallable3(Protocol):
+    def __call__(self,
+                 sender : baseHandler | uiItem,
+                 target : baseItem,
+                 value : Any,
+                 **kwargs) -> None:
+        ...
+
+DCGCallable = DCGCallable0 | DCGCallable1 | DCGCallable2 | DCGCallable3
 
 class constants:
     mvGraphicsBackend_D3D11 = ...

@@ -37,6 +37,8 @@ hardcoded = {
     "children": "list[baseItem]",
     "previous_sibling": "baseItem | None",
     "next_sibling": "baseItem | None",
+    "callback": "DCGCallable | None",
+    "callbacks" : "list[DCGCallable]",
     "color" : "int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]",
     "fill" : "int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]"
 }
@@ -227,6 +229,11 @@ def generate_docstring_for_class(object_class, instance):
                 params_str.append("context : Context")
                 continue
             if param.name == 'kwargs':
+                if "callbacks" in additional_properties:
+                    # alternative syntax only as param
+                    additional_properties.append("callback")
+                    docs["callback"] = docs["callbacks"]
+                    default_values["callback"] = None
                 for prop in sorted(additional_properties):
                     if docs[prop] is not None:
                         doc = docs[prop]
