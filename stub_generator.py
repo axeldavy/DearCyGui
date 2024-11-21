@@ -146,7 +146,7 @@ def generate_docstring_for_class(object_class, instance):
                 params_str.append("context : Context")
                 continue
             if param.name == 'kwargs':
-                for prop in additional_properties:
+                for prop in sorted(additional_properties):
                     if docs[prop] is not None:
                         doc = docs[prop]
                         if doc is not None:
@@ -204,7 +204,7 @@ def generate_docstring_for_class(object_class, instance):
         result.append(f"{level2}...")
         result.append("\n")
 
-    for property in properties:
+    for property in sorted(properties):
         result.append(level1 + "@property")
         definition = f"def {property}(self)"
         default_value = default_values.get(property, None)
@@ -890,6 +890,11 @@ class theme_categories(IntEnum):
     t_colorpicker = ...
     t_window = ...
     t_plot = ...
+
+class handlerListOP(IntEnum):
+    ALL = ...,
+    ANY = ...,
+    NONE = ...
 
 class wrap_mutex:
     def __init__(self, target) -> None:
