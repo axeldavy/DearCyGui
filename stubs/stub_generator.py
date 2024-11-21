@@ -41,9 +41,90 @@ hardcoded = {
     "fill" : "int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]"
 }
 
-def typename(name, value):
+
+def typename(object_class, instance, name, value):
+    if name == "children":
+        if issubclass(object_class, dcg.DrawInWindow) or \
+           issubclass(object_class, dcg.DrawInPlot) or \
+           issubclass(object_class, dcg.ViewportDrawList) or \
+           issubclass(object_class, dcg.DrawInvisibleButton):
+            return "list[drawingItem]"
+        if issubclass(object_class, dcg.Plot):
+            return "list[plotElement]"
+        if issubclass(object_class, dcg.Window):
+            return "list[uiItem, MenuBar]"
+        if issubclass(object_class, dcg.Viewport):
+            return "list[Window, ViewportDrawList, MenuBar]"
+        if issubclass(object_class, dcg.drawingItem):
+            try:
+                instance.children = [dcg.DrawLine(instance.context)]
+                return "list[drawingItem]"
+            except:
+                return "None " 
+        if issubclass(object_class, dcg.uiItem) or \
+           issubclass(object_class, dcg.plotElement):
+            try:
+                instance.children = [dcg.Button(instance.context)]
+                return "list[uiItem]"
+            except:
+                return "None " # Space to not be filtered by the code later...
+        if issubclass(object_class, dcg.baseHandler):
+            try:
+                instance.children = [dcg.HandlerList(instance.context)]
+                return "list[baseHandler]"
+            except:
+                return "None "
+        if issubclass(object_class, dcg.baseTheme):
+            try:
+                instance.children = [dcg.ThemeColorImGui(instance.context)]
+                return "list[baseTheme]"
+            except:
+                return "None "
+        if issubclass(object_class, dcg.SharedValue):
+            return "None "
+    if name == "parent":
+        if issubclass(object_class, dcg.Window):
+            return "Viewport | None"
+        if issubclass(object_class, dcg.drawingItem):
+            return "DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None"
+        if issubclass(object_class, dcg.uiItem):
+            return "uiItem | plotElement | None"
+        if issubclass(object_class, dcg.plotElement):
+            return "Plot | None"
+        if issubclass(object_class, dcg.baseTheme):
+            return "baseHandler | None"
+        if issubclass(object_class, dcg.baseHandler):
+            return "baseTheme | None"
     default = None if value is None else type(value).__name__
-    return hardcoded.get(name, default)
+    default = hardcoded.get(name, default)
+    if issubclass(object_class, dcg.baseTheme) and default is None:
+        if issubclass(object_class, dcg.ThemeColorImGui) or \
+           issubclass(object_class, dcg.ThemeColorImPlot) or \
+           issubclass(object_class, dcg.ThemeColorImNodes):
+            return hardcoded["color"] + "| None"
+        if issubclass(object_class, dcg.baseThemeStyle):
+            try:
+                instance[name] = (1.4, 1.4)
+                return "tuple[float, float] | None"
+            except:
+                pass
+            try:
+                instance[name] = (1, 1)
+                return "tuple[int, int] | None"
+            except:
+                pass
+            try:
+                instance[name] = 1.4
+                return "float | None"
+            except:
+                pass
+            try:
+                instance[name] = 1
+                return "int | None"
+            except:
+                pass
+
+    return default
 
 
 def generate_docstring_for_class(object_class, instance):
@@ -160,7 +241,7 @@ def generate_docstring_for_class(object_class, instance):
                         doc = indent(doc, trim_start=True)
                         kwargs_docs.append(f"{level2}{prop}: {doc}")
                     v = default_values[prop]
-                    v_type = typename(prop, v)
+                    v_type = typename(object_class, instance, prop, v)
                     if v_type is None:
                         v_type = "Any"
                         v = "..."
@@ -208,7 +289,7 @@ def generate_docstring_for_class(object_class, instance):
         result.append(level1 + "@property")
         definition = f"def {property}(self)"
         default_value = default_values.get(property, None)
-        tname = typename(property, default_value)
+        tname = typename(object_class, instance, property, default_value)
         if tname is None:
             result.append(f"{level1}{definition}:")
         else:
@@ -295,4 +376,5 @@ def get_pyi_for_classes(C):
 with open("../dearcygui/core.pyi", "w") as f:
     with open("custom.pyi", "r") as f2:
         f.write(f2.read())
+    f.write("\n")
     f.write(get_pyi_for_classes(dcg.Context()))
