@@ -17,12 +17,23 @@ def remove_jumps_start_and(s : str | None):
         s = s[:-1]
     return s
 
-def indent(s: list[str] | str, trim_start=False):
+def indent(s: list[str] | str, trim_start=False, short=False):
     was_str = isinstance(s, str)
     if was_str:
         s = s.split("\n")
+    if trim_start and s[0] == "":
+        s = s[1:]
+    if short:
+        for i in range(len(s)):
+            if s[i] == "":
+                s = s[:i]
+                break
+    while len(s) > 0 and (s[-1] == "" or s[-1] == level1 or s[-1] == level2):
+        s = s[:-1]
     s = [level1 + sub_s for sub_s in s]
     if trim_start:
+        if len(s) == 0:
+            return ""
         s0 = s[0].split(" ")
         s0 = [sub_s0 for sub_s0 in s0 if len(sub_s0) > 0]
         s[0] = " ".join(s0)
@@ -226,6 +237,9 @@ def generate_docstring_for_class(object_class, instance):
                 pass
             if param.name == 'args' and method.__name__ == "__init__":
                 # Annotation seems incorrect for cython generated __init__
+                if issubclass(object_class, dcg.Callback):
+                    params_str.append("callback : DCGCallable")
+                    continue
                 params_str.append("context : Context")
                 continue
             if param.name == 'kwargs':
@@ -245,7 +259,7 @@ def generate_docstring_for_class(object_class, instance):
                                 doc = doc[1]
                             else:
                                 assert(False)
-                        doc = indent(doc, trim_start=True)
+                        doc = indent(doc, trim_start=True, short=True)
                         kwargs_docs.append(f"{level2}{prop}: {doc}")
                     v = default_values[prop]
                     v_type = typename(object_class, instance, prop, v)
@@ -344,16 +358,7 @@ def get_pyi_for_classes(C):
                     return True
         except Exception:
             return False
-    filter_names = {
-        "All": [dcg.baseItem, dcg.SharedValue],
-        "Ui items": [dcg.uiItem, dcg.Texture, dcg.Font],
-        "Handlers": [dcg.baseHandler],
-        "Drawings": [dcg.drawingItem, dcg.Texture],
-        "Plots": [dcg.plotElement, dcg.Plot, dcg.PlotAxisConfig, dcg.PlotLegendConfig],
-        "Themes": [dcg.baseTheme],
-        "Values": [dcg.SharedValue]
-    }
-    parent_classes = [dcg.Context, dcg.baseItem, dcg.SharedValue]
+    parent_classes = [dcg.Context, dcg.baseItem, dcg.SharedValue, dcg.Callback]
     dcg_items = dir(dcg)
     # remove items not starting with an upper case,
     # which are mainly for internal use, or items finishing by _
@@ -367,6 +372,8 @@ def get_pyi_for_classes(C):
             instance = C.viewport
         elif name == "Context":
             instance = C
+        elif "Callback" in name:
+            instance = object_class(lambda : 0)
         elif issubclass(object_class, dcg.SharedValue):
             instance = None
             for val in [0, (0, 0, 0, 0), 0., "", None]:
