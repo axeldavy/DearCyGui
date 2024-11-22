@@ -5841,66 +5841,6 @@ cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4 color_float4) noexce
 cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32 color_uint) noexcept nogil:
     return imgui.ColorConvertU32ToFloat4(color_uint)
 
-cdef const char* imgui_GetStyleColorName(int i) noexcept nogil:
-    return imgui.GetStyleColorName(<imgui.ImGuiCol>i)
-
-cdef void imgui_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
-    imgui.PushStyleColor(<imgui.ImGuiCol>i, val)
-
-cdef void imgui_PopStyleColor(int count) noexcept nogil:
-    imgui.PopStyleColor(count)
-
-cdef void imnodes_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
-    imnodes.PushColorStyle(<imnodes.ImNodesCol>i, val)
-
-cdef void imnodes_PopStyleColor(int count) noexcept nogil:
-    cdef int i
-    for i in range(count):
-        imnodes.PopColorStyle()
-
-cdef const char* implot_GetStyleColorName(int i) noexcept nogil:
-    return implot.GetStyleColorName(<implot.ImPlotCol>i)
-
-cdef void implot_PushStyleColor(int i, imgui.ImU32 val) noexcept nogil:
-    implot.PushStyleColor(<implot.ImPlotCol>i, val)
-
-cdef void implot_PopStyleColor(int count) noexcept nogil:
-    implot.PopStyleColor(count)
-
-cdef void imgui_PushStyleVar1(int i, float val) noexcept nogil:
-    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, val)
-
-cdef void imgui_PushStyleVar2(int i, float[2] val) noexcept nogil:
-    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, imgui.ImVec2(val[0], val[1]))
-
-cdef void imgui_PopStyleVar(int count) noexcept nogil:
-    imgui.PopStyleVar(count)
-
-cdef void implot_PushStyleVar0(int i, int val) noexcept nogil:
-    implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
-
-cdef void implot_PushStyleVar1(int i, float val) noexcept nogil:
-    implot.PushStyleVar(<implot.ImPlotStyleVar>i, val)
-
-cdef void implot_PushStyleVar2(int i, float[2] val) noexcept nogil:
-    implot.PushStyleVar(<implot.ImPlotStyleVar>i, imgui.ImVec2(val[0], val[1]))
-
-cdef void implot_PopStyleVar(int count) noexcept nogil:
-    implot.PopStyleVar(count)
-
-cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil:
-    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, val)
-
-cdef void imnodes_PushStyleVar2(int i, float[2] val) noexcept nogil:
-    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, imgui.ImVec2(val[0], val[1]))
-
-cdef void imnodes_PopStyleVar(int count) noexcept nogil:
-    imnodes.PopStyleVar(count)
-
-cdef void imgui_SetMouseCursor(int cursor) noexcept nogil:
-    # Applies only for this frame. Is reset the next frame
-    imgui.SetMouseCursor(<imgui.ImGuiMouseCursor>cursor)
-
 def color_as_int(val):
     cdef imgui.ImU32 color = parse_color(val)
     return int(color)

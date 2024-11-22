@@ -690,25 +690,6 @@ Utils that the other pyx may use
 """
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4) noexcept nogil
 cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32) noexcept nogil
-cdef const char* imgui_GetStyleColorName(int) noexcept nogil
-cdef void imgui_PushStyleColor(int, imgui.ImU32) noexcept nogil
-cdef void imgui_PopStyleColor(int) noexcept nogil
-cdef void imnodes_PushStyleColor(int, imgui.ImU32) noexcept nogil
-cdef void imnodes_PopStyleColor(int) noexcept nogil
-cdef const char* implot_GetStyleColorName(int) noexcept nogil
-cdef void implot_PushStyleColor(int, imgui.ImU32) noexcept nogil
-cdef void implot_PopStyleColor(int) noexcept nogil
-cdef void imgui_PushStyleVar1(int i, float val) noexcept nogil
-cdef void imgui_PushStyleVar2(int i, float[2] val) noexcept nogil
-cdef void imgui_PopStyleVar(int count) noexcept nogil
-cdef void implot_PushStyleVar0(int i, int val) noexcept nogil
-cdef void implot_PushStyleVar1(int i, float val) noexcept nogil
-cdef void implot_PushStyleVar2(int i, float[2] val) noexcept nogil
-cdef void implot_PopStyleVar(int count) noexcept nogil
-cdef void imnodes_PushStyleVar1(int i, float val) noexcept nogil
-cdef void imnodes_PushStyleVar2(int i, float[2] val) noexcept nogil
-cdef void imnodes_PopStyleVar(int count) noexcept nogil
-cdef void imgui_SetMouseCursor(int) noexcept nogil
 
 ctypedef fused point_type:
     int

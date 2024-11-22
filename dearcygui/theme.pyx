@@ -24,6 +24,15 @@ from .core cimport *
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from cpython cimport PyObject_GenericSetAttr
 
+cdef inline void imgui_PushStyleVar2(int i, float[2] val) noexcept nogil:
+    imgui.PushStyleVar(<imgui.ImGuiStyleVar>i, imgui.ImVec2(val[0], val[1]))
+
+cdef inline void implot_PushStyleVar2(int i, float[2] val) noexcept nogil:
+    implot.PushStyleVar(<implot.ImPlotStyleVar>i, imgui.ImVec2(val[0], val[1]))
+
+cdef inline void imnodes_PushStyleVar2(int i, float[2] val) noexcept nogil:
+    imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>i, imgui.ImVec2(val[0], val[1]))
+
 cdef inline void push_theme_children(baseItem item) noexcept nogil:
     if item.last_theme_child is None:
         return
@@ -131,7 +140,7 @@ cdef class ThemeColorImGui(baseTheme):
         cdef int i
         cdef string col_name
         for i in range(imgui.ImGuiCol_COUNT):
-            col_name = string(imgui_GetStyleColorName(i))
+            col_name = string(imgui.GetStyleColorName(<imgui.ImGuiCol>i))
             self.name_to_index[col_name] = i
 
     def __dir__(self):
@@ -139,7 +148,7 @@ cdef class ThemeColorImGui(baseTheme):
         cdef int i
         cdef str name
         for i in range(imgui.ImGuiCol_COUNT):
-            name = str(imgui_GetStyleColorName(i), encoding='utf-8')
+            name = str(imgui.GetStyleColorName(<imgui.ImGuiCol>i), encoding='utf-8')
             results.append(name)
         return results + dir(baseTheme)
 
@@ -238,7 +247,7 @@ cdef class ThemeColorImGui(baseTheme):
         cdef pair[int, imgui.ImU32] element_content
         cdef str name
         for element_content in self.index_to_value:
-            name = str(imgui_GetStyleColorName(element_content.first), encoding='utf-8')
+            name = str(imgui.GetStyleColorName(<imgui.ImGuiCol>element_content.first), encoding='utf-8')
             result.append((name, int(element_content.second)))
         return iter(result)
 
@@ -250,7 +259,7 @@ cdef class ThemeColorImGui(baseTheme):
         cdef pair[int, imgui.ImU32] element_content
         for element_content in self.index_to_value:
             # Note: imgui seems to convert U32 for this. Maybe use float4
-            imgui_PushStyleColor(element_content.first, element_content.second)
+            imgui.PushStyleColor(<imgui.ImGuiCol>element_content.first, <imgui.ImU32>element_content.second)
         self.last_push_size.push_back(<int>self.index_to_value.size())
 
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
@@ -273,7 +282,7 @@ cdef class ThemeColorImGui(baseTheme):
         cdef int count = self.last_push_size.back()
         self.last_push_size.pop_back()
         if count > 0:
-            imgui_PopStyleColor(count)
+            imgui.PopStyleColor(count)
         self.mutex.unlock()
 
 @cython.no_gc_clear
@@ -282,7 +291,7 @@ cdef class ThemeColorImPlot(baseTheme):
         cdef int i
         cdef string col_name
         for i in range(implot.ImPlotCol_COUNT):
-            col_name = string(implot_GetStyleColorName(i))
+            col_name = string(implot.GetStyleColorName(<implot.ImPlotCol>i))
             self.name_to_index[col_name] = i
 
     def __dir__(self):
@@ -290,7 +299,7 @@ cdef class ThemeColorImPlot(baseTheme):
         cdef int i
         cdef str name
         for i in range(implot.ImPlotCol_COUNT):
-            name = str(implot_GetStyleColorName(i), encoding='utf-8')
+            name = str(implot.GetStyleColorName(<implot.ImPlotCol>i), encoding='utf-8')
             results.append(name)
         return results + dir(baseTheme)
 
@@ -388,7 +397,7 @@ cdef class ThemeColorImPlot(baseTheme):
         cdef pair[int, imgui.ImU32] element_content
         cdef str name
         for element_content in self.index_to_value:
-            name = str(implot_GetStyleColorName(element_content.first), encoding='utf-8')
+            name = str(implot.GetStyleColorName(<implot.ImPlotCol>element_content.first), encoding='utf-8')
             result.append((name, int(element_content.second)))
         return iter(result)
 
@@ -400,7 +409,7 @@ cdef class ThemeColorImPlot(baseTheme):
         cdef pair[int, imgui.ImU32] element_content
         for element_content in self.index_to_value:
             # Note: imgui seems to convert U32 for this. Maybe use float4
-            implot_PushStyleColor(element_content.first, element_content.second)
+            implot.PushStyleColor(<implot.ImPlotCol>element_content.first, <imgui.ImU32>element_content.second)
         self.last_push_size.push_back(<int>self.index_to_value.size())
 
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
@@ -423,7 +432,7 @@ cdef class ThemeColorImPlot(baseTheme):
         cdef int count = self.last_push_size.back()
         self.last_push_size.pop_back()
         if count > 0:
-            implot_PopStyleColor(count)
+            implot.PopStyleColor(count)
         self.mutex.unlock()
 
 @cython.no_gc_clear
@@ -574,7 +583,7 @@ cdef class ThemeColorImNodes(baseTheme):
         cdef pair[int, imgui.ImU32] element_content
         for element_content in self.index_to_value:
             # Note: imgui seems to convert U32 for this. Maybe use float4
-            imnodes_PushStyleColor(element_content.first, element_content.second)
+            imnodes.PushColorStyle(<imnodes.ImNodesCol>element_content.first, <imgui.ImU32>element_content.second)
         self.last_push_size.push_back(<int>self.index_to_value.size())
 
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
@@ -595,9 +604,11 @@ cdef class ThemeColorImNodes(baseTheme):
 
     cdef void pop(self) noexcept nogil:
         cdef int count = self.last_push_size.back()
+        cdef int i
         self.last_push_size.pop_back()
         if count > 0:
-           imnodes_PopStyleColor(count)
+            for i in range(count):
+                imnodes.PopColorStyle()
         self.mutex.unlock()
 
 
@@ -786,21 +797,21 @@ cdef class baseThemeStyle(baseTheme):
         if self.backend == theme_backends.t_imgui:
             for element_content in self.index_to_value_for_dpi:
                 if element_content.second.value_type == theme_value_types.t_float:
-                    imgui_PushStyleVar1(element_content.first, element_content.second.value.value_float)
+                    imgui.PushStyleVar(element_content.first, element_content.second.value.value_float)
                 else:
                     imgui_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
         elif self.backend == theme_backends.t_implot:
             for element_content in self.index_to_value_for_dpi:
                 if element_content.second.value_type == theme_value_types.t_float:
-                    implot_PushStyleVar1(element_content.first, element_content.second.value.value_float)
+                    implot.PushStyleVar(element_content.first, element_content.second.value.value_float)
                 elif element_content.second.value_type == theme_value_types.t_int:
-                    implot_PushStyleVar0(element_content.first, element_content.second.value.value_int)
+                    implot.PushStyleVar(element_content.first, element_content.second.value.value_int)
                 else:
                     implot_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
         elif self.backend == theme_backends.t_imnodes:
             for element_content in self.index_to_value_for_dpi:
                 if element_content.second.value_type == theme_value_types.t_float:
-                    imnodes_PushStyleVar1(element_content.first, element_content.second.value.value_float)
+                    imnodes.PushStyleVar(element_content.first, element_content.second.value.value_float)
                 else:
                     imnodes_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
         self.last_push_size.push_back(<int>self.index_to_value_for_dpi.size())
@@ -810,11 +821,11 @@ cdef class baseThemeStyle(baseTheme):
         self.last_push_size.pop_back()
         if count > 0:
             if self.backend == theme_backends.t_imgui:
-                imgui_PopStyleVar(count)
+                imgui.PopStyleVar(count)
             elif self.backend == theme_backends.t_implot:
-                implot_PopStyleVar(count)
+                implot.PopStyleVar(count)
             elif self.backend == theme_backends.t_imnodes:
-                imnodes_PopStyleVar(count)
+                imnodes.PopStyleVar(count)
         self.mutex.unlock()
 
 
@@ -1900,7 +1911,7 @@ cdef class ThemeStyleImNodes(baseThemeStyle):
         cdef int count = self.last_push_size.back()
         self.last_push_size.pop_back()
         if count > 0:
-            imnodes_PopStyleVar(count)
+            imnodes.PopStyleVar(count)
         self.mutex.unlock()
 '''
 

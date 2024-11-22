@@ -906,7 +906,8 @@ cdef class MouseCursorHandler(baseHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._enabled):
             return
-        imgui_SetMouseCursor(self._mouse_cursor)
+        # Applies only for this frame. Is reset the next frame
+        imgui.SetMouseCursor(<imgui.ImGuiMouseCursor>self._mouse_cursor)
         if self._callback is not None:
             if self.check_state(item):
                 self.run_callback(item)
