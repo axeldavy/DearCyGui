@@ -1,17 +1,13 @@
 from .core cimport *
+from .types cimport *
 
 cdef class CustomHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
     cdef void run_handler(self, baseItem) noexcept nogil
 
-cpdef enum handlerListOP:
-    ALL,
-    ANY,
-    NONE
-
 cdef class HandlerList(baseHandler):
-    cdef handlerListOP _op
+    cdef HandlerListOP _op
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
     cdef void run_handler(self, baseItem) noexcept nogil
@@ -128,7 +124,7 @@ cdef class LostRenderHandler(baseHandler):
     cdef bint check_state(self, baseItem) noexcept nogil
 
 cdef class MouseCursorHandler(baseHandler):
-    cdef int _mouse_cursor
+    cdef MouseCursor _mouse_cursor
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
     cdef void run_handler(self, baseItem) noexcept nogil

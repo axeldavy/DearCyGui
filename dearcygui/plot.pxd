@@ -1,37 +1,12 @@
 from dearcygui.wrapper cimport imgui, implot
 from .core cimport baseItem, Font, itemState, \
     plotElement, uiItem, Callback, baseHandler
+from .types cimport *
 
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
 cimport numpy as cnp
-
-cpdef enum AxisScale:
-    linear=implot.ImPlotScale_Linear
-    time=implot.ImPlotScale_Time
-    log10=implot.ImPlotScale_Log10
-    symlog=implot.ImPlotScale_SymLog
-
-cpdef enum Axis:
-    X1=implot.ImAxis_X1
-    X2=implot.ImAxis_X2
-    X3=implot.ImAxis_X3
-    Y1=implot.ImAxis_Y1
-    Y2=implot.ImAxis_Y2
-    Y3=implot.ImAxis_Y3
-
-cpdef enum LegendLocation:
-    center=implot.ImPlotLocation_Center
-    north=implot.ImPlotLocation_Center
-    south=implot.ImPlotLocation_Center
-    west=implot.ImPlotLocation_Center
-    east=implot.ImPlotLocation_Center
-    northwest=implot.ImPlotLocation_NorthWest
-    northeast=implot.ImPlotLocation_NorthEast
-    southwest=implot.ImPlotLocation_SouthWest
-    southeast=implot.ImPlotLocation_SouthEast
-
 
 cdef class AxesResizeHandler(baseHandler):
     cdef int[2] _axes

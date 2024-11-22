@@ -24,9 +24,10 @@ from libc.math cimport INFINITY
 from .core cimport baseHandler, baseItem, uiItem, \
     lock_gil_friendly, clear_obj_vector, append_obj_vector, \
     IntPairFromVec2, draw_drawing_children, \
-    draw_ui_children, Font, plotElement, theme_enablers, \
-    theme_categories, update_current_mouse_states, \
+    draw_ui_children, Font, plotElement, \
+    update_current_mouse_states, \
     draw_plot_element_children, itemState
+from .types cimport *
 
 import numpy as np
 cimport numpy as cnp
@@ -186,7 +187,7 @@ cdef class PlotAxisConfig(baseItem):
         self.state.cap.can_be_clicked = True
         self.p_state = &self.state
         self._enabled = True
-        self._scale = AxisScale.linear
+        self._scale = AxisScale.LINEAR
         self._tick_format = b""
         self.flags = 0
         self._min = 0
@@ -228,10 +229,10 @@ cdef class PlotAxisConfig(baseItem):
     def scale(self, AxisScale value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value == AxisScale.linear or \
-           value == AxisScale.time or \
-           value == AxisScale.log10 or\
-           value == AxisScale.symlog:
+        if value == AxisScale.LINEAR or \
+           value == AxisScale.TIME or \
+           value == AxisScale.LOG10 or\
+           value == AxisScale.SYMLOG:
             self._scale = value
         else:
             raise ValueError("Invalid scale. Expecting an AxisScale")
@@ -822,7 +823,7 @@ cdef class PlotAxisConfig(baseItem):
         # next frame
         implot.SetupAxisLinks(axis, &self._min, &self._max)
 
-        implot.SetupAxisScale(axis, self._scale)
+        implot.SetupAxisScale(axis, <int>self._scale)
 
         if <int>self._format.size() > 0:
             implot.SetupAxisFormat(axis, self._format.c_str())
@@ -914,7 +915,7 @@ cdef class PlotAxisConfig(baseItem):
 cdef class PlotLegendConfig(baseItem):
     def __cinit__(self):
         self._show = True
-        self._location = LegendLocation.northwest
+        self._location = LegendLocation.NORTHWEST
         self.flags = 0
 
     '''
@@ -951,15 +952,15 @@ cdef class PlotLegendConfig(baseItem):
     def location(self, LegendLocation value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value == LegendLocation.center or \
-           value == LegendLocation.north or \
-           value == LegendLocation.south or \
-           value == LegendLocation.west or \
-           value == LegendLocation.east or \
-           value == LegendLocation.northeast or \
-           value == LegendLocation.northwest or \
-           value == LegendLocation.southeast or \
-           value == LegendLocation.southwest:
+        if value == LegendLocation.CENTER or \
+           value == LegendLocation.NORTH or \
+           value == LegendLocation.SOUTH or \
+           value == LegendLocation.WEST or \
+           value == LegendLocation.EAST or \
+           value == LegendLocation.NORTHEAST or \
+           value == LegendLocation.NORTHWEST or \
+           value == LegendLocation.SOUTHEAST or \
+           value == LegendLocation.SOUTHWEST:
             self._location = value
         else:
             raise ValueError("Invalid location. Must be a LegendLocation")
@@ -1092,7 +1093,7 @@ cdef class PlotLegendConfig(baseItem):
             self.flags |= implot.ImPlotLegendFlags_Sort
 
     cdef void setup(self) noexcept nogil:
-        implot.SetupLegend(self._location, self.flags)
+        implot.SetupLegend(<int>self._location, self.flags)
         # NOTE: Setup does just fill the location and flags.
         # No item is created at this point,
         # and thus we don't push fonts, check states, etc.
@@ -1842,8 +1843,8 @@ cdef class plotElementWithLegend(plotElement):
             self._font.push()
 
         self.context._viewport.push_pending_theme_actions(
-            theme_enablers.t_enabled_any,
-            theme_categories.t_plot
+            ThemeEnablers.ANY,
+            ThemeCategories.t_plot
         )
 
         if self._theme is not None:
@@ -2776,8 +2777,8 @@ cdef class plotDraggable(plotElement):
 
         # push theme, font
         self.context._viewport.push_pending_theme_actions(
-            theme_enablers.t_enabled_any,
-            theme_categories.t_plot
+            ThemeEnablers.ANY,
+            ThemeCategories.t_plot
         )
 
         if self._theme is not None:
@@ -2847,8 +2848,8 @@ cdef class DrawInPlot(plotElementWithLegend):
             self._font.push()
 
         self.context._viewport.push_pending_theme_actions(
-            theme_enablers.t_enabled_any,
-            theme_categories.t_plot
+            ThemeEnablers.ANY,
+            ThemeCategories.t_plot
         )
 
         if self._theme is not None:

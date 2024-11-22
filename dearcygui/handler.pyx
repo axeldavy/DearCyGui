@@ -15,6 +15,7 @@
 #distutils: language=c++
 
 from .core cimport *
+from .types cimport *
 from cython.operator cimport dereference
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from dearcygui.wrapper cimport imgui, implot
@@ -118,7 +119,7 @@ cdef inline void check_bind_children(baseItem item, baseItem target):
         child = <PyObject *>(<baseItem>child)._next_sibling
 
 cdef bint check_state_from_list(baseHandler start_handler,
-                                handlerListOP op,
+                                HandlerListOP op,
                                 baseItem item) noexcept nogil:
         """
         Helper for handler lists
@@ -130,19 +131,19 @@ cdef bint check_state_from_list(baseHandler start_handler,
         cdef PyObject* child = <PyObject*>start_handler
         cdef bint current_state = False
         cdef bint child_state
-        if op == handlerListOP.ALL:
+        if op == HandlerListOP.ALL:
             current_state = True
         while (<baseHandler>child) is not None:
             child_state = (<baseHandler>child).check_state(item)
             if not((<baseHandler>child)._enabled):
                 child = <PyObject*>((<baseHandler>child)._prev_sibling)
                 continue
-            if op == handlerListOP.ALL:
+            if op == HandlerListOP.ALL:
                 current_state = current_state and child_state
             else:
                 current_state = current_state or child_state
             child = <PyObject*>((<baseHandler>child)._prev_sibling)
-        if op == handlerListOP.NONE:
+        if op == HandlerListOP.NONE:
             # NONE = not(ANY)
             current_state = not(current_state)
         start_handler.unlock_and_previous_siblings()
@@ -170,12 +171,12 @@ cdef class HandlerList(baseHandler):
     """
     def __cinit__(self):
         self.can_have_handler_child = True
-        self._op = handlerListOP.ALL
+        self._op = HandlerListOP.ALL
 
     @property
     def op(self):
         """
-        handlerListOP that defines which condition
+        HandlerListOP that defines which condition
         is required to trigger the callback of this
         handler.
         Default is ALL
@@ -185,8 +186,8 @@ cdef class HandlerList(baseHandler):
         return self._op
 
     @op.setter
-    def op(self, handlerListOP value):
-        if value not in [handlerListOP.ALL, handlerListOP.ANY, handlerListOP.NONE]:
+    def op(self, HandlerListOP value):
+        if value not in [HandlerListOP.ALL, HandlerListOP.ANY, HandlerListOP.NONE]:
             raise ValueError("Unknown op")
         self._op = value
 
@@ -872,25 +873,25 @@ cdef class MouseCursorHandler(baseHandler):
     combined with a HoverHandler.
     """
     def __cinit__(self):
-        self._mouse_cursor = mouse_cursor.CursorArrow
+        self._mouse_cursor = MouseCursor.CursorArrow
 
     @property
     def cursor(self):
         """
-        Change the mouse cursor to one of mouse_cursor,
+        Change the mouse cursor to one of MouseCursor,
         but only for the frames where this handler
         is run.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return <mouse_cursor>self._mouse_cursor
+        return self._mouse_cursor
 
     @cursor.setter
-    def cursor(self, int value):
+    def cursor(self, MouseCursor value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < imgui.ImGuiMouseCursor_None or \
-           value >= imgui.ImGuiMouseCursor_COUNT:
+        if <int>value < imgui.ImGuiMouseCursor_None or \
+           <int>value >= imgui.ImGuiMouseCursor_COUNT:
             raise ValueError("Invalid cursor type {value}")
         self._mouse_cursor = value
 

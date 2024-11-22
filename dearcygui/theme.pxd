@@ -2,6 +2,7 @@ from libcpp.unordered_map cimport unordered_map
 from libcpp.string cimport string
 from dearcygui.wrapper cimport imgui
 from .core cimport *
+from .types cimport *
 
 cdef class ThemeColorImGui(baseTheme):
     cdef unordered_map[string, int] name_to_index
@@ -94,8 +95,8 @@ cdef class ThemeListWithCondition(baseTheme):
     As the elements in this list get checked everytime
     a item in the child tree is rendered, use this lightly.
     """
-    cdef theme_enablers activation_condition_enabled
-    cdef theme_categories activation_condition_category
+    cdef ThemeEnablers activation_condition_enabled
+    cdef ThemeCategories activation_condition_category
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil

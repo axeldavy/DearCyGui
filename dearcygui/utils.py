@@ -19,7 +19,7 @@ class TemporaryTooltip(dcg.Tooltip):
     """
     def __init__(self, context, **kwargs):
         super().__init__(context, **kwargs)
-        not_rendered = dcg.OtherItemHandler(context, target=self, op=dcg.handlerListOP.NONE, callback=self.destroy_tooltip)
+        not_rendered = dcg.OtherItemHandler(context, target=self, op=dcg.HandlerListOP.NONE, callback=self.destroy_tooltip)
         with not_rendered:
             dcg.RenderHandler(context)
         self.viewport_handler = not_rendered
@@ -303,10 +303,10 @@ class ItemInspecter(dcg.Window):
         self.inspected_items = []
         C = context
         with self:
-            with dcg.HorizontalLayout(C, alignment_mode=dcg.alignment.LEFT):
+            with dcg.HorizontalLayout(C, alignment_mode=dcg.Alignment.LEFT):
                 dcg.Button(C, label="Install handlers", callbacks=self.setup_handlers)
                 dcg.Button(C, label="Remove handlers", callbacks=self.remove_handlers)
-            with dcg.HorizontalLayout(C, alignment_mode=dcg.alignment.CENTER):
+            with dcg.HorizontalLayout(C, alignment_mode=dcg.Alignment.CENTER):
                 with dcg.VerticalLayout(C):
                     dcg.Text(C, wrap=0).value = \
                     "Help: Hover an item to inspect it. Alt+right click to move it."
@@ -325,7 +325,7 @@ class ItemInspecter(dcg.Window):
             # If a compatible item is hovered and the ALT key is set,
             # change the cursor to show we can drag
             with dcg.ConditionalHandler(C):
-                dcg.MouseCursorHandler(C, cursor=dcg.mouse_cursor.Hand)
+                dcg.MouseCursorHandler(C, cursor=dcg.MouseCursor.Hand)
                 dcg.HoverHandler(C)
                 dcg.KeyDownHandler(C, key=dcg.constants.mvKey_LAlt)
 
@@ -441,7 +441,7 @@ class DragPoint(dcg.DrawingList):
         # and do not need the mutex
         set_cursor_on_hover = dcg.ConditionalHandler(self.context)
         with set_cursor_on_hover:
-            dcg.MouseCursorHandler(self.context, cursor=dcg.mouse_cursor.ResizeAll)
+            dcg.MouseCursorHandler(self.context, cursor=dcg.MouseCursor.ResizeAll)
             dcg.HoverHandler(self.context)
         self.invisible.handlers += [
             dcg.HoverHandler(self.context, callback=self.handler_hover),

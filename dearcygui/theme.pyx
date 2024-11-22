@@ -21,6 +21,7 @@ from dearcygui.wrapper cimport imgui, implot, imnodes
 cimport cython
 from cython.operator cimport dereference
 from .core cimport *
+from .types cimport *
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from cpython cimport PyObject_GenericSetAttr
 
@@ -269,8 +270,8 @@ cdef class ThemeColorImGui(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
+            action.activation_condition_enabled = ThemeEnablers.ANY
+            action.activation_condition_category = ThemeCategories.t_any
             action.type = theme_types.t_color
             action.backend = theme_backends.t_imgui
             action.theme_index = element_content.first
@@ -419,8 +420,8 @@ cdef class ThemeColorImPlot(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
+            action.activation_condition_enabled = ThemeEnablers.ANY
+            action.activation_condition_category = ThemeCategories.t_any
             action.type = theme_types.t_color
             action.backend = theme_backends.t_implot
             action.theme_index = element_content.first
@@ -593,8 +594,8 @@ cdef class ThemeColorImNodes(baseTheme):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
+            action.activation_condition_enabled = ThemeEnablers.ANY
+            action.activation_condition_category = ThemeCategories.t_any
             action.type = theme_types.t_color
             action.backend = theme_backends.t_imnodes
             action.theme_index = element_content.first
@@ -777,8 +778,8 @@ cdef class baseThemeStyle(baseTheme):
         if self.context._viewport.global_scale != self.dpi:
             self.__compute_for_dpi()
         for element_content in self.index_to_value_for_dpi:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
+            action.activation_condition_enabled = ThemeEnablers.ANY
+            action.activation_condition_category = ThemeCategories.t_any
             action.type = theme_types.t_style
             action.backend = self.backend
             action.theme_index = element_content.first
@@ -1893,8 +1894,8 @@ cdef class ThemeStyleImNodes(baseThemeStyle):
         if not(self.enabled):
             return
         for element_content in self.index_to_value:
-            action.activation_condition_enabled = theme_enablers.t_enabled_any
-            action.activation_condition_category = theme_categories.t_any
+            action.activation_condition_enabled = ThemeEnablers.ANY
+            action.activation_condition_category = ThemeCategories.t_any
             action.type = theme_types.t_style
             action.backend = theme_backends.t_imnodes
             action.theme_index = element_content.first
@@ -1935,8 +1936,8 @@ cdef class ThemeList(baseTheme):
 cdef class ThemeListWithCondition(baseTheme):
     def __cinit__(self):
         self.can_have_theme_child = True
-        self.activation_condition_enabled = theme_enablers.t_enabled_any
-        self.activation_condition_category = theme_categories.t_any
+        self.activation_condition_enabled = ThemeEnablers.ANY
+        self.activation_condition_category = ThemeCategories.t_any
 
     @property
     def condition_enabled(self):
@@ -1950,7 +1951,7 @@ cdef class ThemeListWithCondition(baseTheme):
         return self.activation_condition_enabled
 
     @condition_enabled.setter
-    def condition_enabled(self, theme_enablers value):
+    def condition_enabled(self, ThemeEnablers value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # TODO: check bounds
@@ -1968,7 +1969,7 @@ cdef class ThemeListWithCondition(baseTheme):
         return self.activation_condition_category
 
     @condition_category.setter
-    def condition_category(self, theme_categories value):
+    def condition_category(self, ThemeCategories value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         # TODO: check bounds
@@ -1980,8 +1981,8 @@ cdef class ThemeListWithCondition(baseTheme):
             self.last_push_size.push_back(0)
             return
         cdef int prev_size, i, new_size, count, applied_count
-        cdef theme_enablers condition_enabled
-        cdef theme_categories condition_category
+        cdef ThemeEnablers condition_enabled
+        cdef ThemeCategories condition_category
         count = 0
         applied_count = 0
         if self.last_theme_child is not None:
@@ -1993,18 +1994,18 @@ cdef class ThemeListWithCondition(baseTheme):
             for i in range(prev_size, new_size):
                 condition_enabled = self.context._viewport.pending_theme_actions[i].activation_condition_enabled
                 condition_category = self.context._viewport.pending_theme_actions[i].activation_condition_category
-                if self.activation_condition_enabled != theme_enablers.t_enabled_any:
-                    if condition_enabled != theme_enablers.t_enabled_any and \
+                if self.activation_condition_enabled != ThemeEnablers.ANY:
+                    if condition_enabled != ThemeEnablers.ANY and \
                        condition_enabled != self.activation_condition_enabled:
                         # incompatible conditions. Disable
-                        condition_enabled = theme_enablers.t_discarded
+                        condition_enabled = ThemeEnablers.DISCARDED
                     else:
                         condition_enabled = self.activation_condition_enabled
-                if self.activation_condition_category != theme_categories.t_any:
-                    if condition_category != theme_categories.t_any and \
+                if self.activation_condition_category != ThemeCategories.t_any:
+                    if condition_category != ThemeCategories.t_any and \
                        condition_category != self.activation_condition_category:
                         # incompatible conditions. Disable
-                        condition_enabled = theme_enablers.t_discarded
+                        condition_enabled = ThemeEnablers.DISCARDED
                     else:
                         condition_category = self.activation_condition_category
                 self.context._viewport.pending_theme_actions[i].activation_condition_enabled = condition_enabled
@@ -2030,8 +2031,8 @@ cdef class ThemeListWithCondition(baseTheme):
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef int prev_size, i, new_size
-        cdef theme_enablers condition_enabled
-        cdef theme_categories condition_category
+        cdef ThemeEnablers condition_enabled
+        cdef ThemeCategories condition_category
         if self.last_theme_child is not None:
             prev_size = <int>v.size()
             push_to_list_children(self, v)
@@ -2040,18 +2041,18 @@ cdef class ThemeListWithCondition(baseTheme):
             for i in range(prev_size, new_size):
                 condition_enabled = v[i].activation_condition_enabled
                 condition_category = v[i].activation_condition_category
-                if self.activation_condition_enabled != theme_enablers.t_enabled_any:
-                    if condition_enabled != theme_enablers.t_enabled_any and \
+                if self.activation_condition_enabled != ThemeEnablers.ANY:
+                    if condition_enabled != ThemeEnablers.ANY and \
                        condition_enabled != self.activation_condition_enabled:
                         # incompatible conditions. Disable
-                        condition_enabled = theme_enablers.t_discarded
+                        condition_enabled = ThemeEnablers.DISCARDED
                     else:
                         condition_enabled = self.activation_condition_enabled
-                if self.activation_condition_category != theme_categories.t_any:
-                    if condition_category != theme_categories.t_any and \
+                if self.activation_condition_category != ThemeCategories.t_any:
+                    if condition_category != ThemeCategories.t_any and \
                        condition_category != self.activation_condition_category:
                         # incompatible conditions. Disable
-                        condition_enabled = theme_enablers.t_discarded
+                        condition_enabled = ThemeEnablers.DISCARDED
                     else:
                         condition_category = self.activation_condition_category
                 v[i].activation_condition_enabled = condition_enabled

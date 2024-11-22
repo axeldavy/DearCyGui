@@ -7,6 +7,7 @@ from libcpp.atomic cimport atomic
 from libcpp.vector cimport vector
 from cpython.ref cimport PyObject, Py_INCREF, Py_DECREF
 cimport numpy as cnp
+from .types cimport *
 
 """
 Thread safety:
@@ -224,17 +225,6 @@ cdef class baseItem:
     cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept nogil
     cdef void set_hidden_no_handler_and_propagate_to_children_with_handlers(self) noexcept nogil
 
-cdef enum child_type:
-    cat_drawing
-    cat_viewport_drawlist
-    cat_handler
-    cat_menubar
-    cat_plot_element
-    cat_tab
-    cat_theme
-    cat_widget
-    cat_window
-
 cdef struct itemStateCapabilities:
     bint can_be_active
     bint can_be_clicked
@@ -276,18 +266,6 @@ cdef struct itemState:
 cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 
-cpdef enum mouse_cursor:
-    CursorNone = -1,
-    CursorArrow = 0,
-    CursorTextInput,         # When hovering over InputText, etc.
-    ResizeAll,         # (Unused by Dear ImGui functions)
-    ResizeNS,          # When hovering over a horizontal border
-    ResizeEW,          # When hovering over a vertical border or a column
-    ResizeNESW,        # When hovering over the bottom-left corner of a window
-    ResizeNWSE,        # When hovering over the bottom-right corner of a window
-    Hand,              # (Unused by Dear ImGui functions. Use for e.g. hyperlinks)
-    NotAllowed
-
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
     cdef mvViewport *viewport
@@ -327,8 +305,8 @@ cdef class Viewport(baseItem):
     cdef vector[theme_action] pending_theme_actions # managed outside viewport
     cdef vector[theme_action] applied_theme_actions # managed by viewport
     cdef vector[int] applied_theme_actions_count # managed by viewport
-    cdef theme_enablers current_theme_activation_condition_enabled
-    cdef theme_categories current_theme_activation_condition_category
+    cdef ThemeEnablers current_theme_activation_condition_enabled
+    cdef ThemeCategories current_theme_activation_condition_category
     cdef float _scale
     cdef float global_scale
 
@@ -338,7 +316,7 @@ cdef class Viewport(baseItem):
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil
-    cdef void push_pending_theme_actions(self, theme_enablers, theme_categories) noexcept nogil
+    cdef void push_pending_theme_actions(self, ThemeEnablers, ThemeCategories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
     cdef void cwake(self) noexcept nogil
@@ -435,27 +413,11 @@ cdef class baseHandler(baseItem):
 
 cdef void update_current_mouse_states(itemState& state) noexcept nogil
 
-cpdef enum positioning:
-    DEFAULT,
-    REL_DEFAULT,
-    REL_PARENT,
-    REL_WINDOW,
-    REL_VIEWPORT
-
-cpdef enum alignment:
-    LEFT=0,
-    TOP=0,
-    RIGHT=1,
-    BOTTOM=1,
-    CENTER=2,
-    JUSTIFIED=3,
-    MANUAL=4
-
 cdef class uiItem(baseItem):
     cdef string imgui_label
     cdef str user_label
     cdef bool _show
-    cdef positioning[2] _pos_policy
+    cdef Positioning[2] _pos_policy
     # mvAppItemInfo
     #cdef int location -> for table
     # mvAppItemState
@@ -475,8 +437,8 @@ cdef class uiItem(baseItem):
     cdef bint dpi_scaling
     cdef imgui.ImVec2 requested_size
     cdef float _indent
-    cdef theme_enablers theme_condition_enabled
-    cdef theme_categories theme_condition_category
+    cdef ThemeEnablers theme_condition_enabled
+    cdef ThemeCategories theme_condition_category
     #cdef float trackOffset
     #cdef bint tracked
     cdef Callback dragCallback
@@ -597,75 +559,6 @@ cdef class FontTexture(baseItem):
     cdef list fonts_files # content of the font files
     cdef list fonts
 
-cdef enum theme_types:
-    t_color,
-    t_style
-
-cdef enum theme_backends:
-    t_imgui,
-    t_implot,
-    t_imnodes
-
-cpdef enum theme_enablers:
-    t_enabled_any,
-    t_enabled_False,
-    t_enabled_True,
-    t_discarded
-
-cpdef enum theme_categories:
-    t_any,
-    t_simpleplot,
-    t_button,
-    t_combo,
-    t_checkbox,
-    t_slider,
-    t_listbox,
-    t_radiobutton,
-    t_inputtext,
-    t_inputvalue,
-    t_text,
-    t_selectable,
-    t_tab,
-    t_tabbar,
-    t_tabbutton,
-    t_menuitem,
-    t_progressbar,
-    t_image,
-    t_imagebutton,
-    t_menubar,
-    t_menu,
-    t_tooltip,
-    t_layout,
-    t_treenode,
-    t_collapsingheader,
-    t_child,
-    t_colorbutton,
-    t_coloredit,
-    t_colorpicker,
-    t_window,
-    t_plot
-
-cdef enum theme_value_types:
-    t_int,
-    t_float,
-    t_float2,
-    t_u32
-
-ctypedef union theme_value:
-    int value_int
-    float value_float
-    float[2] value_float2
-    unsigned value_u32
-
-ctypedef struct theme_action:
-    theme_enablers activation_condition_enabled
-    theme_categories activation_condition_category
-    theme_types type
-    theme_backends backend
-    int theme_index
-    theme_value_types value_type
-    theme_value value
-
 """
 Theme base class:
 push: push the item components of the theme
@@ -685,102 +578,3 @@ cdef class baseTheme(baseItem):
     cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
     cdef void pop(self) noexcept nogil
 
-"""
-Utils that the other pyx may use
-"""
-cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4) noexcept nogil
-cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32) noexcept nogil
-
-ctypedef fused point_type:
-    int
-    float
-    double
-
-cdef inline void read_point(point_type* dst, src):
-    if not(hasattr(src, '__len__')):
-        raise TypeError("Point data must be an array of up to 2 coordinates")
-    cdef int src_size = len(src)
-    if src_size > 2:
-        raise TypeError("Point data must be an array of up to 2 coordinates")
-    dst[0] = <point_type>0.
-    dst[1] = <point_type>0.
-    if src_size > 0:
-        dst[0] = <point_type>src[0]
-    if src_size > 1:
-        dst[1] = <point_type>src[1]
-
-cdef inline void read_vec4(point_type* dst, src):
-    if not(hasattr(src, '__len__')):
-        raise TypeError("Point data must be an array of up to 4 coordinates")
-    cdef int src_size = len(src)
-    if src_size > 4:
-        raise TypeError("Point data must be an array of up to 4 coordinates")
-    dst[0] = <point_type>0.
-    dst[1] = <point_type>0.
-    dst[2] = <point_type>0.
-    dst[3] = <point_type>0.
-    if src_size > 0:
-        dst[0] = <point_type>src[0]
-    if src_size > 1:
-        dst[1] = <point_type>src[1]
-    if src_size > 2:
-        dst[2] = <point_type>src[2]
-    if src_size > 3:
-        dst[3] = <point_type>src[3]
-
-cdef inline imgui.ImU32 parse_color(src):
-    if isinstance(src, int):
-        # RGBA, little endian
-        return <imgui.ImU32>(<long long>src)
-    cdef int src_size = 5 # to trigger error by default
-    if hasattr(src, '__len__'):
-        src_size = len(src)
-    if src_size == 0 or src_size > 4:
-        raise TypeError("Color data must either an int32 (rgba, little endian),\n" \
-                        "or an array of int (r, g, b, a) or float (r, g, b, a) normalized")
-    cdef imgui.ImVec4 color_float4
-    cdef imgui.ImU32 color_u32
-    cdef bint contains_nonints = False
-    cdef int i
-    cdef float[4] values
-    cdef int[4] values_int
-
-    for i in range(src_size):
-        element = src[i]
-        if not(isinstance(element, int)):
-            contains_nonints = True
-            values[i] = element
-            values_int[i] = <int>values[i]
-        else:
-            values_int[i] = element
-            values[i] = <float>values_int[i]
-    for i in range(src_size, 4):
-        values[i] = 1.
-        values_int[i] = 255
-
-    if not(contains_nonints):
-        for i in range(4):
-            if values_int[i] < 0 or values_int[i] > 255:
-                raise ValueError("Color value component outside bounds (0...255)")
-        color_u32 = <imgui.ImU32>values_int[0]
-        color_u32 |= (<imgui.ImU32>values_int[1]) << 8
-        color_u32 |= (<imgui.ImU32>values_int[2]) << 16
-        color_u32 |= (<imgui.ImU32>values_int[3]) << 24
-        return color_u32
-
-    for i in range(4):
-        if values[i] < 0. or values[i] > 1.:
-            raise ValueError("Color value component outside bounds (0...1)")
-
-    color_float4.x = values[0]
-    color_float4.y = values[1]
-    color_float4.z = values[2]
-    color_float4.w = values[3]
-    return imgui_ColorConvertFloat4ToU32(color_float4)
-
-cdef inline void unparse_color(float *dst, imgui.ImU32 color_uint) noexcept nogil:
-    cdef imgui.ImVec4 color_float4 = imgui_ColorConvertU32ToFloat4(color_uint)
-    dst[0] = color_float4.x
-    dst[1] = color_float4.y
-    dst[2] = color_float4.z
-    dst[3] = color_float4.w

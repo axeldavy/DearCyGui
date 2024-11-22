@@ -28,8 +28,9 @@ from .core cimport baseHandler, drawingItem, uiItem, \
     IntPairFromVec2, draw_drawing_children, draw_menubar_children, \
     draw_ui_children, \
     draw_tab_children, Callback, \
-    theme_categories, Context, read_vec4, read_point, parse_color, \
-    unparse_color, SharedValue, child_type, update_current_mouse_states
+    Context, read_vec4, read_point, parse_color, \
+    unparse_color, SharedValue, update_current_mouse_states
+from .types cimport *
 
 import numpy as np
 cimport numpy as cnp
@@ -685,7 +686,7 @@ cdef class DrawInWindow(uiItem):
 
 cdef class SimplePlot(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_simpleplot
+        self.theme_condition_category = ThemeCategories.t_simpleplot
         self._value = <SharedValue>(SharedFloatVect.__new__(SharedFloatVect, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -820,7 +821,7 @@ cdef class SimplePlot(uiItem):
 
 cdef class Button(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_button
+        self.theme_condition_category = ThemeCategories.t_button
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -914,7 +915,7 @@ cdef class Button(uiItem):
 
 cdef class Combo(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_combo
+        self.theme_condition_category = ThemeCategories.t_combo
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -1119,7 +1120,7 @@ cdef class Combo(uiItem):
 
 cdef class Checkbox(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_checkbox
+        self.theme_condition_category = ThemeCategories.t_checkbox
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_dragged = True
@@ -1146,7 +1147,7 @@ cdef extern from * nogil:
 
 cdef class Slider(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_slider
+        self.theme_condition_category = ThemeCategories.t_slider
         self._format = 1
         self._size = 1
         self._drag = False
@@ -1592,7 +1593,7 @@ cdef class Slider(uiItem):
 
 cdef class ListBox(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_listbox
+        self.theme_condition_category = ThemeCategories.t_listbox
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -1719,7 +1720,7 @@ cdef class ListBox(uiItem):
 
 cdef class RadioButton(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_radiobutton
+        self.theme_condition_category = ThemeCategories.t_radiobutton
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -1812,7 +1813,7 @@ cdef class RadioButton(uiItem):
 
 cdef class InputText(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_inputtext
+        self.theme_condition_category = ThemeCategories.t_inputtext
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -2206,7 +2207,7 @@ cdef inline void clamp4(clamp_types[4] &value, double lower, double upper) noexc
 
 cdef class InputValue(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_inputvalue
+        self.theme_condition_category = ThemeCategories.t_inputvalue
         self._format = 1
         self._size = 1
         self._print_format = b"%.3f"
@@ -2769,7 +2770,7 @@ cdef class InputValue(uiItem):
 
 cdef class Text(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_text
+        self.theme_condition_category = ThemeCategories.t_text
         self._color = 0 # invisible
         self._wrap = -1
         self._bullet = False
@@ -2911,7 +2912,7 @@ cdef class Text(uiItem):
 
 cdef class Selectable(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_selectable
+        self.theme_condition_category = ThemeCategories.t_selectable
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -3008,7 +3009,7 @@ cdef class Selectable(uiItem):
 
 cdef class MenuItem(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_menuitem
+        self.theme_condition_category = ThemeCategories.t_menuitem
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -3061,7 +3062,7 @@ cdef class MenuItem(uiItem):
 
 cdef class ProgressBar(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_progressbar
+        self.theme_condition_category = ThemeCategories.t_progressbar
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_dragged = True
@@ -3096,7 +3097,7 @@ cdef class ProgressBar(uiItem):
 
 cdef class Image(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_image
+        self.theme_condition_category = ThemeCategories.t_image
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_dragged = True
         self.state.cap.can_be_focused = True
@@ -3179,7 +3180,7 @@ cdef class Image(uiItem):
 
 cdef class ImageButton(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_imagebutton
+        self.theme_condition_category = ThemeCategories.t_imagebutton
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_dragged = True
@@ -3330,7 +3331,7 @@ cdef class MenuBar(uiItem):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_menubar
-        self.theme_condition_category = theme_categories.t_menubar
+        self.theme_condition_category = ThemeCategories.t_menubar
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
@@ -3415,7 +3416,7 @@ cdef class Menu(uiItem):
         # We should maybe restrict to menuitem ?
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self.theme_condition_category = theme_categories.t_menu
+        self.theme_condition_category = ThemeCategories.t_menu
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
@@ -3451,7 +3452,7 @@ cdef class Tooltip(uiItem):
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
-        self.theme_condition_category = theme_categories.t_tooltip
+        self.theme_condition_category = ThemeCategories.t_tooltip
         self.state.cap.can_be_active = True # TODO unsure. Maybe use open instead ?
         self.state.cap.has_position = False
         self.state.cap.has_rect_size = False
@@ -3593,7 +3594,7 @@ cdef class Tooltip(uiItem):
 
 cdef class TabButton(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = theme_categories.t_tabbutton
+        self.theme_condition_category = ThemeCategories.t_tabbutton
         self.element_child_category = child_type.cat_tab
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.state.cap.can_be_active = True
@@ -3690,7 +3691,7 @@ cdef class Tab(uiItem):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_tab
-        self.theme_condition_category = theme_categories.t_tab
+        self.theme_condition_category = ThemeCategories.t_tab
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
@@ -3819,7 +3820,7 @@ cdef class TabBar(uiItem):
     def __cinit__(self):
         #self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_tab_child = True
-        self.theme_condition_category = theme_categories.t_tabbar
+        self.theme_condition_category = ThemeCategories.t_tabbar
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
@@ -4020,7 +4021,7 @@ cdef class TreeNode(uiItem):
         self.state.cap.can_be_toggled = True
         self._selectable = False
         self.flags = imgui.ImGuiTreeNodeFlags_None
-        self.theme_condition_category = theme_categories.t_treenode
+        self.theme_condition_category = ThemeCategories.t_treenode
 
     @property
     def selectable(self):
@@ -4211,7 +4212,7 @@ cdef class CollapsingHeader(uiItem):
         self.state.cap.can_be_toggled = True
         self._closable = False
         self.flags = imgui.ImGuiTreeNodeFlags_None
-        self.theme_condition_category = theme_categories.t_collapsingheader
+        self.theme_condition_category = ThemeCategories.t_collapsingheader
 
     @property
     def closable(self):
@@ -4345,7 +4346,7 @@ cdef class ChildWindow(uiItem):
         self.state.cap.can_be_hovered = True
         self.state.cap.has_content_region = True
         #self.state.cap.can_be_toggled = True # maybe ?
-        self.theme_condition_category = theme_categories.t_child
+        self.theme_condition_category = ThemeCategories.t_child
 
     @property
     def always_show_vertical_scrollvar(self):
@@ -4669,7 +4670,7 @@ cdef class ChildWindow(uiItem):
 cdef class ColorButton(uiItem):
     def __cinit__(self):
         self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
-        self.theme_condition_category = theme_categories.t_colorbutton
+        self.theme_condition_category = ThemeCategories.t_colorbutton
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -4762,7 +4763,7 @@ cdef class ColorButton(uiItem):
 cdef class ColorEdit(uiItem):
     def __cinit__(self):
         self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
-        self.theme_condition_category = theme_categories.t_coloredit
+        self.theme_condition_category = ThemeCategories.t_coloredit
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
@@ -4924,7 +4925,7 @@ cdef class ColorEdit(uiItem):
 cdef class ColorPicker(uiItem):
     def __cinit__(self):
         self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
-        self.theme_condition_category = theme_categories.t_colorpicker
+        self.theme_condition_category = ThemeCategories.t_colorpicker
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True

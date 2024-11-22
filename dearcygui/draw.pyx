@@ -16,9 +16,10 @@
 
 from dearcygui.wrapper cimport imgui
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
-from .core cimport baseItem, drawingItem, child_type, \
+from .core cimport baseItem, drawingItem, \
     lock_gil_friendly, draw_drawing_children, read_point, \
     unparse_color, parse_color, read_vec4
+from .types cimport child_type
 
 from libcpp.algorithm cimport swap
 from libcpp.cmath cimport atan, sin, cos, trunc, floor, round as cround

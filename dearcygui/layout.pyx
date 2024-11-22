@@ -21,8 +21,9 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from libcpp.algorithm cimport swap
 from libcpp.cmath cimport floor
 
-from .core cimport uiItem, lock_gil_friendly, theme_categories, \
-    draw_ui_children, alignment, positioning
+from .core cimport uiItem, lock_gil_friendly, \
+    draw_ui_children
+from .types cimport *
 
 cdef class Layout(uiItem):
     """
@@ -66,7 +67,7 @@ cdef class Layout(uiItem):
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
         self.state.cap.can_be_toggled = True
-        self.theme_condition_category = theme_categories.t_layout
+        self.theme_condition_category = ThemeCategories.t_layout
         self.prev_content_area.x = 0
         self.prev_content_area.y = 0
         self.previous_last_child = NULL
@@ -121,7 +122,7 @@ cdef class HorizontalLayout(Layout):
     horizontally.
     """
     def __cinit__(self):
-        self._alignment_mode = alignment.LEFT
+        self._alignment_mode = Alignment.LEFT
 
     @property
     def alignment_mode(self):
@@ -145,10 +146,10 @@ cdef class HorizontalLayout(Layout):
         return self._alignment_mode
 
     @alignment_mode.setter
-    def alignment_mode(self, alignment value):
+    def alignment_mode(self, Alignment value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < 0 or value > alignment.MANUAL:
+        if <int>value < 0 or value > Alignment.MANUAL:
             raise ValueError("Invalid alignment value")
         self._alignment_mode = value
 
@@ -178,7 +179,7 @@ cdef class HorizontalLayout(Layout):
     def positions(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self._alignment_mode = alignment.MANUAL
+        self._alignment_mode = Alignment.MANUAL
         # TODO: checks
         self._positions.clear()
         for v in value:
@@ -211,7 +212,7 @@ cdef class HorizontalLayout(Layout):
         # and relative positioning mode
         cdef PyObject *child = <PyObject*>self.last_widgets_child
         while (<uiItem>child) is not None:
-            (<uiItem>child)._pos_policy[0] = positioning.REL_PARENT
+            (<uiItem>child)._pos_policy[0] = Positioning.REL_PARENT
             (<uiItem>child)._no_newline = True
             child = <PyObject*>((<uiItem>child)._prev_sibling)
         self.last_widgets_child._no_newline = False
@@ -225,12 +226,12 @@ cdef class HorizontalLayout(Layout):
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
         cdef int n_items = 0
-        if self._alignment_mode == alignment.LEFT:
+        if self._alignment_mode == Alignment.LEFT:
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
-                (<uiItem>child)._pos_policy[0] = positioning.DEFAULT
+                (<uiItem>child)._pos_policy[0] = Positioning.DEFAULT
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
-        elif self._alignment_mode == alignment.RIGHT:
+        elif self._alignment_mode == Alignment.RIGHT:
             pos_end = available_width
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
@@ -239,7 +240,7 @@ cdef class HorizontalLayout(Layout):
                 (<uiItem>child).state.cur.pos_to_parent.x = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
-        elif self._alignment_mode == alignment.CENTER:
+        elif self._alignment_mode == Alignment.CENTER:
             size = self.__compute_items_size(n_items)
             size += max(0, (n_items - 1)) * self._spacing
             pos_start = available_width // 2 - \
@@ -252,11 +253,11 @@ cdef class HorizontalLayout(Layout):
                 (<uiItem>child).state.cur.pos_to_parent.x = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
-        elif self._alignment_mode == alignment.JUSTIFIED:
+        elif self._alignment_mode == Alignment.JUSTIFIED:
             size = self.__compute_items_size(n_items)
             if n_items == 1:
                 # prefer to revert to align left
-                self.last_widgets_child._pos_policy[0] = positioning.DEFAULT
+                self.last_widgets_child._pos_policy[0] = Positioning.DEFAULT
             else:
                 pos_end = available_width
                 spacing = floor((available_width - size) / (n_items-1))
@@ -341,7 +342,7 @@ cdef class HorizontalLayout(Layout):
         if changed:
             # We maintain the lock during the rendering
             # just to be sure the user doesn't change the
-            # positioning we took care to manage :-)
+            # Positioning we took care to manage :-)
             self.last_widgets_child.unlock_and_previous_siblings()
         imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
                            imgui.ImVec2(0., 0.))
@@ -360,7 +361,7 @@ cdef class VerticalLayout(Layout):
     Same as HorizontalLayout but vertically
     """
     def __cinit__(self):
-        self._alignment_mode = alignment.TOP
+        self._alignment_mode = Alignment.TOP
 
     @property
     def alignment_mode(self):
@@ -384,10 +385,10 @@ cdef class VerticalLayout(Layout):
         return self._alignment_mode
 
     @alignment_mode.setter
-    def alignment_mode(self, alignment value):
+    def alignment_mode(self, Alignment value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < 0 or value > alignment.MANUAL:
+        if <int>value < 0 or value > Alignment.MANUAL:
             raise ValueError("Invalid alignment value")
         self._alignment_mode = value
 
@@ -417,7 +418,7 @@ cdef class VerticalLayout(Layout):
     def positions(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self._alignment_mode = alignment.MANUAL
+        self._alignment_mode = Alignment.MANUAL
         # TODO: checks
         self._positions.clear()
         for v in value:
@@ -451,7 +452,7 @@ cdef class VerticalLayout(Layout):
         # and relative positioning mode
         cdef PyObject *child = <PyObject*>self.last_widgets_child
         while (<uiItem>child) is not None:
-            (<uiItem>child)._pos_policy[1] = positioning.REL_PARENT
+            (<uiItem>child)._pos_policy[1] = Positioning.REL_PARENT
             (<uiItem>child)._no_newline = False
             child = <PyObject*>((<uiItem>child)._prev_sibling)
         self.last_widgets_child._no_newline = False
@@ -465,12 +466,12 @@ cdef class VerticalLayout(Layout):
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
         cdef int n_items = 0
-        if self._alignment_mode == alignment.TOP:
+        if self._alignment_mode == Alignment.TOP:
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
-                (<uiItem>child)._pos_policy[1] = positioning.REL_DEFAULT
+                (<uiItem>child)._pos_policy[1] = Positioning.REL_DEFAULT
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
-        elif self._alignment_mode == alignment.RIGHT:
+        elif self._alignment_mode == Alignment.RIGHT:
             pos_end = available_height
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
@@ -479,7 +480,7 @@ cdef class VerticalLayout(Layout):
                 (<uiItem>child).state.cur.pos_to_parent.y = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
-        elif self._alignment_mode == alignment.CENTER:
+        elif self._alignment_mode == Alignment.CENTER:
             size = self.__compute_items_size(n_items)
             size += max(0, (n_items - 1)) * self._spacing
             pos_start = available_height // 2 - \
@@ -492,11 +493,11 @@ cdef class VerticalLayout(Layout):
                 (<uiItem>child).state.cur.pos_to_parent.y = target_pos
                 pos_end = target_pos - self._spacing
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
-        elif self._alignment_mode == alignment.JUSTIFIED:
+        elif self._alignment_mode == Alignment.JUSTIFIED:
             size = self.__compute_items_size(n_items)
             if n_items == 1:
                 # prefer to revert to align top
-                self.last_widgets_child._pos_policy[1] = positioning.DEFAULT
+                self.last_widgets_child._pos_policy[1] = Positioning.DEFAULT
             else:
                 pos_end = available_height
                 spacing = floor((available_height - size) / (n_items-1))

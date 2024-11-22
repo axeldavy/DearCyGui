@@ -20,7 +20,6 @@ import traceback
 cimport cython
 cimport cython.view
 from cython.operator cimport dereference
-from cpython.ref cimport PyObject, Py_INCREF, Py_DECREF
 from libc.string cimport memset, memcpy
 
 # This file is the only one that is linked to the C++ code
@@ -41,6 +40,8 @@ from libcpp.set cimport set as cpp_set
 from libcpp.vector cimport vector
 from libc.math cimport M_PI, INFINITY
 cimport dearcygui.backends.time as ctime
+
+from .types cimport *
 
 import os
 import numpy as np
@@ -2205,12 +2206,12 @@ cdef class Viewport(baseItem):
     @property
     def cursor(self):
         """
-        Change the mouse cursor to one of mouse_cursor.
+        Change the mouse cursor to one of MouseCursor.
         The mouse cursor is reset every frame.
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return <mouse_cursor>self._cursor
+        return <MouseCursor>self._cursor
 
     @cursor.setter
     def cursor(self, int value):
@@ -2547,8 +2548,8 @@ cdef class Viewport(baseItem):
             dst_p[1] = <float>p[1]
 
     cdef void push_pending_theme_actions(self,
-                                         theme_enablers theme_activation_condition_enabled,
-                                         theme_categories theme_activation_condition_category) noexcept nogil:
+                                         ThemeEnablers theme_activation_condition_enabled,
+                                         ThemeCategories theme_activation_condition_category) noexcept nogil:
         """
         Used during rendering to apply themes defined by items
         parents and that should activate based on specific conditions
@@ -2567,18 +2568,18 @@ cdef class Viewport(baseItem):
         cdef int size_init = self.applied_theme_actions.size()
         cdef theme_action action
         cdef imgui.ImVec2 value_float2
-        cdef theme_enablers theme_activation_condition_enabled = self.current_theme_activation_condition_enabled
-        cdef theme_categories theme_activation_condition_category = self.current_theme_activation_condition_category
+        cdef ThemeEnablers theme_activation_condition_enabled = self.current_theme_activation_condition_enabled
+        cdef ThemeCategories theme_activation_condition_category = self.current_theme_activation_condition_category
 
         cdef bool apply
         for i in range(start, end):
             apply = True
-            if self.pending_theme_actions[i].activation_condition_enabled != theme_enablers.t_enabled_any and \
-               theme_activation_condition_enabled != theme_enablers.t_enabled_any and \
+            if self.pending_theme_actions[i].activation_condition_enabled != ThemeEnablers.ANY and \
+               theme_activation_condition_enabled != ThemeEnablers.ANY and \
                self.pending_theme_actions[i].activation_condition_enabled != theme_activation_condition_enabled:
                 apply = False
             if self.pending_theme_actions[i].activation_condition_category != theme_activation_condition_category and \
-               self.pending_theme_actions[i].activation_condition_category != theme_categories.t_any:
+               self.pending_theme_actions[i].activation_condition_category != ThemeCategories.t_any:
                 apply = False
             if apply:
                 action = self.pending_theme_actions[i]
@@ -3160,14 +3161,14 @@ cdef class uiItem(baseItem):
         self.requested_size = imgui.ImVec2(0., 0.)
         self.dpi_scaling = True
         self._indent = 0.
-        self.theme_condition_enabled = theme_enablers.t_enabled_True
-        self.theme_condition_category = theme_categories.t_any
+        self.theme_condition_enabled = ThemeEnablers.TRUE
+        self.theme_condition_category = ThemeCategories.t_any
         self.can_have_sibling = True
         self.element_child_category = child_type.cat_widget
         self.state.cap.has_position = True # ALL widgets have position
         self.state.cap.has_rect_size = True # ALL items have a rectangle size
         self.p_state = &self.state
-        self._pos_policy = [positioning.DEFAULT, positioning.DEFAULT]
+        self._pos_policy = [Positioning.DEFAULT, Positioning.DEFAULT]
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.tracked = False
         self.dragCallback = None
@@ -3475,7 +3476,7 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         if not(self.can_be_disabled) and value != True:
             raise AttributeError(f"Objects of type {type(self)} cannot be disabled")
-        self.theme_condition_enabled = theme_enablers.t_enabled_True if value else theme_enablers.t_enabled_False
+        self.theme_condition_enabled = ThemeEnablers.TRUE if value else ThemeEnablers.FALSE
         self.enabled_update_requested = True
         self._enabled = value
 
@@ -3953,10 +3954,10 @@ cdef class uiItem(baseItem):
         (x, y) = value
         if x is not None:
             self.state.cur.pos_to_viewport.x = x
-            self._pos_policy[0] = positioning.REL_VIEWPORT
+            self._pos_policy[0] = Positioning.REL_VIEWPORT
         if y is not None:
             self.state.cur.pos_to_viewport.y = y
-            self._pos_policy[1] = positioning.REL_VIEWPORT
+            self._pos_policy[1] = Positioning.REL_VIEWPORT
         self.pos_update_requested = True # TODO remove ?
 
     @pos_to_window.setter
@@ -3968,10 +3969,10 @@ cdef class uiItem(baseItem):
         (x, y) = value
         if x is not None:
             self.state.cur.pos_to_window.x = x
-            self._pos_policy[0] = positioning.REL_WINDOW
+            self._pos_policy[0] = Positioning.REL_WINDOW
         if y is not None:
             self.state.cur.pos_to_window.y = y
-            self._pos_policy[1] = positioning.REL_WINDOW
+            self._pos_policy[1] = Positioning.REL_WINDOW
         self.pos_update_requested = True
 
     @pos_to_parent.setter
@@ -3983,10 +3984,10 @@ cdef class uiItem(baseItem):
         (x, y) = value
         if x is not None:
             self.state.cur.pos_to_parent.x = x
-            self._pos_policy[0] = positioning.REL_PARENT
+            self._pos_policy[0] = Positioning.REL_PARENT
         if y is not None:
             self.state.cur.pos_to_parent.y = y
-            self._pos_policy[1] = positioning.REL_PARENT
+            self._pos_policy[1] = Positioning.REL_PARENT
         self.pos_update_requested = True
 
     @pos_to_default.setter
@@ -3998,31 +3999,31 @@ cdef class uiItem(baseItem):
         (x, y) = value
         if x is not None:
             self.state.cur.pos_to_default.x = x
-            self._pos_policy[0] = positioning.REL_DEFAULT
+            self._pos_policy[0] = Positioning.REL_DEFAULT
         if y is not None:
             self.state.cur.pos_to_default.y = y
-            self._pos_policy[1] = positioning.REL_DEFAULT
+            self._pos_policy[1] = Positioning.REL_DEFAULT
         self.pos_update_requested = True
 
     @pos_policy.setter
-    def pos_policy(self, positioning value):
+    def pos_policy(self, Positioning value):
         policies = [
-            positioning.DEFAULT,
-            positioning.REL_DEFAULT,
-            positioning.REL_PARENT,
-            positioning.REL_WINDOW,
-            positioning.REL_VIEWPORT
+            Positioning.DEFAULT,
+            Positioning.REL_DEFAULT,
+            Positioning.REL_PARENT,
+            Positioning.REL_WINDOW,
+            Positioning.REL_VIEWPORT
         ]
         if hasattr(value, "__len__"):
             (x, y) = value
             if x not in policies or y not in policies:
-                raise ValueError("Invalid positioning policy")
+                raise ValueError("Invalid Positioning policy")
             self._pos_policy[0] = x
             self._pos_policy[1] = y
             self.pos_update_requested = True
         else:
             if value not in policies:
-                raise ValueError("Invalid positioning policy")
+                raise ValueError("Invalid Positioning policy")
             self._pos_policy[0] = value
             self._pos_policy[1] = value
             self.pos_update_requested = True
@@ -4094,26 +4095,26 @@ cdef class uiItem(baseItem):
 
         cdef imgui.ImVec2 cursor_pos_backup = imgui.GetCursorScreenPos()
 
-        cdef positioning[2] policy = self._pos_policy
+        cdef Positioning[2] policy = self._pos_policy
         cdef imgui.ImVec2 pos = cursor_pos_backup
 
-        if policy[0] == positioning.REL_DEFAULT:
+        if policy[0] == Positioning.REL_DEFAULT:
             pos.x += self.state.cur.pos_to_default.x
-        elif policy[0] == positioning.REL_PARENT:
+        elif policy[0] == Positioning.REL_PARENT:
             pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
-        elif policy[0] == positioning.REL_WINDOW:
+        elif policy[0] == Positioning.REL_WINDOW:
             pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
-        elif policy[0] == positioning.REL_VIEWPORT:
+        elif policy[0] == Positioning.REL_VIEWPORT:
             pos.x = self.state.cur.pos_to_viewport.x
         # else: DEFAULT
 
-        if policy[1] == positioning.REL_DEFAULT:
+        if policy[1] == Positioning.REL_DEFAULT:
             pos.y += self.state.cur.pos_to_default.y
-        elif policy[1] == positioning.REL_PARENT:
+        elif policy[1] == Positioning.REL_PARENT:
             pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
-        elif policy[1] == positioning.REL_WINDOW:
+        elif policy[1] == Positioning.REL_WINDOW:
             pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
-        elif policy[1] == positioning.REL_VIEWPORT:
+        elif policy[1] == Positioning.REL_VIEWPORT:
             pos.y = self.state.cur.pos_to_viewport.y
         # else: DEFAULT
 
@@ -4162,12 +4163,12 @@ cdef class uiItem(baseItem):
 
         # Advance the cursor only for DEFAULT and REL_DEFAULT
         pos = cursor_pos_backup
-        if policy[0] == positioning.REL_DEFAULT or \
-           policy[0] == positioning.DEFAULT:
+        if policy[0] == Positioning.REL_DEFAULT or \
+           policy[0] == Positioning.DEFAULT:
             pos.x = imgui.GetCursorScreenPos().x
 
-        if policy[1] == positioning.REL_DEFAULT or \
-           policy[1] == positioning.DEFAULT:
+        if policy[1] == Positioning.REL_DEFAULT or \
+           policy[1] == Positioning.DEFAULT:
             pos.y = imgui.GetCursorScreenPos().y
 
         imgui.SetCursorScreenPos(pos)
@@ -4179,8 +4180,8 @@ cdef class uiItem(baseItem):
 
         # Note: not affected by the Unindent.
         if self._no_newline and \
-           (policy[1] == positioning.REL_DEFAULT or \
-            policy[1] == positioning.DEFAULT):
+           (policy[1] == Positioning.REL_DEFAULT or \
+            policy[1] == Positioning.DEFAULT):
             imgui.SameLine(0., -1.)
 
         self.run_handlers()
@@ -4277,7 +4278,7 @@ cdef class Window(uiItem):
         self.on_close_callback = None
         self.min_size = imgui.ImVec2(100., 100.)
         self.max_size = imgui.ImVec2(30000., 30000.)
-        self.theme_condition_category = theme_categories.t_window
+        self.theme_condition_category = ThemeCategories.t_window
         self.scroll_x = 0. # TODO
         self.scroll_y = 0.
         self.scroll_x_update_requested = False
@@ -4909,8 +4910,8 @@ cdef class Window(uiItem):
 
         # themes
         self.context._viewport.push_pending_theme_actions(
-            theme_enablers.t_enabled_any,
-            theme_categories.t_window
+            ThemeEnablers.ANY,
+            ThemeCategories.t_window
         )
         if self._theme is not None:
             self._theme.push()
@@ -5528,7 +5529,7 @@ cdef class FontTexture(baseItem):
     def add_custom_font(self,
                         font_height,
                         character_images,
-                        character_positioning):
+                        character_Positioning):
         """
         See fonts.py for a detailed explanation of
         the input arguments.
@@ -5560,7 +5561,7 @@ cdef class FontTexture(baseItem):
             image = character_images[key]
             h = image.shape[0] + 1
             w = image.shape[1] + 1
-            (y, x, advance) = character_positioning[key]
+            (y, x, advance) = character_Positioning[key]
             j = self.atlas.AddCustomRectFontGlyph(font,
                                              int(key),
                                              w, h,
@@ -5726,134 +5727,3 @@ cdef class baseTheme(baseItem):
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         return
 
-
-"""
-System File dialog
-"""
-
-cdef extern from "SDL3/SDL_dialog.h" nogil:
-    struct SDL_Window_:
-        pass
-    ctypedef SDL_Window_* SDL_Window
-    struct SDL_DialogFileFilter:
-        const char* name
-        const char* pattern
-    ctypedef void (*SDL_DialogFileCallback)(void*, const char*const*, int)
-    void SDL_ShowOpenFileDialog(SDL_DialogFileCallback, void*, SDL_Window_*, SDL_DialogFileFilter*, int, const char*, bint)
-    void SDL_ShowSaveFileDialog(SDL_DialogFileCallback, void*, SDL_Window_*, SDL_DialogFileFilter*, int, const char*)
-    void SDL_ShowOpenFolderDialog(SDL_DialogFileCallback, void*, SDL_Window_*, const char*, bint)
-
-cdef void dialog_callback(void *userdata,
-                          const char *const*filelist,
-                          int filter) noexcept nogil:
-    with gil:
-        dialog_callback_gil(userdata, filelist, filter)
-
-cdef void dialog_callback_gil(void *userdata,
-                          const char *const*filelist,
-                          int filter):
-    cdef object callback
-    result = None
-    if filelist != NULL:
-        result = []
-        while filelist[0] != NULL:
-            result.append(str(<bytes>filelist[0], encoding='utf-8'))
-            filelist += 1
-    if userdata == NULL:
-        return
-    callback = <object><PyObject*>userdata
-    try:
-        callback(result)
-    except Exception as e:
-        print(traceback.format_exc())
-    
-def show_open_file_dialog(callback, str default_location=None, bint allow_multiple_files=False):
-    """
-    Open the OS file open selection dialog
-
-    callback is a function that will be called with a single
-    argument: a list of paths. Can be None or [] if the dialog
-    was cancelled or nothing was selected.
-
-    default_location: optional default location
-    allow_multiple_files (default to False): if True, allow
-        selecting several paths which will be passed to the list
-        given to the callback. If False, the list has maximum a
-        single argument.
-    """
-    Py_INCREF(callback)
-    cdef char *default_location_c = NULL
-    cdef bytes default_location_array = None
-    if default_location is not None:
-        default_location_array = bytes(default_location, 'utf-8')
-        default_location_c = <char *>default_location_array
-    SDL_ShowOpenFileDialog(dialog_callback, <void*><PyObject*>callback, NULL, NULL, 0, default_location_c, allow_multiple_files)
-
-def show_save_file_dialog(callback, str default_location=None):
-    """
-    Open the OS file save selection dialog
-
-    callback is a function that will be called with a single
-    argument: a list of paths. Can be None or [] if the dialog
-    was cancelled or nothing was selected. else, the list
-    will contain a single path.
-
-    default_location: optional default location
-    """
-    Py_INCREF(callback)
-    cdef char *default_location_c = NULL
-    cdef bytes default_location_array = None
-    if default_location is not None:
-        default_location_array = bytes(default_location, 'utf-8')
-        default_location_c = <char *>default_location_array
-    SDL_ShowSaveFileDialog(dialog_callback, <void*><PyObject*>callback, NULL, NULL, 0, default_location_c)
-
-def show_open_folder_dialog(callback, str default_location=None, bint allow_multiple_files=False):
-    """
-    Open the OS directory open selection dialog
-
-    callback is a function that will be called with a single
-    argument: a list of paths. Can be None or [] if the dialog
-    was cancelled or nothing was selected.
-
-    default_location: optional default location
-    allow_multiple_files (default to False): if True, allow
-        selecting several paths which will be passed to the list
-        given to the callback. If False, the list has maximum a
-        single argument.
-    """
-    Py_INCREF(callback)
-    cdef char *default_location_c = NULL
-    cdef bytes default_location_array = None
-    if default_location is not None:
-        default_location_array = bytes(default_location, 'utf-8')
-        default_location_c = <char *>default_location_array
-    SDL_ShowOpenFolderDialog(dialog_callback, <void*><PyObject*>callback, NULL, default_location_c, allow_multiple_files)
-
-
-"""
-To avoid linking to imgui in the other .so
-"""
-
-cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4 color_float4) noexcept nogil:
-    return imgui.ColorConvertFloat4ToU32(color_float4)
-
-cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32 color_uint) noexcept nogil:
-    return imgui.ColorConvertU32ToFloat4(color_uint)
-
-def color_as_int(val):
-    cdef imgui.ImU32 color = parse_color(val)
-    return int(color)
-
-def color_as_ints(val):
-    cdef imgui.ImU32 color = parse_color(val)
-    cdef imgui.ImVec4 color_vec = imgui.ColorConvertU32ToFloat4(color)
-    return (int(255. * color_vec.x),
-            int(255. * color_vec.y),
-            int(255. * color_vec.z),
-            int(255. * color_vec.w))
-
-def color_as_floats(val):
-    cdef imgui.ImU32 color = parse_color(val)
-    cdef imgui.ImVec4 color_vec = imgui.ColorConvertU32ToFloat4(color)
-    return (color_vec.x, color_vec.y, color_vec.z, color_vec.w)

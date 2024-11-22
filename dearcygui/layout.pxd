@@ -1,5 +1,6 @@
 from dearcygui.wrapper cimport imgui
-from .core cimport uiItem, alignment
+from .core cimport uiItem
+from .types cimport Alignment
 
 from cpython.ref cimport PyObject
 from libcpp.vector cimport vector
@@ -12,7 +13,7 @@ cdef class Layout(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 cdef class HorizontalLayout(Layout):
-    cdef alignment _alignment_mode
+    cdef Alignment _alignment_mode
     cdef float _spacing
     cdef vector[float] _positions
     cdef float __compute_items_size(self, int&) noexcept nogil
@@ -21,7 +22,7 @@ cdef class HorizontalLayout(Layout):
     cdef bint draw_item(self) noexcept nogil
 
 cdef class VerticalLayout(Layout):
-    cdef alignment _alignment_mode
+    cdef Alignment _alignment_mode
     cdef float _spacing
     cdef vector[float] _positions
     cdef float __compute_items_size(self, int&) noexcept nogil

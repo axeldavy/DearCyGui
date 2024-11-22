@@ -496,135 +496,6 @@ class constants:
     mvKey_Quote = ...
     mvKey_F25 = ...
 
-def show_open_file_dialog(callback, default_location: str = ..., allow_multiple_files: bool = ...) -> None:
-    """
-    Open the OS file open selection dialog
-
-    callback is a function that will be called with a single
-    argument: a list of paths. Can be None or [] if the dialog
-    was cancelled or nothing was selected.
-
-    default_location: optional default location
-    allow_multiple_files (default to False): if True, allow
-        selecting several paths which will be passed to the list
-        given to the callback. If False, the list has maximum a
-        single argument.
-    """
-    ...
-
-def show_save_file_dialog(callback, default_location: str = ...) -> None:
-    """
-    Open the OS file save selection dialog
-
-    callback is a function that will be called with a single
-    argument: a list of paths. Can be None or [] if the dialog
-    was cancelled or nothing was selected. else, the list
-    will contain a single path.
-
-    default_location: optional default location
-    """
-    ...
-
-def show_open_folder_dialog(callback, default_location: str = ..., allow_multiple_files: bool = ...) -> None:
-    """
-    Open the OS directory open selection dialog
-
-    callback is a function that will be called with a single
-    argument: a list of paths. Can be None or [] if the dialog
-    was cancelled or nothing was selected.
-
-    default_location: optional default location
-    allow_multiple_files (default to False): if True, allow
-        selecting several paths which will be passed to the list
-        given to the callback. If False, the list has maximum a
-        single argument.
-    """
-    ...
-
-def color_as_int(val) -> int:
-    ...
-
-def color_as_ints(val) -> tuple[int, int, int, int]:
-    ...
-
-def color_as_floats(val) -> tuple[float, float, float, float]:
-    ...
-
-class mouse_cursor(IntEnum):
-    CursorNone = ...
-    CursorArrow = ...
-    CursorTextInput = ...
-    ResizeAll = ...
-    ResizeNS = ...
-    ResizeEW = ...
-    ResizeNESW = ...
-    ResizeNWSE = ...
-    Hand = ...
-    NotAllowed = ...
-
-class positioning(IntEnum):
-    DEFAULT = ...
-    REL_DEFAULT = ...
-    REL_PARENT = ...
-    REL_WINDOW = ...
-    REL_VIEWPORT = ...
-
-
-class alignment(IntEnum):
-    LEFT = ...
-    TOP = ...
-    RIGHT = ...
-    BOTTOM = ...
-    CENTER = ...
-    JUSTIFIED = ...
-    MANUAL = ...
-
-
-
-class theme_enablers(IntEnum):
-    t_enabled_any = ...
-    t_enabled_False = ...
-    t_enabled_True = ...
-    t_discarded = ...
-
-
-class theme_categories(IntEnum):
-    t_any = ...
-    t_simpleplot = ...
-    t_button = ...
-    t_combo = ...
-    t_checkbox = ...
-    t_slider = ...
-    t_listbox = ...
-    t_radiobutton = ...
-    t_inputtext = ...
-    t_inputvalue = ...
-    t_text = ...
-    t_selectable = ...
-    t_tab = ...
-    t_tabbar = ...
-    t_tabbutton = ...
-    t_menuitem = ...
-    t_progressbar = ...
-    t_image = ...
-    t_imagebutton = ...
-    t_menubar = ...
-    t_menu = ...
-    t_tooltip = ...
-    t_layout = ...
-    t_treenode = ...
-    t_collapsingheader = ...
-    t_child = ...
-    t_colorbutton = ...
-    t_coloredit = ...
-    t_colorpicker = ...
-    t_window = ...
-    t_plot = ...
-
-class handlerListOP(IntEnum):
-    ALL = ...,
-    ANY = ...,
-    NONE = ...
 
 class wrap_mutex:
     def __init__(self, target) -> None:
@@ -26936,7 +26807,7 @@ class FontTexture(baseItem):
         ...
 
 
-    def add_custom_font(self, font_height, character_images, character_positioning):
+    def add_custom_font(self, font_height, character_images, character_Positioning):
         """
         See fonts.py for a detailed explanation of
         the input arguments.
@@ -28501,14 +28372,14 @@ class HandlerList(baseHandler):
     is not rendered. This corresponds to the visible state.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : handlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HandlerList = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HandlerList = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
             from first rendered, to last rendered.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
-        op: handlerListOP that defines which condition
+        op: HandlerListOP that defines which condition
             is required to trigger the callback of this
             handler.
             Default is ALL
@@ -28540,13 +28411,13 @@ class HandlerList(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : handlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HandlerList = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HandlerList = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
-        op: handlerListOP that defines which condition
+        op: HandlerListOP that defines which condition
             is required to trigger the callback of this
             handler.
             Default is ALL
@@ -28747,9 +28618,9 @@ class HandlerList(baseHandler):
 
 
     @property
-    def op(self) -> handlerListOP:
+    def op(self) -> HandlerListOP:
         """
-        handlerListOP that defines which condition
+        HandlerListOP that defines which condition
         is required to trigger the callback of this
         handler.
         Default is ALL
@@ -28759,7 +28630,7 @@ class HandlerList(baseHandler):
 
 
     @op.setter
-    def op(self, value : handlerListOP):
+    def op(self, value : HandlerListOP):
         ...
 
 
@@ -28911,7 +28782,7 @@ class HorizontalLayout(Layout):
     horizontally.
     
     """
-    def __init__(self, context : Context, alignment_mode : alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : HorizontalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : HorizontalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         alignment_mode: Horizontal alignment mode of the items.
@@ -29054,7 +28925,7 @@ class HorizontalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : HorizontalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : HorizontalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         alignment_mode: Horizontal alignment mode of the items.
             LEFT: items are appended from the left
@@ -29287,7 +29158,7 @@ class HorizontalLayout(Layout):
 
 
     @property
-    def alignment_mode(self) -> alignment:
+    def alignment_mode(self) -> Alignment:
         """
         Horizontal alignment mode of the items.
         LEFT: items are appended from the left
@@ -29308,7 +29179,7 @@ class HorizontalLayout(Layout):
 
 
     @alignment_mode.setter
-    def alignment_mode(self, value : alignment):
+    def alignment_mode(self, value : Alignment):
         ...
 
 
@@ -38545,10 +38416,10 @@ class Layout(uiItem):
     the size of the remaining content area available
     locally within the window, or if the last item has changed.
 
-    The layout item works by changing the positioning
+    The layout item works by changing the Positioning
     policy and the target position of its children, and
     thus there is no guarantee that the user set
-    positioning and position states of the children are
+    Positioning and position states of the children are
     preserved.
     
     """
@@ -47445,12 +47316,12 @@ class MouseCursorHandler(baseHandler):
     combined with a HoverHandler.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], cursor : mouse_cursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseCursorHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], cursor : MouseCursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseCursorHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
             from first rendered, to last rendered.
-        cursor: Change the mouse cursor to one of mouse_cursor,
+        cursor: Change the mouse cursor to one of MouseCursor,
             but only for the frames where this handler
             is run.
         next_sibling: child of the parent of the item that
@@ -47483,11 +47354,11 @@ class MouseCursorHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], cursor : mouse_cursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseCursorHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], cursor : MouseCursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseCursorHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
-        cursor: Change the mouse cursor to one of mouse_cursor,
+        cursor: Change the mouse cursor to one of MouseCursor,
             but only for the frames where this handler
             is run.
         next_sibling: child of the parent of the item that
@@ -47624,9 +47495,9 @@ class MouseCursorHandler(baseHandler):
 
 
     @property
-    def cursor(self) -> mouse_cursor:
+    def cursor(self) -> MouseCursor:
         """
-        Change the mouse cursor to one of mouse_cursor,
+        Change the mouse cursor to one of MouseCursor,
         but only for the frames where this handler
         is run.
         
@@ -47635,7 +47506,7 @@ class MouseCursorHandler(baseHandler):
 
 
     @cursor.setter
-    def cursor(self, value : mouse_cursor):
+    def cursor(self, value : MouseCursor):
         ...
 
 
@@ -50601,14 +50472,14 @@ class OtherItemHandler(HandlerList):
     not be rendered.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : handlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OtherItemHandler = ..., target : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OtherItemHandler = ..., target : Any = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
             from first rendered, to last rendered.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
-        op: handlerListOP that defines which condition
+        op: HandlerListOP that defines which condition
             is required to trigger the callback of this
             handler.
             Default is ALL
@@ -50642,13 +50513,13 @@ class OtherItemHandler(HandlerList):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : handlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OtherItemHandler = ..., target : Any = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OtherItemHandler = ..., target : Any = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
-        op: handlerListOP that defines which condition
+        op: HandlerListOP that defines which condition
             is required to trigger the callback of this
             handler.
             Default is ALL
@@ -50851,9 +50722,9 @@ class OtherItemHandler(HandlerList):
 
 
     @property
-    def op(self) -> handlerListOP:
+    def op(self) -> HandlerListOP:
         """
-        handlerListOP that defines which condition
+        HandlerListOP that defines which condition
         is required to trigger the callback of this
         handler.
         Default is ALL
@@ -50863,7 +50734,7 @@ class OtherItemHandler(HandlerList):
 
 
     @op.setter
-    def op(self, value : handlerListOP):
+    def op(self, value : HandlerListOP):
         ...
 
 
@@ -77147,7 +77018,7 @@ class ThemeListWithCondition(baseTheme):
     a item in the child tree is rendered, use this lightly.
     
     """
-    def __init__(self, context : Context, children : list[baseTheme] = [], condition_category : theme_categories = 0, condition_enabled : theme_enablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeListWithCondition = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseTheme] = [], condition_category : ThemeCategories = 0, condition_enabled : ThemeEnablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeListWithCondition = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -77188,7 +77059,7 @@ class ThemeListWithCondition(baseTheme):
         ...
 
 
-    def configure(self, children : list[baseTheme] = [], condition_category : theme_categories = 0, condition_enabled : theme_enablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeListWithCondition = ..., user_data : Any = ...):
+    def configure(self, children : list[baseTheme] = [], condition_category : ThemeCategories = 0, condition_enabled : ThemeEnablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeListWithCondition = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -77313,7 +77184,7 @@ class ThemeListWithCondition(baseTheme):
 
 
     @property
-    def condition_category(self) -> theme_categories:
+    def condition_category(self) -> ThemeCategories:
         """
         Writable attribute: As long as it is active, the theme list
         waits to be applied that the conditions are met.
@@ -77324,12 +77195,12 @@ class ThemeListWithCondition(baseTheme):
 
 
     @condition_category.setter
-    def condition_category(self, value : theme_categories):
+    def condition_category(self, value : ThemeCategories):
         ...
 
 
     @property
-    def condition_enabled(self) -> theme_enablers:
+    def condition_enabled(self) -> ThemeEnablers:
         """
         Writable attribute: As long as it is active, the theme list
         waits to be applied that the conditions are met.
@@ -77340,7 +77211,7 @@ class ThemeListWithCondition(baseTheme):
 
 
     @condition_enabled.setter
-    def condition_enabled(self, value : theme_enablers):
+    def condition_enabled(self, value : ThemeEnablers):
         ...
 
 
@@ -84482,7 +84353,7 @@ class VerticalLayout(Layout):
     Same as HorizontalLayout but vertically
     
     """
-    def __init__(self, context : Context, alignment_mode : alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : VerticalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : VerticalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         alignment_mode: Vertical alignment mode of the items.
@@ -84625,7 +84496,7 @@ class VerticalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : VerticalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : VerticalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         alignment_mode: Vertical alignment mode of the items.
             TOP: items are appended from the top
@@ -84858,7 +84729,7 @@ class VerticalLayout(Layout):
 
 
     @property
-    def alignment_mode(self) -> alignment:
+    def alignment_mode(self) -> Alignment:
         """
         Vertical alignment mode of the items.
         TOP: items are appended from the top
@@ -84879,7 +84750,7 @@ class VerticalLayout(Layout):
 
 
     @alignment_mode.setter
-    def alignment_mode(self, value : alignment):
+    def alignment_mode(self, value : Alignment):
         ...
 
 
@@ -85729,13 +85600,13 @@ class Viewport(baseItem):
     every item renders itself and its children.
     
     """
-    def __init__(self, context : Context, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : mouse_cursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def __init__(self, context : Context, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
 
         children: List of all the children of the item,
             from first rendered, to last rendered.
         close_callback: Callback to be issued when the viewport is closed.
-        cursor: Change the mouse cursor to one of mouse_cursor.
+        cursor: Change the mouse cursor to one of MouseCursor.
             The mouse cursor is reset every frame.
         font: global font
         handlers: bound handler (or handlerList)
@@ -85783,12 +85654,12 @@ class Viewport(baseItem):
         ...
 
 
-    def configure(self, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : mouse_cursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def configure(self, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
         close_callback: Callback to be issued when the viewport is closed.
-        cursor: Change the mouse cursor to one of mouse_cursor.
+        cursor: Change the mouse cursor to one of MouseCursor.
             The mouse cursor is reset every frame.
         font: global font
         handlers: bound handler (or handlerList)
@@ -85846,13 +85717,13 @@ class Viewport(baseItem):
         ...
 
 
-    def initialize(self, minimized=False, maximized=False, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : mouse_cursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, min_height : int = 250, min_width : int = 250, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def initialize(self, minimized=False, maximized=False, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, min_height : int = 250, min_width : int = 250, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
 
         children: List of all the children of the item,
             from first rendered, to last rendered.
         close_callback: Callback to be issued when the viewport is closed.
-        cursor: Change the mouse cursor to one of mouse_cursor.
+        cursor: Change the mouse cursor to one of MouseCursor.
             The mouse cursor is reset every frame.
         font: global font
         handlers: bound handler (or handlerList)
@@ -86045,9 +85916,9 @@ class Viewport(baseItem):
 
 
     @property
-    def cursor(self) -> mouse_cursor:
+    def cursor(self) -> MouseCursor:
         """
-        Change the mouse cursor to one of mouse_cursor.
+        Change the mouse cursor to one of MouseCursor.
         The mouse cursor is reset every frame.
         
         """
@@ -86055,7 +85926,7 @@ class Viewport(baseItem):
 
 
     @cursor.setter
-    def cursor(self, value : mouse_cursor):
+    def cursor(self, value : MouseCursor):
         ...
 
 

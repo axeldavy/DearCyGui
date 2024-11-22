@@ -135,8 +135,10 @@ def setup_package():
         "dearcygui/draw.pyx",
         "dearcygui/handler.pyx",
         "dearcygui/layout.pyx",
+        "dearcygui/os.pyx",
         "dearcygui/plot.pyx",
         "dearcygui/theme.pyx",
+        "dearcygui/types.pyx",
         "dearcygui/widget.pyx",
     ]
 
@@ -196,7 +198,7 @@ def setup_package():
         ext_modules = cythonize(extensions, compiler_directives={'language_level' : "3"}, nthreads=4)
     )
     metadata["package_data"] = {}
-    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf']
+    metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf', '*typed']
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')

@@ -8,4 +8,5 @@ recursive-include thirdparty/latin-modern-roman/ *
 recursive-include thirdparty/SDL/ *
 recursive-include dearcygui/ *.pyx
 recursive-include dearcygui/ *.pxd
+recursive-include dearcygui/ *.typed
 include dearcygui/imgui_config.h
