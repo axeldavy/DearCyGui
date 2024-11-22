@@ -1267,15 +1267,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._pan_button
+        return <MouseButton>self._pan_button
 
     @pan_button.setter
-    def pan_button(self, int button):
+    def pan_button(self, MouseButton button):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self._pan_button = button
+        self._pan_button = <int>button
 
     @property
     def pan_mod(self):
@@ -1305,15 +1305,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._fit_button
+        return <MouseButton>self._fit_button
 
     @fit_button.setter
-    def fit_button(self, int button):
+    def fit_button(self, MouseButton button):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self._fit_button = button
+        self._fit_button = <int>button
 
     @property
     def menu_button(self):
@@ -1324,15 +1324,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._menu_button
+        return <MouseButton>self._menu_button
 
     @menu_button.setter
-    def menu_button(self, int button):
+    def menu_button(self, MouseButton button):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self._menu_button = button
+        self._menu_button = <int>button
 
     @property
     def zoom_mod(self):
@@ -1762,15 +1762,15 @@ cdef class plotElementWithLegend(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._legend_button
+        return <MouseButton>self._legend_button
 
     @legend_button.setter
-    def legend_button(self, int button):
+    def legend_button(self, MouseButton button):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
-        self._legend_button = button
+        self._legend_button = <int>button
 
     @property
     def legend_handlers(self):

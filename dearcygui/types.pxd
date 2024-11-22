@@ -27,6 +27,24 @@ cpdef enum class HandlerListOP:
     ANY,
     NONE
 
+cpdef enum class MouseButton:
+    LEFT = 0,
+    RIGHT = 1,
+    MIDDLE = 2,
+    X1 = 3,
+    X2 = 4
+
+cpdef enum class MouseButtonMask:
+    NONE = 0,
+    LEFT = 1,
+    RIGHT = 2,
+    MIDDLE = 4,
+    ANY = 7
+#    X1 = 8
+#    X2 = 16,
+#    ANY = 31
+
+
 cpdef enum class MouseCursor:
     CursorNone = -1,
     CursorArrow = 0,

@@ -5416,7 +5416,7 @@ class ClickedHandler(baseHandler):
     it can be Text for example.
     
     """
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ClickedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ClickedHandler = ..., user_data : Any = ...):
         """
 
         button: Target mouse button
@@ -5456,7 +5456,7 @@ class ClickedHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ClickedHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ClickedHandler = ..., user_data : Any = ...):
         """
         button: Target mouse button
             0: left click
@@ -5560,7 +5560,7 @@ class ClickedHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         """
         Target mouse button
         0: left click
@@ -5573,7 +5573,7 @@ class ClickedHandler(baseHandler):
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -14188,7 +14188,7 @@ class DoubleClickedHandler(baseHandler):
     Handler for when a hovered item is double clicked on.
     
     """
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DoubleClickedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DoubleClickedHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -14223,7 +14223,7 @@ class DoubleClickedHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DoubleClickedHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DoubleClickedHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -14322,12 +14322,12 @@ class DoubleClickedHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -15270,7 +15270,7 @@ class DraggedHandler(baseHandler):
     the dragging.
     
     """
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggedHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -15305,7 +15305,7 @@ class DraggedHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggedHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggedHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -15404,12 +15404,12 @@ class DraggedHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -15669,7 +15669,7 @@ class DraggingHandler(baseHandler):
     hovered anymore.
     
     """
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggingHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggingHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -15704,7 +15704,7 @@ class DraggingHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggingHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggingHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -15803,12 +15803,12 @@ class DraggingHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -19183,7 +19183,7 @@ class DrawInPlot(plotElementWithLegend):
     defaults to no_legend = True
     
     """
-    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInPlot = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInPlot = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         axes: (X axis, Y axis)
@@ -19246,7 +19246,7 @@ class DrawInPlot(plotElementWithLegend):
         ...
 
 
-    def configure(self, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInPlot = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInPlot = ..., theme : Any = ..., user_data : Any = ...):
         """
         axes: (X axis, Y axis)
             used for this plot element.
@@ -19478,7 +19478,7 @@ class DrawInPlot(plotElementWithLegend):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -19489,7 +19489,7 @@ class DrawInPlot(plotElementWithLegend):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -20933,7 +20933,7 @@ class DrawInvisibleButton(drawingItem):
     where top left is (0, 0) and bottom right is (1, 1).
     
     """
-    def __init__(self, context : Context, button : int = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInvisibleButton = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInvisibleButton = ..., user_data : Any = ...):
         """
 
         button: Mouse button mask that makes the invisible button
@@ -21000,7 +21000,7 @@ class DrawInvisibleButton(drawingItem):
         ...
 
 
-    def configure(self, button : int = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInvisibleButton = ..., user_data : Any = ...):
+    def configure(self, button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInvisibleButton = ..., user_data : Any = ...):
         """
         button: Mouse button mask that makes the invisible button
             active and triggers the item's callback.
@@ -21149,7 +21149,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButtonMask:
         """
         Mouse button mask that makes the invisible button
         active and triggers the item's callback.
@@ -21160,13 +21160,14 @@ class DrawInvisibleButton(drawingItem):
         1: left button
         2: right button
         4: middle button
+        (See also MouseButtonMask)
         
         """
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButtonMask):
         ...
 
 
@@ -38416,10 +38417,10 @@ class Layout(uiItem):
     the size of the remaining content area available
     locally within the window, or if the last item has changed.
 
-    The layout item works by changing the Positioning
+    The layout item works by changing the positioning
     policy and the target position of its children, and
     thus there is no guarantee that the user set
-    Positioning and position states of the children are
+    positioning and position states of the children are
     preserved.
     
     """
@@ -46908,7 +46909,7 @@ class MetricsWindow(Window):
 
 
 class MouseClickHandler(baseHandler):
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, tag : MouseClickHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, tag : MouseClickHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -46943,7 +46944,7 @@ class MouseClickHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, tag : MouseClickHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, tag : MouseClickHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -47042,12 +47043,12 @@ class MouseClickHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -47718,7 +47719,7 @@ class MouseCursorHandler(baseHandler):
 
 
 class MouseDoubleClickHandler(baseHandler):
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDoubleClickHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDoubleClickHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -47753,7 +47754,7 @@ class MouseDoubleClickHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDoubleClickHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDoubleClickHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -47852,12 +47853,12 @@ class MouseDoubleClickHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -48108,7 +48109,7 @@ class MouseDoubleClickHandler(baseHandler):
 
 
 class MouseDownHandler(baseHandler):
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDownHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDownHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -48143,7 +48144,7 @@ class MouseDownHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDownHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDownHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -48242,12 +48243,12 @@ class MouseDownHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -48498,7 +48499,7 @@ class MouseDownHandler(baseHandler):
 
 
 class MouseDragHandler(baseHandler):
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDragHandler = ..., threshold : float = -1.0, user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDragHandler = ..., threshold : float = -1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -48533,7 +48534,7 @@ class MouseDragHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDragHandler = ..., threshold : float = -1.0, user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDragHandler = ..., threshold : float = -1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -48632,12 +48633,12 @@ class MouseDragHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -49278,7 +49279,7 @@ class MouseMoveHandler(baseHandler):
 
 
 class MouseReleaseHandler(baseHandler):
-    def __init__(self, context : Context, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseReleaseHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseReleaseHandler = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -49313,7 +49314,7 @@ class MouseReleaseHandler(baseHandler):
         ...
 
 
-    def configure(self, button : int = -1, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseReleaseHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseReleaseHandler = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -49412,12 +49413,12 @@ class MouseReleaseHandler(baseHandler):
 
 
     @property
-    def button(self) -> int:
+    def button(self) -> MouseButton:
         ...
 
 
     @button.setter
-    def button(self, value : int):
+    def button(self, value : MouseButton):
         ...
 
 
@@ -51265,7 +51266,7 @@ class Plot(uiItem):
     to the plot (+ some logic in your callbacks). 
     
     """
-    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : int = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : int = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : int = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Plot = ..., theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
+    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Plot = ..., theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
         """
 
         callback: callback object or list of callback objects
@@ -51437,7 +51438,7 @@ class Plot(uiItem):
         ...
 
 
-    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : int = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : int = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : int = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Plot = ..., theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
+    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Plot = ..., theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -51893,7 +51894,7 @@ class Plot(uiItem):
 
 
     @property
-    def fit_button(self) -> int:
+    def fit_button(self) -> MouseButton:
         """
         Button that must be double-clicked to initiate
         a fit of the axes to the displayed data.
@@ -51904,7 +51905,7 @@ class Plot(uiItem):
 
 
     @fit_button.setter
-    def fit_button(self, value : int):
+    def fit_button(self, value : MouseButton):
         ...
 
 
@@ -52032,7 +52033,7 @@ class Plot(uiItem):
 
 
     @property
-    def menu_button(self) -> int:
+    def menu_button(self) -> MouseButton:
         """
         Button that opens context menus
         (if enabled) when clicked.
@@ -52043,7 +52044,7 @@ class Plot(uiItem):
 
 
     @menu_button.setter
-    def menu_button(self, value : int):
+    def menu_button(self, value : MouseButton):
         ...
 
 
@@ -52230,7 +52231,7 @@ class Plot(uiItem):
 
 
     @property
-    def pan_button(self) -> int:
+    def pan_button(self) -> MouseButton:
         """
         Button that when held enables to navigate inside the plot
         Default is the left mouse button.
@@ -52240,7 +52241,7 @@ class Plot(uiItem):
 
 
     @pan_button.setter
-    def pan_button(self, value : int):
+    def pan_button(self, value : MouseButton):
         ...
 
 
@@ -53730,7 +53731,7 @@ class PlotAxisConfig(baseItem):
 
 
 class PlotBars(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotBars = ..., theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotBars = ..., theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
         """
 
         X: Values on the X axis.
@@ -53796,7 +53797,7 @@ class PlotBars(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotBars = ..., theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotBars = ..., theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -54073,7 +54074,7 @@ class PlotBars(plotElementXY):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -54084,7 +54085,7 @@ class PlotBars(plotElementXY):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -54371,7 +54372,7 @@ class PlotInfLines(plotElementX):
     the passed coordinates
     
     """
-    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotInfLines = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotInfLines = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -54436,7 +54437,7 @@ class PlotInfLines(plotElementX):
         ...
 
 
-    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotInfLines = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotInfLines = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -54702,7 +54703,7 @@ class PlotInfLines(plotElementX):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -54713,7 +54714,7 @@ class PlotInfLines(plotElementX):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -55486,7 +55487,7 @@ class PlotLegendConfig(baseItem):
 
 
 class PlotLine(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, tag : PlotLine = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, tag : PlotLine = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -55557,7 +55558,7 @@ class PlotLine(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, tag : PlotLine = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, tag : PlotLine = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -55825,7 +55826,7 @@ class PlotLine(plotElementXY):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -55836,7 +55837,7 @@ class PlotLine(plotElementXY):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -56176,7 +56177,7 @@ class PlotLine(plotElementXY):
 
 
 class PlotScatter(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotScatter = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotScatter = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -56241,7 +56242,7 @@ class PlotScatter(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotScatter = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotScatter = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -56503,7 +56504,7 @@ class PlotScatter(plotElementXY):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -56514,7 +56515,7 @@ class PlotScatter(plotElementXY):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -56796,7 +56797,7 @@ class PlotScatter(plotElementXY):
 
 
 class PlotShadedLine(plotElementXYY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotShadedLine = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotShadedLine = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -56860,7 +56861,7 @@ class PlotShadedLine(plotElementXYY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotShadedLine = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotShadedLine = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -57131,7 +57132,7 @@ class PlotShadedLine(plotElementXYY):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -57142,7 +57143,7 @@ class PlotShadedLine(plotElementXYY):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -57410,7 +57411,7 @@ class PlotShadedLine(plotElementXYY):
 
 
 class PlotStairs(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, tag : PlotStairs = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, tag : PlotStairs = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -57480,7 +57481,7 @@ class PlotStairs(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, tag : PlotStairs = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, tag : PlotStairs = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -57747,7 +57748,7 @@ class PlotStairs(plotElementXY):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -57758,7 +57759,7 @@ class PlotStairs(plotElementXY):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -58058,7 +58059,7 @@ class PlotStairs(plotElementXY):
 
 
 class PlotStems(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotStems = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotStems = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -58123,7 +58124,7 @@ class PlotStems(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotStems = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotStems = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -58399,7 +58400,7 @@ class PlotStems(plotElementXY):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -58410,7 +58411,7 @@ class PlotStems(plotElementXY):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -90835,7 +90836,7 @@ class plotElementWithLegend(plotElement):
     popup entry that gets shown on a right click (by default).
     
     """
-    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementWithLegend = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementWithLegend = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         axes: (X axis, Y axis)
@@ -90898,7 +90899,7 @@ class plotElementWithLegend(plotElement):
         ...
 
 
-    def configure(self, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementWithLegend = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementWithLegend = ..., theme : Any = ..., user_data : Any = ...):
         """
         axes: (X axis, Y axis)
             used for this plot element.
@@ -91130,7 +91131,7 @@ class plotElementWithLegend(plotElement):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -91141,7 +91142,7 @@ class plotElementWithLegend(plotElement):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -91409,7 +91410,7 @@ class plotElementWithLegend(plotElement):
 
 
 class plotElementX(plotElementWithLegend):
-    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementX = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementX = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -91473,7 +91474,7 @@ class plotElementX(plotElementWithLegend):
         ...
 
 
-    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementX = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementX = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -91724,7 +91725,7 @@ class plotElementX(plotElementWithLegend):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -91735,7 +91736,7 @@ class plotElementX(plotElementWithLegend):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -92003,7 +92004,7 @@ class plotElementX(plotElementWithLegend):
 
 
 class plotElementXY(plotElementWithLegend):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXY = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXY = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -92067,7 +92068,7 @@ class plotElementXY(plotElementWithLegend):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXY = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXY = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -92328,7 +92329,7 @@ class plotElementXY(plotElementWithLegend):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -92339,7 +92340,7 @@ class plotElementXY(plotElementWithLegend):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 
@@ -92607,7 +92608,7 @@ class plotElementXY(plotElementWithLegend):
 
 
 class plotElementXYY(plotElementWithLegend):
-    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXYY = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXYY = ..., theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -92671,7 +92672,7 @@ class plotElementXYY(plotElementWithLegend):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : int = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXYY = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXYY = ..., theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -92942,7 +92943,7 @@ class plotElementXYY(plotElementWithLegend):
 
 
     @property
-    def legend_button(self) -> int:
+    def legend_button(self) -> MouseButton:
         """
         Button that opens the legend entry for
         this element.
@@ -92953,7 +92954,7 @@ class plotElementXYY(plotElementWithLegend):
 
 
     @legend_button.setter
-    def legend_button(self, value : int):
+    def legend_button(self, value : MouseButton):
         ...
 
 

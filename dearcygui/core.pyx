@@ -491,50 +491,50 @@ cdef class Context:
             return True
         return imgui.IsKeyReleased(<imgui.ImGuiKey>key)
 
-    def is_mouse_down(self, int button):
+    def is_mouse_down(self, MouseButton button):
         """is mouse button held?"""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.IsMouseDown(button)
+        return imgui.IsMouseDown(<int>button)
 
-    def is_mouse_clicked(self, int button, bint repeat=False):
+    def is_mouse_clicked(self, MouseButton button, bint repeat=False):
         """did mouse button clicked? (went from !Down to Down). Same as get_mouse_clicked_count() >= 1."""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.IsMouseClicked(button, repeat)
+        return imgui.IsMouseClicked(<int>button, repeat)
 
-    def is_mouse_double_clicked(self, int button):
+    def is_mouse_double_clicked(self, MouseButton button):
         """did mouse button double-clicked?. Same as get_mouse_clicked_count() == 2."""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.IsMouseDoubleClicked(button)
+        return imgui.IsMouseDoubleClicked(<int>button)
 
-    def get_mouse_clicked_count(self, int button):
+    def get_mouse_clicked_count(self, MouseButton button):
         """how many times a mouse button is clicked in a row"""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.GetMouseClickedCount(button)
+        return imgui.GetMouseClickedCount(<int>button)
 
-    def is_mouse_released(self, int button):
+    def is_mouse_released(self, MouseButton button):
         """did mouse button released? (went from Down to !Down)"""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.IsMouseReleased(button)
+        return imgui.IsMouseReleased(<int>button)
 
     def get_mouse_position(self):
         """Retrieves the mouse position (x, y). Raises KeyError if there is no mouse"""
@@ -546,37 +546,37 @@ cdef class Context:
             raise KeyError("Cannot get mouse position: no mouse found")
         return (pos.x, pos.y)
 
-    def is_mouse_dragging(self, int button, float lock_threshold=-1.):
+    def is_mouse_dragging(self, MouseButton button, float lock_threshold=-1.):
         """is mouse dragging? (uses default distance threshold if lock_threshold < 0.0f"""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.IsMouseDragging(button, lock_threshold)
+        return imgui.IsMouseDragging(<int>button, lock_threshold)
 
-    def get_mouse_drag_delta(self, int button, float lock_threshold=-1.):
+    def get_mouse_drag_delta(self, MouseButton button, float lock_threshold=-1.):
         """
         Return the delta (dx, dy) from the initial clicking position while the mouse button is pressed or was just released.
         
         This is locked and return 0.0f until the mouse moves past a distance threshold at least once
         (uses default distance if lock_threshold < 0.0f)"""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        cdef imgui.ImVec2 delta =  imgui.GetMouseDragDelta(button, lock_threshold)
+        cdef imgui.ImVec2 delta =  imgui.GetMouseDragDelta(<int>button, lock_threshold)
         return (delta.x, delta.y)
 
-    def reset_mouse_drag_delta(self, int button):
+    def reset_mouse_drag_delta(self, MouseButton button):
         """Reset to 0 the drag delta for the target button"""
         cdef unique_lock[recursive_mutex] m
-        if button < 0 or button >= imgui.ImGuiMouseButton_COUNT:
+        if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        return imgui.ResetMouseDragDelta(button)
+        return imgui.ResetMouseDragDelta(<int>button)
 
     @property
     def running(self):

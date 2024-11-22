@@ -158,18 +158,20 @@ cdef class DrawInvisibleButton(drawingItem):
         1: left button
         2: right button
         4: middle button
+        (See also MouseButtonMask)
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._button
+        return <MouseButtonMask>self._button
 
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButtonMask value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < 0 or value > 7:
+        if <int>value < 0 or <int>value > 7:
+            # X1 and X2 not supported
             raise ValueError(f"Invalid button mask {value} passed to {self}")
-        self._button = value
+        self._button = <imgui.ImGuiButtonFlags>value
 
     @property
     def p1(self):

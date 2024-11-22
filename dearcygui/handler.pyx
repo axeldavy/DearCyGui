@@ -368,7 +368,7 @@ cdef class ClickedHandler(baseHandler):
     it can be Text for example.
     """
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
     @property
     def button(self):
         """
@@ -382,10 +382,10 @@ cdef class ClickedHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError("Invalid button")
         self._button = value
 
@@ -398,43 +398,32 @@ cdef class ClickedHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
-        cdef bint clicked = False
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.cur.clicked[i]:
-                clicked = True
-        return clicked
+        return state.cur.clicked[<int>self._button]
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.cur.clicked[i]:
-                self.context.queue_callback_arg1int(self._callback, self, item, i)
+        if state.cur.clicked[<int>self._button]:
+            self.context.queue_callback_arg1int(self._callback, self, item, <int>self._button)
 
 cdef class DoubleClickedHandler(baseHandler):
     """
     Handler for when a hovered item is double clicked on.
     """
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError("Invalid button")
         self._button = value
 
@@ -447,26 +436,15 @@ cdef class DoubleClickedHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
-        cdef bint clicked = False
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.cur.double_clicked[i]:
-                clicked = True
-        return clicked
+        return state.cur.double_clicked[<int>self._button]
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.cur.double_clicked[i]:
-                self.context.queue_callback_arg1int(self._callback, self, item, i)
+        if state.cur.double_clicked[<int>self._button]:
+            self.context.queue_callback_arg1int(self._callback, self, item, <int>self._button)
 
 cdef class DeactivatedHandler(baseHandler):
     """
@@ -503,17 +481,17 @@ cdef class DraggedHandler(baseHandler):
     the dragging.
     """
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError("Invalid button")
         self._button = value
 
@@ -526,25 +504,15 @@ cdef class DraggedHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
-        cdef bint dragged = False
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.prev.dragging[i] and not(state.cur.dragging[i]):
-                dragged = True
-        return dragged
+        return state.prev.dragging[<int>self._button] and not(state.cur.dragging[<int>self._button])
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.prev.dragging[i] and not(state.cur.dragging[i]):
+        cdef int i = <int>self._button
+        if state.prev.dragging[i] and not(state.cur.dragging[i]):
                 self.context.queue_callback_arg2float(self._callback,
                                                       self,
                                                       item,
@@ -561,17 +529,17 @@ cdef class DraggingHandler(baseHandler):
     hovered anymore.
     """
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError("Invalid button")
         self._button = value
 
@@ -584,30 +552,20 @@ cdef class DraggingHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
-        cdef bint dragging = False
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.cur.dragging[i]:
-                dragging = True
-        return dragging
+        return state.cur.dragging[<int>self._button]
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         cdef itemState *state = item.p_state
-        cdef int i
+        cdef int i = <int>self._button
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if state.cur.dragging[i]:
-                self.context.queue_callback_arg2float(self._callback,
-                                                      self,
-                                                      item,
-                                                      state.cur.drag_deltas[i].x,
-                                                      state.cur.drag_deltas[i].y)
+        if state.cur.dragging[i]:
+            self.context.queue_callback_arg2float(self._callback,
+                                                  self,
+                                                  item,
+                                                  state.cur.drag_deltas[i].x,
+                                                  state.cur.drag_deltas[i].y)
 
 cdef class EditedHandler(baseHandler):
     """
@@ -1067,7 +1025,7 @@ cdef class KeyReleaseHandler(baseHandler):
 
 cdef class MouseClickHandler(baseHandler):
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
         self._repeat = False
     @property
     def button(self):
@@ -1075,10 +1033,10 @@ cdef class MouseClickHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError(f"Invalid button {value} passed to {self}")
         self._button = value
     @property
@@ -1093,66 +1051,50 @@ cdef class MouseClickHandler(baseHandler):
         self._repeat = value
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
-        cdef int i
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseClicked(i, self._repeat):
-                return True
+        if imgui.IsMouseClicked(<int>self._button, self._repeat):
+            return True
         return False
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseClicked(i, self._repeat):
-                self.context.queue_callback_arg1int(self._callback, self, item, i)
+        if imgui.IsMouseClicked(<int>self._button, self._repeat):
+            self.context.queue_callback_arg1int(self._callback, self, item, <int>self._button)
 
 
 cdef class MouseDoubleClickHandler(baseHandler):
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
     @property
     def button(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError(f"Invalid button {value} passed to {self}")
         self._button = value
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
-        cdef int i
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseDoubleClicked(i):
-                return True
+        if imgui.IsMouseDoubleClicked(<int>self._button):
+            return True
         return False
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseDoubleClicked(i):
-                self.context.queue_callback_arg1int(self._callback, self, item, i)
+        if imgui.IsMouseDoubleClicked(<int>self._button):
+            self.context.queue_callback_arg1int(self._callback, self, item, <int>self._button)
 
 
 cdef class MouseDownHandler(baseHandler):
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
 
     @property
     def button(self):
@@ -1160,37 +1102,29 @@ cdef class MouseDownHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError(f"Invalid button {value} passed to {self}")
         self._button = value
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
-        cdef int i
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseDown(i):
-                return True
+        if imgui.IsMouseDown(<int>self._button):
+            return True
         return False
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseDown(i):
-                self.context.queue_callback_arg1int1float(self._callback, self, item, i, imgui.GetIO().MouseDownDuration[i])
+        if imgui.IsMouseDown(<int>self._button):
+            self.context.queue_callback_arg1int1float(self._callback, self, item, <int>self._button, imgui.GetIO().MouseDownDuration[<int>self._button])
 
 
 cdef class MouseDragHandler(baseHandler):
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
         self._threshold = -1 # < 0. means use default
 
     @property
@@ -1199,10 +1133,10 @@ cdef class MouseDragHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError(f"Invalid button {value} passed to {self}")
         self._button = value
     @property
@@ -1217,26 +1151,18 @@ cdef class MouseDragHandler(baseHandler):
         self._threshold = value
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
-        cdef int i
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseDragging(i, self._threshold):
-                return True
+        if imgui.IsMouseDragging(<int>self._button, self._threshold):
+            return True
         return False
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef int i
         cdef imgui.ImVec2 delta
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseDragging(i, self._threshold):
-                delta = imgui.GetMouseDragDelta(i, self._threshold)
-                self.context.queue_callback_arg1int2float(self._callback, self, item, i, delta.x, delta.y)
+        if imgui.IsMouseDragging(<int>self._button, self._threshold):
+            delta = imgui.GetMouseDragDelta(<int>self._button, self._threshold)
+            self.context.queue_callback_arg1int2float(self._callback, self, item, <int>self._button, delta.x, delta.y)
 
 cdef class MouseMoveHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil:
@@ -1258,7 +1184,7 @@ cdef class MouseMoveHandler(baseHandler):
 
 cdef class MouseReleaseHandler(baseHandler):
     def __cinit__(self):
-        self._button = -1
+        self._button = MouseButton.LEFT
 
     @property
     def button(self):
@@ -1266,32 +1192,24 @@ cdef class MouseReleaseHandler(baseHandler):
         lock_gil_friendly(m, self.mutex)
         return self._button
     @button.setter
-    def button(self, int value):
+    def button(self, MouseButton value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < -1 or value >= imgui.ImGuiMouseButton_COUNT:
+        if value < MouseButton.LEFT or value > MouseButton.X2:
             raise ValueError(f"Invalid button {value} passed to {self}")
         self._button = value
 
     cdef bint check_state(self, baseItem item) noexcept nogil:
-        cdef int i
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseReleased(i):
-                return True
+        if imgui.IsMouseReleased(<int>self._button):
+            return True
         return False
 
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef int i
         if not(self._enabled):
             return
-        for i in range(imgui.ImGuiMouseButton_COUNT):
-            if self._button >= 0 and self._button != i:
-                continue
-            if imgui.IsMouseReleased(i):
-                self.context.queue_callback_arg1int(self._callback, self, item, i)
+        if imgui.IsMouseReleased(<int>self._button):
+            self.context.queue_callback_arg1int(self._callback, self, item, <int>self._button)
 
 cdef class MouseWheelHandler(baseHandler):
     def __cinit__(self, *args, **kwargs):
