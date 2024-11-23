@@ -1307,7 +1307,7 @@ cdef class baseItem:
                 attached = True
         assert(attached) # because we checked before compatibility
         if not(self._parent.__check_rendered()): # TODO: could be optimized. Also not totally correct (attaching to a menu for instance)
-            self.set_hidden_and_propagate_to_siblings_no_handlers()
+            self.set_hidden_and_propagate_to_children_no_handlers()
 
     cpdef void attach_before(self, target):
         """
@@ -1372,7 +1372,7 @@ cdef class baseItem:
         self._next_sibling = target_before
         target_before._prev_sibling = self
         if not(self._parent.__check_rendered()):
-            self.set_hidden_and_propagate_to_siblings_no_handlers()
+            self.set_hidden_and_propagate_to_children_no_handlers()
 
     cdef void __detach_item_and_lock(self, unique_lock[recursive_mutex]& m):
         # NOTE: the mutex is not locked if we raise an exception.
@@ -1436,7 +1436,7 @@ cdef class baseItem:
         self.__detach_item_and_lock(m)
         # Mark as hidden. Useful for OtherItemHandler
         # when we want to detect loss of hover, render, etc
-        self.set_hidden_and_propagate_to_siblings_no_handlers()
+        self.set_hidden_and_propagate_to_children_no_handlers()
 
     cpdef void delete_item(self):
         """
@@ -1574,11 +1574,11 @@ cdef class baseItem:
         # TODO: plotAxis
 
     @cython.final
-    cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept nogil:
+    cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept:
         """
         Same as above, but will not call any handlers. Used as helper for functions below
+        Assumes the lock is already held.
         """
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if self.last_window_child is not None:
             (<baseItem>self.last_window_child).set_hidden_and_propagate_to_siblings_no_handlers()
         if self.last_widgets_child is not None:
@@ -1609,7 +1609,7 @@ cdef class baseItem:
             self._prev_sibling.set_hidden_and_propagate_to_siblings_with_handlers()
 
     @cython.final
-    cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept nogil:
+    cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept:
         """
         Same as above, version without calling handlers:
         Item is programmatically made hidden, but outside rendering,
@@ -1635,7 +1635,8 @@ cdef class baseItem:
           required for instance for items that should destroy when
           an item is not rendered anymore. 
         """
-        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
 
         # Skip propagating and handlers if already hidden.
         if self.p_state == NULL or \
@@ -1658,6 +1659,19 @@ cdef class baseItem:
             self.p_state.cur.rendered:
             self.update_current_state_as_hidden()
             self.propagate_hidden_state_to_children_with_handlers()
+
+    @cython.final
+    cdef void set_hidden_and_propagate_to_children_no_handlers(self) noexcept:
+        """
+        See set_hidden_and_propagate_to_siblings_no_handlers.
+        Assumes the lock is already held
+        """
+
+        # Skip propagating and handlers if already hidden.
+        if self.p_state == NULL or \
+            self.p_state.cur.rendered:
+            self.update_current_state_as_hidden()
+            self.propagate_hidden_state_to_children_no_handlers()
 
     def lock_mutex(self, wait=False):
         """
@@ -2986,7 +3000,7 @@ cdef class drawingItem(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if not(value) and self._show:
-            self.set_hidden_and_propagate_to_siblings_no_handlers()
+            self.set_hidden_and_propagate_to_children_no_handlers()
         self._show = value
 
     cdef void draw(self, imgui.ImDrawList* l) noexcept nogil:
@@ -3588,7 +3602,7 @@ cdef class uiItem(baseItem):
         if self._show == value:
             return
         if not(value) and self._show:
-            self.set_hidden_and_propagate_to_siblings_no_handlers() # TODO: already handled in draw() ?
+            self.set_hidden_and_propagate_to_children_no_handlers() # TODO: already handled in draw() ?
         self.show_update_requested = True
         self._show = value
 
@@ -5065,7 +5079,7 @@ cdef class plotElement(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if not(value) and self._show:
-            self.set_hidden_and_propagate_to_siblings_no_handlers()
+            self.set_hidden_and_propagate_to_children_no_handlers()
         self._show = value
 
     @property

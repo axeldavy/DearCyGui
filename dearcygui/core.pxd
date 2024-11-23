@@ -220,10 +220,11 @@ cdef class baseItem:
     cdef void run_handlers(self) noexcept nogil
     cdef void update_current_state_as_hidden(self) noexcept nogil
     cdef void propagate_hidden_state_to_children_with_handlers(self) noexcept nogil
-    cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept nogil
+    cdef void propagate_hidden_state_to_children_no_handlers(self) noexcept
     cdef void set_hidden_and_propagate_to_siblings_with_handlers(self) noexcept nogil
-    cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept nogil
+    cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept
     cdef void set_hidden_no_handler_and_propagate_to_children_with_handlers(self) noexcept nogil
+    cdef void set_hidden_and_propagate_to_children_no_handlers(self) noexcept
 
 cdef struct itemStateCapabilities:
     bint can_be_active
