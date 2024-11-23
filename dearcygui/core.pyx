@@ -1061,6 +1061,53 @@ cdef class baseItem:
             (<baseItem>child).detach_item()
             child = self.last_menubar_child
 
+    @property
+    def children_types(self):
+        """Returns which types of children can be attached to this item"""
+        cdef ChildType type = ChildType.NONE
+        if self.can_have_drawing_child:
+            type |= ChildType.DRAWING
+        if self.can_have_handler_child:
+            type |= ChildType.HANDLER
+        if self.can_have_menubar_child:
+            type |= ChildType.MENUBAR
+        if self.can_have_plot_element_child:
+            type |= ChildType.PLOTELEMENT
+        if self.can_have_tab_child:
+            type |= ChildType.TAB
+        if self.can_have_theme_child:
+            type |= ChildType.THEME
+        #if self.can_ha:
+        #    type |= ChildType.VIEWPORTDRAWLIST
+        if self.can_have_widget_child:
+            type |= ChildType.WIDGET
+        if self.can_have_window_child:
+            type |= ChildType.WINDOW
+        return type
+
+    @property
+    def item_type(self):
+        """Returns which type of child this item is"""
+        if self.element_child_category == child_type.cat_drawing:
+            return ChildType.DRAWING
+        elif self.element_child_category == child_type.cat_handler:
+            return ChildType.HANDLER
+        elif self.element_child_category == child_type.cat_menubar:
+            return ChildType.MENUBAR
+        elif self.element_child_category == child_type.cat_plot_element:
+            return ChildType.PLOTELEMENT
+        elif self.element_child_category == child_type.cat_tab:
+            return ChildType.TAB
+        elif self.element_child_category == child_type.cat_theme:
+            return ChildType.THEME
+        elif self.element_child_category == child_type.cat_viewport_drawlist:
+            return ChildType.VIEWPORTDRAWLIST
+        elif self.element_child_category == child_type.cat_widget:
+            return ChildType.WIDGET
+        elif self.element_child_category == child_type.cat_window:
+            return ChildType.WINDOW
+        return ChildType.NONE
+
     def __enter__(self):
         # Mutexes not needed
         if not(self.can_have_drawing_child or \

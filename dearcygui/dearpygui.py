@@ -269,7 +269,7 @@ def is_item_container(item: Union[int, str]) -> Union[bool, None]:
     Returns:
         status as a bool
     """
-    return internal_dpg.get_item_info(item)["container"]
+    return DCG_CONTEXT[item].item_type != dcg.ChildType.NONE
 
 
 def get_item_parent(item: Union[int, str]) -> Union[int, None]:

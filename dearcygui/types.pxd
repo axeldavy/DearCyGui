@@ -12,14 +12,15 @@ cdef enum child_type:
     cat_window
 
 cpdef enum class ChildType:
-    DRAWINGS = 1,
+    NONE = 0,
+    DRAWING = 1,
     HANDLER = 2,
     MENUBAR = 4,
     PLOTELEMENT = 8,
     TAB = 16,
     THEME = 32,
     VIEWPORTDRAWLIST = 64,
-    WIDGETS = 128,
+    WIDGET = 128,
     WINDOW = 256
 
 cpdef enum class HandlerListOP:
