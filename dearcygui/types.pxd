@@ -11,18 +11,6 @@ cdef enum child_type:
     cat_widget
     cat_window
 
-cpdef enum class ChildType:
-    NONE = 0,
-    DRAWING = 1,
-    HANDLER = 2,
-    MENUBAR = 4,
-    PLOTELEMENT = 8,
-    TAB = 16,
-    THEME = 32,
-    VIEWPORTDRAWLIST = 64,
-    WIDGET = 128,
-    WINDOW = 256
-
 cpdef enum class HandlerListOP:
     ALL,
     ANY,
@@ -36,10 +24,13 @@ cpdef enum class MouseButton:
     X2 = 4
 
 cpdef enum class MouseButtonMask:
-    NONE = 0,
+    NOBUTTON = 0,
     LEFT = 1,
     RIGHT = 2,
+    LEFTRIGHT = 3,
     MIDDLE = 4,
+    LEFTMIDDLE = 5,
+    MIDDLERIGHT = 6,
     ANY = 7
 #    X1 = 8
 #    X2 = 16,

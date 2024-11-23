@@ -42,6 +42,7 @@ from libc.math cimport M_PI, INFINITY
 cimport dearcygui.backends.time as ctime
 
 from .types cimport *
+from dearcygui.types import ChildType
 
 import os
 import numpy as np
@@ -104,13 +105,13 @@ cdef class Context:
     Main class managing the DearCyGui items and imgui context.
     There is exactly one viewport per context.
 
-    Items are assigned an uuid and eventually a user tag.
-    indexing the context with the uuid or the tag returns
-    the object associated.
-
     The last created context can be accessed as deacygui.C
     """
-    def __init__(self, queue=None):
+    def __init__(self,
+                 queue=None,
+                 item_creation_callback=None,
+                 item_unused_configure_args_callback=None,
+                 item_deletion_callback=None):
         """
         Parameters:
             queue (optional, defaults to ThreadPoolExecutor(max_workers=1)):
@@ -125,15 +126,15 @@ cdef class Context:
             if not(isinstance(queue, Executor)):
                 raise TypeError("queue must be a subclass of concurrent.futures.Executor")
             self.queue = queue
+        self._item_creation_callback = item_creation_callback
+        self._item_unused_configure_args_callback = item_unused_configure_args_callback
+        self._item_deletion_callback = item_deletion_callback
         C = self
 
     def __cinit__(self):
         self.next_uuid.store(21)
         self.waitOneFrame = False
         self.started = True
-        self.uuid_to_tag = dict()
-        self.tag_to_uuid = dict()
-        self.items = weakref.WeakValueDictionary()
         self.threadlocal_data = threading.local()
         self._viewport = Viewport(self)
         self.resetTheme = False
@@ -168,6 +169,26 @@ cdef class Context:
     def viewport(self) -> Viewport:
         """Readonly attribute: root item from where rendering starts"""
         return self._viewport
+
+    @property
+    def item_creation_callback(self):
+        """Callback called during item creation before configuration"""
+        return self._item_creation_callback
+
+    @property
+    def item_unused_configure_args_callback(self) -> Viewport:
+        """Callback called during item creation before configuration"""
+        return self._item_unused_configure_args_callback
+
+    @property
+    def item_deletion_callback(self) -> Viewport:
+        """Callback called during item deletion.
+        
+        If the item is released by the gc it is not guaranteed that
+        this callback is called, as the item might have lost its
+        pointer on the context.
+        """
+        return self._item_deletion_callback
 
     cdef void queue_callback_noarg(self, Callback callback, baseItem parent_item, baseItem target_item) noexcept nogil:
         if callback is None:
@@ -281,98 +302,6 @@ cdef class Context:
             except Exception as e:
                 print(traceback.format_exc())
 
-
-    cdef void register_item(self, baseItem o, long long uuid):
-        """ Stores weak references to objects.
-        
-        Each object holds a reference on the context, and thus will be
-        freed after calling unregister_item. If gc makes it so the context
-        is collected first, that's ok as we don't use the content of the
-        map anymore.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.items[uuid] = o
-        self.threadlocal_data.last_item_uuid = uuid
-        if o.can_have_drawing_child or \
-           o.can_have_handler_child or \
-           o.can_have_menubar_child or \
-           o.can_have_plot_element_child or \
-           o.can_have_tab_child or \
-           o.can_have_theme_child or \
-           o.can_have_widget_child or \
-           o.can_have_window_child:
-            self.threadlocal_data.last_container_uuid = uuid
-
-    cdef void unregister_item(self, long long uuid):
-        """ Free weak reference """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        try:
-            del self.items[uuid]
-        except Exception:
-            pass
-        if self.uuid_to_tag is None:
-            # Can occur during gc collect at
-            # the end of the program
-            return
-        if uuid in self.uuid_to_tag:
-            tag = self.uuid_to_tag[uuid]
-            del self.uuid_to_tag[uuid]
-            del self.tag_to_uuid[tag]
-
-    cdef baseItem get_registered_item_from_uuid(self, long long uuid):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self.items.get(uuid, None)
-
-    cdef baseItem get_registered_item_from_tag(self, str tag):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef long long uuid = self.tag_to_uuid.get(tag, -1)
-        if uuid == -1:
-            # not found
-            return None
-        return self.get_registered_item_from_uuid(uuid)
-
-    cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag):
-        old_tag = self.uuid_to_tag.get(uuid, None)
-        if old_tag == tag:
-            return
-        if tag in self.tag_to_uuid:
-            raise KeyError(f"Tag {tag} already in use")
-        if old_tag is not None:
-            del self.tag_to_uuid[old_tag]
-            del self.uuid_to_tag[uuid]
-        if tag is not None:
-            self.uuid_to_tag[uuid] = tag
-            self.tag_to_uuid[tag] = uuid
-
-    def __getitem__(self, key):
-        """
-        Retrieves the object associated to
-        a tag or an uuid
-        """
-        if isinstance(key, baseItem) or isinstance(key, SharedValue):
-            # TODO: register shared values
-            # Useful for legacy call wrappers
-            return key
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef long long uuid
-        if isinstance(key, str):
-            if key not in self.tag_to_uuid:
-                raise KeyError(f"Item not found with index {key}.")
-            uuid = self.tag_to_uuid[key]
-        elif isinstance(key, int):
-            uuid = key
-        else:
-            raise TypeError(f"{type(key)} is an invalid index type")
-        item = self.get_registered_item_from_uuid(uuid)
-        if item is None:
-            raise KeyError(f"Item not found with index {key}.")
-        return item
-
     cpdef void push_next_parent(self, baseItem next_parent):
         """
         Each time 'with' is used on an item, it is pushed
@@ -417,25 +346,6 @@ cdef class Context:
         if len(parent_queue) == 0:
             return None
         return parent_queue[0]
-
-    cpdef object fetch_last_created_item(self):
-        """
-        Return the last item created in this thread.
-        Returns None if the last item created has been
-        deleted.
-        """
-        cdef long long last_uuid = getattr(self.threadlocal_data, 'last_item_uuid', -1)
-        return self.get_registered_item_from_uuid(last_uuid)
-
-    cpdef object fetch_last_created_container(self):
-        """
-        Return the last item which can have children
-        created in this thread.
-        Returns None if the last such item has been
-        deleted.
-        """
-        cdef long long last_uuid = getattr(self.threadlocal_data, 'last_container_uuid', -1)
-        return self.get_registered_item_from_uuid(last_uuid)
 
     def is_key_down(self, int key, int keymod=-1):
         """
@@ -637,14 +547,6 @@ cdef class baseItem:
     It is possible to get the list of children of an item as well
     with the 'children' attribute: item.children.
 
-    For ease of use, the items can be named for easy retrieval.
-    The tag attribute is a user string that can be set at any
-    moment and can be passed for parent/previous_sibling/next_sibling.
-    The item associated with a tag can be retrieved with context[tag].
-    Note that having a tag doesn't mean the item is referenced by the context.
-    If an item is not in the subtree of the viewport, and is not referenced,
-    it might get deleted.
-
     During rendering the children of each item are rendered in
     order from the first one to the last one.
     When an item is attached to a parent, it is by default inserted
@@ -678,6 +580,8 @@ cdef class baseItem:
     not be deleted by the garbage collector.
     """
     def __init__(self, context, *args, **kwargs):
+        if self.context._item_creation_callback is not None:
+            self.context._item_creation_callback(self)
         self.configure(*args, **kwargs)
 
     def __cinit__(self, context, *args, **kwargs):
@@ -686,7 +590,6 @@ cdef class baseItem:
         self.context = context
         self.external_lock = False
         self.uuid = self.context.next_uuid.fetch_add(1)
-        self.context.register_item(self, self.uuid)
         self.can_have_widget_child = False
         self.can_have_drawing_child = False
         self.can_have_sibling = False
@@ -739,9 +642,15 @@ cdef class baseItem:
                 setattr(self, key, value)
             except AttributeError as e:
                 remaining[key] = value
-        if len(remaining) > 0:
-            print("Unused configure parameters: ", remaining)
+        if self.context._item_unused_configure_args_callback is not None and \
+           len(remaining) > 0:
+            self.context._item_unused_configure_args_callback(self, remaining)
         return
+
+    def __del__(self):
+        if self.context is not None:
+            if self.context._item_deletion_callback is not None:
+                self.context._item_deletion_callback(self)
 
     def __dealloc__(self):
         clear_obj_vector(self._handlers)
@@ -780,28 +689,6 @@ cdef class baseItem:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return int(self.uuid)
-
-    @property
-    def tag(self):
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self.context.get_registered_item_from_uuid(self.uuid) # TODO
-
-    @tag.setter
-    def tag(self, str tag):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self.context.update_registered_item_tag(self, self.uuid, tag)
 
     @property
     def parent(self):
@@ -1064,25 +951,25 @@ cdef class baseItem:
     @property
     def children_types(self):
         """Returns which types of children can be attached to this item"""
-        cdef ChildType type = ChildType.NONE
+        type = ChildType.NOCHILD
         if self.can_have_drawing_child:
-            type |= ChildType.DRAWING
+            type = type | ChildType.DRAWING
         if self.can_have_handler_child:
-            type |= ChildType.HANDLER
+            type = type | ChildType.HANDLER
         if self.can_have_menubar_child:
-            type |= ChildType.MENUBAR
+            type = type | ChildType.MENUBAR
         if self.can_have_plot_element_child:
-            type |= ChildType.PLOTELEMENT
+            type = type | ChildType.PLOTELEMENT
         if self.can_have_tab_child:
-            type |= ChildType.TAB
+            type = type | ChildType.TAB
         if self.can_have_theme_child:
-            type |= ChildType.THEME
+            type = type | ChildType.THEME
         #if self.can_ha:
-        #    type |= ChildType.VIEWPORTDRAWLIST
+        #    type = type | ChildType.VIEWPORTDRAWLIST
         if self.can_have_widget_child:
-            type |= ChildType.WIDGET
+            type = type | ChildType.WIDGET
         if self.can_have_window_child:
-            type |= ChildType.WINDOW
+            type = type | ChildType.WINDOW
         return type
 
     @property
@@ -1106,7 +993,7 @@ cdef class baseItem:
             return ChildType.WIDGET
         elif self.element_child_category == child_type.cat_window:
             return ChildType.WINDOW
-        return ChildType.NONE
+        return ChildType.NOCHILD
 
     def __enter__(self):
         # Mutexes not needed
@@ -1212,11 +1099,10 @@ cdef class baseItem:
             raise ValueError("Trying to attach a deleted item")
 
         if not(isinstance(target, baseItem)):
-            target_parent = self.context[target]
-        else:
-            target_parent = <baseItem>target
-            if target_parent.context is not self.context:
-                raise ValueError(f"Cannot attach {self} to {target} as it was not created in the same context")
+            raise ValueError(f"{target} cannot be attached")
+        target_parent = <baseItem>target
+        if target_parent.context is not self.context:
+            raise ValueError(f"Cannot attach {self} to {target} as it was not created in the same context")
 
         if target_parent is None:
             raise ValueError("Trying to attach to None")
@@ -1366,11 +1252,10 @@ cdef class baseItem:
             raise ValueError("Trying to attach a deleted item")
 
         if not(isinstance(target, baseItem)):
-            target_before = self.context[target]
-        else:
-            target_before = <baseItem>target
-            if target_before.context is not self.context:
-                raise ValueError(f"Cannot attach {self} to {target} as it was not created in the same context")
+            raise ValueError(f"{target} cannot be attached")
+        target_before = <baseItem>target
+        if target_before.context is not self.context:
+            raise ValueError(f"Cannot attach {self} to {target} as it was not created in the same context")
 
         if target_before is None:
             raise ValueError("target before cannot be None")
@@ -3248,10 +3133,6 @@ cdef class uiItem(baseItem):
                 self.state.cur.pos_to_viewport = self.state.cur.pos_to_window # for windows TODO move to own configure
         if 'callback' in kwargs:
             self.callbacks = kwargs.pop("callback")
-        if 'source' in kwargs:
-            source = kwargs.pop("source")
-            if source is not None and (not(isinstance(source, int)) or (source > 0)):
-                self.shareable_value = self.context[source].shareable_value
         return super().configure(**kwargs)
 
     cdef void update_current_state(self) noexcept nogil:

@@ -70,9 +70,6 @@ cdef inline object IntPairFromVec2(imgui.ImVec2 v):
 cdef class Context:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid
-    cdef object items # weakref.WeakValueDictionary
-    cdef dict[str, long long] tag_to_uuid
-    cdef dict[long long, str] uuid_to_tag
     cdef object threadlocal_data
     cdef bint waitOneFrame
     cdef bint started
@@ -93,6 +90,9 @@ cdef class Context:
     #cdef UUID activeWindow
     #cdef UUID focusedItem
     cdef Callback on_close_callback
+    cdef object _item_creation_callback
+    cdef object _item_unused_configure_args_callback
+    cdef object _item_deletion_callback
     cdef object queue
     cdef void queue_callback_noarg(self, Callback, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem, baseItem) noexcept nogil
@@ -106,17 +106,10 @@ cdef class Context:
     cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
     cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
     cdef void queue_callback_argdoubletriplet(self, Callback, baseItem, baseItem, double, double, double, double, double, double) noexcept nogil
-    cdef void register_item(self, baseItem o, long long uuid)
-    cdef void update_registered_item_tag(self, baseItem o, long long uuid, str tag)
-    cdef void unregister_item(self, long long uuid)
-    cdef baseItem get_registered_item_from_uuid(self, long long uuid)
-    cdef baseItem get_registered_item_from_tag(self, str tag)
     cpdef void push_next_parent(self, baseItem next_parent)
     cpdef void pop_next_parent(self)
     cpdef object fetch_parent_queue_back(self)
     cpdef object fetch_parent_queue_front(self)
-    cpdef object fetch_last_created_item(self)
-    cpdef object fetch_last_created_container(self)
 
 """
 Each .so has its own current context. To be able to work

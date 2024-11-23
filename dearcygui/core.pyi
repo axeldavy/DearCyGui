@@ -526,7 +526,7 @@ class ActivatedHandler(baseHandler):
     buttons turn active when the mouse is pressed on them.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ActivatedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -536,8 +536,6 @@ class ActivatedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -561,7 +559,7 @@ class ActivatedHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ActivatedHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -570,8 +568,6 @@ class ActivatedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -690,6 +686,13 @@ class ActivatedHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -705,6 +708,13 @@ class ActivatedHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -858,27 +868,6 @@ class ActivatedHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ActivatedHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ActivatedHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -913,7 +902,7 @@ class ActiveHandler(baseHandler):
     the mouse is released.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ActiveHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -923,8 +912,6 @@ class ActiveHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -948,7 +935,7 @@ class ActiveHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ActiveHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -957,8 +944,6 @@ class ActiveHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -1077,6 +1062,13 @@ class ActiveHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -1092,6 +1084,13 @@ class ActiveHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -1245,27 +1244,6 @@ class ActiveHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ActiveHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ActiveHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -1307,7 +1285,7 @@ class AxesResizeHandler(baseHandler):
     and the second tuple for the target Y axis (default Y1)
     
     """
-    def __init__(self, context : Context, axes : tuple = (0, 3), callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : AxesResizeHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, axes : tuple = (0, 3), callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         axes: (X axis, Y axis)
@@ -1320,8 +1298,6 @@ class AxesResizeHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -1345,7 +1321,7 @@ class AxesResizeHandler(baseHandler):
         ...
 
 
-    def configure(self, axes : tuple = (0, 3), callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : AxesResizeHandler = ..., user_data : Any = ...):
+    def configure(self, axes : tuple = (0, 3), callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         axes: (X axis, Y axis)
             used for this handler.
@@ -1357,8 +1333,6 @@ class AxesResizeHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -1493,6 +1467,13 @@ class AxesResizeHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -1508,6 +1489,13 @@ class AxesResizeHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -1661,27 +1649,6 @@ class AxesResizeHandler(baseHandler):
 
 
     @property
-    def tag(self) -> AxesResizeHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : AxesResizeHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -1709,7 +1676,7 @@ class AxesResizeHandler(baseHandler):
 
 
 class Button(uiItem):
-    def __init__(self, context : Context, arrow : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : int = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, tag : Button = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, arrow : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : int = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         arrow: Whether to display an arrow.
@@ -1796,8 +1763,6 @@ class Button(uiItem):
             In the case of items that can be closed,
             show is set to False automatically on close.
         small: Whether to display a small button
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -1846,7 +1811,7 @@ class Button(uiItem):
         ...
 
 
-    def configure(self, arrow : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : int = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, tag : Button = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, arrow : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : int = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         arrow: Whether to display an arrow.
             Not compatible with small
@@ -1932,8 +1897,6 @@ class Button(uiItem):
             In the case of items that can be closed,
             show is set to False automatically on close.
         small: Whether to display a small button
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -2117,6 +2080,13 @@ class Button(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -2310,6 +2280,13 @@ class Button(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -2770,27 +2747,6 @@ class Button(uiItem):
 
 
     @property
-    def tag(self) -> Button:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Button):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -2921,7 +2877,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 
 class Checkbox(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : Checkbox = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -3002,8 +2958,6 @@ class Checkbox(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -3052,7 +3006,7 @@ class Checkbox(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : Checkbox = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -3132,8 +3086,6 @@ class Checkbox(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -3280,6 +3232,13 @@ class Checkbox(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -3448,6 +3407,13 @@ class Checkbox(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -3879,27 +3845,6 @@ class Checkbox(uiItem):
 
 
     @property
-    def tag(self) -> Checkbox:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Checkbox):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -4011,7 +3956,7 @@ class Checkbox(uiItem):
 
 
 class ChildWindow(uiItem):
-    def __init__(self, context : Context, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, auto_resize_x : bool = False, auto_resize_y : bool = False, border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : ChildWindow = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, auto_resize_x : bool = False, auto_resize_y : bool = False, border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         always_auto_resize: combined with AutoResizeX/AutoResizeY.
@@ -4124,8 +4069,6 @@ class ChildWindow(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -4174,7 +4117,7 @@ class ChildWindow(uiItem):
         ...
 
 
-    def configure(self, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, auto_resize_x : bool = False, auto_resize_y : bool = False, border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : ChildWindow = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, auto_resize_x : bool = False, auto_resize_y : bool = False, border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         always_auto_resize: combined with AutoResizeX/AutoResizeY.
             Always measure size even when child is hidden,
@@ -4286,8 +4229,6 @@ class ChildWindow(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -4546,6 +4487,13 @@ class ChildWindow(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -4773,6 +4721,13 @@ class ChildWindow(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -5278,27 +5233,6 @@ class ChildWindow(uiItem):
 
 
     @property
-    def tag(self) -> ChildWindow:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ChildWindow):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -5416,7 +5350,7 @@ class ClickedHandler(baseHandler):
     it can be Text for example.
     
     """
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ClickedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         button: Target mouse button
@@ -5431,8 +5365,6 @@ class ClickedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -5456,7 +5388,7 @@ class ClickedHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ClickedHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         button: Target mouse button
             0: left click
@@ -5470,8 +5402,6 @@ class ClickedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -5608,6 +5538,13 @@ class ClickedHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -5623,6 +5560,13 @@ class ClickedHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -5776,27 +5720,6 @@ class ClickedHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ClickedHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ClickedHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -5837,7 +5760,7 @@ class CloseHandler(baseHandler):
     the object is show or not shown.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : CloseHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -5847,8 +5770,6 @@ class CloseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -5872,7 +5793,7 @@ class CloseHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : CloseHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -5881,8 +5802,6 @@ class CloseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -6001,6 +5920,13 @@ class CloseHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -6016,6 +5942,13 @@ class CloseHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -6169,27 +6102,6 @@ class CloseHandler(baseHandler):
 
 
     @property
-    def tag(self) -> CloseHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : CloseHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -6217,7 +6129,7 @@ class CloseHandler(baseHandler):
 
 
 class CollapsingHeader(uiItem):
-    def __init__(self, context : Context, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : CollapsingHeader = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         bullet: Display a bullet instead of arrow.
@@ -6307,8 +6219,6 @@ class CollapsingHeader(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -6357,7 +6267,7 @@ class CollapsingHeader(uiItem):
         ...
 
 
-    def configure(self, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : CollapsingHeader = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         bullet: Display a bullet instead of arrow.
             IMPORTANT: node can still be marked open/close if
@@ -6446,8 +6356,6 @@ class CollapsingHeader(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -6632,6 +6540,13 @@ class CollapsingHeader(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -6825,6 +6740,13 @@ class CollapsingHeader(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -7300,27 +7222,6 @@ class CollapsingHeader(uiItem):
 
 
     @property
-    def tag(self) -> CollapsingHeader:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : CollapsingHeader):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -7443,7 +7344,7 @@ class CollapsingHeader(uiItem):
 
 
 class ColorButton(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, tag : ColorButton = ..., theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -7528,8 +7429,6 @@ class ColorButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -7578,7 +7477,7 @@ class ColorButton(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, tag : ColorButton = ..., theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -7662,8 +7561,6 @@ class ColorButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -7832,6 +7729,13 @@ class ColorButton(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -8011,6 +7915,13 @@ class ColorButton(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -8498,27 +8409,6 @@ class ColorButton(uiItem):
 
 
     @property
-    def tag(self) -> ColorButton:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ColorButton):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -8630,7 +8520,7 @@ class ColorButton(uiItem):
 
 
 class ColorEdit(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, tag : ColorEdit = ..., theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -8719,8 +8609,6 @@ class ColorEdit(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -8769,7 +8657,7 @@ class ColorEdit(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, tag : ColorEdit = ..., theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -8857,8 +8745,6 @@ class ColorEdit(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -9027,6 +8913,13 @@ class ColorEdit(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -9206,6 +9099,13 @@ class ColorEdit(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -9749,27 +9649,6 @@ class ColorEdit(uiItem):
 
 
     @property
-    def tag(self) -> ColorEdit:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ColorEdit):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -9881,7 +9760,7 @@ class ColorEdit(uiItem):
 
 
 class ColorPicker(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, tag : ColorPicker = ..., theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -9968,8 +9847,6 @@ class ColorPicker(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -10018,7 +9895,7 @@ class ColorPicker(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, tag : ColorPicker = ..., theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -10104,8 +9981,6 @@ class ColorPicker(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -10274,6 +10149,13 @@ class ColorPicker(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -10453,6 +10335,13 @@ class ColorPicker(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -10968,27 +10857,6 @@ class ColorPicker(uiItem):
 
 
     @property
-    def tag(self) -> ColorPicker:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ColorPicker):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -11100,7 +10968,7 @@ class ColorPicker(uiItem):
 
 
 class Combo(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, tag : Combo = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -11192,8 +11060,6 @@ class Combo(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -11242,7 +11108,7 @@ class Combo(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, tag : Combo = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -11333,8 +11199,6 @@ class Combo(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -11503,6 +11367,13 @@ class Combo(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -11738,6 +11609,13 @@ class Combo(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -12225,27 +12103,6 @@ class Combo(uiItem):
 
 
     @property
-    def tag(self) -> Combo:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Combo):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -12386,7 +12243,7 @@ class ConditionalHandler(baseHandler):
     not call their callbacks.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ConditionalHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -12396,8 +12253,6 @@ class ConditionalHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -12421,7 +12276,7 @@ class ConditionalHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ConditionalHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -12430,8 +12285,6 @@ class ConditionalHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -12550,6 +12403,13 @@ class ConditionalHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -12565,6 +12425,13 @@ class ConditionalHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -12718,27 +12585,6 @@ class ConditionalHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ConditionalHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ConditionalHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -12770,34 +12616,9 @@ class Context(object):
     Main class managing the DearCyGui items and imgui context.
     There is exactly one viewport per context.
 
-    Items are assigned an uuid and eventually a user tag.
-    indexing the context with the uuid or the tag returns
-    the object associated.
-
     The last created context can be accessed as deacygui.C
     
     """
-    def fetch_last_created_container(self):
-        """
-        Return the last item which can have children
-        created in this thread.
-        Returns None if the last such item has been
-        deleted.
-        
-        """
-        ...
-
-
-    def fetch_last_created_item(self):
-        """
-        Return the last item created in this thread.
-        Returns None if the last item created has been
-        deleted.
-        
-        """
-        ...
-
-
     def fetch_parent_queue_back(self):
         """
         Retrieve the last item from the potential parent list
@@ -12956,6 +12777,32 @@ Reset to 0 the drag delta for the target button
 
 
     @property
+    def item_creation_callback(self):
+        """Callback called during item creation before configuration
+        """
+        ...
+
+
+    @property
+    def item_deletion_callback(self):
+        """Callback called during item deletion.
+        
+        If the item is released by the gc it is not guaranteed that
+        this callback is called, as the item might have lost its
+        pointer on the context.
+        
+        """
+        ...
+
+
+    @property
+    def item_unused_configure_args_callback(self):
+        """Callback called during item creation before configuration
+        """
+        ...
+
+
+    @property
     def running(self) -> bool:
         ...
 
@@ -13023,7 +12870,7 @@ class CustomHandler(baseHandler):
     you must use Cython and subclass baseHandler instead.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : CustomHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -13033,8 +12880,6 @@ class CustomHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -13058,7 +12903,7 @@ class CustomHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : CustomHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -13067,8 +12912,6 @@ class CustomHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -13187,6 +13030,13 @@ class CustomHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -13202,6 +13052,13 @@ class CustomHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -13355,27 +13212,6 @@ class CustomHandler(baseHandler):
 
 
     @property
-    def tag(self) -> CustomHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : CustomHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -13420,7 +13256,7 @@ class DeactivatedAfterEditHandler(baseHandler):
     activation after having been edited.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DeactivatedAfterEditHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -13430,8 +13266,6 @@ class DeactivatedAfterEditHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -13455,7 +13289,7 @@ class DeactivatedAfterEditHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DeactivatedAfterEditHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -13464,8 +13298,6 @@ class DeactivatedAfterEditHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -13584,6 +13416,13 @@ class DeactivatedAfterEditHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -13599,6 +13438,13 @@ class DeactivatedAfterEditHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -13752,27 +13598,6 @@ class DeactivatedAfterEditHandler(baseHandler):
 
 
     @property
-    def tag(self) -> DeactivatedAfterEditHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DeactivatedAfterEditHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -13804,7 +13629,7 @@ class DeactivatedHandler(baseHandler):
     Handler for when an active item loses activation.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DeactivatedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -13814,8 +13639,6 @@ class DeactivatedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -13839,7 +13662,7 @@ class DeactivatedHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DeactivatedHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -13848,8 +13671,6 @@ class DeactivatedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -13968,6 +13789,13 @@ class DeactivatedHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -13983,6 +13811,13 @@ class DeactivatedHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -14136,27 +13971,6 @@ class DeactivatedHandler(baseHandler):
 
 
     @property
-    def tag(self) -> DeactivatedHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DeactivatedHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -14188,7 +14002,7 @@ class DoubleClickedHandler(baseHandler):
     Handler for when a hovered item is double clicked on.
     
     """
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DoubleClickedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -14198,8 +14012,6 @@ class DoubleClickedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -14223,7 +14035,7 @@ class DoubleClickedHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DoubleClickedHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -14232,8 +14044,6 @@ class DoubleClickedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -14362,6 +14172,13 @@ class DoubleClickedHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -14377,6 +14194,13 @@ class DoubleClickedHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -14530,27 +14354,6 @@ class DoubleClickedHandler(baseHandler):
 
 
     @property
-    def tag(self) -> DoubleClickedHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DoubleClickedHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -14578,7 +14381,7 @@ class DoubleClickedHandler(baseHandler):
 
 
 class DragPoint(DrawingList):
-    def __init__(self, context: dearcygui.core.Context, context : Context, _clamp_inside : bool = False, _on_dragged : Any = ..., _on_dragging : Any = ..., _on_hover : Any = ..., _radius : float = 4.0, capture_mouse : bool = True, children : list[drawingItem] = ..., clamp_inside : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 1.0, 0.0, 1.0], handlers : list = ..., invisible : DrawInvisibleButton = ..., next_sibling : baseItem | None = None, no_input : bool = False, on_dragged : Any = ..., on_dragging : Any = ..., on_hover : Any = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 4.0, show : bool = True, tag : DragPoint = ..., user_data : Any = ..., visible : DrawCircle = ..., was_dragging : bool = False, x : float = 0.0, y : float = 0.0):
+    def __init__(self, context: dearcygui.core.Context, context : Context, _clamp_inside : bool = False, _on_dragged : Any = ..., _on_dragging : Any = ..., _on_hover : Any = ..., _radius : float = 4.0, capture_mouse : bool = True, children : list[drawingItem] = ..., clamp_inside : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 1.0, 0.0, 1.0], handlers : list = ..., invisible : DrawInvisibleButton = ..., next_sibling : baseItem | None = None, no_input : bool = False, on_dragged : Any = ..., on_dragging : Any = ..., on_hover : Any = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 4.0, show : bool = True, user_data : Any = ..., visible : DrawCircle = ..., was_dragging : bool = False, x : float = 0.0, y : float = 0.0):
         """
         capture_mouse: See DrawInvisibleButton for a detailed description
         children: List of all the children of the item,
@@ -14606,8 +14409,6 @@ class DragPoint(DrawingList):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         x: X coordinate in screen space
         y: Y coordinate in screen space
@@ -14633,7 +14434,7 @@ class DragPoint(DrawingList):
         ...
 
 
-    def configure(self, _clamp_inside : bool = False, _on_dragged : Any = ..., _on_dragging : Any = ..., _on_hover : Any = ..., _radius : float = 4.0, capture_mouse : bool = True, children : list[drawingItem] = ..., clamp_inside : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 1.0, 0.0, 1.0], handlers : list = ..., invisible : DrawInvisibleButton = ..., next_sibling : baseItem | None = None, no_input : bool = False, on_dragged : Any = ..., on_dragging : Any = ..., on_hover : Any = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 4.0, show : bool = True, tag : DragPoint = ..., user_data : Any = ..., visible : DrawCircle = ..., was_dragging : bool = False, x : float = 0.0, y : float = 0.0):
+    def configure(self, _clamp_inside : bool = False, _on_dragged : Any = ..., _on_dragging : Any = ..., _on_hover : Any = ..., _radius : float = 4.0, capture_mouse : bool = True, children : list[drawingItem] = ..., clamp_inside : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 1.0, 0.0, 1.0], handlers : list = ..., invisible : DrawInvisibleButton = ..., next_sibling : baseItem | None = None, no_input : bool = False, on_dragged : Any = ..., on_dragging : Any = ..., on_hover : Any = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 4.0, show : bool = True, user_data : Any = ..., visible : DrawCircle = ..., was_dragging : bool = False, x : float = 0.0, y : float = 0.0):
         """
         capture_mouse: See DrawInvisibleButton for a detailed description
         children: List of all the children of the item,
@@ -14661,8 +14462,6 @@ class DragPoint(DrawingList):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         x: X coordinate in screen space
         y: Y coordinate in screen space
@@ -14845,6 +14644,13 @@ class DragPoint(DrawingList):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clamp_inside(self) -> bool:
         """
         If set, the point will be forced to remain
@@ -14912,6 +14718,13 @@ class DragPoint(DrawingList):
 
     @invisible.setter
     def invisible(self, value : DrawInvisibleButton):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -15171,27 +14984,6 @@ class DragPoint(DrawingList):
 
 
     @property
-    def tag(self) -> DragPoint:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DragPoint):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -15270,7 +15062,7 @@ class DraggedHandler(baseHandler):
     the dragging.
     
     """
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -15280,8 +15072,6 @@ class DraggedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -15305,7 +15095,7 @@ class DraggedHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggedHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -15314,8 +15104,6 @@ class DraggedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -15444,6 +15232,13 @@ class DraggedHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -15459,6 +15254,13 @@ class DraggedHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -15612,27 +15414,6 @@ class DraggedHandler(baseHandler):
 
 
     @property
-    def tag(self) -> DraggedHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DraggedHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -15669,7 +15450,7 @@ class DraggingHandler(baseHandler):
     hovered anymore.
     
     """
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggingHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -15679,8 +15460,6 @@ class DraggingHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -15704,7 +15483,7 @@ class DraggingHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DraggingHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -15713,8 +15492,6 @@ class DraggingHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -15843,6 +15620,13 @@ class DraggingHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -15858,6 +15642,13 @@ class DraggingHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -16011,27 +15802,6 @@ class DraggingHandler(baseHandler):
 
 
     @property
-    def tag(self) -> DraggingHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DraggingHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -16059,7 +15829,7 @@ class DraggingHandler(baseHandler):
 
 
 class DrawArrow(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, tag : DrawArrow = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -16075,8 +15845,6 @@ class DrawArrow(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -16100,7 +15868,7 @@ class DrawArrow(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, tag : DrawArrow = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -16115,8 +15883,6 @@ class DrawArrow(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -16225,6 +15991,13 @@ class DrawArrow(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -16239,6 +16012,13 @@ class DrawArrow(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -16432,27 +16212,6 @@ class DrawArrow(drawingItem):
 
 
     @property
-    def tag(self) -> DrawArrow:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawArrow):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -16490,7 +16249,7 @@ class DrawArrow(drawingItem):
 
 
 class DrawBezierCubic(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, tag : DrawBezierCubic = ..., thickness : float = 0.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -16506,8 +16265,6 @@ class DrawBezierCubic(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -16531,7 +16288,7 @@ class DrawBezierCubic(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, tag : DrawBezierCubic = ..., thickness : float = 0.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -16546,8 +16303,6 @@ class DrawBezierCubic(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -16656,6 +16411,13 @@ class DrawBezierCubic(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -16670,6 +16432,13 @@ class DrawBezierCubic(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -16883,27 +16652,6 @@ class DrawBezierCubic(drawingItem):
 
 
     @property
-    def tag(self) -> DrawBezierCubic:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawBezierCubic):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -16941,7 +16689,7 @@ class DrawBezierCubic(drawingItem):
 
 
 class DrawBezierQuadratic(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, tag : DrawBezierQuadratic = ..., thickness : float = 0.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -16957,8 +16705,6 @@ class DrawBezierQuadratic(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -16982,7 +16728,7 @@ class DrawBezierQuadratic(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, tag : DrawBezierQuadratic = ..., thickness : float = 0.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -16997,8 +16743,6 @@ class DrawBezierQuadratic(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -17107,6 +16851,13 @@ class DrawBezierQuadratic(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -17121,6 +16872,13 @@ class DrawBezierQuadratic(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -17324,27 +17082,6 @@ class DrawBezierQuadratic(drawingItem):
 
 
     @property
-    def tag(self) -> DrawBezierQuadratic:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawBezierQuadratic):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -17382,7 +17119,7 @@ class DrawBezierQuadratic(drawingItem):
 
 
 class DrawCircle(drawingItem):
-    def __init__(self, context : Context, center : list = [0.0, 0.0], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : Any = ..., segments : int = 0, show : bool = True, tag : DrawCircle = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, center : list = [0.0, 0.0], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : Any = ..., segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -17398,8 +17135,6 @@ class DrawCircle(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -17423,7 +17158,7 @@ class DrawCircle(drawingItem):
         ...
 
 
-    def configure(self, center : list = [0.0, 0.0], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : Any = ..., segments : int = 0, show : bool = True, tag : DrawCircle = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, center : list = [0.0, 0.0], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : Any = ..., segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -17438,8 +17173,6 @@ class DrawCircle(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -17558,6 +17291,13 @@ class DrawCircle(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -17583,6 +17323,13 @@ class DrawCircle(drawingItem):
 
     @fill.setter
     def fill(self, value : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -17765,27 +17512,6 @@ class DrawCircle(drawingItem):
 
 
     @property
-    def tag(self) -> DrawCircle:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawCircle):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -17823,7 +17549,7 @@ class DrawCircle(drawingItem):
 
 
 class DrawEllipse(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, tag : DrawEllipse = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -17839,8 +17565,6 @@ class DrawEllipse(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -17864,7 +17588,7 @@ class DrawEllipse(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, tag : DrawEllipse = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -17879,8 +17603,6 @@ class DrawEllipse(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -17989,6 +17711,13 @@ class DrawEllipse(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -18014,6 +17743,13 @@ class DrawEllipse(drawingItem):
 
     @fill.setter
     def fill(self, value : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -18206,27 +17942,6 @@ class DrawEllipse(drawingItem):
 
 
     @property
-    def tag(self) -> DrawEllipse:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawEllipse):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -18264,7 +17979,7 @@ class DrawEllipse(drawingItem):
 
 
 class DrawImage(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, tag : DrawImage = ..., texture : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0]):
+    def __init__(self, context : Context, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0]):
         """
 
         children: List of all the children of the item,
@@ -18280,8 +17995,6 @@ class DrawImage(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -18305,7 +18018,7 @@ class DrawImage(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, tag : DrawImage = ..., texture : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0]):
+    def configure(self, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [0.0, 0.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0]):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -18320,8 +18033,6 @@ class DrawImage(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -18430,6 +18141,13 @@ class DrawImage(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color_multiplier(self) -> list:
         ...
 
@@ -18444,6 +18162,13 @@ class DrawImage(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -18627,27 +18352,6 @@ class DrawImage(drawingItem):
 
 
     @property
-    def tag(self) -> DrawImage:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawImage):
-        ...
-
-
-    @property
     def texture(self):
         ...
 
@@ -18695,7 +18399,7 @@ class DrawImage(drawingItem):
 
 
 class DrawImageQuad(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawImageQuad = ..., texture : Any = ..., user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [0.0, 0.0], uv3 : list = [0.0, 0.0], uv4 : list = [0.0, 0.0]):
+    def __init__(self, context : Context, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [0.0, 0.0], uv3 : list = [0.0, 0.0], uv4 : list = [0.0, 0.0]):
         """
 
         children: List of all the children of the item,
@@ -18711,8 +18415,6 @@ class DrawImageQuad(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -18736,7 +18438,7 @@ class DrawImageQuad(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawImageQuad = ..., texture : Any = ..., user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [0.0, 0.0], uv3 : list = [0.0, 0.0], uv4 : list = [0.0, 0.0]):
+    def configure(self, children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [0.0, 0.0], uv3 : list = [0.0, 0.0], uv4 : list = [0.0, 0.0]):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -18751,8 +18453,6 @@ class DrawImageQuad(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -18861,6 +18561,13 @@ class DrawImageQuad(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color_multiplier(self) -> list:
         ...
 
@@ -18875,6 +18582,13 @@ class DrawImageQuad(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -19078,27 +18792,6 @@ class DrawImageQuad(drawingItem):
 
 
     @property
-    def tag(self) -> DrawImageQuad:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawImageQuad):
-        ...
-
-
-    @property
     def texture(self):
         ...
 
@@ -19183,7 +18876,7 @@ class DrawInPlot(plotElementWithLegend):
     defaults to no_legend = True
     
     """
-    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInPlot = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         axes: (X axis, Y axis)
@@ -19220,8 +18913,6 @@ class DrawInPlot(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -19246,7 +18937,7 @@ class DrawInPlot(plotElementWithLegend):
         ...
 
 
-    def configure(self, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInPlot = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, axes : tuple = (0, 3), children : list[drawingItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = True, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         axes: (X axis, Y axis)
             used for this plot element.
@@ -19282,8 +18973,6 @@ class DrawInPlot(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -19409,6 +19098,13 @@ class DrawInPlot(plotElementWithLegend):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -19460,6 +19156,13 @@ class DrawInPlot(plotElementWithLegend):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -19695,27 +19398,6 @@ class DrawInPlot(plotElementWithLegend):
 
 
     @property
-    def tag(self) -> DrawInPlot:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawInPlot):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -19788,7 +19470,7 @@ class DrawInWindow(uiItem):
     visible/etc tests maintained and thus do not have a callback.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : DrawInWindow = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -19866,8 +19548,6 @@ class DrawInWindow(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -19916,7 +19596,7 @@ class DrawInWindow(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : DrawInWindow = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -19993,8 +19673,6 @@ class DrawInWindow(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -20167,6 +19845,13 @@ class DrawInWindow(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -20326,6 +20011,13 @@ class DrawInWindow(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -20757,27 +20449,6 @@ class DrawInWindow(uiItem):
 
 
     @property
-    def tag(self) -> DrawInWindow:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawInWindow):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -20933,7 +20604,7 @@ class DrawInvisibleButton(drawingItem):
     where top left is (0, 0) and bottom right is (1, 1).
     
     """
-    def __init__(self, context : Context, button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInvisibleButton = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         button: Mouse button mask that makes the invisible button
@@ -20975,8 +20646,6 @@ class DrawInvisibleButton(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -21000,7 +20669,7 @@ class DrawInvisibleButton(drawingItem):
         ...
 
 
-    def configure(self, button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawInvisibleButton = ..., user_data : Any = ...):
+    def configure(self, button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         button: Mouse button mask that makes the invisible button
             active and triggers the item's callback.
@@ -21041,8 +20710,6 @@ class DrawInvisibleButton(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -21216,6 +20883,13 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -21281,6 +20955,13 @@ class DrawInvisibleButton(drawingItem):
         """
         Readonly attribute: Is the mouse inside area
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -21583,27 +21264,6 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def tag(self) -> DrawInvisibleButton:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawInvisibleButton):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -21631,7 +21291,7 @@ class DrawInvisibleButton(drawingItem):
 
 
 class DrawLine(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawLine = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -21647,8 +21307,6 @@ class DrawLine(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -21672,7 +21330,7 @@ class DrawLine(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawLine = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -21687,8 +21345,6 @@ class DrawLine(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -21797,6 +21453,13 @@ class DrawLine(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -21811,6 +21474,13 @@ class DrawLine(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -21994,27 +21664,6 @@ class DrawLine(drawingItem):
 
 
     @property
-    def tag(self) -> DrawLine:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawLine):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -22052,7 +21701,7 @@ class DrawLine(drawingItem):
 
 
 class DrawPolygon(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, tag : DrawPolygon = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -22068,8 +21717,6 @@ class DrawPolygon(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -22093,7 +21740,7 @@ class DrawPolygon(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, tag : DrawPolygon = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -22108,8 +21755,6 @@ class DrawPolygon(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -22218,6 +21863,13 @@ class DrawPolygon(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -22243,6 +21895,13 @@ class DrawPolygon(drawingItem):
 
     @fill.setter
     def fill(self, value : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -22415,27 +22074,6 @@ class DrawPolygon(drawingItem):
 
 
     @property
-    def tag(self) -> DrawPolygon:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawPolygon):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -22473,7 +22111,7 @@ class DrawPolygon(drawingItem):
 
 
 class DrawPolyline(drawingItem):
-    def __init__(self, context : Context, children : None  = [], closed : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, tag : DrawPolyline = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], closed : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -22489,8 +22127,6 @@ class DrawPolyline(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -22514,7 +22150,7 @@ class DrawPolyline(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], closed : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, tag : DrawPolyline = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], closed : bool = False, color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -22529,8 +22165,6 @@ class DrawPolyline(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -22639,6 +22273,13 @@ class DrawPolyline(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def closed(self) -> bool:
         ...
 
@@ -22663,6 +22304,13 @@ class DrawPolyline(drawingItem):
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -22836,27 +22484,6 @@ class DrawPolyline(drawingItem):
 
 
     @property
-    def tag(self) -> DrawPolyline:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawPolyline):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -22894,7 +22521,7 @@ class DrawPolyline(drawingItem):
 
 
 class DrawQuad(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawQuad = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -22910,8 +22537,6 @@ class DrawQuad(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -22935,7 +22560,7 @@ class DrawQuad(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawQuad = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], p4 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -22950,8 +22575,6 @@ class DrawQuad(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -23060,6 +22683,13 @@ class DrawQuad(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -23085,6 +22715,13 @@ class DrawQuad(drawingItem):
 
     @fill.setter
     def fill(self, value : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -23287,27 +22924,6 @@ class DrawQuad(drawingItem):
 
 
     @property
-    def tag(self) -> DrawQuad:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawQuad):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -23345,7 +22961,7 @@ class DrawQuad(drawingItem):
 
 
 class DrawRect(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], color_bottom_left : list = [0.0, 0.0, 0.0, 0.0], color_bottom_right : list = [0.0, 0.0, 0.0, 0.0], color_upper_left : list = [0.0, 0.0, 0.0, 0.0], color_upper_right : list = [0.0, 0.0, 0.0, 0.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], multicolor : bool = False, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [1.0, 1.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, tag : DrawRect = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], color_bottom_left : list = [0.0, 0.0, 0.0, 0.0], color_bottom_right : list = [0.0, 0.0, 0.0, 0.0], color_upper_left : list = [0.0, 0.0, 0.0, 0.0], color_upper_right : list = [0.0, 0.0, 0.0, 0.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], multicolor : bool = False, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [1.0, 1.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -23361,8 +22977,6 @@ class DrawRect(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -23386,7 +23000,7 @@ class DrawRect(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], color_bottom_left : list = [0.0, 0.0, 0.0, 0.0], color_bottom_right : list = [0.0, 0.0, 0.0, 0.0], color_upper_left : list = [0.0, 0.0, 0.0, 0.0], color_upper_right : list = [0.0, 0.0, 0.0, 0.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], multicolor : bool = False, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [1.0, 1.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, tag : DrawRect = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], color_bottom_left : list = [0.0, 0.0, 0.0, 0.0], color_bottom_right : list = [0.0, 0.0, 0.0, 0.0], color_upper_left : list = [0.0, 0.0, 0.0, 0.0], color_upper_right : list = [0.0, 0.0, 0.0, 0.0], fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], multicolor : bool = False, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : list = [1.0, 1.0], pmin : list = [0.0, 0.0], previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -23401,8 +23015,6 @@ class DrawRect(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -23511,6 +23123,13 @@ class DrawRect(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -23576,6 +23195,13 @@ class DrawRect(drawingItem):
 
     @fill.setter
     def fill(self, value : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -23778,27 +23404,6 @@ class DrawRect(drawingItem):
 
 
     @property
-    def tag(self) -> DrawRect:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawRect):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -23836,7 +23441,7 @@ class DrawRect(drawingItem):
 
 
 class DrawText(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, tag : DrawText = ..., text : str = "", user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -23853,8 +23458,6 @@ class DrawText(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -23878,7 +23481,7 @@ class DrawText(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, tag : DrawText = ..., text : str = "", user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : list = [0.0, 0.0], previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -23894,8 +23497,6 @@ class DrawText(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -24004,6 +23605,13 @@ class DrawText(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -24033,6 +23641,13 @@ class DrawText(drawingItem):
 
     @font.setter
     def font(self, value : Font):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -24215,27 +23830,6 @@ class DrawText(drawingItem):
 
 
     @property
-    def tag(self) -> DrawText:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawText):
-        ...
-
-
-    @property
     def text(self) -> str:
         ...
 
@@ -24273,7 +23867,7 @@ class DrawText(drawingItem):
 
 
 class DrawTriangle(drawingItem):
-    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawTriangle = ..., thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -24289,8 +23883,6 @@ class DrawTriangle(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -24314,7 +23906,7 @@ class DrawTriangle(drawingItem):
         ...
 
 
-    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawTriangle = ..., thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : list = [0.0, 0.0], p2 : list = [0.0, 0.0], p3 : list = [0.0, 0.0], parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -24329,8 +23921,6 @@ class DrawTriangle(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -24439,6 +24029,13 @@ class DrawTriangle(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def color(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]:
         ...
 
@@ -24474,6 +24071,13 @@ class DrawTriangle(drawingItem):
 
     @fill.setter
     def fill(self, value : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -24666,27 +24270,6 @@ class DrawTriangle(drawingItem):
 
 
     @property
-    def tag(self) -> DrawTriangle:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawTriangle):
-        ...
-
-
-    @property
     def thickness(self) -> float:
         ...
 
@@ -24730,7 +24313,7 @@ class DrawingList(drawingItem):
     hide/show/delete them by manipulating the list.
     
     """
-    def __init__(self, context : Context, children : list[drawingItem] = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawingList = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[drawingItem] = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -24746,8 +24329,6 @@ class DrawingList(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -24771,7 +24352,7 @@ class DrawingList(drawingItem):
         ...
 
 
-    def configure(self, children : list[drawingItem] = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : DrawingList = ..., user_data : Any = ...):
+    def configure(self, children : list[drawingItem] = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -24786,8 +24367,6 @@ class DrawingList(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -24896,10 +24475,24 @@ class DrawingList(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -25063,27 +24656,6 @@ class DrawingList(drawingItem):
 
 
     @property
-    def tag(self) -> DrawingList:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawingList):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -25116,7 +24688,7 @@ class DrawingListScale(drawingItem):
     can apply shift and scale to the data
     
     """
-    def __init__(self, context : Context, children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_parent_scale : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : list = [1.0, 1.0], shifts : list = [0.0, 0.0], show : bool = True, tag : DrawingListScale = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_parent_scale : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : list = [1.0, 1.0], shifts : list = [0.0, 0.0], show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -25148,8 +24720,6 @@ class DrawingListScale(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -25173,7 +24743,7 @@ class DrawingListScale(drawingItem):
         ...
 
 
-    def configure(self, children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_parent_scale : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : list = [1.0, 1.0], shifts : list = [0.0, 0.0], show : bool = True, tag : DrawingListScale = ..., user_data : Any = ...):
+    def configure(self, children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_parent_scale : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : list = [1.0, 1.0], shifts : list = [0.0, 0.0], show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -25204,8 +24774,6 @@ class DrawingListScale(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -25314,10 +24882,24 @@ class DrawingListScale(drawingItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -25536,27 +25118,6 @@ class DrawingListScale(drawingItem):
 
 
     @property
-    def tag(self) -> DrawingListScale:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : DrawingListScale):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -25590,7 +25151,7 @@ class EditedHandler(baseHandler):
     triggers the callback.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : EditedHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -25600,8 +25161,6 @@ class EditedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -25625,7 +25184,7 @@ class EditedHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : EditedHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -25634,8 +25193,6 @@ class EditedHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -25754,6 +25311,13 @@ class EditedHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -25769,6 +25333,13 @@ class EditedHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -25922,27 +25493,6 @@ class EditedHandler(baseHandler):
 
 
     @property
-    def tag(self) -> EditedHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : EditedHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -25977,7 +25527,7 @@ class FocusHandler(baseHandler):
     or editing a field).
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : FocusHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -25987,8 +25537,6 @@ class FocusHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -26012,7 +25560,7 @@ class FocusHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : FocusHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -26021,8 +25569,6 @@ class FocusHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -26141,6 +25687,13 @@ class FocusHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -26156,6 +25709,13 @@ class FocusHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -26309,27 +25869,6 @@ class FocusHandler(baseHandler):
 
 
     @property
-    def tag(self) -> FocusHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : FocusHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -26357,7 +25896,7 @@ class FocusHandler(baseHandler):
 
 
 class Font(baseItem):
-    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, no_scaling : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, scale : float = 1.0, size : Any = ..., tag : Font = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, no_scaling : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, scale : float = 1.0, size : Any = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -26372,8 +25911,6 @@ class Font(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         size: native height of characters
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -26397,7 +25934,7 @@ class Font(baseItem):
         ...
 
 
-    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, no_scaling : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, scale : float = 1.0, size : Any = ..., tag : Font = ..., user_data : Any = ...):
+    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, no_scaling : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, scale : float = 1.0, size : Any = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -26411,8 +25948,6 @@ class Font(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         size: native height of characters
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -26521,10 +26056,24 @@ class Font(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -26708,27 +26257,6 @@ class Font(baseItem):
 
 
     @property
-    def tag(self) -> Font:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Font):
-        ...
-
-
-    @property
     def texture(self):
         ...
 
@@ -26789,7 +26317,7 @@ class FontTexture(baseItem):
     scale, and implement 1) or 2) yourself.
     
     """
-    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : FontTexture = ..., texture : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, texture : Any = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -26799,8 +26327,6 @@ class FontTexture(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         texture: Readonly texture containing the font data.
             build() must be called first
         user_data: User data of any type.
@@ -26870,7 +26396,7 @@ class FontTexture(baseItem):
         ...
 
 
-    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : FontTexture = ..., texture : Any = ..., user_data : Any = ...):
+    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, texture : Any = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -26879,8 +26405,6 @@ class FontTexture(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         texture: Readonly texture containing the font data.
             build() must be called first
         user_data: User data of any type.
@@ -26996,10 +26520,24 @@ class FontTexture(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -27144,27 +26682,6 @@ class FontTexture(baseItem):
 
 
     @property
-    def tag(self) -> FontTexture:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : FontTexture):
-        ...
-
-
-    @property
     def texture(self):
         """
         Readonly texture containing the font data.
@@ -27212,7 +26729,7 @@ class GotFocusHandler(baseHandler):
     focus.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : GotFocusHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -27222,8 +26739,6 @@ class GotFocusHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -27247,7 +26762,7 @@ class GotFocusHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : GotFocusHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -27256,8 +26771,6 @@ class GotFocusHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -27376,6 +26889,13 @@ class GotFocusHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -27391,6 +26911,13 @@ class GotFocusHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -27544,27 +27071,6 @@ class GotFocusHandler(baseHandler):
 
 
     @property
-    def tag(self) -> GotFocusHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : GotFocusHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -27597,7 +27103,7 @@ class GotHoverHandler(baseHandler):
     the target item has just been hovered.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : GotHoverHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -27607,8 +27113,6 @@ class GotHoverHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -27632,7 +27136,7 @@ class GotHoverHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : GotHoverHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -27641,8 +27145,6 @@ class GotHoverHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -27761,6 +27263,13 @@ class GotHoverHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -27776,6 +27285,13 @@ class GotHoverHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -27929,27 +27445,6 @@ class GotHoverHandler(baseHandler):
 
 
     @property
-    def tag(self) -> GotHoverHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : GotHoverHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -27983,7 +27478,7 @@ class GotRenderHandler(baseHandler):
     non-rendered to a rendered state.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : GotRenderHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -27993,8 +27488,6 @@ class GotRenderHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -28018,7 +27511,7 @@ class GotRenderHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : GotRenderHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -28027,8 +27520,6 @@ class GotRenderHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -28147,6 +27638,13 @@ class GotRenderHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -28162,6 +27660,13 @@ class GotRenderHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -28315,27 +27820,6 @@ class GotRenderHandler(baseHandler):
 
 
     @property
-    def tag(self) -> GotRenderHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : GotRenderHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -28373,7 +27857,7 @@ class HandlerList(baseHandler):
     is not rendered. This corresponds to the visible state.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HandlerList = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -28387,8 +27871,6 @@ class HandlerList(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -28412,7 +27894,7 @@ class HandlerList(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HandlerList = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -28425,8 +27907,6 @@ class HandlerList(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -28545,6 +28025,13 @@ class HandlerList(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -28560,6 +28047,13 @@ class HandlerList(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -28730,27 +28224,6 @@ class HandlerList(baseHandler):
 
 
     @property
-    def tag(self) -> HandlerList:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : HandlerList):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -28783,7 +28256,7 @@ class HorizontalLayout(Layout):
     horizontally.
     
     """
-    def __init__(self, context : Context, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : HorizontalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         alignment_mode: Horizontal alignment mode of the items.
@@ -28876,8 +28349,6 @@ class HorizontalLayout(Layout):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -28926,7 +28397,7 @@ class HorizontalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : HorizontalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         alignment_mode: Horizontal alignment mode of the items.
             LEFT: items are appended from the left
@@ -29018,8 +28489,6 @@ class HorizontalLayout(Layout):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -29222,6 +28691,13 @@ class HorizontalLayout(Layout):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -29420,6 +28896,13 @@ class HorizontalLayout(Layout):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -29878,27 +29361,6 @@ class HorizontalLayout(Layout):
 
 
     @property
-    def tag(self) -> HorizontalLayout:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : HorizontalLayout):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -30026,7 +29488,7 @@ class HoverHandler(baseHandler):
     the target item is hovered.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HoverHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -30036,8 +29498,6 @@ class HoverHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -30061,7 +29521,7 @@ class HoverHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : HoverHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -30070,8 +29530,6 @@ class HoverHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -30190,6 +29648,13 @@ class HoverHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -30205,6 +29670,13 @@ class HoverHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -30358,27 +29830,6 @@ class HoverHandler(baseHandler):
 
 
     @property
-    def tag(self) -> HoverHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : HoverHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -30406,7 +29857,7 @@ class HoverHandler(baseHandler):
 
 
 class Image(uiItem):
-    def __init__(self, context : Context, border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Image = ..., texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -30487,8 +29938,6 @@ class Image(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -30537,7 +29986,7 @@ class Image(uiItem):
         ...
 
 
-    def configure(self, border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Image = ..., texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
+    def configure(self, border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -30617,8 +30066,6 @@ class Image(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -30775,6 +30222,13 @@ class Image(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -30953,6 +30407,13 @@ class Image(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -31384,27 +30845,6 @@ class Image(uiItem):
 
 
     @property
-    def tag(self) -> Image:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Image):
-        ...
-
-
-    @property
     def texture(self):
         ...
 
@@ -31536,7 +30976,7 @@ class Image(uiItem):
 
 
 class ImageButton(uiItem):
-    def __init__(self, context : Context, background_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : ImageButton = ..., texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
+    def __init__(self, context : Context, background_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -31617,8 +31057,6 @@ class ImageButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -31667,7 +31105,7 @@ class ImageButton(uiItem):
         ...
 
 
-    def configure(self, background_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : ImageButton = ..., texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
+    def configure(self, background_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -31747,8 +31185,6 @@ class ImageButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -31905,6 +31341,13 @@ class ImageButton(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -32093,6 +31536,13 @@ class ImageButton(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -32524,27 +31974,6 @@ class ImageButton(uiItem):
 
 
     @property
-    def tag(self) -> ImageButton:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ImageButton):
-        ...
-
-
-    @property
     def texture(self):
         ...
 
@@ -32676,7 +32105,7 @@ class ImageButton(uiItem):
 
 
 class InputText(uiItem):
-    def __init__(self, context : Context, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, readonly : bool = False, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, tag : InputText = ..., theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, readonly : bool = False, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : int = 0):
         """
 
         always_overwrite: Overwrite mode
@@ -32781,8 +32210,6 @@ class InputText(uiItem):
             In the case of items that can be closed,
             show is set to False automatically on close.
         tab_input: Pressing TAB input a '	' character into the text field
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         uppercase: Turn a..z into A..Z
         user_data: User data of any type.
@@ -32832,7 +32259,7 @@ class InputText(uiItem):
         ...
 
 
-    def configure(self, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, readonly : bool = False, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, tag : InputText = ..., theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, readonly : bool = False, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : int = 0):
         """
         always_overwrite: Overwrite mode
         auto_select_all: Select entire text when first taking mouse focus
@@ -32936,8 +32363,6 @@ class InputText(uiItem):
             In the case of items that can be closed,
             show is set to False automatically on close.
         tab_input: Pressing TAB input a '	' character into the text field
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         uppercase: Turn a..z into A..Z
         user_data: User data of any type.
@@ -33135,6 +32560,13 @@ class InputText(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -33412,6 +32844,13 @@ class InputText(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -33985,27 +33424,6 @@ class InputText(uiItem):
 
 
     @property
-    def tag(self) -> InputText:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : InputText):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -34131,7 +33549,7 @@ class InputText(uiItem):
 
 
 class InputValue(uiItem):
-    def __init__(self, context : Context, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, tag : InputValue = ..., theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def __init__(self, context : Context, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
         """
 
         always_overwrite: Overwrite mode
@@ -34249,8 +33667,6 @@ class InputValue(uiItem):
             size 2 and 3)
         step: 
         step_fast: 
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -34299,7 +33715,7 @@ class InputValue(uiItem):
         ...
 
 
-    def configure(self, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, tag : InputValue = ..., theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def configure(self, always_overwrite : bool = False, auto_select_all : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
         """
         always_overwrite: Overwrite mode
         auto_select_all: Select entire text when first taking mouse focus
@@ -34416,8 +33832,6 @@ class InputValue(uiItem):
             size 2 and 3)
         step: 
         step_fast: 
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -34614,6 +34028,13 @@ class InputValue(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -34893,6 +34314,13 @@ class InputValue(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -35504,27 +34932,6 @@ class InputValue(uiItem):
 
 
     @property
-    def tag(self) -> InputValue:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : InputValue):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -35636,7 +35043,7 @@ class InputValue(uiItem):
 
 
 class ItemInspecter(Window):
-    def __init__(self, context: dearcygui.core.Context, width=0, height=0, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : ItemInspecter = ..., theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ...):
+    def __init__(self, context: dearcygui.core.Context, width=0, height=0, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ...):
         """
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
             even when the size does not require it (only if horizontal scrollbar
@@ -35760,8 +35167,6 @@ class ItemInspecter(Window):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         unsaved_document: Writable attribute to display a dot next to the title, as if the window
             contains unsaved changes.
@@ -35797,7 +35202,7 @@ class ItemInspecter(Window):
         ...
 
 
-    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : ItemInspecter = ..., theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
             even when the size does not require it (only if horizontal scrollbar
@@ -35936,8 +35341,6 @@ class ItemInspecter(Window):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         unsaved_document: Writable attribute to display a dot next to the title, as if the window
             contains unsaved changes.
@@ -36131,6 +35534,13 @@ class ItemInspecter(Window):
 
     @children.setter
     def children(self, value : list[uiItem, MenuBar]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -36332,6 +35742,13 @@ class ItemInspecter(Window):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -37065,27 +36482,6 @@ class ItemInspecter(Window):
 
 
     @property
-    def tag(self) -> ItemInspecter:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ItemInspecter):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -37212,7 +36608,7 @@ class ItemInspecter(Window):
 
 
 class KeyDownHandler(baseHandler):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : KeyDownHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -37222,8 +36618,6 @@ class KeyDownHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -37247,7 +36641,7 @@ class KeyDownHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : KeyDownHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -37256,8 +36650,6 @@ class KeyDownHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -37376,6 +36768,13 @@ class KeyDownHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -37391,6 +36790,13 @@ class KeyDownHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -37554,27 +36960,6 @@ class KeyDownHandler(baseHandler):
 
 
     @property
-    def tag(self) -> KeyDownHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : KeyDownHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -37602,7 +36987,7 @@ class KeyDownHandler(baseHandler):
 
 
 class KeyPressHandler(baseHandler):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = True, show : bool = True, tag : KeyPressHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = True, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -37612,8 +36997,6 @@ class KeyPressHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -37637,7 +37020,7 @@ class KeyPressHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = True, show : bool = True, tag : KeyPressHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = True, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -37646,8 +37029,6 @@ class KeyPressHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -37766,6 +37147,13 @@ class KeyPressHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -37781,6 +37169,13 @@ class KeyPressHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -37954,27 +37349,6 @@ class KeyPressHandler(baseHandler):
 
 
     @property
-    def tag(self) -> KeyPressHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : KeyPressHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -38002,7 +37376,7 @@ class KeyPressHandler(baseHandler):
 
 
 class KeyReleaseHandler(baseHandler):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : KeyReleaseHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -38012,8 +37386,6 @@ class KeyReleaseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -38037,7 +37409,7 @@ class KeyReleaseHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : KeyReleaseHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : int = 0, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -38046,8 +37418,6 @@ class KeyReleaseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -38166,6 +37536,13 @@ class KeyReleaseHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -38181,6 +37558,13 @@ class KeyReleaseHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -38344,27 +37728,6 @@ class KeyReleaseHandler(baseHandler):
 
 
     @property
-    def tag(self) -> KeyReleaseHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : KeyReleaseHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -38424,7 +37787,7 @@ class Layout(uiItem):
     preserved.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Layout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -38505,8 +37868,6 @@ class Layout(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -38555,7 +37916,7 @@ class Layout(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Layout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -38635,8 +37996,6 @@ class Layout(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -38809,6 +38168,13 @@ class Layout(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -39011,6 +38377,13 @@ class Layout(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -39442,27 +38815,6 @@ class Layout(uiItem):
 
 
     @property
-    def tag(self) -> Layout:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Layout):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -39585,7 +38937,7 @@ class Layout(uiItem):
 
 
 class ListBox(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, tag : ListBox = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -39669,8 +39021,6 @@ class ListBox(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -39719,7 +39069,7 @@ class ListBox(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, tag : ListBox = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -39802,8 +39152,6 @@ class ListBox(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -39972,6 +39320,13 @@ class ListBox(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -40174,6 +39529,13 @@ class ListBox(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -40634,27 +39996,6 @@ class ListBox(uiItem):
 
 
     @property
-    def tag(self) -> ListBox:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ListBox):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -40771,7 +40112,7 @@ class LostFocusHandler(baseHandler):
     focus.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : LostFocusHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -40781,8 +40122,6 @@ class LostFocusHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -40806,7 +40145,7 @@ class LostFocusHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : LostFocusHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -40815,8 +40154,6 @@ class LostFocusHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -40935,6 +40272,13 @@ class LostFocusHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -40950,6 +40294,13 @@ class LostFocusHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -41103,27 +40454,6 @@ class LostFocusHandler(baseHandler):
 
 
     @property
-    def tag(self) -> LostFocusHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : LostFocusHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -41157,7 +40487,7 @@ class LostHoverHandler(baseHandler):
     is not anymore.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : LostHoverHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -41167,8 +40497,6 @@ class LostHoverHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -41192,7 +40520,7 @@ class LostHoverHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : LostHoverHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -41201,8 +40529,6 @@ class LostHoverHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -41321,6 +40647,13 @@ class LostHoverHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -41336,6 +40669,13 @@ class LostHoverHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -41489,27 +40829,6 @@ class LostHoverHandler(baseHandler):
 
 
     @property
-    def tag(self) -> LostHoverHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : LostHoverHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -41546,7 +40865,7 @@ class LostRenderHandler(baseHandler):
     an item is non-rendered will trigger the handlers.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : LostRenderHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -41556,8 +40875,6 @@ class LostRenderHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -41581,7 +40898,7 @@ class LostRenderHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : LostRenderHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -41590,8 +40907,6 @@ class LostRenderHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -41710,6 +41025,13 @@ class LostRenderHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -41725,6 +41047,13 @@ class LostRenderHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -41878,27 +41207,6 @@ class LostRenderHandler(baseHandler):
 
 
     @property
-    def tag(self) -> LostRenderHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : LostRenderHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -41926,7 +41234,7 @@ class LostRenderHandler(baseHandler):
 
 
 class Menu(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : Menu = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -42007,8 +41315,6 @@ class Menu(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -42057,7 +41363,7 @@ class Menu(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : Menu = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -42137,8 +41443,6 @@ class Menu(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -42307,6 +41611,13 @@ class Menu(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -42486,6 +41797,13 @@ class Menu(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -42917,27 +42235,6 @@ class Menu(uiItem):
 
 
     @property
-    def tag(self) -> Menu:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Menu):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -43049,7 +42346,7 @@ class Menu(uiItem):
 
 
 class MenuBar(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : MenuBar = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -43130,8 +42427,6 @@ class MenuBar(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -43180,7 +42475,7 @@ class MenuBar(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : MenuBar = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -43260,8 +42555,6 @@ class MenuBar(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -43408,6 +42701,13 @@ class MenuBar(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -43592,6 +42892,13 @@ class MenuBar(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -44023,27 +43330,6 @@ class MenuBar(uiItem):
 
 
     @property
-    def tag(self) -> MenuBar:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MenuBar):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -44155,7 +43441,7 @@ class MenuBar(uiItem):
 
 
 class MenuItem(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, tag : MenuItem = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -44238,8 +43524,6 @@ class MenuItem(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -44288,7 +43572,7 @@ class MenuItem(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, tag : MenuItem = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -44370,8 +43654,6 @@ class MenuItem(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -44554,6 +43836,13 @@ class MenuItem(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -44756,6 +44045,13 @@ class MenuItem(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -45201,27 +44497,6 @@ class MenuItem(uiItem):
 
 
     @property
-    def tag(self) -> MenuItem:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MenuItem):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -45333,7 +44608,7 @@ class MenuItem(uiItem):
 
 
 class MetricsWindow(Window):
-    def __init__(self, context: dearcygui.core.Context, width=0, height=0, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : MetricsWindow = ..., theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ...):
+    def __init__(self, context: dearcygui.core.Context, width=0, height=0, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ...):
         """
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
             even when the size does not require it (only if horizontal scrollbar
@@ -45457,8 +44732,6 @@ class MetricsWindow(Window):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         unsaved_document: Writable attribute to display a dot next to the title, as if the window
             contains unsaved changes.
@@ -45494,7 +44767,7 @@ class MetricsWindow(Window):
         ...
 
 
-    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : MetricsWindow = ..., theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = ..., collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
             even when the size does not require it (only if horizontal scrollbar
@@ -45633,8 +44906,6 @@ class MetricsWindow(Window):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         unsaved_document: Writable attribute to display a dot next to the title, as if the window
             contains unsaved changes.
@@ -45828,6 +45099,13 @@ class MetricsWindow(Window):
 
     @children.setter
     def children(self, value : list[uiItem, MenuBar]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -46029,6 +45307,13 @@ class MetricsWindow(Window):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -46762,27 +46047,6 @@ class MetricsWindow(Window):
 
 
     @property
-    def tag(self) -> MetricsWindow:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MetricsWindow):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -46909,7 +46173,7 @@ class MetricsWindow(Window):
 
 
 class MouseClickHandler(baseHandler):
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, tag : MouseClickHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -46919,8 +46183,6 @@ class MouseClickHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -46944,7 +46206,7 @@ class MouseClickHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, tag : MouseClickHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -46953,8 +46215,6 @@ class MouseClickHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -47083,6 +46343,13 @@ class MouseClickHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -47098,6 +46365,13 @@ class MouseClickHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -47261,27 +46535,6 @@ class MouseClickHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseClickHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseClickHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -47317,7 +46570,7 @@ class MouseCursorHandler(baseHandler):
     combined with a HoverHandler.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], cursor : MouseCursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseCursorHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], cursor : MouseCursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -47330,8 +46583,6 @@ class MouseCursorHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -47355,7 +46606,7 @@ class MouseCursorHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], cursor : MouseCursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseCursorHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], cursor : MouseCursor = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -47367,8 +46618,6 @@ class MouseCursorHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -47487,6 +46736,13 @@ class MouseCursorHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -47518,6 +46774,13 @@ class MouseCursorHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -47671,27 +46934,6 @@ class MouseCursorHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseCursorHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseCursorHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -47719,7 +46961,7 @@ class MouseCursorHandler(baseHandler):
 
 
 class MouseDoubleClickHandler(baseHandler):
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDoubleClickHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -47729,8 +46971,6 @@ class MouseDoubleClickHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -47754,7 +46994,7 @@ class MouseDoubleClickHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDoubleClickHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -47763,8 +47003,6 @@ class MouseDoubleClickHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -47893,6 +47131,13 @@ class MouseDoubleClickHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -47908,6 +47153,13 @@ class MouseDoubleClickHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -48061,27 +47313,6 @@ class MouseDoubleClickHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseDoubleClickHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseDoubleClickHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -48109,7 +47340,7 @@ class MouseDoubleClickHandler(baseHandler):
 
 
 class MouseDownHandler(baseHandler):
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDownHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -48119,8 +47350,6 @@ class MouseDownHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -48144,7 +47373,7 @@ class MouseDownHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDownHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -48153,8 +47382,6 @@ class MouseDownHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -48283,6 +47510,13 @@ class MouseDownHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -48298,6 +47532,13 @@ class MouseDownHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -48451,27 +47692,6 @@ class MouseDownHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseDownHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseDownHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -48499,7 +47719,7 @@ class MouseDownHandler(baseHandler):
 
 
 class MouseDragHandler(baseHandler):
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDragHandler = ..., threshold : float = -1.0, user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, threshold : float = -1.0, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -48509,8 +47729,6 @@ class MouseDragHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -48534,7 +47752,7 @@ class MouseDragHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseDragHandler = ..., threshold : float = -1.0, user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, threshold : float = -1.0, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -48543,8 +47761,6 @@ class MouseDragHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -48673,6 +47889,13 @@ class MouseDragHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -48688,6 +47911,13 @@ class MouseDragHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -48841,27 +48071,6 @@ class MouseDragHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseDragHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseDragHandler):
-        ...
-
-
-    @property
     def threshold(self) -> float:
         ...
 
@@ -48899,7 +48108,7 @@ class MouseDragHandler(baseHandler):
 
 
 class MouseMoveHandler(baseHandler):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseMoveHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -48909,8 +48118,6 @@ class MouseMoveHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -48934,7 +48141,7 @@ class MouseMoveHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseMoveHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -48943,8 +48150,6 @@ class MouseMoveHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -49063,6 +48268,13 @@ class MouseMoveHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -49078,6 +48290,13 @@ class MouseMoveHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -49231,27 +48450,6 @@ class MouseMoveHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseMoveHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseMoveHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -49279,7 +48477,7 @@ class MouseMoveHandler(baseHandler):
 
 
 class MouseReleaseHandler(baseHandler):
-    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseReleaseHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -49289,8 +48487,6 @@ class MouseReleaseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -49314,7 +48510,7 @@ class MouseReleaseHandler(baseHandler):
         ...
 
 
-    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseReleaseHandler = ..., user_data : Any = ...):
+    def configure(self, button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -49323,8 +48519,6 @@ class MouseReleaseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -49453,6 +48647,13 @@ class MouseReleaseHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -49468,6 +48669,13 @@ class MouseReleaseHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -49621,27 +48829,6 @@ class MouseReleaseHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseReleaseHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseReleaseHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -49669,7 +48856,7 @@ class MouseReleaseHandler(baseHandler):
 
 
 class MouseWheelHandler(baseHandler):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, horizontal : bool = False, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseWheelHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, horizontal : bool = False, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -49681,8 +48868,6 @@ class MouseWheelHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -49706,7 +48891,7 @@ class MouseWheelHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, horizontal : bool = False, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : MouseWheelHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, horizontal : bool = False, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -49717,8 +48902,6 @@ class MouseWheelHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -49837,6 +49020,13 @@ class MouseWheelHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -49869,6 +49059,13 @@ class MouseWheelHandler(baseHandler):
 
     @horizontal.setter
     def horizontal(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -50022,27 +49219,6 @@ class MouseWheelHandler(baseHandler):
 
 
     @property
-    def tag(self) -> MouseWheelHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : MouseWheelHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -50080,7 +49256,7 @@ class OpenHandler(baseHandler):
     the object is show or not shown.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OpenHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -50090,8 +49266,6 @@ class OpenHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -50115,7 +49289,7 @@ class OpenHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OpenHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -50124,8 +49298,6 @@ class OpenHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -50244,6 +49416,13 @@ class OpenHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -50259,6 +49438,13 @@ class OpenHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -50412,27 +49598,6 @@ class OpenHandler(baseHandler):
 
 
     @property
-    def tag(self) -> OpenHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : OpenHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -50473,7 +49638,7 @@ class OtherItemHandler(HandlerList):
     not be rendered.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OtherItemHandler = ..., target : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, target : Any = ..., user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -50487,8 +49652,6 @@ class OtherItemHandler(HandlerList):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         target: Target item which state will be used
             for children handlers.
         user_data: User data of any type.
@@ -50514,7 +49677,7 @@ class OtherItemHandler(HandlerList):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : OtherItemHandler = ..., target : Any = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, target : Any = ..., user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -50527,8 +49690,6 @@ class OtherItemHandler(HandlerList):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         target: Target item which state will be used
             for children handlers.
         user_data: User data of any type.
@@ -50649,6 +49810,13 @@ class OtherItemHandler(HandlerList):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -50664,6 +49832,13 @@ class OtherItemHandler(HandlerList):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -50834,27 +50009,6 @@ class OtherItemHandler(HandlerList):
 
 
     @property
-    def tag(self) -> OtherItemHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : OtherItemHandler):
-        ...
-
-
-    @property
     def target(self):
         """
         Target item which state will be used
@@ -50897,7 +50051,7 @@ class OtherItemHandler(HandlerList):
 
 
 class PlaceHolderParent(baseItem):
-    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : PlaceHolderParent = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -50907,8 +50061,6 @@ class PlaceHolderParent(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -50932,7 +50084,7 @@ class PlaceHolderParent(baseItem):
         ...
 
 
-    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : PlaceHolderParent = ..., user_data : Any = ...):
+    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -50941,8 +50093,6 @@ class PlaceHolderParent(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -51051,10 +50201,24 @@ class PlaceHolderParent(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -51199,27 +50363,6 @@ class PlaceHolderParent(baseItem):
 
 
     @property
-    def tag(self) -> PlaceHolderParent:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlaceHolderParent):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -51266,7 +50409,7 @@ class Plot(uiItem):
     to the plot (+ some logic in your callbacks). 
     
     """
-    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Plot = ..., theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
+    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
         """
 
         callback: callback object or list of callback objects
@@ -51371,8 +50514,6 @@ class Plot(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         use_24hour_clock: If set, times will be formatted using a 24 hour clock.
             Default is False
@@ -51438,7 +50579,7 @@ class Plot(uiItem):
         ...
 
 
-    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Plot = ..., theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
+    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : int = 0, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : int = 0, zoom_rate : float = 0.10000000149011612):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -51542,8 +50683,6 @@ class Plot(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         use_24hour_clock: If set, times will be formatted using a 24 hour clock.
             Default is False
@@ -51781,6 +50920,13 @@ class Plot(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -52004,6 +51150,13 @@ class Plot(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -52582,27 +51735,6 @@ class Plot(uiItem):
 
 
     @property
-    def tag(self) -> Plot:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Plot):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -52796,7 +51928,7 @@ class Plot(uiItem):
 
 
 class PlotAxisConfig(baseItem):
-    def __init__(self, context : Context, auto_fit : bool = False, children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, tag : PlotAxisConfig = ..., user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
+    def __init__(self, context : Context, auto_fit : bool = False, children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
         """
 
         auto_fit: Writable attribute to force the axis to fit its range
@@ -52856,8 +51988,6 @@ class PlotAxisConfig(baseItem):
             this axis.
         scale: Current AxisScale.
             Default is AxisScale.linear
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         zoom_max: Constraint on the maximum value
             of the zoom
@@ -52885,7 +52015,7 @@ class PlotAxisConfig(baseItem):
         ...
 
 
-    def configure(self, auto_fit : bool = False, children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, tag : PlotAxisConfig = ..., user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
+    def configure(self, auto_fit : bool = False, children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
         """
         auto_fit: Writable attribute to force the axis to fit its range
             to the data every frame.
@@ -52944,8 +52074,6 @@ class PlotAxisConfig(baseItem):
             this axis.
         scale: Current AxisScale.
             Default is AxisScale.linear
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         zoom_max: Constraint on the maximum value
             of the zoom
@@ -53081,6 +52209,13 @@ class PlotAxisConfig(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -53211,6 +52346,13 @@ class PlotAxisConfig(baseItem):
 
     @invert.setter
     def invert(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -53653,27 +52795,6 @@ class PlotAxisConfig(baseItem):
 
 
     @property
-    def tag(self) -> PlotAxisConfig:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotAxisConfig):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -53731,7 +52852,7 @@ class PlotAxisConfig(baseItem):
 
 
 class PlotBars(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotBars = ..., theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
         """
 
         X: Values on the X axis.
@@ -53770,8 +52891,6 @@ class PlotBars(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         weight: bar_size. TODO better document
@@ -53797,7 +52916,7 @@ class PlotBars(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotBars = ..., theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ..., weight : float = 1.0):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -53835,8 +52954,6 @@ class PlotBars(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         weight: bar_size. TODO better document
@@ -53991,6 +53108,13 @@ class PlotBars(plotElementXY):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -54056,6 +53180,13 @@ class PlotBars(plotElementXY):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -54291,27 +53422,6 @@ class PlotBars(plotElementXY):
 
 
     @property
-    def tag(self) -> PlotBars:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotBars):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -54372,7 +53482,7 @@ class PlotInfLines(plotElementX):
     the passed coordinates
     
     """
-    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotInfLines = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -54411,8 +53521,6 @@ class PlotInfLines(plotElementX):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -54437,7 +53545,7 @@ class PlotInfLines(plotElementX):
         ...
 
 
-    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotInfLines = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -54475,8 +53583,6 @@ class PlotInfLines(plotElementX):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -54620,6 +53726,13 @@ class PlotInfLines(plotElementX):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -54685,6 +53798,13 @@ class PlotInfLines(plotElementX):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -54920,27 +54040,6 @@ class PlotInfLines(plotElementX):
 
 
     @property
-    def tag(self) -> PlotInfLines:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotInfLines):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -54982,7 +54081,7 @@ class PlotInfLines(plotElementX):
 
 
 class PlotLegendConfig(baseItem):
-    def __init__(self, context : Context, children : list[baseItem] = [], horizontal : bool = False, location : LegendLocation = 5, next_sibling : baseItem | None = None, no_buttons : bool = False, no_highlight_axis : bool = False, no_highlight_item : bool = False, no_menus : bool = False, outside : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, sorted : bool = False, tag : PlotLegendConfig = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseItem] = [], horizontal : bool = False, location : LegendLocation = 5, next_sibling : baseItem | None = None, no_buttons : bool = False, no_highlight_axis : bool = False, no_highlight_item : bool = False, no_menus : bool = False, outside : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, sorted : bool = False, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -55009,8 +54108,6 @@ class PlotLegendConfig(baseItem):
             is rendered just before this item.
         sorted: Writable attribute to display the legend entries
             in alphabetical order
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -55034,7 +54131,7 @@ class PlotLegendConfig(baseItem):
         ...
 
 
-    def configure(self, children : list[baseItem] = [], horizontal : bool = False, location : LegendLocation = 5, next_sibling : baseItem | None = None, no_buttons : bool = False, no_highlight_axis : bool = False, no_highlight_item : bool = False, no_menus : bool = False, outside : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, sorted : bool = False, tag : PlotLegendConfig = ..., user_data : Any = ...):
+    def configure(self, children : list[baseItem] = [], horizontal : bool = False, location : LegendLocation = 5, next_sibling : baseItem | None = None, no_buttons : bool = False, no_highlight_axis : bool = False, no_highlight_item : bool = False, no_menus : bool = False, outside : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, sorted : bool = False, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -55060,8 +54157,6 @@ class PlotLegendConfig(baseItem):
             is rendered just before this item.
         sorted: Writable attribute to display the legend entries
             in alphabetical order
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -55170,6 +54265,13 @@ class PlotLegendConfig(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -55190,6 +54292,13 @@ class PlotLegendConfig(baseItem):
 
     @horizontal.setter
     def horizontal(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -55439,27 +54548,6 @@ class PlotLegendConfig(baseItem):
 
 
     @property
-    def tag(self) -> PlotLegendConfig:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotLegendConfig):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -55487,7 +54575,7 @@ class PlotLegendConfig(baseItem):
 
 
 class PlotLine(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, tag : PlotLine = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -55532,8 +54620,6 @@ class PlotLine(plotElementXY):
             show is set to False automatically on close.
         skip_nan: A NaN data point will be ignored instead of
             being rendered as missing data.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -55558,7 +54644,7 @@ class PlotLine(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, tag : PlotLine = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], loop : bool = False, next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, segments : bool = False, shaded : bool = False, show : bool = True, skip_nan : bool = False, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -55602,8 +54688,6 @@ class PlotLine(plotElementXY):
             show is set to False automatically on close.
         skip_nan: A NaN data point will be ignored instead of
             being rendered as missing data.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -55757,6 +54841,13 @@ class PlotLine(plotElementXY):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -55808,6 +54899,13 @@ class PlotLine(plotElementXY):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -56115,27 +55213,6 @@ class PlotLine(plotElementXY):
 
 
     @property
-    def tag(self) -> PlotLine:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotLine):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -56177,7 +55254,7 @@ class PlotLine(plotElementXY):
 
 
 class PlotScatter(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotScatter = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -56216,8 +55293,6 @@ class PlotScatter(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -56242,7 +55317,7 @@ class PlotScatter(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotScatter = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -56280,8 +55355,6 @@ class PlotScatter(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -56435,6 +55508,13 @@ class PlotScatter(plotElementXY):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -56486,6 +55566,13 @@ class PlotScatter(plotElementXY):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -56735,27 +55822,6 @@ class PlotScatter(plotElementXY):
 
 
     @property
-    def tag(self) -> PlotScatter:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotScatter):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -56797,7 +55863,7 @@ class PlotScatter(plotElementXY):
 
 
 class PlotShadedLine(plotElementXYY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotShadedLine = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -56835,8 +55901,6 @@ class PlotShadedLine(plotElementXYY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -56861,7 +55925,7 @@ class PlotShadedLine(plotElementXYY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotShadedLine = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -56898,8 +55962,6 @@ class PlotShadedLine(plotElementXYY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -57063,6 +56125,13 @@ class PlotShadedLine(plotElementXYY):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -57114,6 +56183,13 @@ class PlotShadedLine(plotElementXYY):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -57349,27 +56425,6 @@ class PlotShadedLine(plotElementXYY):
 
 
     @property
-    def tag(self) -> PlotShadedLine:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotShadedLine):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -57411,7 +56466,7 @@ class PlotShadedLine(plotElementXYY):
 
 
 class PlotStairs(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, tag : PlotStairs = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -57455,8 +56510,6 @@ class PlotStairs(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -57481,7 +56534,7 @@ class PlotStairs(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, tag : PlotStairs = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, pre_step : bool = False, previous_sibling : baseItem | None = None, shaded : bool = False, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -57524,8 +56577,6 @@ class PlotStairs(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -57679,6 +56730,13 @@ class PlotStairs(plotElementXY):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -57730,6 +56788,13 @@ class PlotStairs(plotElementXY):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -57997,27 +57062,6 @@ class PlotStairs(plotElementXY):
 
 
     @property
-    def tag(self) -> PlotStairs:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotStairs):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -58059,7 +57103,7 @@ class PlotStairs(plotElementXY):
 
 
 class PlotStems(plotElementXY):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotStems = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -58098,8 +57142,6 @@ class PlotStems(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -58124,7 +57166,7 @@ class PlotStems(plotElementXY):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : PlotStems = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, horizontal : bool = False, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -58162,8 +57204,6 @@ class PlotStems(plotElementXY):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -58317,6 +57357,13 @@ class PlotStems(plotElementXY):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -58382,6 +57429,13 @@ class PlotStems(plotElementXY):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -58617,27 +57671,6 @@ class PlotStems(plotElementXY):
 
 
     @property
-    def tag(self) -> PlotStems:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : PlotStems):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -58679,7 +57712,7 @@ class PlotStems(plotElementXY):
 
 
 class ProgressBar(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedFloat = ..., show : bool = True, tag : ProgressBar = ..., theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedFloat = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -58761,8 +57794,6 @@ class ProgressBar(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -58811,7 +57842,7 @@ class ProgressBar(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedFloat = ..., show : bool = True, tag : ProgressBar = ..., theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedFloat = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -58892,8 +57923,6 @@ class ProgressBar(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -59040,6 +58069,13 @@ class ProgressBar(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -59208,6 +58244,13 @@ class ProgressBar(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -59653,27 +58696,6 @@ class ProgressBar(uiItem):
 
 
     @property
-    def tag(self) -> ProgressBar:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ProgressBar):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -59785,7 +58807,7 @@ class ProgressBar(uiItem):
 
 
 class RadioButton(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, tag : RadioButton = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -59868,8 +58890,6 @@ class RadioButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -59918,7 +58938,7 @@ class RadioButton(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, tag : RadioButton = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -60000,8 +59020,6 @@ class RadioButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -60170,6 +59188,13 @@ class RadioButton(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -60386,6 +59411,13 @@ class RadioButton(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -60831,27 +59863,6 @@ class RadioButton(uiItem):
 
 
     @property
-    def tag(self) -> RadioButton:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : RadioButton):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -60975,7 +59986,7 @@ class RenderHandler(baseHandler):
     currently closed.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : RenderHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -60985,8 +59996,6 @@ class RenderHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -61010,7 +60019,7 @@ class RenderHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : RenderHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -61019,8 +60028,6 @@ class RenderHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -61139,6 +60146,13 @@ class RenderHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -61154,6 +60168,13 @@ class RenderHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -61307,27 +60328,6 @@ class RenderHandler(baseHandler):
 
 
     @property
-    def tag(self) -> RenderHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : RenderHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -61360,7 +60360,7 @@ class ResizeHandler(baseHandler):
     whenever the item's bounding box changes size.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ResizeHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -61370,8 +60370,6 @@ class ResizeHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -61395,7 +60393,7 @@ class ResizeHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ResizeHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -61404,8 +60402,6 @@ class ResizeHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -61524,6 +60520,13 @@ class ResizeHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -61539,6 +60542,13 @@ class ResizeHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -61692,27 +60702,6 @@ class ResizeHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ResizeHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ResizeHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -61740,7 +60729,7 @@ class ResizeHandler(baseHandler):
 
 
 class Selectable(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, tag : Selectable = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -61825,8 +60814,6 @@ class Selectable(uiItem):
             In the case of items that can be closed,
             show is set to False automatically on close.
         span_columns: Frame will span all columns of its container table (text will still fit in current column)
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -61875,7 +60862,7 @@ class Selectable(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, tag : Selectable = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -61959,8 +60946,6 @@ class Selectable(uiItem):
             In the case of items that can be closed,
             show is set to False automatically on close.
         span_columns: Frame will span all columns of its container table (text will still fit in current column)
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -62129,6 +61114,13 @@ class Selectable(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -62359,6 +61351,13 @@ class Selectable(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -62818,27 +61817,6 @@ class Selectable(uiItem):
 
 
     @property
-    def tag(self) -> Selectable:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Selectable):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -62950,7 +61928,7 @@ class Selectable(uiItem):
 
 
 class Separator(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Separator = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -63026,8 +62004,6 @@ class Separator(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -63076,7 +62052,7 @@ class Separator(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Separator = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -63151,8 +62127,6 @@ class Separator(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -63303,6 +62277,13 @@ class Separator(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -63414,6 +62395,13 @@ class Separator(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -63836,27 +62824,6 @@ class Separator(uiItem):
 
     @show.setter
     def show(self, value : bool):
-        ...
-
-
-    @property
-    def tag(self) -> Separator:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Separator):
         ...
 
 
@@ -64566,7 +63533,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 
 class SimplePlot(uiItem):
-    def __init__(self, context : Context, autoscale : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, shareable_value : SharedFloatVect = ..., show : bool = True, tag : SimplePlot = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, autoscale : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, shareable_value : SharedFloatVect = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         autoscale: Whether scale_min and scale_max should be deduced
@@ -64653,8 +63620,6 @@ class SimplePlot(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -64703,7 +63668,7 @@ class SimplePlot(uiItem):
         ...
 
 
-    def configure(self, autoscale : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, shareable_value : SharedFloatVect = ..., show : bool = True, tag : SimplePlot = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, autoscale : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, shareable_value : SharedFloatVect = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         autoscale: Whether scale_min and scale_max should be deduced
             from the data
@@ -64789,8 +63754,6 @@ class SimplePlot(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -64974,6 +63937,13 @@ class SimplePlot(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -65167,6 +64137,13 @@ class SimplePlot(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -65640,27 +64617,6 @@ class SimplePlot(uiItem):
 
 
     @property
-    def tag(self) -> SimplePlot:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : SimplePlot):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -65772,7 +64728,7 @@ class SimplePlot(uiItem):
 
 
 class Slider(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, tag : Slider = ..., theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -65885,8 +64841,6 @@ class Slider(uiItem):
             size 2 and 3)
         speed: When drag is true,
             this attributes sets the drag speed.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -65938,7 +64892,7 @@ class Slider(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, tag : Slider = ..., theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -66050,8 +65004,6 @@ class Slider(uiItem):
             size 2 and 3)
         speed: When drag is true,
             this attributes sets the drag speed.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -66223,6 +65175,13 @@ class Slider(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -66460,6 +65419,13 @@ class Slider(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -67019,27 +65985,6 @@ class Slider(uiItem):
 
 
     @property
-    def tag(self) -> Slider:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Slider):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -67167,7 +66112,7 @@ class Slider(uiItem):
 
 
 class Spacer(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Spacer = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -67245,8 +66190,6 @@ class Spacer(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -67295,7 +66238,7 @@ class Spacer(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Spacer = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -67372,8 +66315,6 @@ class Spacer(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -67524,6 +66465,13 @@ class Spacer(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -67635,6 +66583,13 @@ class Spacer(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -68066,27 +67021,6 @@ class Spacer(uiItem):
 
 
     @property
-    def tag(self) -> Spacer:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Spacer):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -68198,7 +67132,7 @@ class Spacer(uiItem):
 
 
 class Tab(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : Tab = ..., theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -68285,8 +67219,6 @@ class Tab(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         trailing: Enforce the tab position to the
             right of the tab bar (before the scrolling buttons)
@@ -68337,7 +67269,7 @@ class Tab(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : Tab = ..., theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -68423,8 +67355,6 @@ class Tab(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         trailing: Enforce the tab position to the
             right of the tab bar (before the scrolling buttons)
@@ -68595,6 +67525,13 @@ class Tab(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -68788,6 +67725,13 @@ class Tab(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -69263,27 +68207,6 @@ class Tab(uiItem):
 
 
     @property
-    def tag(self) -> Tab:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Tab):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -69410,7 +68333,7 @@ class Tab(uiItem):
 
 
 class TabBar(uiItem):
-    def __init__(self, context : Context, allow_tab_scroll : bool = False, autoselect_new_tabs : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : TabBar = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, allow_tab_scroll : bool = False, autoselect_new_tabs : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         allow_tab_scroll: Add scroll buttons when tabs don't fit
@@ -69502,8 +68425,6 @@ class TabBar(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -69552,7 +68473,7 @@ class TabBar(uiItem):
         ...
 
 
-    def configure(self, allow_tab_scroll : bool = False, autoselect_new_tabs : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : TabBar = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, allow_tab_scroll : bool = False, autoselect_new_tabs : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         allow_tab_scroll: Add scroll buttons when tabs don't fit
         autoselect_new_tabs: Automatically select new
@@ -69643,8 +68564,6 @@ class TabBar(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -69846,6 +68765,13 @@ class TabBar(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -70021,6 +68947,13 @@ class TabBar(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -70551,27 +69484,6 @@ class TabBar(uiItem):
 
 
     @property
-    def tag(self) -> TabBar:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : TabBar):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -70683,7 +69595,7 @@ class TabBar(uiItem):
 
 
 class TabButton(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : TabButton = ..., theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -70769,8 +69681,6 @@ class TabButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         trailing: Enforce the tab position to the
             right of the tab bar (before the scrolling buttons)
@@ -70821,7 +69731,7 @@ class TabButton(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, tag : TabButton = ..., theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -70906,8 +69816,6 @@ class TabButton(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         trailing: Enforce the tab position to the
             right of the tab bar (before the scrolling buttons)
@@ -71078,6 +69986,13 @@ class TabButton(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -71280,6 +70195,13 @@ class TabButton(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -71755,27 +70677,6 @@ class TabButton(uiItem):
 
 
     @property
-    def tag(self) -> TabButton:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : TabButton):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -71912,7 +70813,7 @@ class TemporaryTooltip(Tooltip):
     True as long as the item should be shown.
     
     """
-    def __init__(self, context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : TemporaryTooltip = ..., target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -71998,8 +70899,6 @@ class TemporaryTooltip(Tooltip):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         target: Target item which state will be checked
             to trigger the tooltip.
             Note if the item is after this tooltip
@@ -72057,7 +70956,7 @@ class TemporaryTooltip(Tooltip):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : TemporaryTooltip = ..., target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -72143,8 +71042,6 @@ class TemporaryTooltip(Tooltip):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         target: Target item which state will be checked
             to trigger the tooltip.
             Note if the item is after this tooltip
@@ -72326,6 +71223,13 @@ class TemporaryTooltip(Tooltip):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def condition_from_handler(self):
         """
         When set, the handler referenced in
@@ -72496,6 +71400,13 @@ class TemporaryTooltip(Tooltip):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -72899,27 +71810,6 @@ class TemporaryTooltip(Tooltip):
 
 
     @property
-    def tag(self) -> TemporaryTooltip:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : TemporaryTooltip):
-        ...
-
-
-    @property
     def target(self):
         """
         Target item which state will be checked
@@ -73053,7 +71943,7 @@ class TemporaryTooltip(Tooltip):
 
 
 class Text(uiItem):
-    def __init__(self, context : Context, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, tag : Text = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0, wrap : int = -1):
+    def __init__(self, context : Context, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0, wrap : int = -1):
         """
 
         bullet: Whether to add a bullet
@@ -73140,8 +72030,6 @@ class Text(uiItem):
             show is set to False automatically on close.
         show_label: Whether to display the
             label next to the text stored in value
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -73194,7 +72082,7 @@ class Text(uiItem):
         ...
 
 
-    def configure(self, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, tag : Text = ..., theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0, wrap : int = -1):
+    def configure(self, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0, wrap : int = -1):
         """
         bullet: Whether to add a bullet
             before the text
@@ -73280,8 +72168,6 @@ class Text(uiItem):
             show is set to False automatically on close.
         show_label: Whether to display the
             label next to the text stored in value
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -73469,6 +72355,13 @@ class Text(uiItem):
 
     @children.setter
     def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -73665,6 +72558,13 @@ class Text(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -74106,27 +73006,6 @@ class Text(uiItem):
 
 
     @property
-    def tag(self) -> Text:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Text):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -74255,7 +73134,7 @@ class Text(uiItem):
 
 
 class Texture(baseItem):
-    def __init__(self, context : Context, children : list[baseItem] = [], hint_dynamic : bool = False, nearest_neighbor_upsampling : int = 0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : Texture = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseItem] = [], hint_dynamic : bool = False, nearest_neighbor_upsampling : int = 0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -74271,8 +73150,6 @@ class Texture(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -74296,7 +73173,7 @@ class Texture(baseItem):
         ...
 
 
-    def configure(self, *args, children : list[baseItem] = [], hint_dynamic : bool = False, nearest_neighbor_upsampling : int = 0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : Texture = ..., user_data : Any = ...):
+    def configure(self, *args, children : list[baseItem] = [], hint_dynamic : bool = False, nearest_neighbor_upsampling : int = 0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -74311,8 +73188,6 @@ class Texture(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -74451,6 +73326,13 @@ class Texture(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -74480,6 +73362,13 @@ class Texture(baseItem):
 
     @hint_dynamic.setter
     def hint_dynamic(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -74647,27 +73536,6 @@ class Texture(baseItem):
 
 
     @property
-    def tag(self) -> Texture:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Texture):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -74774,7 +73642,7 @@ class ThemeColorImGui(baseTheme):
         ModalWindowDimBg: Darken/colorize entire screen behind a modal window, when one is active
     
     """
-    def __init__(self, context : Context, Border : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, BorderShadow : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Button : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, CheckMark : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ChildBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, DragDropTarget : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Header : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MenuBarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ModalWindowDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavCursor : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingHighlight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogram : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogramHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLines : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLinesHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PopupBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGrip : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Separator : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Tab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderLight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderStrong : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableHeaderBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBgAlt : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Text : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextDisabled : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextLink : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextSelectedBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgCollapsed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, WindowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeColorImGui = ..., user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
+    def __init__(self, context : Context, Border : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, BorderShadow : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Button : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, CheckMark : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ChildBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, DragDropTarget : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Header : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MenuBarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ModalWindowDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavCursor : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingHighlight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogram : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogramHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLines : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLinesHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PopupBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGrip : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Separator : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Tab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderLight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderStrong : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableHeaderBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBgAlt : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Text : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextDisabled : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextLink : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextSelectedBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgCollapsed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, WindowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
         """
 
         children: List of all the children of the item,
@@ -74784,8 +73652,6 @@ class ThemeColorImGui(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -74809,7 +73675,7 @@ class ThemeColorImGui(baseTheme):
         ...
 
 
-    def configure(self, Border : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, BorderShadow : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Button : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, CheckMark : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ChildBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, DragDropTarget : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Header : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MenuBarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ModalWindowDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavCursor : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingHighlight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogram : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogramHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLines : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLinesHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PopupBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGrip : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Separator : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Tab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderLight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderStrong : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableHeaderBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBgAlt : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Text : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextDisabled : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextLink : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextSelectedBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgCollapsed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, WindowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeColorImGui = ..., user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
+    def configure(self, Border : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, BorderShadow : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Button : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ButtonHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, CheckMark : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ChildBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, DragDropTarget : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Header : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, HeaderHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MenuBarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ModalWindowDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavCursor : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingDimBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, NavWindowingHighlight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogram : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotHistogramHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLines : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotLinesHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PopupBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGrip : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ResizeGripHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ScrollbarGrabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Separator : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SeparatorHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, SliderGrabActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Tab : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabDimmedSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelected : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TabSelectedOverline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderLight : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableBorderStrong : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableHeaderBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TableRowBgAlt : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Text : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextDisabled : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextLink : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TextSelectedBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleBgCollapsed : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, WindowBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -74818,8 +73684,6 @@ class ThemeColorImGui(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -75488,6 +74352,13 @@ class ThemeColorImGui(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -75503,6 +74374,13 @@ class ThemeColorImGui(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -75646,27 +74524,6 @@ class ThemeColorImGui(baseTheme):
 
 
     @property
-    def tag(self) -> ThemeColorImGui:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeColorImGui):
-        ...
-
-
-    @property
     def user_data(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None:
         """
         User data of any type.
@@ -75694,7 +74551,7 @@ class ThemeColorImGui(baseTheme):
 
 
 class ThemeColorImNodes(baseTheme):
-    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeColorImNodes = ..., user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
+    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
         """
 
         children: List of all the children of the item,
@@ -75704,8 +74561,6 @@ class ThemeColorImNodes(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -75729,7 +74584,7 @@ class ThemeColorImNodes(baseTheme):
         ...
 
 
-    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeColorImNodes = ..., user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
+    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -75738,8 +74593,6 @@ class ThemeColorImNodes(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -75848,6 +74701,13 @@ class ThemeColorImNodes(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -75863,6 +74723,13 @@ class ThemeColorImNodes(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -76006,27 +74873,6 @@ class ThemeColorImNodes(baseTheme):
 
 
     @property
-    def tag(self) -> ThemeColorImNodes:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeColorImNodes):
-        ...
-
-
-    @property
     def user_data(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None:
         """
         User data of any type.
@@ -76054,7 +74900,7 @@ class ThemeColorImNodes(baseTheme):
 
 
 class ThemeColorImPlot(baseTheme):
-    def __init__(self, context : Context, AxisBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisGrid : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisTick : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Crosshairs : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ErrorBar : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, InlayText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Line : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerFill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerOutline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Selection : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeColorImPlot = ..., user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
+    def __init__(self, context : Context, AxisBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisGrid : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisTick : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Crosshairs : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ErrorBar : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, InlayText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Line : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerFill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerOutline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Selection : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
         """
 
         children: List of all the children of the item,
@@ -76064,8 +74910,6 @@ class ThemeColorImPlot(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -76089,7 +74933,7 @@ class ThemeColorImPlot(baseTheme):
         ...
 
 
-    def configure(self, AxisBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisGrid : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisTick : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Crosshairs : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ErrorBar : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, InlayText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Line : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerFill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerOutline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Selection : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeColorImPlot = ..., user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
+    def configure(self, AxisBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgActive : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisBgHovered : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisGrid : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, AxisTick : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Crosshairs : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, ErrorBar : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Fill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, FrameBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, InlayText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, LegendText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Line : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerFill : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, MarkerOutline : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBg : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, PlotBorder : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, Selection : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, TitleText : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None = None):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -76098,8 +74942,6 @@ class ThemeColorImPlot(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -76418,6 +75260,13 @@ class ThemeColorImPlot(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -76433,6 +75282,13 @@ class ThemeColorImPlot(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -76576,27 +75432,6 @@ class ThemeColorImPlot(baseTheme):
 
 
     @property
-    def tag(self) -> ThemeColorImPlot:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeColorImPlot):
-        ...
-
-
-    @property
     def user_data(self) -> int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]| None:
         """
         User data of any type.
@@ -76641,7 +75476,7 @@ class ThemeList(baseTheme):
     applied as well.
     
     """
-    def __init__(self, context : Context, children : list[baseTheme] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeList = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseTheme] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -76651,8 +75486,6 @@ class ThemeList(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -76676,7 +75509,7 @@ class ThemeList(baseTheme):
         ...
 
 
-    def configure(self, children : list[baseTheme] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeList = ..., user_data : Any = ...):
+    def configure(self, children : list[baseTheme] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -76685,8 +75518,6 @@ class ThemeList(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -76795,6 +75626,13 @@ class ThemeList(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -76810,6 +75648,13 @@ class ThemeList(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -76953,27 +75798,6 @@ class ThemeList(baseTheme):
 
 
     @property
-    def tag(self) -> ThemeList:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeList):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -77019,7 +75843,7 @@ class ThemeListWithCondition(baseTheme):
     a item in the child tree is rendered, use this lightly.
     
     """
-    def __init__(self, context : Context, children : list[baseTheme] = [], condition_category : ThemeCategories = 0, condition_enabled : ThemeEnablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeListWithCondition = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseTheme] = [], condition_category : ThemeCategories = 0, condition_enabled : ThemeEnablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -77035,8 +75859,6 @@ class ThemeListWithCondition(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -77060,7 +75882,7 @@ class ThemeListWithCondition(baseTheme):
         ...
 
 
-    def configure(self, children : list[baseTheme] = [], condition_category : ThemeCategories = 0, condition_enabled : ThemeEnablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeListWithCondition = ..., user_data : Any = ...):
+    def configure(self, children : list[baseTheme] = [], condition_category : ThemeCategories = 0, condition_enabled : ThemeEnablers = 0, enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -77075,8 +75897,6 @@ class ThemeListWithCondition(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -77185,6 +76005,13 @@ class ThemeListWithCondition(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def condition_category(self) -> ThemeCategories:
         """
         Writable attribute: As long as it is active, the theme list
@@ -77232,6 +76059,13 @@ class ThemeListWithCondition(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -77375,27 +76209,6 @@ class ThemeListWithCondition(baseTheme):
 
 
     @property
-    def tag(self) -> ThemeListWithCondition:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeListWithCondition):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -77431,7 +76244,7 @@ class ThemeStopCondition(baseTheme):
     Does not work inside a ThemeListWithCondition
     
     """
-    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStopCondition = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -77441,8 +76254,6 @@ class ThemeStopCondition(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -77466,7 +76277,7 @@ class ThemeStopCondition(baseTheme):
         ...
 
 
-    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStopCondition = ..., user_data : Any = ...):
+    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -77475,8 +76286,6 @@ class ThemeStopCondition(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -77585,6 +76394,13 @@ class ThemeStopCondition(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -77600,6 +76416,13 @@ class ThemeStopCondition(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -77743,27 +76566,6 @@ class ThemeStopCondition(baseTheme):
 
 
     @property
-    def tag(self) -> ThemeStopCondition:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeStopCondition):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -77791,7 +76593,7 @@ class ThemeStopCondition(baseTheme):
 
 
 class ThemeStyleImGui(baseThemeStyle):
-    def __init__(self, context : Context, Alpha : float | None = None, ButtonTextAlign : tuple[float, float] | None = None, CellPadding : tuple[float, float] | None = None, ChildBorderSize : float | None = None, ChildRounding : float | None = None, DisabledAlpha : float | None = None, FrameBorderSize : float | None = None, FramePadding : tuple[float, float] | None = None, FrameRounding : float | None = None, GrabMinSize : float | None = None, GrabRounding : float | None = None, IndentSpacing : float | None = None, ItemInnerSpacing : tuple[float, float] | None = None, ItemSpacing : tuple[float, float] | None = None, PopupBorderSize : float | None = None, PopupRounding : float | None = None, ScrollbarRounding : float | None = None, ScrollbarSize : float | None = None, SelectableTextAlign : tuple[float, float] | None = None, SeparatorTextBorderSize : float | None = None, SeparatorTextPadding : tuple[float, float] | None = None, TabBarBorderSize : float | None = None, TabBarOverlineSize : float | None = None, TabBorderSize : float | None = None, TabRounding : float | None = None, TableAngledHeadersAngle : float | None = None, TableAngledHeadersTextAlign : tuple[float, float] | None = None, WindowBorderSize : float | None = None, WindowMinSize : tuple[float, float] | None = None, WindowPadding : tuple[float, float] | None = None, WindowRounding : float | None = None, WindowTitleAlign : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStyleImGui = ..., user_data : tuple[float, float] | None = None):
+    def __init__(self, context : Context, Alpha : float | None = None, ButtonTextAlign : tuple[float, float] | None = None, CellPadding : tuple[float, float] | None = None, ChildBorderSize : float | None = None, ChildRounding : float | None = None, DisabledAlpha : float | None = None, FrameBorderSize : float | None = None, FramePadding : tuple[float, float] | None = None, FrameRounding : float | None = None, GrabMinSize : float | None = None, GrabRounding : float | None = None, IndentSpacing : float | None = None, ItemInnerSpacing : tuple[float, float] | None = None, ItemSpacing : tuple[float, float] | None = None, PopupBorderSize : float | None = None, PopupRounding : float | None = None, ScrollbarRounding : float | None = None, ScrollbarSize : float | None = None, SelectableTextAlign : tuple[float, float] | None = None, SeparatorTextBorderSize : float | None = None, SeparatorTextPadding : tuple[float, float] | None = None, TabBarBorderSize : float | None = None, TabBarOverlineSize : float | None = None, TabBorderSize : float | None = None, TabRounding : float | None = None, TableAngledHeadersAngle : float | None = None, TableAngledHeadersTextAlign : tuple[float, float] | None = None, WindowBorderSize : float | None = None, WindowMinSize : tuple[float, float] | None = None, WindowPadding : tuple[float, float] | None = None, WindowRounding : float | None = None, WindowTitleAlign : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
 
         Alpha: Global alpha applied to everything in Dear ImGui.
@@ -77854,8 +76656,6 @@ class ThemeStyleImGui(baseThemeStyle):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -77879,7 +76679,7 @@ class ThemeStyleImGui(baseThemeStyle):
         ...
 
 
-    def configure(self, Alpha : float | None = None, ButtonTextAlign : tuple[float, float] | None = None, CellPadding : tuple[float, float] | None = None, ChildBorderSize : float | None = None, ChildRounding : float | None = None, DisabledAlpha : float | None = None, FrameBorderSize : float | None = None, FramePadding : tuple[float, float] | None = None, FrameRounding : float | None = None, GrabMinSize : float | None = None, GrabRounding : float | None = None, IndentSpacing : float | None = None, ItemInnerSpacing : tuple[float, float] | None = None, ItemSpacing : tuple[float, float] | None = None, PopupBorderSize : float | None = None, PopupRounding : float | None = None, ScrollbarRounding : float | None = None, ScrollbarSize : float | None = None, SelectableTextAlign : tuple[float, float] | None = None, SeparatorTextBorderSize : float | None = None, SeparatorTextPadding : tuple[float, float] | None = None, TabBarBorderSize : float | None = None, TabBarOverlineSize : float | None = None, TabBorderSize : float | None = None, TabRounding : float | None = None, TableAngledHeadersAngle : float | None = None, TableAngledHeadersTextAlign : tuple[float, float] | None = None, WindowBorderSize : float | None = None, WindowMinSize : tuple[float, float] | None = None, WindowPadding : tuple[float, float] | None = None, WindowRounding : float | None = None, WindowTitleAlign : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStyleImGui = ..., user_data : tuple[float, float] | None = None):
+    def configure(self, Alpha : float | None = None, ButtonTextAlign : tuple[float, float] | None = None, CellPadding : tuple[float, float] | None = None, ChildBorderSize : float | None = None, ChildRounding : float | None = None, DisabledAlpha : float | None = None, FrameBorderSize : float | None = None, FramePadding : tuple[float, float] | None = None, FrameRounding : float | None = None, GrabMinSize : float | None = None, GrabRounding : float | None = None, IndentSpacing : float | None = None, ItemInnerSpacing : tuple[float, float] | None = None, ItemSpacing : tuple[float, float] | None = None, PopupBorderSize : float | None = None, PopupRounding : float | None = None, ScrollbarRounding : float | None = None, ScrollbarSize : float | None = None, SelectableTextAlign : tuple[float, float] | None = None, SeparatorTextBorderSize : float | None = None, SeparatorTextPadding : tuple[float, float] | None = None, TabBarBorderSize : float | None = None, TabBarOverlineSize : float | None = None, TabBorderSize : float | None = None, TabRounding : float | None = None, TableAngledHeadersAngle : float | None = None, TableAngledHeadersTextAlign : tuple[float, float] | None = None, WindowBorderSize : float | None = None, WindowMinSize : tuple[float, float] | None = None, WindowPadding : tuple[float, float] | None = None, WindowRounding : float | None = None, WindowTitleAlign : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
         Alpha: Global alpha applied to everything in Dear ImGui.
         ButtonTextAlign: Alignment of button text when button is larger than text.
@@ -77941,8 +76741,6 @@ class ThemeStyleImGui(baseThemeStyle):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -78566,6 +77364,13 @@ class ThemeStyleImGui(baseThemeStyle):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -78581,6 +77386,13 @@ class ThemeStyleImGui(baseThemeStyle):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -78758,27 +77570,6 @@ class ThemeStyleImGui(baseThemeStyle):
 
 
     @property
-    def tag(self) -> ThemeStyleImGui:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeStyleImGui):
-        ...
-
-
-    @property
     def user_data(self) -> tuple[float, float] | None:
         """
         User data of any type.
@@ -78806,7 +77597,7 @@ class ThemeStyleImGui(baseThemeStyle):
 
 
 class ThemeStyleImNodes(baseThemeStyle):
-    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStyleImNodes = ..., user_data : tuple[float, float] | None = None):
+    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
 
         children: List of all the children of the item,
@@ -78824,8 +77615,6 @@ class ThemeStyleImNodes(baseThemeStyle):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -78849,7 +77638,7 @@ class ThemeStyleImNodes(baseThemeStyle):
         ...
 
 
-    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStyleImNodes = ..., user_data : tuple[float, float] | None = None):
+    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -78866,8 +77655,6 @@ class ThemeStyleImNodes(baseThemeStyle):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -78976,6 +77763,13 @@ class ThemeStyleImNodes(baseThemeStyle):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -78991,6 +77785,13 @@ class ThemeStyleImNodes(baseThemeStyle):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -79168,27 +77969,6 @@ class ThemeStyleImNodes(baseThemeStyle):
 
 
     @property
-    def tag(self) -> ThemeStyleImNodes:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeStyleImNodes):
-        ...
-
-
-    @property
     def user_data(self) -> tuple[float, float] | None:
         """
         User data of any type.
@@ -79216,7 +77996,7 @@ class ThemeStyleImNodes(baseThemeStyle):
 
 
 class ThemeStyleImPlot(baseThemeStyle):
-    def __init__(self, context : Context, AnnotationPadding : tuple[float, float] | None = None, DigitalBitGap : float | None = None, DigitalBitHeight : float | None = None, ErrorBarSize : float | None = None, ErrorBarWeight : float | None = None, FillAlpha : float | None = None, FitPadding : tuple[float, float] | None = None, LabelPadding : tuple[float, float] | None = None, LegendInnerPadding : tuple[float, float] | None = None, LegendPadding : tuple[float, float] | None = None, LegendSpacing : tuple[float, float] | None = None, LineWeight : float | None = None, MajorGridSize : tuple[float, float] | None = None, MajorTickLen : tuple[float, float] | None = None, MajorTickSize : tuple[float, float] | None = None, Marker : float | None = None, MarkerSize : float | None = None, MarkerWeight : float | None = None, MinorAlpha : float | None = None, MinorGridSize : tuple[float, float] | None = None, MinorTickLen : tuple[float, float] | None = None, MinorTickSize : tuple[float, float] | None = None, MousePosPadding : tuple[float, float] | None = None, PlotBorderSize : float | None = None, PlotDefaultSize : tuple[float, float] | None = None, PlotMinSize : tuple[float, float] | None = None, PlotPadding : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStyleImPlot = ..., user_data : tuple[float, float] | None = None):
+    def __init__(self, context : Context, AnnotationPadding : tuple[float, float] | None = None, DigitalBitGap : float | None = None, DigitalBitHeight : float | None = None, ErrorBarSize : float | None = None, ErrorBarWeight : float | None = None, FillAlpha : float | None = None, FitPadding : tuple[float, float] | None = None, LabelPadding : tuple[float, float] | None = None, LegendInnerPadding : tuple[float, float] | None = None, LegendPadding : tuple[float, float] | None = None, LegendSpacing : tuple[float, float] | None = None, LineWeight : float | None = None, MajorGridSize : tuple[float, float] | None = None, MajorTickLen : tuple[float, float] | None = None, MajorTickSize : tuple[float, float] | None = None, Marker : float | None = None, MarkerSize : float | None = None, MarkerWeight : float | None = None, MinorAlpha : float | None = None, MinorGridSize : tuple[float, float] | None = None, MinorTickLen : tuple[float, float] | None = None, MinorTickSize : tuple[float, float] | None = None, MousePosPadding : tuple[float, float] | None = None, PlotBorderSize : float | None = None, PlotDefaultSize : tuple[float, float] | None = None, PlotMinSize : tuple[float, float] | None = None, PlotPadding : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
 
         AnnotationPadding: Text padding around annotation labels.
@@ -79261,8 +78041,6 @@ class ThemeStyleImPlot(baseThemeStyle):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -79286,7 +78064,7 @@ class ThemeStyleImPlot(baseThemeStyle):
         ...
 
 
-    def configure(self, AnnotationPadding : tuple[float, float] | None = None, DigitalBitGap : float | None = None, DigitalBitHeight : float | None = None, ErrorBarSize : float | None = None, ErrorBarWeight : float | None = None, FillAlpha : float | None = None, FitPadding : tuple[float, float] | None = None, LabelPadding : tuple[float, float] | None = None, LegendInnerPadding : tuple[float, float] | None = None, LegendPadding : tuple[float, float] | None = None, LegendSpacing : tuple[float, float] | None = None, LineWeight : float | None = None, MajorGridSize : tuple[float, float] | None = None, MajorTickLen : tuple[float, float] | None = None, MajorTickSize : tuple[float, float] | None = None, Marker : float | None = None, MarkerSize : float | None = None, MarkerWeight : float | None = None, MinorAlpha : float | None = None, MinorGridSize : tuple[float, float] | None = None, MinorTickLen : tuple[float, float] | None = None, MinorTickSize : tuple[float, float] | None = None, MousePosPadding : tuple[float, float] | None = None, PlotBorderSize : float | None = None, PlotDefaultSize : tuple[float, float] | None = None, PlotMinSize : tuple[float, float] | None = None, PlotPadding : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : ThemeStyleImPlot = ..., user_data : tuple[float, float] | None = None):
+    def configure(self, AnnotationPadding : tuple[float, float] | None = None, DigitalBitGap : float | None = None, DigitalBitHeight : float | None = None, ErrorBarSize : float | None = None, ErrorBarWeight : float | None = None, FillAlpha : float | None = None, FitPadding : tuple[float, float] | None = None, LabelPadding : tuple[float, float] | None = None, LegendInnerPadding : tuple[float, float] | None = None, LegendPadding : tuple[float, float] | None = None, LegendSpacing : tuple[float, float] | None = None, LineWeight : float | None = None, MajorGridSize : tuple[float, float] | None = None, MajorTickLen : tuple[float, float] | None = None, MajorTickSize : tuple[float, float] | None = None, Marker : float | None = None, MarkerSize : float | None = None, MarkerWeight : float | None = None, MinorAlpha : float | None = None, MinorGridSize : tuple[float, float] | None = None, MinorTickLen : tuple[float, float] | None = None, MinorTickSize : tuple[float, float] | None = None, MousePosPadding : tuple[float, float] | None = None, PlotBorderSize : float | None = None, PlotDefaultSize : tuple[float, float] | None = None, PlotMinSize : tuple[float, float] | None = None, PlotPadding : tuple[float, float] | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
         AnnotationPadding: Text padding around annotation labels.
         DigitalBitGap: Digital channels bit padding gap in pixels.
@@ -79330,8 +78108,6 @@ class ThemeStyleImPlot(baseThemeStyle):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -79872,6 +78648,13 @@ class ThemeStyleImPlot(baseThemeStyle):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -79887,6 +78670,13 @@ class ThemeStyleImPlot(baseThemeStyle):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -80064,27 +78854,6 @@ class ThemeStyleImPlot(baseThemeStyle):
 
 
     @property
-    def tag(self) -> ThemeStyleImPlot:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ThemeStyleImPlot):
-        ...
-
-
-    @property
     def user_data(self) -> tuple[float, float] | None:
         """
         User data of any type.
@@ -80141,7 +78910,7 @@ class TimeWatcher(uiItem):
     GPU data, etc), not to GPU rendering time.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : TimeWatcher = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -80219,8 +78988,6 @@ class TimeWatcher(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -80269,7 +79036,7 @@ class TimeWatcher(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : TimeWatcher = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -80346,8 +79113,6 @@ class TimeWatcher(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -80498,6 +79263,13 @@ class TimeWatcher(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -80609,6 +79381,13 @@ class TimeWatcher(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -81012,27 +79791,6 @@ class TimeWatcher(uiItem):
 
 
     @property
-    def tag(self) -> TimeWatcher:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : TimeWatcher):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -81158,7 +79916,7 @@ class ToggledCloseHandler(baseHandler):
     the object is show or not shown.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ToggledCloseHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -81168,8 +79926,6 @@ class ToggledCloseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -81193,7 +79949,7 @@ class ToggledCloseHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ToggledCloseHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -81202,8 +79958,6 @@ class ToggledCloseHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -81322,6 +80076,13 @@ class ToggledCloseHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -81337,6 +80098,13 @@ class ToggledCloseHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -81490,27 +80258,6 @@ class ToggledCloseHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ToggledCloseHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ToggledCloseHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -81548,7 +80295,7 @@ class ToggledOpenHandler(baseHandler):
     the object is show or not shown.
     
     """
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ToggledOpenHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -81558,8 +80305,6 @@ class ToggledOpenHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -81583,7 +80328,7 @@ class ToggledOpenHandler(baseHandler):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ToggledOpenHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -81592,8 +80337,6 @@ class ToggledOpenHandler(baseHandler):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -81712,6 +80455,13 @@ class ToggledOpenHandler(baseHandler):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -81727,6 +80477,13 @@ class ToggledOpenHandler(baseHandler):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -81880,27 +80637,6 @@ class ToggledOpenHandler(baseHandler):
 
 
     @property
-    def tag(self) -> ToggledOpenHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ToggledOpenHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -81928,7 +80664,7 @@ class ToggledOpenHandler(baseHandler):
 
 
 class Tooltip(uiItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Tooltip = ..., target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -82015,8 +80751,6 @@ class Tooltip(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         target: Target item which state will be checked
             to trigger the tooltip.
             Note if the item is after this tooltip
@@ -82074,7 +80808,7 @@ class Tooltip(uiItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : Tooltip = ..., target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -82160,8 +80894,6 @@ class Tooltip(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         target: Target item which state will be checked
             to trigger the tooltip.
             Note if the item is after this tooltip
@@ -82343,6 +81075,13 @@ class Tooltip(uiItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def condition_from_handler(self):
         """
         When set, the handler referenced in
@@ -82513,6 +81252,13 @@ class Tooltip(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -82916,27 +81662,6 @@ class Tooltip(uiItem):
 
 
     @property
-    def tag(self) -> Tooltip:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Tooltip):
-        ...
-
-
-    @property
     def target(self):
         """
         Target item which state will be checked
@@ -83070,7 +81795,7 @@ class Tooltip(uiItem):
 
 
 class TreeNode(uiItem):
-    def __init__(self, context : Context, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, tag : TreeNode = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         bullet: Display a bullet instead of arrow.
@@ -83165,8 +81890,6 @@ class TreeNode(uiItem):
             and right-most edges (cover the indent area).
         span_text_width: Narrow hit box + narrow hovering
             highlight, will only cover the label text.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -83215,7 +81938,7 @@ class TreeNode(uiItem):
         ...
 
 
-    def configure(self, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, tag : TreeNode = ..., theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         bullet: Display a bullet instead of arrow.
             IMPORTANT: node can still be marked open/close if
@@ -83309,8 +82032,6 @@ class TreeNode(uiItem):
             and right-most edges (cover the indent area).
         span_text_width: Narrow hit box + narrow hovering
             highlight, will only cover the label text.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -83495,6 +82216,13 @@ class TreeNode(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -83688,6 +82416,13 @@ class TreeNode(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -84207,27 +82942,6 @@ class TreeNode(uiItem):
 
 
     @property
-    def tag(self) -> TreeNode:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : TreeNode):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -84354,7 +83068,7 @@ class VerticalLayout(Layout):
     Same as HorizontalLayout but vertically
     
     """
-    def __init__(self, context : Context, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : VerticalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         alignment_mode: Vertical alignment mode of the items.
@@ -84447,8 +83161,6 @@ class VerticalLayout(Layout):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -84497,7 +83209,7 @@ class VerticalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : VerticalLayout = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, alignment_mode : Alignment = 0, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         alignment_mode: Vertical alignment mode of the items.
             TOP: items are appended from the top
@@ -84589,8 +83301,6 @@ class VerticalLayout(Layout):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -84793,6 +83503,13 @@ class VerticalLayout(Layout):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clicked(self) -> tuple:
         """
         Readonly attribute: has the item just been clicked.
@@ -84991,6 +83708,13 @@ class VerticalLayout(Layout):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -85449,27 +84173,6 @@ class VerticalLayout(Layout):
 
 
     @property
-    def tag(self) -> VerticalLayout:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : VerticalLayout):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -85601,7 +84304,7 @@ class Viewport(baseItem):
     every item renders itself and its children.
     
     """
-    def __init__(self, context : Context, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def __init__(self, context : Context, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
 
         children: List of all the children of the item,
@@ -85623,8 +84326,6 @@ class Viewport(baseItem):
         scale: Multiplicative scale that, multiplied by
             the value of dpi, is used to scale
             automatically all items.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: global theme
         user_data: User data of any type.
         wait_for_input: When the app doesn't need to be
@@ -85655,7 +84356,7 @@ class Viewport(baseItem):
         ...
 
 
-    def configure(self, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def configure(self, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -85676,8 +84377,6 @@ class Viewport(baseItem):
         scale: Multiplicative scale that, multiplied by
             the value of dpi, is used to scale
             automatically all items.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: global theme
         user_data: User data of any type.
         wait_for_input: When the app doesn't need to be
@@ -85718,7 +84417,7 @@ class Viewport(baseItem):
         ...
 
 
-    def initialize(self, minimized=False, maximized=False, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, min_height : int = 250, min_width : int = 250, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", tag : Viewport = ..., theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def initialize(self, minimized=False, maximized=False, always_on_top : bool = False, children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = ..., height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, min_height : int = 250, min_width : int = 250, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
 
         children: List of all the children of the item,
@@ -85740,8 +84439,6 @@ class Viewport(baseItem):
         scale: Multiplicative scale that, multiplied by
             the value of dpi, is used to scale
             automatically all items.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: global theme
         user_data: User data of any type.
         wait_for_input: When the app doesn't need to be
@@ -85884,6 +84581,13 @@ class Viewport(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def clear_color(self) -> tuple:
         ...
 
@@ -86017,6 +84721,13 @@ class Viewport(baseItem):
 
     @height.setter
     def height(self, value : int):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -86303,27 +85014,6 @@ class Viewport(baseItem):
 
 
     @property
-    def tag(self) -> Viewport:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Viewport):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: global theme
@@ -86434,7 +85124,7 @@ class Viewport(baseItem):
 
 
 class ViewportDrawList(baseItem):
-    def __init__(self, context : Context, children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ViewportDrawList = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -86450,8 +85140,6 @@ class ViewportDrawList(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -86475,7 +85163,7 @@ class ViewportDrawList(baseItem):
         ...
 
 
-    def configure(self, children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : ViewportDrawList = ..., user_data : Any = ...):
+    def configure(self, children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -86490,8 +85178,6 @@ class ViewportDrawList(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -86600,6 +85286,13 @@ class ViewportDrawList(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -86615,6 +85308,13 @@ class ViewportDrawList(baseItem):
 
     @front.setter
     def front(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -86777,27 +85477,6 @@ class ViewportDrawList(baseItem):
 
 
     @property
-    def tag(self) -> ViewportDrawList:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : ViewportDrawList):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -86825,7 +85504,7 @@ class ViewportDrawList(baseItem):
 
 
 class Window(uiItem):
-    def __init__(self, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : Window = ..., theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
@@ -86965,8 +85644,6 @@ class Window(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         unsaved_document: Writable attribute to display a dot next to the title, as if the window
             contains unsaved changes.
@@ -87017,7 +85694,7 @@ class Window(uiItem):
         ...
 
 
-    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, tag : Window = ..., theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, autosize : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
             even when the size does not require it (only if horizontal scrollbar
@@ -87156,8 +85833,6 @@ class Window(uiItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         unsaved_document: Writable attribute to display a dot next to the title, as if the window
             contains unsaved changes.
@@ -87351,6 +86026,13 @@ class Window(uiItem):
 
     @children.setter
     def children(self, value : list[uiItem, MenuBar]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
         ...
 
 
@@ -87552,6 +86234,13 @@ class Window(uiItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -88285,27 +86974,6 @@ class Window(uiItem):
 
 
     @property
-    def tag(self) -> Window:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : Window):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: bound theme for the item
@@ -88432,7 +87100,7 @@ class Window(uiItem):
 
 
 class baseHandler(baseItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : baseHandler = ..., user_data : Any = ...):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -88442,8 +87110,6 @@ class baseHandler(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -88467,7 +87133,7 @@ class baseHandler(baseItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : baseHandler = ..., user_data : Any = ...):
+    def configure(self, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -88476,8 +87142,6 @@ class baseHandler(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -88596,6 +87260,13 @@ class baseHandler(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -88611,6 +87282,13 @@ class baseHandler(baseItem):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -88764,27 +87442,6 @@ class baseHandler(baseItem):
 
 
     @property
-    def tag(self) -> baseHandler:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : baseHandler):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -88837,14 +87494,6 @@ class baseItem(object):
     It is possible to get the list of children of an item as well
     with the 'children' attribute: item.children.
 
-    For ease of use, the items can be named for easy retrieval.
-    The tag attribute is a user string that can be set at any
-    moment and can be passed for parent/previous_sibling/next_sibling.
-    The item associated with a tag can be retrieved with context[tag].
-    Note that having a tag doesn't mean the item is referenced by the context.
-    If an item is not in the subtree of the viewport, and is not referenced,
-    it might get deleted.
-
     During rendering the children of each item are rendered in
     order from the first one to the last one.
     When an item is attached to a parent, it is by default inserted
@@ -88878,7 +87527,7 @@ class baseItem(object):
     not be deleted by the garbage collector.
     
     """
-    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : baseItem = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -88888,8 +87537,6 @@ class baseItem(object):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -88913,7 +87560,7 @@ class baseItem(object):
         ...
 
 
-    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, tag : baseItem = ..., user_data : Any = ...):
+    def configure(self, children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -88922,8 +87569,6 @@ class baseItem(object):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -89032,10 +87677,24 @@ class baseItem(object):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -89180,27 +87839,6 @@ class baseItem(object):
 
 
     @property
-    def tag(self) -> baseItem:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : baseItem):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -89233,7 +87871,7 @@ class baseTheme(baseItem):
     to apply for a given category (color, style)/(imgui/implot/imnode)
     
     """
-    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : baseTheme = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -89243,8 +87881,6 @@ class baseTheme(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -89268,7 +87904,7 @@ class baseTheme(baseItem):
         ...
 
 
-    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : baseTheme = ..., user_data : Any = ...):
+    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -89277,8 +87913,6 @@ class baseTheme(baseItem):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -89387,6 +88021,13 @@ class baseTheme(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -89402,6 +88043,13 @@ class baseTheme(baseItem):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -89545,27 +88193,6 @@ class baseTheme(baseItem):
 
 
     @property
-    def tag(self) -> baseTheme:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : baseTheme):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -89593,7 +88220,7 @@ class baseTheme(baseItem):
 
 
 class baseThemeStyle(baseTheme):
-    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : baseThemeStyle = ..., user_data : tuple[float, float] | None = None):
+    def __init__(self, context : Context, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
 
         children: List of all the children of the item,
@@ -89611,8 +88238,6 @@ class baseThemeStyle(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -89636,7 +88261,7 @@ class baseThemeStyle(baseTheme):
         ...
 
 
-    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, tag : baseThemeStyle = ..., user_data : tuple[float, float] | None = None):
+    def configure(self, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, no_rounding : bool = True, no_scaling : bool = False, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : tuple[float, float] | None = None):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -89653,8 +88278,6 @@ class baseThemeStyle(baseTheme):
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -89763,6 +88386,13 @@ class baseThemeStyle(baseTheme):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -89778,6 +88408,13 @@ class baseThemeStyle(baseTheme):
 
     @enabled.setter
     def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -89955,27 +88592,6 @@ class baseThemeStyle(baseTheme):
 
 
     @property
-    def tag(self) -> baseThemeStyle:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : baseThemeStyle):
-        ...
-
-
-    @property
     def user_data(self) -> tuple[float, float] | None:
         """
         User data of any type.
@@ -90009,7 +88625,7 @@ class drawingItem(baseItem):
     parent
     
     """
-    def __init__(self, context : Context, children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : drawingItem = ..., user_data : Any = ...):
+    def __init__(self, context : Context, children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         children: List of all the children of the item,
@@ -90025,8 +88641,6 @@ class drawingItem(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -90050,7 +88664,7 @@ class drawingItem(baseItem):
         ...
 
 
-    def configure(self, children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : drawingItem = ..., user_data : Any = ...):
+    def configure(self, children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         children: List of all the children of the item,
             from first rendered, to last rendered.
@@ -90065,8 +88679,6 @@ class drawingItem(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         user_data: User data of any type.
         """
         ...
@@ -90175,10 +88787,24 @@ class drawingItem(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -90342,27 +88968,6 @@ class drawingItem(baseItem):
 
 
     @property
-    def tag(self) -> drawingItem:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : drawingItem):
-        ...
-
-
-    @property
     def user_data(self):
         """
         User data of any type.
@@ -90394,7 +88999,7 @@ class plotElement(baseItem):
     Base class for plot children.
     
     """
-    def __init__(self, context : Context, axes : tuple = (0, 3), children : None  = [], label : str = "", next_sibling : baseItem | None = None, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElement = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, axes : tuple = (0, 3), children : None  = [], label : str = "", next_sibling : baseItem | None = None, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         axes: (X axis, Y axis)
@@ -90414,8 +89019,6 @@ class plotElement(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -90440,7 +89043,7 @@ class plotElement(baseItem):
         ...
 
 
-    def configure(self, axes : tuple = (0, 3), children : None  = [], label : str = "", next_sibling : baseItem | None = None, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElement = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, axes : tuple = (0, 3), children : None  = [], label : str = "", next_sibling : baseItem | None = None, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         axes: (X axis, Y axis)
             used for this plot element.
@@ -90459,8 +89062,6 @@ class plotElement(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -90586,10 +89187,24 @@ class plotElement(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
         
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
         """
         ...
 
@@ -90767,27 +89382,6 @@ class plotElement(baseItem):
 
 
     @property
-    def tag(self) -> plotElement:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : plotElement):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -90836,7 +89430,7 @@ class plotElementWithLegend(plotElement):
     popup entry that gets shown on a right click (by default).
     
     """
-    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementWithLegend = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         axes: (X axis, Y axis)
@@ -90873,8 +89467,6 @@ class plotElementWithLegend(plotElement):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -90899,7 +89491,7 @@ class plotElementWithLegend(plotElement):
         ...
 
 
-    def configure(self, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementWithLegend = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         axes: (X axis, Y axis)
             used for this plot element.
@@ -90935,8 +89527,6 @@ class plotElementWithLegend(plotElement):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -91062,6 +89652,13 @@ class plotElementWithLegend(plotElement):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -91113,6 +89710,13 @@ class plotElementWithLegend(plotElement):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -91348,27 +89952,6 @@ class plotElementWithLegend(plotElement):
 
 
     @property
-    def tag(self) -> plotElementWithLegend:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : plotElementWithLegend):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -91410,7 +89993,7 @@ class plotElementWithLegend(plotElement):
 
 
 class plotElementX(plotElementWithLegend):
-    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementX = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -91448,8 +90031,6 @@ class plotElementX(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -91474,7 +90055,7 @@ class plotElementX(plotElementWithLegend):
         ...
 
 
-    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementX = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -91511,8 +90092,6 @@ class plotElementX(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -91656,6 +90235,13 @@ class plotElementX(plotElementWithLegend):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -91707,6 +90293,13 @@ class plotElementX(plotElementWithLegend):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -91942,27 +90535,6 @@ class plotElementX(plotElementWithLegend):
 
 
     @property
-    def tag(self) -> plotElementX:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : plotElementX):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -92004,7 +90576,7 @@ class plotElementX(plotElementWithLegend):
 
 
 class plotElementXY(plotElementWithLegend):
-    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXY = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -92042,8 +90614,6 @@ class plotElementXY(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -92068,7 +90638,7 @@ class plotElementXY(plotElementWithLegend):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXY = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -92105,8 +90675,6 @@ class plotElementXY(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -92260,6 +90828,13 @@ class plotElementXY(plotElementWithLegend):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -92311,6 +90886,13 @@ class plotElementXY(plotElementWithLegend):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -92546,27 +91128,6 @@ class plotElementXY(plotElementWithLegend):
 
 
     @property
-    def tag(self) -> plotElementXY:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : plotElementXY):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -92608,7 +91169,7 @@ class plotElementXY(plotElementWithLegend):
 
 
 class plotElementXYY(plotElementWithLegend):
-    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXYY = ..., theme : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
 
         X: Values on the X axis.
@@ -92646,8 +91207,6 @@ class plotElementXYY(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -92672,7 +91231,7 @@ class plotElementXYY(plotElementWithLegend):
         ...
 
 
-    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, tag : plotElementXYY = ..., theme : Any = ..., user_data : Any = ...):
+    def configure(self, X : ndarray = [0.], Y1 : ndarray = [0.], Y2 : ndarray = [0.], axes : tuple = (0, 3), children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
         """
         X: Values on the X axis.
         axes: (X axis, Y axis)
@@ -92709,8 +91268,6 @@ class plotElementXYY(plotElementWithLegend):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: theme for the legend and plot
         user_data: User data of any type.
         """
@@ -92874,6 +91431,13 @@ class plotElementXYY(plotElementWithLegend):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -92925,6 +91489,13 @@ class plotElementXYY(plotElementWithLegend):
 
     @ignore_fit.setter
     def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -93160,27 +91731,6 @@ class plotElementXYY(plotElementWithLegend):
 
 
     @property
-    def tag(self) -> plotElementXYY:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : plotElementXYY):
-        ...
-
-
-    @property
     def theme(self):
         """
         Writable attribute: theme for the legend and plot
@@ -93222,7 +91772,7 @@ class plotElementXYY(plotElementWithLegend):
 
 
 class uiItem(baseItem):
-    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : uiItem = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
         callback: callback object or list of callback objects
@@ -93300,8 +91850,6 @@ class uiItem(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -93350,7 +91898,7 @@ class uiItem(baseItem):
         ...
 
 
-    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, tag : uiItem = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : list = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
         callback: callback object or list of callback objects
             which is called when the value of the item is changed.
@@ -93427,8 +91975,6 @@ class uiItem(baseItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
-        tag: tag is an optional string that uniquely
-            defines the object.
         theme: bound theme for the item
         user_data: User data of any type.
         value: main internal value for the object.
@@ -93579,6 +92125,13 @@ class uiItem(baseItem):
 
 
     @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -93690,6 +92243,13 @@ class uiItem(baseItem):
 
     @indent.setter
     def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -94117,27 +92677,6 @@ class uiItem(baseItem):
 
     @show.setter
     def show(self, value : bool):
-        ...
-
-
-    @property
-    def tag(self) -> uiItem:
-        """
-        Writable attribute: tag is an optional string that uniquely
-        defines the object.
-
-        If set (else it is set to None), tag can be used to access
-        the object by name for parent=,
-        previous_sibling=, next_sibling= arguments.
-
-        The tag can be set at any time, but it must be unique.
-        
-        """
-        ...
-
-
-    @tag.setter
-    def tag(self, value : uiItem):
         ...
 
 
