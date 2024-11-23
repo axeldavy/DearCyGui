@@ -701,13 +701,6 @@ cdef class SimplePlot(uiItem):
         self._autoscale = True
         self.last_frame_autoscale_update = -1
 
-    def configure(self, **kwargs):
-        # Map old attribute names (the new names are handled in uiItem)
-        self._scale_min = kwargs.pop("scaleMin", self._scale_min)
-        self._scale_max = kwargs.pop("scaleMax", self._scale_max)
-        self._autoscale = kwargs.pop("autosize", self._autoscale)
-        return super().configure(**kwargs)
-
     @property
     def scale_min(self):
         """
@@ -2234,17 +2227,6 @@ cdef class InputValue(uiItem):
             self.format = kwargs.pop("format")
         if "size" in kwargs:
             self.size = kwargs.pop("size")
-        # legacy support
-        if "min_clamped" in kwargs:
-            if kwargs.pop("min_clamped"):
-                self._min = kwargs.pop("minv", 0.)
-        if "max_clamped" in kwargs:
-            if kwargs.pop("max_clamped"):
-                self._max = kwargs.pop("maxv", 100.)
-        if "minv" in kwargs:
-            del kwargs["minv"]
-        if "maxv" in kwargs:
-            del kwargs["maxv"]
         # baseItem configure will configure the rest.
         return super().configure(**kwargs)
 

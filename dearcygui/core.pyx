@@ -320,6 +320,7 @@ cdef class Context:
         cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
         parent_queue.append(next_parent)
         self.threadlocal_data.parent_queue = parent_queue
+        self.threadlocal_data.current_parent = next_parent
 
     cpdef void pop_next_parent(self):
         """
@@ -328,15 +329,17 @@ cdef class Context:
         cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
         if len(parent_queue) > 0:
             parent_queue.pop()
+        self.threadlocal_data.parent_queue = parent_queue # Unsure if needed
+        if len(parent_queue) > 0:
+            self.threadlocal_data.current_parent = parent_queue[len(parent_queue)-1]
+        else:
+            self.threadlocal_data.current_parent = None
 
     cpdef object fetch_parent_queue_back(self):
         """
         Retrieve the last item from the potential parent list
         """
-        cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
-        if len(parent_queue) == 0:
-            return None
-        return parent_queue[len(parent_queue)-1]
+        return getattr(self.threadlocal_data, 'current_parent', None)
 
     cpdef object fetch_parent_queue_front(self):
         """
@@ -596,56 +599,83 @@ cdef class baseItem:
         self.element_child_category = -1
 
     def configure(self, **kwargs):
-        # Legacy DPG support: automatic attachement
-        should_attach = kwargs.pop("attach", None)
-        cdef bint ignore_if_fail = False
-        if should_attach is None:
-            # None: default to False for items which
-            # cannot be attached, True else
-            if self.element_child_category == -1:
-                should_attach = False
-            else:
-                should_attach = True
-                # To avoid failing on items which cannot
-                # be attached to the rendering tree but
-                # can be attached to other items
-                ignore_if_fail = True
-        if self._parent is None and should_attach:
-            before = kwargs.pop("before", None)
-            parent = kwargs.pop("parent", None)
-            if before is not None:
-                # parent manually set. Do not ignore failure
-                ignore_if_fail = False
-                self.attach_before(before)
-            else:
-                if parent is None:
-                    parent = self.context.fetch_parent_queue_back()
-                    if parent is None:
-                        parent = self.context._viewport
+        # Automatic attachment
+        cdef bint ignore_if_fail
+        cdef bint should_attach
+        cdef bint default_behaviour = True
+        # The most common case is neither
+        # attach, parent, nor before as set.
+        # The code is optimized with this case
+        # in mind.
+        if self._parent is None:
+            ignore_if_fail = False
+            # attach = None => default behaviour
+            if "attach" in kwargs:
+                attach = kwargs.pop("attach")
+                if attach is not None:
+                    default_behaviour = False
+                    should_attach = attach
+            if default_behaviour:
+                # default behaviour: False for items which
+                # cannot be attached, True else but without
+                # failure.
+                if self.element_child_category == -1:
+                    should_attach = False
                 else:
+                    should_attach = True
+                    # To avoid failing on items which cannot
+                    # be attached to the rendering tree but
+                    # can be attached to other items
+                    ignore_if_fail = True
+            if should_attach:
+                before = None
+                parent = None
+                if "before" in kwargs:
+                    before = kwargs.pop("before")
+                if "parent" in kwargs:
+                    parent = kwargs.pop("parent")
+                if before is not None:
                     # parent manually set. Do not ignore failure
                     ignore_if_fail = False
-                try:
+                    self.attach_before(before)
+                else:
+                    if parent is None:
+                        parent = self.context.fetch_parent_queue_back()
+                        if parent is None:
+                            # The default parent is the viewport,
+                            # but check right now for failure
+                            # as attach_to_parent is not cheap.
+                            if not(ignore_if_fail) or \
+                                self.element_child_category == child_type.cat_window or \
+                                self.element_child_category == child_type.cat_menubar or \
+                                self.element_child_category == child_type.cat_viewport_drawlist:
+                                parent = self.context._viewport
+                    else:
+                        # parent manually set. Do not ignore failure
+                        ignore_if_fail = False
                     if parent is not None:
-                        self.attach_to_parent(parent)
-                except TypeError as e:
-                    if not(ignore_if_fail):
-                        raise(e)
-        else:
-            if "before" in kwargs:
-                del kwargs["before"]
-            if "parent" in kwargs:
-                del kwargs["parent"]
+                        try:
+                            self.attach_to_parent(parent)
+                        except TypeError as e:
+                            if not(ignore_if_fail):
+                                raise(e)
+
+        # Fast path for this common case
+        if self.context._item_unused_configure_args_callback is None:
+            for (key, value) in kwargs.items():
+                try:
+                    setattr(self, key, value)
+                except:
+                    pass
+            return
         remaining = {}
         for (key, value) in kwargs.items():
             try:
                 setattr(self, key, value)
             except AttributeError as e:
                 remaining[key] = value
-        if self.context._item_unused_configure_args_callback is not None and \
-           len(remaining) > 0:
+        if len(remaining) > 0:
             self.context._item_unused_configure_args_callback(self, remaining)
-        return
 
     def __del__(self):
         if self.context is not None:
