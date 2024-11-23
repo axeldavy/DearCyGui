@@ -1797,10 +1797,10 @@ cdef class RadioButton(uiItem):
                 changed = True
                 SharedStr.set(<SharedStr>self._value, self._items[i])
             imgui.PopID()
-        imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                           imgui.ImVec2(0., 0.))
+        #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+        #                   imgui.ImVec2(0., 0.))
         imgui.EndGroup()
-        imgui.PopStyleVar(1)
+        #imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
         return changed
@@ -2885,10 +2885,10 @@ cdef class Text(uiItem):
         if self._show_label or self._bullet:
             # Group enables to share the states for all items
             # And have correct rect_size
-            imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                               imgui.ImVec2(0., 0.))
+            #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+            #                   imgui.ImVec2(0., 0.))
             imgui.EndGroup()
-            imgui.PopStyleVar(1)
+            #imgui.PopStyleVar(1)
 
         self.update_current_state()
         return False
@@ -3983,11 +3983,13 @@ cdef class TabBar(uiItem):
             imgui.EndTabBar()
         else:
             self.propagate_hidden_state_to_children_with_handlers()
-        # EngGroup adds itemSpacing which messes up requested sizes
-        imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                               imgui.ImVec2(0., 0.))
+        # PushStyleVar was added because EngGroup adds itemSpacing
+        # which messed up requested sizes. However it seems the
+        # issue was fixed by imgui
+        #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+        #                       imgui.ImVec2(0., 0.))
         imgui.EndGroup()
-        imgui.PopStyleVar(1)
+        #imgui.PopStyleVar(1)
         imgui.PopID()
         return self.state.cur.active and not(self.state.prev.active)
 
@@ -4177,10 +4179,10 @@ cdef class TreeNode(uiItem):
                 self.context._viewport.parent_pos = pos_p
             imgui.TreePop()
 
-        imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                           imgui.ImVec2(0., 0.))
+        #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+        #                   imgui.ImVec2(0., 0.))
         imgui.EndGroup()
-        imgui.PopStyleVar(1)
+        #imgui.PopStyleVar(1)
         # TODO; rect size from group ?
         imgui.PopID()
 

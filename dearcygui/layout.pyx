@@ -108,10 +108,10 @@ cdef class Layout(uiItem):
             swap(pos_p, self.context._viewport.parent_pos)
             draw_ui_children(self)
             self.context._viewport.parent_pos = pos_p
-        imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                               imgui.ImVec2(0., 0.))
+        #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+        #                       imgui.ImVec2(0., 0.))
         imgui.EndGroup()
-        imgui.PopStyleVar(1)
+        #imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
         return changed
@@ -344,10 +344,10 @@ cdef class HorizontalLayout(Layout):
             # just to be sure the user doesn't change the
             # Positioning we took care to manage :-)
             self.last_widgets_child.unlock_and_previous_siblings()
-        imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                           imgui.ImVec2(0., 0.))
+        #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+        #                   imgui.ImVec2(0., 0.))
         imgui.EndGroup()
-        imgui.PopStyleVar(1)
+        #imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
         if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
@@ -585,10 +585,10 @@ cdef class VerticalLayout(Layout):
             # just to be sure the user doesn't change the
             # positioning we took care to manage :-)
             self.last_widgets_child.unlock_and_previous_siblings()
-        imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
-                           imgui.ImVec2(0., 0.))
+        #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
+        #                   imgui.ImVec2(0., 0.))
         imgui.EndGroup()
-        imgui.PopStyleVar(1)
+        #imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
         if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
