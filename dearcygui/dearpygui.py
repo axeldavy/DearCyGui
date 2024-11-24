@@ -20,7 +20,8 @@ from contextlib import contextmanager
 
 import dearcygui as dcg
 
-from dearcygui import constants
+from dearcygui.constants import *
+from dearcygui import Key, KeyMod, MouseButton
 
 from typing import List, Any, Callable, Union, Tuple
 import numpy as np
@@ -32,17 +33,221 @@ LOCAL_STORAGE = threading.local()
 LOCAL_STORAGE.Y_AXIS = dcg.Axis.Y1
 
 # reserved fields:
-constants.mvReservedUUID_0 = 10
-constants.mvReservedUUID_1 = 11
-constants.mvReservedUUID_2 = 12
-constants.mvReservedUUID_3 = 13
-constants.mvReservedUUID_4 = 14
-constants.mvReservedUUID_5 = 15
-constants.mvReservedUUID_6 = 16
-constants.mvReservedUUID_7 = 17
-constants.mvReservedUUID_8 = 18
-constants.mvReservedUUID_9 = 19
-constants.mvReservedUUID_10 = 20
+mvReservedUUID_0 = 10
+mvReservedUUID_1 = 11
+mvReservedUUID_2 = 12
+mvReservedUUID_3 = 13
+mvReservedUUID_4 = 14
+mvReservedUUID_5 = 15
+mvReservedUUID_6 = 16
+mvReservedUUID_7 = 17
+mvReservedUUID_8 = 18
+mvReservedUUID_9 = 19
+mvReservedUUID_10 = 20
+
+# Key codes
+mvKey_ModDisabled = None
+mvKey_None = KeyMod.NOMOD
+mvKey_0 = Key.ZERO
+mvKey_1 = Key.ONE
+mvKey_2 = Key.TWO
+mvKey_3 = Key.THREE
+mvKey_4 = Key.FOUR
+mvKey_5 = Key.FIVE
+mvKey_6 = Key.SIX
+mvKey_7 = Key.SEVEN
+mvKey_8 = Key.EIGHT
+mvKey_9 = Key.NINE
+mvKey_A = Key.A
+mvKey_B = Key.B
+mvKey_C = Key.C
+mvKey_D = Key.D
+mvKey_E = Key.E
+mvKey_F = Key.F
+mvKey_G = Key.G
+mvKey_H = Key.H
+mvKey_I = Key.I
+mvKey_J = Key.J
+mvKey_K = Key.K
+mvKey_L = Key.L
+mvKey_M = Key.M
+mvKey_N = Key.N
+mvKey_O = Key.O
+mvKey_P = Key.P
+mvKey_Q = Key.Q
+mvKey_R = Key.R
+mvKey_S = Key.S
+mvKey_T = Key.T
+mvKey_U = Key.U
+mvKey_V = Key.V
+mvKey_W = Key.W
+mvKey_X = Key.X
+mvKey_Y = Key.Y
+mvKey_Z = Key.Z
+mvKey_Back = Key.BACKSPACE
+mvKey_Tab = Key.TAB
+mvKey_Return = Key.ENTER
+mvKey_LShift = Key.LEFTSHIFT
+mvKey_RShift = Key.RIGHTSHIFT
+mvKey_LControl = Key.LEFTCTRL
+mvKey_RControl = Key.RIGHTCTRL
+mvKey_LAlt = Key.LEFTALT
+mvKey_RAlt = Key.RIGHTALT
+mvKey_Pause = Key.PAUSE
+mvKey_CapsLock = Key.CAPSLOCK
+mvKey_Escape = Key.ESCAPE
+mvKey_Spacebar = Key.SPACE
+mvKey_End = Key.END
+mvKey_Home = Key.HOME
+mvKey_Left = Key.LEFTARROW
+mvKey_Up = Key.UPARROW
+mvKey_Right = Key.RIGHTARROW
+mvKey_Down = Key.DOWNARROW
+mvKey_Print = Key.PRINTSCREEN
+mvKey_Insert = Key.INSERT
+mvKey_Delete = Key.DELETE
+mvKey_NumPad0 = Key.KEYPAD0
+mvKey_NumPad1 = Key.KEYPAD1
+mvKey_NumPad2 = Key.KEYPAD2
+mvKey_NumPad3 = Key.KEYPAD3
+mvKey_NumPad4 = Key.KEYPAD4
+mvKey_NumPad5 = Key.KEYPAD5
+mvKey_NumPad6 = Key.KEYPAD6
+mvKey_NumPad7 = Key.KEYPAD7
+mvKey_NumPad8 = Key.KEYPAD8
+mvKey_NumPad9 = Key.KEYPAD9
+mvKey_Subtract = Key.KEYPADSUBTRACT
+mvKey_Decimal = Key.KEYPADDECIMAL
+mvKey_Divide = Key.KEYPADDIVIDE
+mvKey_Multiply = Key.KEYPADMULTIPLY
+mvKey_Add = Key.KEYPADADD
+mvKey_F1 = Key.F1
+mvKey_F2 = Key.F2
+mvKey_F3 = Key.F3
+mvKey_F4 = Key.F4
+mvKey_F5 = Key.F5
+mvKey_F6 = Key.F6
+mvKey_F7 = Key.F7
+mvKey_F8 = Key.F8
+mvKey_F9 = Key.F9
+mvKey_F10 = Key.F10
+mvKey_F11 = Key.F11
+mvKey_F12 = Key.F12
+mvKey_F13 = Key.F13
+mvKey_F14 = Key.F14
+mvKey_F15 = Key.F15
+mvKey_F16 = Key.F16
+mvKey_F17 = Key.F17
+mvKey_F18 = Key.F18
+mvKey_F19 = Key.F19
+mvKey_F20 = Key.F20
+mvKey_F21 = Key.F21
+mvKey_F22 = Key.F22
+mvKey_F23 = Key.F23
+mvKey_F24 = Key.F24
+mvKey_NumLock = Key.NUMLOCK
+mvKey_ScrollLock = Key.SCROLLLOCK
+mvKey_Period = Key.PERIOD
+mvKey_Slash = Key.SLASH
+mvKey_Backslash = Key.BACKSLASH
+mvKey_Open_Brace = Key.LEFTBRACKET
+mvKey_Close_Brace = Key.RIGHTBRACKET
+mvKey_Browser_Back = Key.APPBACK
+mvKey_Browser_Forward = Key.APPFORWARD
+mvKey_Comma = Key.COMMA # -> it seems to be the old mvKey_Separator
+mvKey_Minus = Key.MINUS
+mvKey_Menu = Key.MENU
+mvKey_ModSuper = KeyMod.SUPER # Cmd/Super/Windows
+mvKey_ModShift = KeyMod.SHIFT
+mvKey_ModAlt = KeyMod.ALT
+mvKey_ModCtrl = KeyMod.CTRL
+
+
+#-----------------------------------------------------------------------------
+# Mouse Codes
+#-----------------------------------------------------------------------------
+mvMouseButton_Left = MouseButton.LEFT
+mvMouseButton_Right = MouseButton.RIGHT
+mvMouseButton_Middle = MouseButton.MIDDLE
+mvMouseButton_X1 = MouseButton.X1
+mvMouseButton_X2 = MouseButton.X2
+
+mvGraphicsBackend_D3D11 = 0
+mvGraphicsBackend_D3D12 = 1
+mvGraphicsBackend_VULKAN = 2
+mvGraphicsBackend_METAL = 3
+mvGraphicsBackend_OPENGL = 4
+
+
+mvAll = 0
+mvTool_About = 3 # MV_TOOL_ABOUT_UUID
+mvTool_Debug = 4 # MV_TOOL_DEBUG_UUID
+mvTool_Doc = 5 # MV_TOOL_DOC_UUID
+mvTool_ItemRegistry = 6 # MV_TOOL_ITEM_REGISTRY_UUID
+mvTool_Metrics = 7 # MV_TOOL_METRICS_UUID
+mvTool_Stack = 10 # MV_TOOL_STACK_UUID
+mvTool_Style = 8 # MV_TOOL_STYLE_UUID
+mvTool_Font = 9 # MV_TOOL_FONT_UUID
+mvFontAtlas = 2 # MV_ATLAS_UUID
+mvAppUUID = 1 # MV_APP_UUID
+mvInvalidUUID = 0 # MV_INVALID_UUID
+
+mvComboHeight_Small = "small"
+mvComboHeight_Regular = "regular"
+mvComboHeight_Large = "large"
+mvComboHeight_Largest = "largest"
+
+mvPlatform_Windows = 0
+mvPlatform_Apple = 1
+mvPlatform_Linux = 2
+
+mvTabOrder_Reorderable = 0
+mvTabOrder_Fixed = 1
+mvTabOrder_Leading = 2
+mvTabOrder_Trailing = 3
+
+mvTimeUnit_Us = 0
+mvTimeUnit_Ms = 1
+mvTimeUnit_S = 2
+mvTimeUnit_Min = 3
+mvTimeUnit_Hr = 4
+mvTimeUnit_Day = 5
+mvTimeUnit_Mo = 6
+mvTimeUnit_Yr = 7
+
+mvDatePickerLevel_Day = 0
+mvDatePickerLevel_Month = 1
+mvDatePickerLevel_Year = 2
+
+mvCullMode_None = 0
+mvCullMode_Back = 1
+mvCullMode_Front = 2
+
+mvFontRangeHint_Default = 0
+mvFontRangeHint_Japanese = 1
+mvFontRangeHint_Korean = 2
+mvFontRangeHint_Chinese_Full = 3
+mvFontRangeHint_Chinese_Simplified_Common = 4
+mvFontRangeHint_Cyrillic = 5
+mvFontRangeHint_Thai = 6
+mvFontRangeHint_Vietnamese = 7
+
+mvNode_Attr_Input = 0
+mvNode_Attr_Output = 1
+mvNode_Attr_Static = 2
+
+mvPlotBin_Sqrt = -1
+mvPlotBin_Sturges = -2
+mvPlotBin_Rice = -3
+mvPlotBin_Scott = -4
+
+
+mvFormat_Float_rgba = 0
+mvFormat_Float_rgb = 1
+
+mvThemeCat_Core = 0
+mvThemeCat_Plots = 1
+mvThemeCat_Nodes = 2
 
 class DPGContext(dcg.Context):
     """
@@ -114,6 +319,7 @@ class DPGContext(dcg.Context):
                         'autosize_y': False,
                         'alpha_bar': False,
                         'alpha_preview': 0,
+                        'corner_colors': None,
                         'sort': False,
                         'label': None}
             non_defaults = {}
@@ -294,7 +500,7 @@ def mutex():
         CONTEXT.viewport.unlock_mutex()
 
 
-def popup(parent: Union[int, str], mousebutton: int = constants.mvMouseButton_Right, modal: bool=False, tag:Union[int, str]=0, min_size:Union[List[int], Tuple[int, ...]]=[100,100], max_size: Union[List[int], Tuple[int, ...]] =[30000, 30000], no_move: bool=False, no_background: bool=False) -> int:
+def popup(parent: Union[int, str], mousebutton: int = mvMouseButton_Right, modal: bool=False, tag:Union[int, str]=0, min_size:Union[List[int], Tuple[int, ...]]=[100,100], max_size: Union[List[int], Tuple[int, ...]] =[30000, 30000], no_move: bool=False, no_background: bool=False) -> int:
     """A window that will be displayed when a parent item is hovered and the corresponding mouse button has been clicked. By default a popup will shrink fit the items it contains.
     This is useful for context windows, and simple modal window popups.
     When popups are used a modal they have more avaliable settings (i.e. title, resize, width, height) These
@@ -338,7 +544,7 @@ def show_style_editor() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_Style)
+    internal_dpg.show_tool(mvTool_Style)
 
 
 def show_metrics() -> None:
@@ -347,7 +553,7 @@ def show_metrics() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_Metrics)
+    internal_dpg.show_tool(mvTool_Metrics)
 
 
 def show_about() -> None:
@@ -356,7 +562,7 @@ def show_about() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_About)
+    internal_dpg.show_tool(mvTool_About)
 
 
 def show_debug() -> None:
@@ -365,7 +571,7 @@ def show_debug() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_Debug)
+    internal_dpg.show_tool(mvTool_Debug)
 
 
 def show_documentation() -> None:
@@ -374,7 +580,7 @@ def show_documentation() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_Doc)
+    internal_dpg.show_tool(mvTool_Doc)
 
 
 def show_font_manager() -> None:
@@ -383,7 +589,7 @@ def show_font_manager() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_Font)
+    internal_dpg.show_tool(mvTool_Font)
 
 
 def show_item_registry() -> None:
@@ -392,7 +598,7 @@ def show_item_registry() -> None:
     Returns:
         None
     """
-    internal_dpg.show_tool(constants.mvTool_ItemRegistry)
+    internal_dpg.show_tool(mvTool_ItemRegistry)
 
 
 ########################################################################################################################
@@ -1531,7 +1737,7 @@ def bar_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float],
 
     return dcg.PlotBars(CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, show=show, weight=weight, horizontal=horizontal, **kwargs)
 
-def bool_value(*, label: str =None, user_data: Any =None, default_value: bool =False, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def bool_value(*, label: str =None, user_data: Any =None, default_value: bool =False, parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a bool value.
 
     Args:
@@ -1609,7 +1815,7 @@ def candle_series(dates : Union[List[float], Tuple[float, ...]], opens : Union[L
         bear_color (Union[List[int], Tuple[int, ...]], optional): 
         weight (float, optional): 
         tooltip (bool, optional): 
-        time_unit (int, optional): mvTimeUnit_* constants. Default mvTimeUnit_Day.
+        time_unit (int, optional): mvTimeUnit_*  Default mvTimeUnit_Day.
         id (Union[int, str], optional): (deprecated) 
     Returns:
         Union[int, str]
@@ -1815,7 +2021,7 @@ def color_button(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 25
 
     return dcg.ColorButton(CONTEXT, value=default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_border=no_border, no_drag_drop=no_drag_drop, **kwargs)
 
-def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_picker: bool =False, no_options: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, no_drag_drop: bool =False, alpha_bar: bool =False, alpha_preview: int =0, display_mode: int =constants.mvColorEdit_rgb, display_type: int =constants.mvColorEdit_uint8, input_mode: int =constants.mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
+def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_picker: bool =False, no_options: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, no_drag_drop: bool =False, alpha_bar: bool =False, alpha_preview: int =0, display_mode: int =mvColorEdit_rgb, display_type: int =mvColorEdit_uint8, input_mode: int =mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
     """     Adds an RGBA color editor. Left clicking the small color preview will provide a color picker. Click and draging the small color preview will copy the color to be applied on any other color widget.
 
     Args:
@@ -1863,7 +2069,7 @@ def color_edit(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255)
 
     return dcg.ColorEdit(CONTEXT, value=default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_picker=no_picker, no_options=no_options, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, no_drag_drop=no_drag_drop, alpha_bar=alpha_bar, alpha_preview=alpha_preview, display_mode=display_mode, display_type=display_type, input_mode=input_mode, **kwargs)
 
-def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_side_preview: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, alpha_bar: bool =False, display_rgb: bool =False, display_hsv: bool =False, display_hex: bool =False, picker_mode: int =constants.mvColorPicker_bar, alpha_preview: int =0, display_type: int =constants.mvColorEdit_uint8, input_mode: int =constants.mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
+def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 255), *, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_alpha: bool =False, no_side_preview: bool =False, no_small_preview: bool =False, no_inputs: bool =False, no_tooltip: bool =False, no_label: bool =False, alpha_bar: bool =False, display_rgb: bool =False, display_hsv: bool =False, display_hex: bool =False, picker_mode: int =mvColorPicker_bar, alpha_preview: int =0, display_type: int =mvColorEdit_uint8, input_mode: int =mvColorEdit_input_rgb, **kwargs) -> Union[int, str]:
     """     Adds an RGB color picker. Right click the color picker for options. Click and drag the color preview to copy the color and drop on any other color widget to apply. Right Click allows the style of the color picker to be changed.
 
     Args:
@@ -1912,7 +2118,7 @@ def color_picker(default_value : Union[List[int], Tuple[int, ...]] =(0, 0, 0, 25
 
     return dcg.ColorPicker(CONTEXT, value=default_value, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, no_alpha=no_alpha, no_side_preview=no_side_preview, no_small_preview=no_small_preview, no_inputs=no_inputs, no_tooltip=no_tooltip, no_label=no_label, alpha_bar=alpha_bar, display_rgb=display_rgb, display_hsv=display_hsv, display_hex=display_hex, picker_mode=picker_mode, alpha_preview=alpha_preview, display_type=display_type, input_mode=input_mode, **kwargs)
 
-def color_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def color_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a color value.
 
     Args:
@@ -1933,7 +2139,7 @@ def color_value(*, label: str =None, user_data: Any =None, default_value: Union[
 
     return dcg.SharedColor(CONTEXT, default_value)
 
-def colormap(colors : List[Union[List[int], Tuple[int, ...]]], qualitative : bool, *, label: str =None, user_data: Any =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_4, **kwargs) -> Union[int, str]:
+def colormap(colors : List[Union[List[int], Tuple[int, ...]]], qualitative : bool, *, label: str =None, user_data: Any =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_4, **kwargs) -> Union[int, str]:
     """     Adds a legend that pairs colors with normalized value 0.0->1.0. Each color will be  This is typically used with a heat series. (ex. [[0, 0, 0, 255], [255, 255, 255, 255]] will be mapped to a soft transition from 0.0-1.0)
 
     Args:
@@ -2179,7 +2385,7 @@ def date_picker(*, label: str =None, user_data: Any =None, indent: int =0, paylo
         tracked (bool, optional): Scroll tracking
         track_offset (float, optional): 0.0f:top, 0.5f:center, 1.0f:bottom
         default_value (dict, optional): 
-        level (int, optional): Use avaliable constants. mvDatePickerLevel_Day, mvDatePickerLevel_Month, mvDatePickerLevel_Year
+        level (int, optional): Use avaliable  mvDatePickerLevel_Day, mvDatePickerLevel_Month, mvDatePickerLevel_Year
         id (Union[int, str], optional): (deprecated) 
     Returns:
         Union[int, str]
@@ -2215,7 +2421,7 @@ def digital_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[flo
 
     #return digital_series(x, y, label=label, user_data=user_data, show=show, **kwargs)
 
-def double4_value(*, label: str =None, user_data: Any =None, default_value: Any =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def double4_value(*, label: str =None, user_data: Any =None, default_value: Any =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a double value.
 
     Args:
@@ -2236,7 +2442,7 @@ def double4_value(*, label: str =None, user_data: Any =None, default_value: Any 
 
     return dcg.SharedDouble4(CONTEXT, default_value)
 
-def double_value(*, label: str =None, user_data: Any =None, default_value: float =0.0, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def double_value(*, label: str =None, user_data: Any =None, default_value: float =0.0, parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a double value.
 
     Args:
@@ -2629,7 +2835,7 @@ def draw_layer(*, label: str =None, user_data: Any =None, show: bool =True, pers
         show (bool, optional): Attempt to render widget.
         perspective_divide (bool, optional): New in 1.1. apply perspective divide
         depth_clipping (bool, optional): New in 1.1. apply depth clipping
-        cull_mode (int, optional): New in 1.1. culling mode, mvCullMode_* constants. Only works with triangles currently.
+        cull_mode (int, optional): New in 1.1. culling mode, mvCullMode_*  Only works with triangles currently.
         id (Union[int, str], optional): (deprecated) 
     Returns:
         Union[int, str]
@@ -2690,7 +2896,7 @@ def drawlist(width : int, height : int, *, label: str =None, user_data: Any =Non
 
     return dcg.DrawInWindow(CONTEXT, width=width, height=height, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, **kwargs)
 
-def dynamic_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
+def dynamic_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a dynamic texture.
 
     Args:
@@ -2818,7 +3024,7 @@ def filter_set(*, label: str =None, user_data: Any =None, width: int =0, indent:
 
     #return filter_set(label=label, user_data=user_data, width=width, indent=indent, show=show, **kwargs)
 
-def float4_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def float4_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(0.0, 0.0, 0.0, 0.0), parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a float4 value.
 
     Args:
@@ -2839,7 +3045,7 @@ def float4_value(*, label: str =None, user_data: Any =None, default_value: Union
 
     return dcg.SharedFloat4(CONTEXT, default_value)
 
-def float_value(*, label: str =None, user_data: Any =None, default_value: float =0.0, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def float_value(*, label: str =None, user_data: Any =None, default_value: float =0.0, parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a float value.
 
     Args:
@@ -2860,7 +3066,7 @@ def float_value(*, label: str =None, user_data: Any =None, default_value: float 
 
     return dcg.SharedFloat(CONTEXT, default_value)
 
-def float_vect_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def float_vect_value(*, label: str =None, user_data: Any =None, default_value: Union[List[float], Tuple[float, ...]] =(), parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a float vect value.
 
     Args:
@@ -2881,7 +3087,7 @@ def float_vect_value(*, label: str =None, user_data: Any =None, default_value: U
 
     return dcg.SharedFloatVect(CONTEXT, default_value)
 
-def font(file : str, size : int, *, label: str =None, user_data: Any =None, pixel_snapH: bool =False, parent: Union[int, str] =constants.mvReservedUUID_0, **kwargs) -> Union[int, str]:
+def font(file : str, size : int, *, label: str =None, user_data: Any =None, pixel_snapH: bool =False, parent: Union[int, str] =mvReservedUUID_0, **kwargs) -> Union[int, str]:
     """     Adds font to a font registry.
 
     Args:
@@ -3619,7 +3825,7 @@ def input_text(*, label: str =None, user_data: Any =None, width: int =0, height:
 
     return dcg.InputText(CONTEXT, label=label, user_data=user_data, width=width, height=height, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, hint=hint, multiline=multiline, no_spaces=no_spaces, uppercase=uppercase, tab_input=tab_input, decimal=decimal, hexadecimal=hexadecimal, readonly=readonly, password=password, scientific=scientific, on_enter=on_enter, auto_select_all=auto_select_all, ctrl_enter_for_new_line=ctrl_enter_for_new_line, no_horizontal_scroll=no_horizontal_scroll, always_overwrite=always_overwrite, no_undo_redo=no_undo_redo, escape_clears_all=escape_clears_all, **kwargs)
 
-def int4_value(*, label: str =None, user_data: Any =None, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def int4_value(*, label: str =None, user_data: Any =None, default_value: Union[List[int], Tuple[int, ...]] =(0, 0, 0, 0), parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a int4 value.
 
     Args:
@@ -3640,7 +3846,7 @@ def int4_value(*, label: str =None, user_data: Any =None, default_value: Union[L
 
     return dcg.SharedInt4(CONTEXT, default_value)
 
-def int_value(*, label: str =None, user_data: Any =None, default_value: int =0, parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def int_value(*, label: str =None, user_data: Any =None, default_value: int =0, parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a int value.
 
     Args:
@@ -3935,7 +4141,7 @@ def item_visible_handler(*, label: str =None, user_data: Any =None, callback: Ca
 
     return dcg.RenderedHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def key_down_handler(key : int =mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key down handler.
 
     Args:
@@ -3955,9 +4161,12 @@ def key_down_handler(key : int =constants.mvKey_None, *, label: str =None, user_
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.KeyDownHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    if key is mvKey_None:
+        return dcg.utils.AnyKeyDownHandlerdcg.KeyDownHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    else:
+        return dcg.KeyDownHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def key_press_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def key_press_handler(key : int =mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key press handler.
 
     Args:
@@ -3977,9 +4186,12 @@ def key_press_handler(key : int =constants.mvKey_None, *, label: str =None, user
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.KeyPressHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    if key is mvKey_None:
+        return dcg.utils.AnyKeyPressHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    else:
+        return dcg.KeyPressHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def key_release_handler(key : int =constants.mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def key_release_handler(key : int =mvKey_None, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a key release handler.
 
     Args:
@@ -3999,7 +4211,10 @@ def key_release_handler(key : int =constants.mvKey_None, *, label: str =None, us
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    return dcg.KeyReleaseHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    if key is mvKey_None:
+        return dcg.AnyKeyReleaseHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+    else:
+        return dcg.KeyReleaseHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
 def knob_float(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, enabled: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, default_value: float =0.0, min_value: float =0.0, max_value: float =100.0, **kwargs) -> Union[int, str]:
     """     Adds a knob that rotates based on change in x mouse position.
@@ -4233,7 +4448,7 @@ def menu_item(*, label: str =None, user_data: Any =None, indent: int =0, payload
 
     return dcg.MenuItem(CONTEXT, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drop_callback=drop_callback, show=show, enabled=enabled, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, shortcut=shortcut, check=check, **kwargs)
 
-def mouse_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse click handler.
 
     Args:
@@ -4255,7 +4470,7 @@ def mouse_click_handler(button : int =-1, *, label: str =None, user_data: Any =N
 
     return dcg.MouseClickHandler(CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse double click handler.
 
     Args:
@@ -4277,7 +4492,7 @@ def mouse_double_click_handler(button : int =-1, *, label: str =None, user_data:
 
     return dcg.MouseDoubleClickHandler(CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse down handler.
 
     Args:
@@ -4299,7 +4514,7 @@ def mouse_down_handler(button : int =-1, *, label: str =None, user_data: Any =No
 
     return dcg.MouseDownHandler(CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse drag handler.
 
     Args:
@@ -4322,7 +4537,7 @@ def mouse_drag_handler(button : int =-1, threshold : float =10.0, *, label: str 
 
     return dcg.MouseDragHandler(CONTEXT, button=button, threshold=threshold, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse move handler.
 
     Args:
@@ -4343,7 +4558,7 @@ def mouse_move_handler(*, label: str =None, user_data: Any =None, callback: Call
 
     return dcg.MouseMoveHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse release handler.
 
     Args:
@@ -4365,7 +4580,7 @@ def mouse_release_handler(button : int =-1, *, label: str =None, user_data: Any 
 
     return dcg.MouseReleaseHandler(CONTEXT, button=button, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
-def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =constants.mvReservedUUID_1, **kwargs) -> Union[int, str]:
+def mouse_wheel_handler(*, label: str =None, user_data: Any =None, callback: Callable =None, show: bool =True, parent: Union[int, str] =mvReservedUUID_1, **kwargs) -> Union[int, str]:
     """     Adds a mouse wheel handler.
 
     Args:
@@ -4462,7 +4677,7 @@ def node_editor(*, label: str =None, user_data: Any =None, width: int =0, height
         delink_callback (Callable, optional): Callback ran when a link is detached.
         menubar (bool, optional): Shows or hides the menubar.
         minimap (bool, optional): Shows or hides the Minimap. New in 1.6.
-        minimap_location (int, optional): mvNodeMiniMap_Location_* constants. New in 1.6.
+        minimap_location (int, optional): mvNodeMiniMap_Location_*  New in 1.6.
         id (Union[int, str], optional): (deprecated) 
     Returns:
         Union[int, str]
@@ -4527,7 +4742,7 @@ def pie_series(x : float, y : float, radius : float, values : Union[List[float],
 
     #return pie_series(x, y, radius, values, labels, label=label, user_data=user_data, show=show, format=format, angle=angle, normalize=normalize, ignore_hidden=ignore_hidden, **kwargs)
 
-def plot(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_title: bool =False, no_menus: bool =False, no_box_select: bool =False, no_mouse_pos: bool =False, query: bool =False, query_color: Union[List[float], Tuple[float, ...]] =(0, 255, 0, 255), min_query_rects: int =1, max_query_rects: int =1, crosshairs: bool =False, equal_aspects: bool =False, no_inputs: bool =False, no_frame: bool =False, use_local_time: bool =False, use_ISO8601: bool =False, use_24hour_clock: bool =False, pan_button: int =constants.mvMouseButton_Left, pan_mod: int =constants.mvKey_None, context_menu_button: int =constants.mvMouseButton_Right, fit_button: int =constants.mvMouseButton_Left, box_select_button: int =constants.mvMouseButton_Right, box_select_mod: int =constants.mvKey_None, box_select_cancel_button: int =constants.mvMouseButton_Left, query_toggle_mod: int =constants.mvKey_ModCtrl, horizontal_mod: int =constants.mvKey_ModAlt, vertical_mod: int =constants.mvKey_ModShift, override_mod: int =constants.mvKey_ModCtrl, zoom_mod: int =constants.mvKey_None, zoom_rate: int =0.1, **kwargs) -> Union[int, str]:
+def plot(*, label: str =None, user_data: Any =None, width: int =0, height: int =0, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', callback: Callable =None, drag_callback: Callable =None, drop_callback: Callable =None, show: bool =True, pos: Union[List[int], Tuple[int, ...]] =[], filter_key: str ='', tracked: bool =False, track_offset: float =0.5, no_title: bool =False, no_menus: bool =False, no_box_select: bool =False, no_mouse_pos: bool =False, query: bool =False, query_color: Union[List[float], Tuple[float, ...]] =(0, 255, 0, 255), min_query_rects: int =1, max_query_rects: int =1, crosshairs: bool =False, equal_aspects: bool =False, no_inputs: bool =False, no_frame: bool =False, use_local_time: bool =False, use_ISO8601: bool =False, use_24hour_clock: bool =False, pan_button: int =mvMouseButton_Left, pan_mod: int =mvKey_None, context_menu_button: int =mvMouseButton_Right, fit_button: int =mvMouseButton_Left, box_select_button: int =mvMouseButton_Right, box_select_mod: int =mvKey_None, box_select_cancel_button: int =mvMouseButton_Left, query_toggle_mod: int =mvKey_ModCtrl, horizontal_mod: int =mvKey_ModAlt, vertical_mod: int =mvKey_ModShift, override_mod: int =mvKey_ModCtrl, zoom_mod: int =mvKey_None, zoom_rate: int =0.1, **kwargs) -> Union[int, str]:
     """     Adds a plot which is used to hold series, and can be drawn to with draw commands. For all _mod parameters use mvKey_ModX enums, or mvKey_ModDisabled to disable the modifier.
 
     Args:
@@ -4682,7 +4897,7 @@ class PlotAxisX(dcg.PlotAxisConfig):
         else:
             plot.X3 = self
 
-def plot_axis(axis : int, *, label: str =None, user_data: Any =None, payload_type: str ='$$DPG_PAYLOAD', drop_callback: Callable =None, show: bool =True, no_label: bool =False, no_gridlines: bool =False, no_tick_marks: bool =False, no_tick_labels: bool =False, no_initial_fit: bool =False, no_menus: bool =False, no_side_switch: bool =False, no_highlight: bool =False, opposite: bool =False, foreground_grid: bool =False, tick_format: str ='', scale: int =constants.mvPlotScale_Linear, invert: bool =False, auto_fit: bool =False, range_fit: bool =False, pan_stretch: bool =False, lock_min: bool =False, lock_max: bool =False, **kwargs) -> Union[int, str]:
+def plot_axis(axis : int, *, label: str =None, user_data: Any =None, payload_type: str ='$$DPG_PAYLOAD', drop_callback: Callable =None, show: bool =True, no_label: bool =False, no_gridlines: bool =False, no_tick_marks: bool =False, no_tick_labels: bool =False, no_initial_fit: bool =False, no_menus: bool =False, no_side_switch: bool =False, no_highlight: bool =False, opposite: bool =False, foreground_grid: bool =False, tick_format: str ='', scale: int =mvPlotScale_Linear, invert: bool =False, auto_fit: bool =False, range_fit: bool =False, pan_stretch: bool =False, lock_min: bool =False, lock_max: bool =False, **kwargs) -> Union[int, str]:
     """     Adds an axis to a plot.
 
     Args:
@@ -4864,7 +5079,7 @@ def radio_button(items : Union[List[str], Tuple[str, ...]] =(), *, label: str =N
 
     return dcg.RadioButton(CONTEXT, items=items, label=label, user_data=user_data, indent=indent, payload_type=payload_type, callback=wrap_callback(callback), drag_callback=drag_callback, drop_callback=drop_callback, show=show, enabled=enabled, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, value=default_value, horizontal=horizontal, **kwargs)
 
-def raw_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, format: int =constants.mvFormat_Float_rgba, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
+def raw_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, format: int =mvFormat_Float_rgba, parent: Union[int, str] =mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a raw texture.
 
     Args:
@@ -4980,7 +5195,7 @@ def separator(*, label: str =None, user_data: Any =None, indent: int =0, show: b
 
     return dcg.Separator(CONTEXT, label=label, user_data=user_data, indent=indent, show=show, pos=pos, **kwargs)
 
-def series_value(*, label: str =None, user_data: Any =None, default_value: Any =(), parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def series_value(*, label: str =None, user_data: Any =None, default_value: Any =(), parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a plot series value.
 
     Args:
@@ -5388,7 +5603,7 @@ def stair_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float
 
     return dcg.PlotStairs(CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, show=show, pre_step=pre_step, shaded=shaded, **kwargs)
 
-def static_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =constants.mvReservedUUID_2, **kwargs) -> Union[int, str]:
+def static_texture(width : int, height : int, default_value : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, parent: Union[int, str] =mvReservedUUID_2, **kwargs) -> Union[int, str]:
     """     Adds a static texture.
 
     Args:
@@ -5444,7 +5659,7 @@ def stem_series(x : Union[List[float], Tuple[float, ...]], y : Union[List[float]
 
     return dcg.PlotStems(CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), X=x, Y=y, label=label, user_data=user_data, indent=indent, show=show, horizontal=horizontal, **kwargs)
 
-def string_value(*, label: str =None, user_data: Any =None, default_value: str ='', parent: Union[int, str] =constants.mvReservedUUID_3, **kwargs) -> Union[int, str]:
+def string_value(*, label: str =None, user_data: Any =None, default_value: str ='', parent: Union[int, str] =mvReservedUUID_3, **kwargs) -> Union[int, str]:
     """     Adds a string value.
 
     Args:
@@ -7547,7 +7762,7 @@ def is_key_down(key : int, **kwargs) -> bool:
         bool
     """
 
-    return CONTEXT.is_key_down(key, **kwargs)
+    return CONTEXT.is_key_down(dcg.Key(key), **kwargs)
 
 def is_key_pressed(key : int, **kwargs) -> bool:
     """     Checks if key is pressed.
@@ -7558,7 +7773,7 @@ def is_key_pressed(key : int, **kwargs) -> bool:
         bool
     """
 
-    return CONTEXT.is_key_pressed(key, **kwargs)
+    return CONTEXT.is_key_pressed(dcg.Key(key), **kwargs)
 
 def is_key_released(key : int, **kwargs) -> bool:
     """     Checks if key is released.
@@ -7569,7 +7784,7 @@ def is_key_released(key : int, **kwargs) -> bool:
         bool
     """
 
-    return CONTEXT.is_key_released(key, **kwargs)
+    return CONTEXT.is_key_released(dcg.Key(key), **kwargs)
 
 def is_mouse_button_clicked(button : int, **kwargs) -> bool:
     """     Checks if mouse button is clicked.
@@ -8926,11 +9141,11 @@ def child(**kwargs):
 @deprecated("Use: Just not recommended")
 def setup_registries() -> None:
     """Adds default registries for fonts, handlers, textures, colormaps, and values."""
-    add_font_registry(tag=constants.mvReservedUUID_0)
-    add_handler_registry(tag=constants.mvReservedUUID_1)
-    add_texture_registry(tag=constants.mvReservedUUID_2)
-    add_value_registry(tag=constants.mvReservedUUID_3)
-    add_colormap_registry(tag=constants.mvReservedUUID_4)
+    add_font_registry(tag=mvReservedUUID_0)
+    add_handler_registry(tag=mvReservedUUID_1)
+    add_texture_registry(tag=mvReservedUUID_2)
+    add_value_registry(tag=mvReservedUUID_3)
+    add_colormap_registry(tag=mvReservedUUID_4)
 
 @deprecated("Use: `set_frame_callback()`")
 def set_start_callback(callback):
@@ -8945,479 +9160,13 @@ def set_start_callback(callback):
 # Constants #
 ##########################################################
 
-mvGraphicsBackend_D3D11=constants.mvGraphicsBackend_D3D11
-mvGraphicsBackend_D3D12=constants.mvGraphicsBackend_D3D12
-mvGraphicsBackend_VULKAN=constants.mvGraphicsBackend_VULKAN
-mvGraphicsBackend_METAL=constants.mvGraphicsBackend_METAL
-mvGraphicsBackend_OPENGL=constants.mvGraphicsBackend_OPENGL
-mvMouseButton_Left=constants.mvMouseButton_Left
-mvMouseButton_Right=constants.mvMouseButton_Right
-mvMouseButton_Middle=constants.mvMouseButton_Middle
-mvMouseButton_X1=constants.mvMouseButton_X1
-mvMouseButton_X2=constants.mvMouseButton_X2
-mvKey_ModDisabled=constants.mvKey_ModDisabled
-mvKey_None=constants.mvKey_None
-mvKey_0=constants.mvKey_0
-mvKey_1=constants.mvKey_1
-mvKey_2=constants.mvKey_2
-mvKey_3=constants.mvKey_3
-mvKey_4=constants.mvKey_4
-mvKey_5=constants.mvKey_5
-mvKey_6=constants.mvKey_6
-mvKey_7=constants.mvKey_7
-mvKey_8=constants.mvKey_8
-mvKey_9=constants.mvKey_9
-mvKey_A=constants.mvKey_A
-mvKey_B=constants.mvKey_B
-mvKey_C=constants.mvKey_C
-mvKey_D=constants.mvKey_D
-mvKey_E=constants.mvKey_E
-mvKey_F=constants.mvKey_F
-mvKey_G=constants.mvKey_G
-mvKey_H=constants.mvKey_H
-mvKey_I=constants.mvKey_I
-mvKey_J=constants.mvKey_J
-mvKey_K=constants.mvKey_K
-mvKey_L=constants.mvKey_L
-mvKey_M=constants.mvKey_M
-mvKey_N=constants.mvKey_N
-mvKey_O=constants.mvKey_O
-mvKey_P=constants.mvKey_P
-mvKey_Q=constants.mvKey_Q
-mvKey_R=constants.mvKey_R
-mvKey_S=constants.mvKey_S
-mvKey_T=constants.mvKey_T
-mvKey_U=constants.mvKey_U
-mvKey_V=constants.mvKey_V
-mvKey_W=constants.mvKey_W
-mvKey_X=constants.mvKey_X
-mvKey_Y=constants.mvKey_Y
-mvKey_Z=constants.mvKey_Z
-mvKey_Back=constants.mvKey_Back
-mvKey_Tab=constants.mvKey_Tab
-mvKey_Return=constants.mvKey_Return
-mvKey_LShift=constants.mvKey_LShift
-mvKey_RShift=constants.mvKey_RShift
-mvKey_LControl=constants.mvKey_LControl
-mvKey_RControl=constants.mvKey_RControl
-mvKey_LAlt=constants.mvKey_LAlt
-mvKey_RAlt=constants.mvKey_RAlt
-mvKey_Pause=constants.mvKey_Pause
-mvKey_CapsLock=constants.mvKey_CapsLock
-mvKey_Escape=constants.mvKey_Escape
-mvKey_Spacebar=constants.mvKey_Spacebar
-mvKey_End=constants.mvKey_End
-mvKey_Home=constants.mvKey_Home
-mvKey_Left=constants.mvKey_Left
-mvKey_Up=constants.mvKey_Up
-mvKey_Right=constants.mvKey_Right
-mvKey_Down=constants.mvKey_Down
-mvKey_Print=constants.mvKey_Print
-mvKey_Insert=constants.mvKey_Insert
-mvKey_Delete=constants.mvKey_Delete
-mvKey_NumPad0=constants.mvKey_NumPad0
-mvKey_NumPad1=constants.mvKey_NumPad1
-mvKey_NumPad2=constants.mvKey_NumPad2
-mvKey_NumPad3=constants.mvKey_NumPad3
-mvKey_NumPad4=constants.mvKey_NumPad4
-mvKey_NumPad5=constants.mvKey_NumPad5
-mvKey_NumPad6=constants.mvKey_NumPad6
-mvKey_NumPad7=constants.mvKey_NumPad7
-mvKey_NumPad8=constants.mvKey_NumPad8
-mvKey_NumPad9=constants.mvKey_NumPad9
-mvKey_Subtract=constants.mvKey_Subtract
-mvKey_Decimal=constants.mvKey_Decimal
-mvKey_Divide=constants.mvKey_Divide
-mvKey_Multiply=constants.mvKey_Multiply
-mvKey_Add=constants.mvKey_Add
-mvKey_F1=constants.mvKey_F1
-mvKey_F2=constants.mvKey_F2
-mvKey_F3=constants.mvKey_F3
-mvKey_F4=constants.mvKey_F4
-mvKey_F5=constants.mvKey_F5
-mvKey_F6=constants.mvKey_F6
-mvKey_F7=constants.mvKey_F7
-mvKey_F8=constants.mvKey_F8
-mvKey_F9=constants.mvKey_F9
-mvKey_F10=constants.mvKey_F10
-mvKey_F11=constants.mvKey_F11
-mvKey_F12=constants.mvKey_F12
-mvKey_F13=constants.mvKey_F13
-mvKey_F14=constants.mvKey_F14
-mvKey_F15=constants.mvKey_F15
-mvKey_F16=constants.mvKey_F16
-mvKey_F17=constants.mvKey_F17
-mvKey_F18=constants.mvKey_F18
-mvKey_F19=constants.mvKey_F19
-mvKey_F20=constants.mvKey_F20
-mvKey_F21=constants.mvKey_F21
-mvKey_F22=constants.mvKey_F22
-mvKey_F23=constants.mvKey_F23
-mvKey_F24=constants.mvKey_F24
-mvKey_NumLock=constants.mvKey_NumLock
-mvKey_ScrollLock=constants.mvKey_ScrollLock
-mvKey_Period=constants.mvKey_Period
-mvKey_Slash=constants.mvKey_Slash
-mvKey_Backslash=constants.mvKey_Backslash
-mvKey_Open_Brace=constants.mvKey_Open_Brace
-mvKey_Close_Brace=constants.mvKey_Close_Brace
-mvKey_Browser_Back=constants.mvKey_Browser_Back
-mvKey_Browser_Forward=constants.mvKey_Browser_Forward
-mvKey_Comma=constants.mvKey_Comma
-mvKey_Minus=constants.mvKey_Minus
-mvKey_Menu=constants.mvKey_Menu
-mvKey_ModSuper=constants.mvKey_ModSuper
-mvKey_ModShift=constants.mvKey_ModShift
-mvKey_ModAlt=constants.mvKey_ModAlt
-mvKey_ModCtrl=constants.mvKey_ModCtrl
-mvKey_Clear=constants.mvKey_Clear
-mvKey_Prior=constants.mvKey_Prior
-mvKey_Next=constants.mvKey_Next
-mvKey_Select=constants.mvKey_Select
-mvKey_Execute=constants.mvKey_Execute
-mvKey_LWin=constants.mvKey_LWin
-mvKey_RWin=constants.mvKey_RWin
-mvKey_Apps=constants.mvKey_Apps
-mvKey_Sleep=constants.mvKey_Sleep
-mvKey_Help=constants.mvKey_Help
-mvKey_Browser_Refresh=constants.mvKey_Browser_Refresh
-mvKey_Browser_Stop=constants.mvKey_Browser_Stop
-mvKey_Browser_Search=constants.mvKey_Browser_Search
-mvKey_Browser_Favorites=constants.mvKey_Browser_Favorites
-mvKey_Browser_Home=constants.mvKey_Browser_Home
-mvKey_Volume_Mute=constants.mvKey_Volume_Mute
-mvKey_Volume_Down=constants.mvKey_Volume_Down
-mvKey_Volume_Up=constants.mvKey_Volume_Up
-mvKey_Media_Next_Track=constants.mvKey_Media_Next_Track
-mvKey_Media_Prev_Track=constants.mvKey_Media_Prev_Track
-mvKey_Media_Stop=constants.mvKey_Media_Stop
-mvKey_Media_Play_Pause=constants.mvKey_Media_Play_Pause
-mvKey_Launch_Mail=constants.mvKey_Launch_Mail
-mvKey_Launch_Media_Select=constants.mvKey_Launch_Media_Select
-mvKey_Launch_App1=constants.mvKey_Launch_App1
-mvKey_Launch_App2=constants.mvKey_Launch_App2
-mvKey_Colon=constants.mvKey_Colon
-mvKey_Plus=constants.mvKey_Plus
-mvKey_Tilde=constants.mvKey_Tilde
-mvKey_Quote=constants.mvKey_Quote
-mvKey_F25=constants.mvKey_F25
-mvAll=constants.mvAll
-mvTool_About=constants.mvTool_About
-mvTool_Debug=constants.mvTool_Debug
-mvTool_Doc=constants.mvTool_Doc
-mvTool_ItemRegistry=constants.mvTool_ItemRegistry
-mvTool_Metrics=constants.mvTool_Metrics
-mvTool_Stack=constants.mvTool_Stack
-mvTool_Style=constants.mvTool_Style
-mvTool_Font=constants.mvTool_Font
-mvFontAtlas=constants.mvFontAtlas
-mvAppUUID=constants.mvAppUUID
-mvInvalidUUID=constants.mvInvalidUUID
-mvDir_None=constants.mvDir_None
-mvDir_Left=constants.mvDir_Left
-mvDir_Right=constants.mvDir_Right
-mvDir_Up=constants.mvDir_Up
-mvDir_Down=constants.mvDir_Down
-mvComboHeight_Small=constants.mvComboHeight_Small
-mvComboHeight_Regular=constants.mvComboHeight_Regular
-mvComboHeight_Large=constants.mvComboHeight_Large
-mvComboHeight_Largest=constants.mvComboHeight_Largest
-mvPlatform_Windows=constants.mvPlatform_Windows
-mvPlatform_Apple=constants.mvPlatform_Apple
-mvPlatform_Linux=constants.mvPlatform_Linux
-mvColorEdit_AlphaPreviewNone=constants.mvColorEdit_AlphaPreviewNone
-mvColorEdit_AlphaPreview=constants.mvColorEdit_AlphaPreview
-mvColorEdit_AlphaPreviewHalf=constants.mvColorEdit_AlphaPreviewHalf
-mvColorEdit_uint8=constants.mvColorEdit_uint8
-mvColorEdit_float=constants.mvColorEdit_float
-mvColorEdit_rgb=constants.mvColorEdit_rgb
-mvColorEdit_hsv=constants.mvColorEdit_hsv
-mvColorEdit_hex=constants.mvColorEdit_hex
-mvColorEdit_input_rgb=constants.mvColorEdit_input_rgb
-mvColorEdit_input_hsv=constants.mvColorEdit_input_hsv
-mvPlotColormap_Default=constants.mvPlotColormap_Default
-mvPlotColormap_Deep=constants.mvPlotColormap_Deep
-mvPlotColormap_Dark=constants.mvPlotColormap_Dark
-mvPlotColormap_Pastel=constants.mvPlotColormap_Pastel
-mvPlotColormap_Paired=constants.mvPlotColormap_Paired
-mvPlotColormap_Viridis=constants.mvPlotColormap_Viridis
-mvPlotColormap_Plasma=constants.mvPlotColormap_Plasma
-mvPlotColormap_Hot=constants.mvPlotColormap_Hot
-mvPlotColormap_Cool=constants.mvPlotColormap_Cool
-mvPlotColormap_Pink=constants.mvPlotColormap_Pink
-mvPlotColormap_Jet=constants.mvPlotColormap_Jet
-mvPlotColormap_Twilight=constants.mvPlotColormap_Twilight
-mvPlotColormap_RdBu=constants.mvPlotColormap_RdBu
-mvPlotColormap_BrBG=constants.mvPlotColormap_BrBG
-mvPlotColormap_PiYG=constants.mvPlotColormap_PiYG
-mvPlotColormap_Spectral=constants.mvPlotColormap_Spectral
-mvPlotColormap_Greys=constants.mvPlotColormap_Greys
-mvColorPicker_bar=constants.mvColorPicker_bar
-mvColorPicker_wheel=constants.mvColorPicker_wheel
-mvTabOrder_Reorderable=constants.mvTabOrder_Reorderable
-mvTabOrder_Fixed=constants.mvTabOrder_Fixed
-mvTabOrder_Leading=constants.mvTabOrder_Leading
-mvTabOrder_Trailing=constants.mvTabOrder_Trailing
-mvTimeUnit_Us=constants.mvTimeUnit_Us
-mvTimeUnit_Ms=constants.mvTimeUnit_Ms
-mvTimeUnit_S=constants.mvTimeUnit_S
-mvTimeUnit_Min=constants.mvTimeUnit_Min
-mvTimeUnit_Hr=constants.mvTimeUnit_Hr
-mvTimeUnit_Day=constants.mvTimeUnit_Day
-mvTimeUnit_Mo=constants.mvTimeUnit_Mo
-mvTimeUnit_Yr=constants.mvTimeUnit_Yr
-mvDatePickerLevel_Day=constants.mvDatePickerLevel_Day
-mvDatePickerLevel_Month=constants.mvDatePickerLevel_Month
-mvDatePickerLevel_Year=constants.mvDatePickerLevel_Year
-mvCullMode_None=constants.mvCullMode_None
-mvCullMode_Back=constants.mvCullMode_Back
-mvCullMode_Front=constants.mvCullMode_Front
-mvFontRangeHint_Default=constants.mvFontRangeHint_Default
-mvFontRangeHint_Japanese=constants.mvFontRangeHint_Japanese
-mvFontRangeHint_Korean=constants.mvFontRangeHint_Korean
-mvFontRangeHint_Chinese_Full=constants.mvFontRangeHint_Chinese_Full
-mvFontRangeHint_Chinese_Simplified_Common=constants.mvFontRangeHint_Chinese_Simplified_Common
-mvFontRangeHint_Cyrillic=constants.mvFontRangeHint_Cyrillic
-mvFontRangeHint_Thai=constants.mvFontRangeHint_Thai
-mvFontRangeHint_Vietnamese=constants.mvFontRangeHint_Vietnamese
-mvNode_PinShape_Circle=constants.mvNode_PinShape_Circle
-mvNode_PinShape_CircleFilled=constants.mvNode_PinShape_CircleFilled
-mvNode_PinShape_Triangle=constants.mvNode_PinShape_Triangle
-mvNode_PinShape_TriangleFilled=constants.mvNode_PinShape_TriangleFilled
-mvNode_PinShape_Quad=constants.mvNode_PinShape_Quad
-mvNode_PinShape_QuadFilled=constants.mvNode_PinShape_QuadFilled
-mvNode_Attr_Input=constants.mvNode_Attr_Input
-mvNode_Attr_Output=constants.mvNode_Attr_Output
-mvNode_Attr_Static=constants.mvNode_Attr_Static
-mvPlotBin_Sqrt=constants.mvPlotBin_Sqrt
-mvPlotBin_Sturges=constants.mvPlotBin_Sturges
-mvPlotBin_Rice=constants.mvPlotBin_Rice
-mvPlotBin_Scott=constants.mvPlotBin_Scott
-mvXAxis=constants.mvXAxis
-mvXAxis2=constants.mvXAxis2
-mvXAxis3=constants.mvXAxis3
-mvYAxis=constants.mvYAxis
-mvYAxis2=constants.mvYAxis2
-mvYAxis3=constants.mvYAxis3
-mvPlotScale_Linear=constants.mvPlotScale_Linear
-mvPlotScale_Time=constants.mvPlotScale_Time
-mvPlotScale_Log10=constants.mvPlotScale_Log10
-mvPlotScale_SymLog=constants.mvPlotScale_SymLog
-mvPlotMarker_None=constants.mvPlotMarker_None
-mvPlotMarker_Circle=constants.mvPlotMarker_Circle
-mvPlotMarker_Square=constants.mvPlotMarker_Square
-mvPlotMarker_Diamond=constants.mvPlotMarker_Diamond
-mvPlotMarker_Up=constants.mvPlotMarker_Up
-mvPlotMarker_Down=constants.mvPlotMarker_Down
-mvPlotMarker_Left=constants.mvPlotMarker_Left
-mvPlotMarker_Right=constants.mvPlotMarker_Right
-mvPlotMarker_Cross=constants.mvPlotMarker_Cross
-mvPlotMarker_Plus=constants.mvPlotMarker_Plus
-mvPlotMarker_Asterisk=constants.mvPlotMarker_Asterisk
-mvPlot_Location_Center=constants.mvPlot_Location_Center
-mvPlot_Location_North=constants.mvPlot_Location_North
-mvPlot_Location_South=constants.mvPlot_Location_South
-mvPlot_Location_West=constants.mvPlot_Location_West
-mvPlot_Location_East=constants.mvPlot_Location_East
-mvPlot_Location_NorthWest=constants.mvPlot_Location_NorthWest
-mvPlot_Location_NorthEast=constants.mvPlot_Location_NorthEast
-mvPlot_Location_SouthWest=constants.mvPlot_Location_SouthWest
-mvPlot_Location_SouthEast=constants.mvPlot_Location_SouthEast
-mvNodeMiniMap_Location_BottomLeft=constants.mvNodeMiniMap_Location_BottomLeft
-mvNodeMiniMap_Location_BottomRight=constants.mvNodeMiniMap_Location_BottomRight
-mvNodeMiniMap_Location_TopLeft=constants.mvNodeMiniMap_Location_TopLeft
-mvNodeMiniMap_Location_TopRight=constants.mvNodeMiniMap_Location_TopRight
-mvTable_SizingFixedFit=constants.mvTable_SizingFixedFit
-mvTable_SizingFixedSame=constants.mvTable_SizingFixedSame
-mvTable_SizingStretchProp=constants.mvTable_SizingStretchProp
-mvTable_SizingStretchSame=constants.mvTable_SizingStretchSame
-mvFormat_Float_rgba=constants.mvFormat_Float_rgba
-mvFormat_Float_rgb=constants.mvFormat_Float_rgb
-mvThemeCat_Core=constants.mvThemeCat_Core
-mvThemeCat_Plots=constants.mvThemeCat_Plots
-mvThemeCat_Nodes=constants.mvThemeCat_Nodes
-mvThemeCol_Text=constants.mvThemeCol_Text
-mvThemeCol_TextDisabled=constants.mvThemeCol_TextDisabled
-mvThemeCol_WindowBg=constants.mvThemeCol_WindowBg
-mvThemeCol_ChildBg=constants.mvThemeCol_ChildBg
-mvThemeCol_Border=constants.mvThemeCol_Border
-mvThemeCol_PopupBg=constants.mvThemeCol_PopupBg
-mvThemeCol_BorderShadow=constants.mvThemeCol_BorderShadow
-mvThemeCol_FrameBg=constants.mvThemeCol_FrameBg
-mvThemeCol_FrameBgHovered=constants.mvThemeCol_FrameBgHovered
-mvThemeCol_FrameBgActive=constants.mvThemeCol_FrameBgActive
-mvThemeCol_TitleBg=constants.mvThemeCol_TitleBg
-mvThemeCol_TitleBgActive=constants.mvThemeCol_TitleBgActive
-mvThemeCol_TitleBgCollapsed=constants.mvThemeCol_TitleBgCollapsed
-mvThemeCol_MenuBarBg=constants.mvThemeCol_MenuBarBg
-mvThemeCol_ScrollbarBg=constants.mvThemeCol_ScrollbarBg
-mvThemeCol_ScrollbarGrab=constants.mvThemeCol_ScrollbarGrab
-mvThemeCol_ScrollbarGrabHovered=constants.mvThemeCol_ScrollbarGrabHovered
-mvThemeCol_ScrollbarGrabActive=constants.mvThemeCol_ScrollbarGrabActive
-mvThemeCol_CheckMark=constants.mvThemeCol_CheckMark
-mvThemeCol_SliderGrab=constants.mvThemeCol_SliderGrab
-mvThemeCol_SliderGrabActive=constants.mvThemeCol_SliderGrabActive
-mvThemeCol_Button=constants.mvThemeCol_Button
-mvThemeCol_ButtonHovered=constants.mvThemeCol_ButtonHovered
-mvThemeCol_ButtonActive=constants.mvThemeCol_ButtonActive
-mvThemeCol_Header=constants.mvThemeCol_Header
-mvThemeCol_HeaderHovered=constants.mvThemeCol_HeaderHovered
-mvThemeCol_HeaderActive=constants.mvThemeCol_HeaderActive
-mvThemeCol_Separator=constants.mvThemeCol_Separator
-mvThemeCol_SeparatorHovered=constants.mvThemeCol_SeparatorHovered
-mvThemeCol_SeparatorActive=constants.mvThemeCol_SeparatorActive
-mvThemeCol_ResizeGrip=constants.mvThemeCol_ResizeGrip
-mvThemeCol_ResizeGripHovered=constants.mvThemeCol_ResizeGripHovered
-mvThemeCol_ResizeGripActive=constants.mvThemeCol_ResizeGripActive
-mvThemeCol_Tab=constants.mvThemeCol_Tab
-mvThemeCol_TabHovered=constants.mvThemeCol_TabHovered
-mvThemeCol_TabActive=constants.mvThemeCol_TabActive
-mvThemeCol_TabUnfocused=constants.mvThemeCol_TabUnfocused
-mvThemeCol_TabUnfocusedActive=constants.mvThemeCol_TabUnfocusedActive
-mvThemeCol_PlotLines=constants.mvThemeCol_PlotLines
-mvThemeCol_PlotLinesHovered=constants.mvThemeCol_PlotLinesHovered
-mvThemeCol_PlotHistogram=constants.mvThemeCol_PlotHistogram
-mvThemeCol_PlotHistogramHovered=constants.mvThemeCol_PlotHistogramHovered
-mvThemeCol_TableHeaderBg=constants.mvThemeCol_TableHeaderBg
-mvThemeCol_TableBorderStrong=constants.mvThemeCol_TableBorderStrong
-mvThemeCol_TableBorderLight=constants.mvThemeCol_TableBorderLight
-mvThemeCol_TableRowBg=constants.mvThemeCol_TableRowBg
-mvThemeCol_TableRowBgAlt=constants.mvThemeCol_TableRowBgAlt
-mvThemeCol_TextSelectedBg=constants.mvThemeCol_TextSelectedBg
-mvThemeCol_DragDropTarget=constants.mvThemeCol_DragDropTarget
-mvThemeCol_NavHighlight=constants.mvThemeCol_NavHighlight
-mvThemeCol_NavWindowingHighlight=constants.mvThemeCol_NavWindowingHighlight
-mvThemeCol_NavWindowingDimBg=constants.mvThemeCol_NavWindowingDimBg
-mvThemeCol_ModalWindowDimBg=constants.mvThemeCol_ModalWindowDimBg
-mvPlotCol_Line=constants.mvPlotCol_Line
-mvPlotCol_Fill=constants.mvPlotCol_Fill
-mvPlotCol_MarkerOutline=constants.mvPlotCol_MarkerOutline
-mvPlotCol_MarkerFill=constants.mvPlotCol_MarkerFill
-mvPlotCol_ErrorBar=constants.mvPlotCol_ErrorBar
-mvPlotCol_FrameBg=constants.mvPlotCol_FrameBg
-mvPlotCol_PlotBg=constants.mvPlotCol_PlotBg
-mvPlotCol_PlotBorder=constants.mvPlotCol_PlotBorder
-mvPlotCol_LegendBg=constants.mvPlotCol_LegendBg
-mvPlotCol_LegendBorder=constants.mvPlotCol_LegendBorder
-mvPlotCol_LegendText=constants.mvPlotCol_LegendText
-mvPlotCol_TitleText=constants.mvPlotCol_TitleText
-mvPlotCol_InlayText=constants.mvPlotCol_InlayText
-mvPlotCol_AxisBg=constants.mvPlotCol_AxisBg
-mvPlotCol_AxisBgActive=constants.mvPlotCol_AxisBgActive
-mvPlotCol_AxisBgHovered=constants.mvPlotCol_AxisBgHovered
-mvPlotCol_AxisGrid=constants.mvPlotCol_AxisGrid
-mvPlotCol_AxisText=constants.mvPlotCol_AxisText
-mvPlotCol_Selection=constants.mvPlotCol_Selection
-mvPlotCol_Crosshairs=constants.mvPlotCol_Crosshairs
-mvNodeCol_NodeBackground=constants.mvNodeCol_NodeBackground
-mvNodeCol_NodeBackgroundHovered=constants.mvNodeCol_NodeBackgroundHovered
-mvNodeCol_NodeBackgroundSelected=constants.mvNodeCol_NodeBackgroundSelected
-mvNodeCol_NodeOutline=constants.mvNodeCol_NodeOutline
-mvNodeCol_TitleBar=constants.mvNodeCol_TitleBar
-mvNodeCol_TitleBarHovered=constants.mvNodeCol_TitleBarHovered
-mvNodeCol_TitleBarSelected=constants.mvNodeCol_TitleBarSelected
-mvNodeCol_Link=constants.mvNodeCol_Link
-mvNodeCol_LinkHovered=constants.mvNodeCol_LinkHovered
-mvNodeCol_LinkSelected=constants.mvNodeCol_LinkSelected
-mvNodeCol_Pin=constants.mvNodeCol_Pin
-mvNodeCol_PinHovered=constants.mvNodeCol_PinHovered
-mvNodeCol_BoxSelector=constants.mvNodeCol_BoxSelector
-mvNodeCol_BoxSelectorOutline=constants.mvNodeCol_BoxSelectorOutline
-mvNodeCol_GridBackground=constants.mvNodeCol_GridBackground
-mvNodeCol_GridLine=constants.mvNodeCol_GridLine
-mvNodesCol_GridLinePrimary=constants.mvNodesCol_GridLinePrimary
-mvNodesCol_MiniMapBackground=constants.mvNodesCol_MiniMapBackground
-mvNodesCol_MiniMapBackgroundHovered=constants.mvNodesCol_MiniMapBackgroundHovered
-mvNodesCol_MiniMapOutline=constants.mvNodesCol_MiniMapOutline
-mvNodesCol_MiniMapOutlineHovered=constants.mvNodesCol_MiniMapOutlineHovered
-mvNodesCol_MiniMapNodeBackground=constants.mvNodesCol_MiniMapNodeBackground
-mvNodesCol_MiniMapNodeBackgroundHovered=constants.mvNodesCol_MiniMapNodeBackgroundHovered
-mvNodesCol_MiniMapNodeBackgroundSelected=constants.mvNodesCol_MiniMapNodeBackgroundSelected
-mvNodesCol_MiniMapNodeOutline=constants.mvNodesCol_MiniMapNodeOutline
-mvNodesCol_MiniMapLink=constants.mvNodesCol_MiniMapLink
-mvNodesCol_MiniMapLinkSelected=constants.mvNodesCol_MiniMapLinkSelected
-mvNodesCol_MiniMapCanvas=constants.mvNodesCol_MiniMapCanvas
-mvNodesCol_MiniMapCanvasOutline=constants.mvNodesCol_MiniMapCanvasOutline
-mvStyleVar_Alpha=constants.mvStyleVar_Alpha
-mvStyleVar_DisabledAlpha=constants.mvStyleVar_DisabledAlpha
-mvStyleVar_WindowPadding=constants.mvStyleVar_WindowPadding
-mvStyleVar_WindowRounding=constants.mvStyleVar_WindowRounding
-mvStyleVar_WindowBorderSize=constants.mvStyleVar_WindowBorderSize
-mvStyleVar_WindowMinSize=constants.mvStyleVar_WindowMinSize
-mvStyleVar_WindowTitleAlign=constants.mvStyleVar_WindowTitleAlign
-mvStyleVar_ChildRounding=constants.mvStyleVar_ChildRounding
-mvStyleVar_ChildBorderSize=constants.mvStyleVar_ChildBorderSize
-mvStyleVar_PopupRounding=constants.mvStyleVar_PopupRounding
-mvStyleVar_PopupBorderSize=constants.mvStyleVar_PopupBorderSize
-mvStyleVar_FramePadding=constants.mvStyleVar_FramePadding
-mvStyleVar_FrameRounding=constants.mvStyleVar_FrameRounding
-mvStyleVar_FrameBorderSize=constants.mvStyleVar_FrameBorderSize
-mvStyleVar_ItemSpacing=constants.mvStyleVar_ItemSpacing
-mvStyleVar_ItemInnerSpacing=constants.mvStyleVar_ItemInnerSpacing
-mvStyleVar_IndentSpacing=constants.mvStyleVar_IndentSpacing
-mvStyleVar_CellPadding=constants.mvStyleVar_CellPadding
-mvStyleVar_ScrollbarSize=constants.mvStyleVar_ScrollbarSize
-mvStyleVar_ScrollbarRounding=constants.mvStyleVar_ScrollbarRounding
-mvStyleVar_GrabMinSize=constants.mvStyleVar_GrabMinSize
-mvStyleVar_GrabRounding=constants.mvStyleVar_GrabRounding
-mvStyleVar_TabRounding=constants.mvStyleVar_TabRounding
-mvStyleVar_TabBorderSize=constants.mvStyleVar_TabBorderSize
-mvStyleVar_TabBarBorderSize=constants.mvStyleVar_TabBarBorderSize
-mvStyleVar_TableAngledHeadersAngle=constants.mvStyleVar_TableAngledHeadersAngle
-mvStyleVar_TableAngledHeadersTextAlign=constants.mvStyleVar_TableAngledHeadersTextAlign
-mvStyleVar_ButtonTextAlign=constants.mvStyleVar_ButtonTextAlign
-mvStyleVar_SelectableTextAlign=constants.mvStyleVar_SelectableTextAlign
-mvStyleVar_SeparatorTextBorderSize=constants.mvStyleVar_SeparatorTextBorderSize
-mvStyleVar_SeparatorTextAlign=constants.mvStyleVar_SeparatorTextAlign
-mvStyleVar_SeparatorTextPadding=constants.mvStyleVar_SeparatorTextPadding
-mvPlotStyleVar_LineWeight=constants.mvPlotStyleVar_LineWeight
-mvPlotStyleVar_Marker=constants.mvPlotStyleVar_Marker
-mvPlotStyleVar_MarkerSize=constants.mvPlotStyleVar_MarkerSize
-mvPlotStyleVar_MarkerWeight=constants.mvPlotStyleVar_MarkerWeight
-mvPlotStyleVar_FillAlpha=constants.mvPlotStyleVar_FillAlpha
-mvPlotStyleVar_ErrorBarSize=constants.mvPlotStyleVar_ErrorBarSize
-mvPlotStyleVar_ErrorBarWeight=constants.mvPlotStyleVar_ErrorBarWeight
-mvPlotStyleVar_DigitalBitHeight=constants.mvPlotStyleVar_DigitalBitHeight
-mvPlotStyleVar_DigitalBitGap=constants.mvPlotStyleVar_DigitalBitGap
-mvPlotStyleVar_PlotBorderSize=constants.mvPlotStyleVar_PlotBorderSize
-mvPlotStyleVar_MinorAlpha=constants.mvPlotStyleVar_MinorAlpha
-mvPlotStyleVar_MajorTickLen=constants.mvPlotStyleVar_MajorTickLen
-mvPlotStyleVar_MinorTickLen=constants.mvPlotStyleVar_MinorTickLen
-mvPlotStyleVar_MajorTickSize=constants.mvPlotStyleVar_MajorTickSize
-mvPlotStyleVar_MinorTickSize=constants.mvPlotStyleVar_MinorTickSize
-mvPlotStyleVar_MajorGridSize=constants.mvPlotStyleVar_MajorGridSize
-mvPlotStyleVar_MinorGridSize=constants.mvPlotStyleVar_MinorGridSize
-mvPlotStyleVar_PlotPadding=constants.mvPlotStyleVar_PlotPadding
-mvPlotStyleVar_LabelPadding=constants.mvPlotStyleVar_LabelPadding
-mvPlotStyleVar_LegendPadding=constants.mvPlotStyleVar_LegendPadding
-mvPlotStyleVar_LegendInnerPadding=constants.mvPlotStyleVar_LegendInnerPadding
-mvPlotStyleVar_LegendSpacing=constants.mvPlotStyleVar_LegendSpacing
-mvPlotStyleVar_MousePosPadding=constants.mvPlotStyleVar_MousePosPadding
-mvPlotStyleVar_AnnotationPadding=constants.mvPlotStyleVar_AnnotationPadding
-mvPlotStyleVar_FitPadding=constants.mvPlotStyleVar_FitPadding
-mvPlotStyleVar_PlotDefaultSize=constants.mvPlotStyleVar_PlotDefaultSize
-mvPlotStyleVar_PlotMinSize=constants.mvPlotStyleVar_PlotMinSize
-mvNodeStyleVar_GridSpacing=constants.mvNodeStyleVar_GridSpacing
-mvNodeStyleVar_NodeCornerRounding=constants.mvNodeStyleVar_NodeCornerRounding
-mvNodeStyleVar_NodePadding=constants.mvNodeStyleVar_NodePadding
-mvNodeStyleVar_NodeBorderThickness=constants.mvNodeStyleVar_NodeBorderThickness
-mvNodeStyleVar_LinkThickness=constants.mvNodeStyleVar_LinkThickness
-mvNodeStyleVar_LinkLineSegmentsPerLength=constants.mvNodeStyleVar_LinkLineSegmentsPerLength
-mvNodeStyleVar_LinkHoverDistance=constants.mvNodeStyleVar_LinkHoverDistance
-mvNodeStyleVar_PinCircleRadius=constants.mvNodeStyleVar_PinCircleRadius
-mvNodeStyleVar_PinQuadSideLength=constants.mvNodeStyleVar_PinQuadSideLength
-mvNodeStyleVar_PinTriangleSideLength=constants.mvNodeStyleVar_PinTriangleSideLength
-mvNodeStyleVar_PinLineThickness=constants.mvNodeStyleVar_PinLineThickness
-mvNodeStyleVar_PinHoverRadius=constants.mvNodeStyleVar_PinHoverRadius
-mvNodeStyleVar_PinOffset=constants.mvNodeStyleVar_PinOffset
-mvNodesStyleVar_MiniMapPadding=constants.mvNodesStyleVar_MiniMapPadding
-mvNodesStyleVar_MiniMapOffset=constants.mvNodesStyleVar_MiniMapOffset
+
 
 mvInputText=dcg.ThemeCategories.t_inputtext
 mvButton=dcg.ThemeCategories.t_button
 mvRadioButton=dcg.ThemeCategories.t_radiobutton
-#mvTabBar=constants.mvTabBar
-#mvTab=constants.mvTab
+#mvTabBar=mvTabBar
+#mvTab=mvTab
 mvImage=dcg.ThemeCategories.t_image
 mvMenuBar=dcg.ThemeCategories.t_menubar
 mvViewportMenuBar=dcg.ThemeCategories.t_menubar
@@ -9433,166 +9182,155 @@ mvDragInt=dcg.ThemeCategories.t_slider
 mvInputFloat=dcg.ThemeCategories.t_inputvalue
 mvInputInt=dcg.ThemeCategories.t_inputvalue
 mvColorEdit=dcg.ThemeCategories.t_coloredit
-#mvClipper=constants.mvClipper
+#mvClipper=mvClipper
 mvColorPicker=dcg.ThemeCategories.t_colorpicker
 mvTooltip=dcg.ThemeCategories.t_tooltip
 mvCollapsingHeader=dcg.ThemeCategories.t_collapsingheader
-#mvSeparator=constants.mvSeparator
+#mvSeparator=mvSeparator
 mvCheckbox=dcg.ThemeCategories.t_checkbox
 mvListbox=dcg.ThemeCategories.t_listbox
 mvText=dcg.ThemeCategories.t_text
 mvCombo=dcg.ThemeCategories.t_combo
 mvPlot=dcg.ThemeCategories.t_plot
 mvSimplePlot=dcg.ThemeCategories.t_simpleplot
-#mvDrawlist=constants.mvDrawlist
-#mvWindowAppItem=constants.mvWindowAppItem
+#mvDrawlist=mvDrawlist
+#mvWindowAppItem=mvWindowAppItem
 mvSelectable=dcg.ThemeCategories.t_selectable
 mvTreeNode=dcg.ThemeCategories.t_treenode
 mvProgressBar=dcg.ThemeCategories.t_progressbar
-#mvSpacer=constants.mvSpacer
+#mvSpacer=mvSpacer
 mvImageButton=dcg.ThemeCategories.t_imagebutton
-#mvTimePicker=constants.mvTimePicker
-#mvDatePicker=constants.mvDatePicker
+#mvTimePicker=mvTimePicker
+#mvDatePicker=mvDatePicker
 mvColorButton=dcg.ThemeCategories.t_colorbutton
-#mvFileDialog=constants.mvFileDialog
+#mvFileDialog=mvFileDialog
 mvTabButton=dcg.ThemeCategories.t_tabbutton
-#mvDrawNode=constants.mvDrawNode
-#mvNodeEditor=constants.mvNodeEditor
-#mvNode=constants.mvNode
-#mvNodeAttribute=constants.mvNodeAttribute
-#mvTable=constants.mvTable
-#mvTableColumn=constants.mvTableColumn
-#mvTableRow=constants.mvTableRow
-#mvDrawLine=constants.mvDrawLine
-#mvDrawArrow=constants.mvDrawArrow
-#mvDrawTriangle=constants.mvDrawTriangle
-#mvDrawImageQuad=constants.mvDrawImageQuad
-#mvDrawCircle=constants.mvDrawCircle
-#mvDrawEllipse=constants.mvDrawEllipse
-#mvDrawBezierCubic=constants.mvDrawBezierCubic
-#mvDrawBezierQuadratic=constants.mvDrawBezierQuadratic
-#mvDrawQuad=constants.mvDrawQuad
-#mvDrawRect=constants.mvDrawRect
-#mvDrawText=constants.mvDrawText
-#mvDrawPolygon=constants.mvDrawPolygon
-#mvDrawPolyline=constants.mvDrawPolyline
-#mvDrawImage=constants.mvDrawImage
-#mvDragFloatMulti=constants.mvDragFloatMulti
-#mvDragIntMulti=constants.mvDragIntMulti
+#mvDrawNode=mvDrawNode
+#mvNodeEditor=mvNodeEditor
+#mvNode=mvNode
+#mvNodeAttribute=mvNodeAttribute
+#mvTable=mvTable
+#mvTableColumn=mvTableColumn
+#mvTableRow=mvTableRow
+#mvDrawLine=mvDrawLine
+#mvDrawArrow=mvDrawArrow
+#mvDrawTriangle=mvDrawTriangle
+#mvDrawImageQuad=mvDrawImageQuad
+#mvDrawCircle=mvDrawCircle
+#mvDrawEllipse=mvDrawEllipse
+#mvDrawBezierCubic=mvDrawBezierCubic
+#mvDrawBezierQuadratic=mvDrawBezierQuadratic
+#mvDrawQuad=mvDrawQuad
+#mvDrawRect=mvDrawRect
+#mvDrawText=mvDrawText
+#mvDrawPolygon=mvDrawPolygon
+#mvDrawPolyline=mvDrawPolyline
+#mvDrawImage=mvDrawImage
+#mvDragFloatMulti=mvDragFloatMulti
+#mvDragIntMulti=mvDragIntMulti
 mvSliderFloatMulti=dcg.ThemeCategories.t_slider
 mvSliderIntMulti=dcg.ThemeCategories.t_slider
 mvInputIntMulti=dcg.ThemeCategories.t_inputvalue
 mvInputFloatMulti=dcg.ThemeCategories.t_inputvalue
 """
-mvDragPoint=constants.mvDragPoint
-mvDragLine=constants.mvDragLine
-mvDragRect=constants.mvDragRect
-mvAnnotation=constants.mvAnnotation
-mvAxisTag=constants.mvAxisTag
-mvLineSeries=constants.mvLineSeries
-mvScatterSeries=constants.mvScatterSeries
-mvStemSeries=constants.mvStemSeries
-mvStairSeries=constants.mvStairSeries
-mvBarSeries=constants.mvBarSeries
-mvBarGroupSeries=constants.mvBarGroupSeries
-mvErrorSeries=constants.mvErrorSeries
-mvInfLineSeries=constants.mvInfLineSeries
-mvHeatSeries=constants.mvHeatSeries
-mvImageSeries=constants.mvImageSeries
-mvPieSeries=constants.mvPieSeries
-mvShadeSeries=constants.mvShadeSeries
-mvLabelSeries=constants.mvLabelSeries
-mvHistogramSeries=constants.mvHistogramSeries
-mvDigitalSeries=constants.mvDigitalSeries
-mv2dHistogramSeries=constants.mv2dHistogramSeries
-mvCandleSeries=constants.mvCandleSeries
-mvAreaSeries=constants.mvAreaSeries
-mvColorMapScale=constants.mvColorMapScale
-mvSlider3D=constants.mvSlider3D
-mvKnobFloat=constants.mvKnobFloat
-mvLoadingIndicator=constants.mvLoadingIndicator
-mvNodeLink=constants.mvNodeLink
-mvTextureRegistry=constants.mvTextureRegistry
-mvStaticTexture=constants.mvStaticTexture
-mvDynamicTexture=constants.mvDynamicTexture
-mvStage=constants.mvStage
-mvDrawLayer=constants.mvDrawLayer
-mvViewportDrawlist=constants.mvViewportDrawlist
-mvFileExtension=constants.mvFileExtension
-mvPlotLegend=constants.mvPlotLegend
-mvPlotAxis=constants.mvPlotAxis
-mvHandlerRegistry=constants.mvHandlerRegistry
-mvKeyDownHandler=constants.mvKeyDownHandler
-mvKeyPressHandler=constants.mvKeyPressHandler
-mvKeyReleaseHandler=constants.mvKeyReleaseHandler
-mvMouseMoveHandler=constants.mvMouseMoveHandler
-mvMouseWheelHandler=constants.mvMouseWheelHandler
-mvMouseClickHandler=constants.mvMouseClickHandler
-mvMouseDoubleClickHandler=constants.mvMouseDoubleClickHandler
-mvMouseDownHandler=constants.mvMouseDownHandler
-mvMouseReleaseHandler=constants.mvMouseReleaseHandler
-mvMouseDragHandler=constants.mvMouseDragHandler
-mvHoverHandler=constants.mvHoverHandler
-mvActiveHandler=constants.mvActiveHandler
-mvFocusHandler=constants.mvFocusHandler
-mvVisibleHandler=constants.mvVisibleHandler
-mvEditedHandler=constants.mvEditedHandler
-mvActivatedHandler=constants.mvActivatedHandler
-mvDeactivatedHandler=constants.mvDeactivatedHandler
-mvDeactivatedAfterEditHandler=constants.mvDeactivatedAfterEditHandler
-mvToggledOpenHandler=constants.mvToggledOpenHandler
-mvClickedHandler=constants.mvClickedHandler
-mvDoubleClickedHandler=constants.mvDoubleClickedHandler
-mvDragPayload=constants.mvDragPayload
-mvResizeHandler=constants.mvResizeHandler
-mvFont=constants.mvFont
-mvFontRegistry=constants.mvFontRegistry
-mvTheme=constants.mvTheme
-mvThemeColor=constants.mvThemeColor
-mvThemeStyle=constants.mvThemeStyle
-mvThemeComponent=constants.mvThemeComponent
-mvFontRangeHint=constants.mvFontRangeHint
-mvFontRange=constants.mvFontRange
-mvFontChars=constants.mvFontChars
-mvCharRemap=constants.mvCharRemap
-mvValueRegistry=constants.mvValueRegistry
-mvIntValue=constants.mvIntValue
-mvFloatValue=constants.mvFloatValue
-mvFloat4Value=constants.mvFloat4Value
-mvInt4Value=constants.mvInt4Value
-mvBoolValue=constants.mvBoolValue
-mvStringValue=constants.mvStringValue
-mvDoubleValue=constants.mvDoubleValue
-mvDouble4Value=constants.mvDouble4Value
-mvColorValue=constants.mvColorValue
-mvFloatVectValue=constants.mvFloatVectValue
-mvSeriesValue=constants.mvSeriesValue
-mvRawTexture=constants.mvRawTexture
-mvSubPlots=constants.mvSubPlots
-mvColorMap=constants.mvColorMap
-mvColorMapRegistry=constants.mvColorMapRegistry
-mvColorMapButton=constants.mvColorMapButton
-mvColorMapSlider=constants.mvColorMapSlider
-mvTemplateRegistry=constants.mvTemplateRegistry
+mvDragPoint=mvDragPoint
+mvDragLine=mvDragLine
+mvDragRect=mvDragRect
+mvAnnotation=mvAnnotation
+mvAxisTag=mvAxisTag
+mvLineSeries=mvLineSeries
+mvScatterSeries=mvScatterSeries
+mvStemSeries=mvStemSeries
+mvStairSeries=mvStairSeries
+mvBarSeries=mvBarSeries
+mvBarGroupSeries=mvBarGroupSeries
+mvErrorSeries=mvErrorSeries
+mvInfLineSeries=mvInfLineSeries
+mvHeatSeries=mvHeatSeries
+mvImageSeries=mvImageSeries
+mvPieSeries=mvPieSeries
+mvShadeSeries=mvShadeSeries
+mvLabelSeries=mvLabelSeries
+mvHistogramSeries=mvHistogramSeries
+mvDigitalSeries=mvDigitalSeries
+mv2dHistogramSeries=mv2dHistogramSeries
+mvCandleSeries=mvCandleSeries
+mvAreaSeries=mvAreaSeries
+mvColorMapScale=mvColorMapScale
+mvSlider3D=mvSlider3D
+mvKnobFloat=mvKnobFloat
+mvLoadingIndicator=mvLoadingIndicator
+mvNodeLink=mvNodeLink
+mvTextureRegistry=mvTextureRegistry
+mvStaticTexture=mvStaticTexture
+mvDynamicTexture=mvDynamicTexture
+mvStage=mvStage
+mvDrawLayer=mvDrawLayer
+mvViewportDrawlist=mvViewportDrawlist
+mvFileExtension=mvFileExtension
+mvPlotLegend=mvPlotLegend
+mvPlotAxis=mvPlotAxis
+mvHandlerRegistry=mvHandlerRegistry
+mvKeyDownHandler=mvKeyDownHandler
+mvKeyPressHandler=mvKeyPressHandler
+mvKeyReleaseHandler=mvKeyReleaseHandler
+mvMouseMoveHandler=mvMouseMoveHandler
+mvMouseWheelHandler=mvMouseWheelHandler
+mvMouseClickHandler=mvMouseClickHandler
+mvMouseDoubleClickHandler=mvMouseDoubleClickHandler
+mvMouseDownHandler=mvMouseDownHandler
+mvMouseReleaseHandler=mvMouseReleaseHandler
+mvMouseDragHandler=mvMouseDragHandler
+mvHoverHandler=mvHoverHandler
+mvActiveHandler=mvActiveHandler
+mvFocusHandler=mvFocusHandler
+mvVisibleHandler=mvVisibleHandler
+mvEditedHandler=mvEditedHandler
+mvActivatedHandler=mvActivatedHandler
+mvDeactivatedHandler=mvDeactivatedHandler
+mvDeactivatedAfterEditHandler=mvDeactivatedAfterEditHandler
+mvToggledOpenHandler=mvToggledOpenHandler
+mvClickedHandler=mvClickedHandler
+mvDoubleClickedHandler=mvDoubleClickedHandler
+mvDragPayload=mvDragPayload
+mvResizeHandler=mvResizeHandler
+mvFont=mvFont
+mvFontRegistry=mvFontRegistry
+mvTheme=mvTheme
+mvThemeColor=mvThemeColor
+mvThemeStyle=mvThemeStyle
+mvThemeComponent=mvThemeComponent
+mvFontRangeHint=mvFontRangeHint
+mvFontRange=mvFontRange
+mvFontChars=mvFontChars
+mvCharRemap=mvCharRemap
+mvValueRegistry=mvValueRegistry
+mvIntValue=mvIntValue
+mvFloatValue=mvFloatValue
+mvFloat4Value=mvFloat4Value
+mvInt4Value=mvInt4Value
+mvBoolValue=mvBoolValue
+mvStringValue=mvStringValue
+mvDoubleValue=mvDoubleValue
+mvDouble4Value=mvDouble4Value
+mvColorValue=mvColorValue
+mvFloatVectValue=mvFloatVectValue
+mvSeriesValue=mvSeriesValue
+mvRawTexture=mvRawTexture
+mvSubPlots=mvSubPlots
+mvColorMap=mvColorMap
+mvColorMapRegistry=mvColorMapRegistry
+mvColorMapButton=mvColorMapButton
+mvColorMapSlider=mvColorMapSlider
+mvTemplateRegistry=mvTemplateRegistry
 """
-#mvTableCell=constants.mvTableCell
-#mvItemHandlerRegistry=constants.mvItemHandlerRegistry
+#mvTableCell=mvTableCell
+#mvItemHandlerRegistry=mvItemHandlerRegistry
 mvInputDouble=dcg.ThemeCategories.t_inputvalue
 mvInputDoubleMulti=dcg.ThemeCategories.t_inputvalue
 mvDragDouble=dcg.ThemeCategories.t_slider
 mvDragDoubleMulti=dcg.ThemeCategories.t_slider
 mvSliderDouble=dcg.ThemeCategories.t_slider
 mvSliderDoubleMulti=dcg.ThemeCategories.t_slider
-#mvCustomSeries=constants.mvCustomSeries
+#mvCustomSeries=mvCustomSeries
 
-mvReservedUUID_0=constants.mvReservedUUID_0
-mvReservedUUID_1=constants.mvReservedUUID_1
-mvReservedUUID_2=constants.mvReservedUUID_2
-mvReservedUUID_3=constants.mvReservedUUID_3
-mvReservedUUID_4=constants.mvReservedUUID_4
-mvReservedUUID_5=constants.mvReservedUUID_5
-mvReservedUUID_6=constants.mvReservedUUID_6
-mvReservedUUID_7=constants.mvReservedUUID_7
-mvReservedUUID_8=constants.mvReservedUUID_8
-mvReservedUUID_9=constants.mvReservedUUID_9
-mvReservedUUID_10=constants.mvReservedUUID_10

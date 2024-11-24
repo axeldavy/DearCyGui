@@ -1,7 +1,7 @@
 from .dearcygui import bootstrap_cython_submodules
 bootstrap_cython_submodules()
 
-from dearcygui.constants import *
+from . import constants
 from dearcygui.core import *
 from dearcygui.draw import *
 from dearcygui.handler import *
@@ -23,5 +23,5 @@ del theme
 del types
 del widget
 del bootstrap_cython_submodules
-from .utils import *
+from . import utils
 from . import fonts

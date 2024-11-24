@@ -28,6 +28,8 @@ from .core cimport baseHandler, baseItem, uiItem, \
     update_current_mouse_states, \
     draw_plot_element_children, itemState
 from .types cimport *
+from .types import KeyMod
+
 
 import numpy as np
 cimport numpy as cnp
@@ -1286,15 +1288,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._pan_modifier
+        return KeyMod(self._pan_modifier)
 
     @pan_mod.setter
-    def pan_mod(self, int modifier):
+    def pan_mod(self, modifier : KeyMod):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("pan_mod must be a combinaison of modifiers")
-        self._pan_modifier = modifier
+        if not(isinstance(modifier, KeyMod)):
+            raise ValueError(f"pan_mod must be a combinaison of modifiers (KeyMod), not {modifier}")
+        self._pan_modifier = <int>modifier
 
     @property
     def fit_button(self):
@@ -1344,15 +1346,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._zoom_mod
+        return KeyMod(self._zoom_mod)
 
     @zoom_mod.setter
-    def zoom_mod(self, int modifier):
+    def zoom_mod(self, modifier : KeyMod):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if (modifier & ~imgui.ImGuiMod_Mask_) != 0:
-            raise ValueError("zoom_mod must be a combinaison of modifiers")
-        self._zoom_mod = modifier
+        if not(isinstance(modifier, KeyMod)):
+            raise ValueError(f"zoom_mod must be a combinaison of modifiers (KeyMod), not {modifier}")
+        self._zoom_mod = <int>modifier
 
     @property
     def zoom_rate(self):

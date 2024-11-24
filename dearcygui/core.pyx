@@ -42,7 +42,7 @@ from libc.math cimport M_PI, INFINITY
 cimport dearcygui.backends.time as ctime
 
 from .types cimport *
-from dearcygui.types import ChildType
+from .types import ChildType, Key, KeyMod, KeyOrMod
 
 import os
 import numpy as np
@@ -208,14 +208,24 @@ cdef class Context:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1int(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1) noexcept nogil:
+    cdef void queue_callback_arg1key(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1) noexcept nogil:
         if callback is None:
             return
         with gil:
             try:
-                self.queue.submit(callback, parent_item, target_item, arg1)
+                self.queue.submit(callback, parent_item, target_item, Key(arg1))
             except Exception as e:
                 print(traceback.format_exc())
+
+    cdef void queue_callback_arg1button(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, target_item, <MouseButton>arg1)
+            except Exception as e:
+                print(traceback.format_exc())
+
 
     cdef void queue_callback_arg1float(self, Callback callback, baseItem parent_item, baseItem target_item, float arg1) noexcept nogil:
         if callback is None:
@@ -236,12 +246,21 @@ cdef class Context:
                 print(traceback.format_exc())
 
 
-    cdef void queue_callback_arg1int1float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2) noexcept nogil:
+    cdef void queue_callback_arg1key1float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2) noexcept nogil:
         if callback is None:
             return
         with gil:
             try:
-                self.queue.submit(callback, parent_item, target_item, (arg1, arg2))
+                self.queue.submit(callback, parent_item, target_item, (Key(arg1), arg2))
+            except Exception as e:
+                print(traceback.format_exc())
+
+    cdef void queue_callback_arg1button1float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2) noexcept nogil:
+        if callback is None:
+            return
+        with gil:
+            try:
+                self.queue.submit(callback, parent_item, target_item, (<MouseButton>(arg1), arg2))
             except Exception as e:
                 print(traceback.format_exc())
 
@@ -263,12 +282,12 @@ cdef class Context:
             except Exception as e:
                 print(traceback.format_exc())
 
-    cdef void queue_callback_arg1int2float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2, float arg3) noexcept nogil:
+    cdef void queue_callback_arg1button2float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2, float arg3) noexcept nogil:
         if callback is None:
             return
         with gil:
             try:
-                self.queue.submit(callback, parent_item, target_item, (arg1, arg2, arg3))
+                self.queue.submit(callback, parent_item, target_item, (<MouseButton>(arg1), arg2, arg3))
             except Exception as e:
                 print(traceback.format_exc())
 
@@ -350,59 +369,68 @@ cdef class Context:
             return None
         return parent_queue[0]
 
-    def is_key_down(self, int key, int keymod=-1):
+    def is_key_down(self, key : Key, keymod : KeyMod = None):
         """
         Is key being held.
 
         key is a key constant (see constants)
         keymod is a mask if keymod constants (ctrl, shift, alt, super)
-        if keymod is negative, ignores any key modifiers.
-        If non-negative, returns True only if the modifiers
+        if keymod is None, ignores any key modifiers.
+        Else returns True only if the modifiers
         correspond as well as the key.
         """
         cdef unique_lock[recursive_mutex] m
-        if key < 0 or <imgui.ImGuiKey>key >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
+        if key is None or not(isinstance(key, Key)):
+            raise TypeError(f"key must be a valid Key, not {key}")
+        if keymod is not None and not(isinstance(keymod, KeyMod)):
+            raise TypeError(f"keymod must be a valid KeyMod, not {keymod}")
+        cdef imgui.ImGuiKey keycode = key
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        if keymod >= 0 and (keymod & imgui.ImGuiMod_Mask_) != imgui.GetIO().KeyMods:
+        if keymod is not None and (<int>keymod & imgui.ImGuiMod_Mask_) != imgui.GetIO().KeyMods:
             return False
-        return imgui.IsKeyDown(<imgui.ImGuiKey>key)
+        return imgui.IsKeyDown(keycode)
 
-    def is_key_pressed(self, int key, int keymod=-1, bint repeat=True):
+    def is_key_pressed(self, key : Key, keymod : KeyMod = None, bint repeat=True):
         """
         Was key pressed (went from !Down to Down)?
-        
+
         if repeat=true, the pressed state is repeated
         if the user continue pressing the key.
-        If keymod is non-negative, returns True only if the modifiers
+        If keymod is not None, returns True only if the modifiers
         correspond as well as the key.
 
         """
         cdef unique_lock[recursive_mutex] m
-        if key < 0 or <imgui.ImGuiKey>key >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
+        if key is None or not(isinstance(key, Key)):
+            raise TypeError(f"key must be a valid Key, not {key}")
+        if keymod is not None and not(isinstance(keymod, KeyMod)):
+            raise TypeError(f"keymod must be a valid KeyMod, not {keymod}")
+        cdef imgui.ImGuiKey keycode = key
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        if keymod >= 0 and (keymod & imgui.ImGuiMod_Mask_) != imgui.GetIO().KeyMods:
+        if keymod is not None and (<int>keymod & imgui.ImGuiMod_Mask_) != imgui.GetIO().KeyMods:
             return False
-        return imgui.IsKeyPressed(<imgui.ImGuiKey>key, repeat)
+        return imgui.IsKeyPressed(keycode, repeat)
 
-    def is_key_released(self, int key, int keymod=-1):
+    def is_key_released(self, key : Key, keymod : KeyMod = None):
         """
         Was key released (went from Down to !Down)?
-        
-        If keymod is non-negative, returns True also if the
+
+        If keymod is not None, returns True also if the
         required modifiers are not pressed.
         """
         cdef unique_lock[recursive_mutex] m
-        if key < 0 or <imgui.ImGuiKey>key >= imgui.ImGuiKey_NamedKey_END:
-            raise ValueError("Invalid key")
+        if key is None or not(isinstance(key, Key)):
+            raise TypeError(f"key must be a valid Key, not {key}")
+        if keymod is not None and not(isinstance(keymod, KeyMod)):
+            raise TypeError(f"keymod must be a valid KeyMod, not {keymod}")
+        cdef imgui.ImGuiKey keycode = key
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
-        if keymod >= 0 and (keymod & imgui.GetIO().KeyMods) != keymod:
+        if keymod is not None and (<int>keymod & imgui.GetIO().KeyMods) != keymod:
             return True
-        return imgui.IsKeyReleased(<imgui.ImGuiKey>key)
+        return imgui.IsKeyReleased(keycode)
 
     def is_mouse_down(self, MouseButton button):
         """is mouse button held?"""

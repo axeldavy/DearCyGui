@@ -96,13 +96,15 @@ cdef class Context:
     cdef object queue
     cdef void queue_callback_noarg(self, Callback, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem, baseItem) noexcept nogil
-    cdef void queue_callback_arg1int(self, Callback, baseItem, baseItem, int) noexcept nogil
+    cdef void queue_callback_arg1key(self, Callback, baseItem, baseItem, int) noexcept nogil
+    cdef void queue_callback_arg1button(self, Callback, baseItem, baseItem, int) noexcept nogil
     cdef void queue_callback_arg1float(self, Callback, baseItem, baseItem, float) noexcept nogil
     cdef void queue_callback_arg1value(self, Callback, baseItem, baseItem, SharedValue) noexcept nogil
-    cdef void queue_callback_arg1int1float(self, Callback, baseItem, baseItem, int, float) noexcept nogil
+    cdef void queue_callback_arg1key1float(self, Callback, baseItem, baseItem, int, float) noexcept nogil
+    cdef void queue_callback_arg1button1float(self, Callback, baseItem, baseItem, int, float) noexcept nogil
     cdef void queue_callback_arg2float(self, Callback, baseItem, baseItem, float, float) noexcept nogil
     cdef void queue_callback_arg2double(self, Callback, baseItem, baseItem, double, double) noexcept nogil
-    cdef void queue_callback_arg1int2float(self, Callback, baseItem, baseItem, int, float, float) noexcept nogil
+    cdef void queue_callback_arg1button2float(self, Callback, baseItem, baseItem, int, float, float) noexcept nogil
     cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
     cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
     cdef void queue_callback_argdoubletriplet(self, Callback, baseItem, baseItem, double, double, double, double, double, double) noexcept nogil
