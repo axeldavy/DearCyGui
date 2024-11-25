@@ -900,7 +900,7 @@ cdef class PlotAxisConfig(baseItem):
 
     cdef void after_plot(self, implot.ImAxis axis) noexcept nogil:
         # The fit only impacts the next frame
-        if self._min != self.prev_min or self._max != self.prev_max:
+        if self._enabled and (self._min != self.prev_min or self._max != self.prev_max):
             self.context._viewport.redraw_needed = True
 
     cdef void set_hidden(self) noexcept nogil:
