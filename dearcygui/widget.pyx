@@ -4612,7 +4612,7 @@ cdef class ChildWindow(uiItem):
         cdef imgui.ImGuiWindowFlags flags = self.window_flags
         if self.last_menubar_child is not None:
             flags |= imgui.ImGuiWindowFlags_MenuBar
-        cdef imgui.ImVec2 pos_p
+        cdef imgui.ImVec2 pos_p, pos_w
         cdef imgui.ImVec2 requested_size = self.scaled_requested_size()
         cdef imgui.ImGuiChildFlags child_flags = self.child_flags
         # Else they have no effect
@@ -4633,10 +4633,12 @@ cdef class ChildWindow(uiItem):
                             flags):
             self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             pos_p = imgui.GetCursorScreenPos()
-            # TODO: since Child windows are ... windows, should we update window_pos ?
+            pos_w = pos_p
             swap(pos_p, self.context._viewport.parent_pos)
+            swap(pos_w, self.context._viewport.window_pos)
             draw_ui_children(self)
             draw_menubar_children(self)
+            self.context._viewport.window_pos = pos_w
             self.context._viewport.parent_pos = pos_p
             self.state.cur.rendered = True
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)

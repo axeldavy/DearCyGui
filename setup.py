@@ -189,7 +189,7 @@ def setup_package():
                 'Topic :: Software Development :: User Interfaces',
                 'Topic :: Software Development :: Libraries :: Python Modules',
             ],
-        packages=['dearcygui', "dearcygui.utils"],
+        packages=['dearcygui', 'dearcygui.utils', 'dearcygui.backends', 'dearcygui.wrapper'],
         install_requires=[
           'numpy',
           'freetype-py',
@@ -200,6 +200,8 @@ def setup_package():
     metadata["package_data"] = {}
     metadata["package_data"]['dearcygui'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf', '*typed']
     metadata["package_data"]['dearcygui.utils'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf', '*typed']
+    metadata["package_data"]['dearcygui.backends'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf', '*typed']
+    metadata["package_data"]['dearcygui.wrapper'] = ['*.pxd', '*.py', '*.pyi', '*ttf', '*otf', '*typed']
 
     if "--force" in sys.argv:
         sys.argv.remove('--force')
