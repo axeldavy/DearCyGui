@@ -3851,7 +3851,7 @@ cdef class uiItem(baseItem):
         while items react dynamically to the size of their parent, a few
         frames may be needed for positions to stabilize.
         """
-        return self._pos_policy
+        return (<Positioning>self._pos_policy[0], <Positioning>self._pos_policy[1])
 
     @property
     def height(self):

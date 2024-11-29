@@ -167,6 +167,11 @@ cpdef enum class LegendLocation:
 cdef imgui.ImU32 imgui_ColorConvertFloat4ToU32(imgui.ImVec4) noexcept nogil
 cdef imgui.ImVec4 imgui_ColorConvertU32ToFloat4(imgui.ImU32) noexcept nogil
 
+cdef class Coord:
+    cdef double _x
+    cdef double _y
+    @staticmethod
+    cdef Coord build(double[2] &coord)
 
 cdef inline void read_point(point_type* dst, src):
     if not(hasattr(src, '__len__')):
@@ -180,6 +185,13 @@ cdef inline void read_point(point_type* dst, src):
         dst[0] = <point_type>src[0]
     if src_size > 1:
         dst[1] = <point_type>src[1]
+
+cdef inline void read_coord(double* dst, src):
+    if isinstance(src, Coord):
+        dst[0] = (<Coord>src)._x
+        dst[1] = (<Coord>src)._y
+    else:
+        read_point[double](dst, src)
 
 cdef inline void read_vec4(point_type* dst, src):
     if not(hasattr(src, '__len__')):

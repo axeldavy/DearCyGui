@@ -13,6 +13,28 @@ def color_as_ints(val) -> tuple[int, int, int, int]:
 def color_as_floats(val) -> tuple[float, float, float, float]:
     ...
 
+class Coord:
+    @property
+    def x(self): # -> double:
+        """Coordinate on the horizontal axis"""
+        ...
+    
+    @property
+    def y(self): # -> double:
+        """Coordinate on the vertical axis"""
+        ...
+    
+    def __len__(self): # -> Literal[2]:
+        ...
+    
+    def __getitem__(self, key): # -> double:
+        ...
+    
+    def __setitem__(self, key, value): # -> None:
+        ...
+    
+
+
 class ChildType(IntFlag):
     NOCHILD = ...
     DRAWING = ...

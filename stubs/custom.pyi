@@ -1,32 +1,68 @@
 from typing import Any
 from enum import IntEnum
-from typing import Protocol
+from typing import Protocol, Sequence
 from .types import *
 
+Sender = TypeVar('Sender', baseHandler, uiItem, covariant=True)
+Target = TypeVar('Target', baseItem, covariant=True)
+
 class DCGCallable0(Protocol):
-    def __call__(self, **kwargs) -> None:
+    def __call__(self, /) -> Any:
         ...
 
 class DCGCallable1(Protocol):
-    def __call__(self, sender : baseHandler | uiItem, **kwargs) -> None:
+    def __call__(self,
+                 sender : Sender,
+                 /) -> Any:
         ...
 
 class DCGCallable2(Protocol):
     def __call__(self,
-                 sender : baseHandler | uiItem,
-                 target : baseItem,
-                 **kwargs) -> None:
+                 sender : Sender,
+                 target : Target,
+                 /) -> Any:
         ...
 
 class DCGCallable3(Protocol):
     def __call__(self,
-                 sender : baseHandler | uiItem,
-                 target : baseItem,
+                 sender : Sender,
+                 target : Target,
                  value : Any,
-                 **kwargs) -> None:
+                 /) -> Any:
         ...
 
-DCGCallable = DCGCallable0 | DCGCallable1 | DCGCallable2 | DCGCallable3
+class DCGCallable0Kw(Protocol):    
+    def __call__(self, /, **kwargs) -> Any:
+        ...
+
+class DCGCallable1Kw(Protocol):
+    def __call__(self,
+                 sender : Sender,
+                 /,
+                 **kwargs : Any) -> Any:
+        ...
+
+class DCGCallable2Kw(Protocol):
+    def __call__(self,
+                 sender : Sender,
+                 target : Target,
+                 /,
+                 **kwargs : Any) -> Any:
+        ...
+
+class DCGCallable3Kw(Protocol):
+    def __call__(self,
+                 sender : Sender,
+                 target : Target,
+                 value : Any,
+                 /,  
+                 **kwargs : Any) -> Any:
+        ...
+
+
+DCGCallable = DCGCallable0 | DCGCallable1 | DCGCallable2 | DCGCallable3 | DCGCallable0Kw | DCGCallable1Kw | DCGCallable2Kw | DCGCallable3Kw
+
+Color = int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float] | Sequence[int] | Sequence[float]
 
 
 class wrap_mutex:

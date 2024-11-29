@@ -1,4 +1,4 @@
-
+cimport cython
 from dearcygui.wrapper cimport imgui
 
 from enum import IntFlag, IntEnum
@@ -25,6 +25,319 @@ def color_as_floats(val) -> tuple[float, float, float, float]:
     cdef imgui.ImU32 color = parse_color(val)
     cdef imgui.ImVec4 color_vec = imgui.ColorConvertU32ToFloat4(color)
     return (color_vec.x, color_vec.y, color_vec.z, color_vec.w)
+
+@cython.freelist(8)
+cdef class Coord:
+    """Fast writable 2D coordinate tuple (x, y) which supports a lot of operations"""
+    #def __cinit__(self): Commented as trivial. Commenting enables auto-generated __reduce__
+    #    self._x = 0
+    #    self._y = 0
+
+    def __init__(self, double x = 0., double y = 0.):
+        self._x = x
+        self._y = y
+
+    @property
+    def x(self):
+        """Coordinate on the horizontal axis"""
+        return self._x
+
+    @property
+    def y(self):
+        """Coordinate on the vertical axis"""
+        return self._y
+
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, key):
+        cdef int index
+        if isinstance(key, int):
+            index = <int>key
+            if index == 0:
+                return self._x
+            if index == 1:
+                return self._y
+        elif isinstance(key, str):
+            if key == "x":
+                return self._x
+            if key == "y":
+                return self._y
+        raise IndexError(f"Invalid key: {key}")
+
+    def __setitem__(self, key, value):
+        cdef int index
+        if isinstance(key, int):
+            index = <int>key
+            if index == 0:
+                self._x = <double>value
+                return
+            if index == 1:
+                self._y = <double>value
+                return
+        elif isinstance(key, str):
+            if key == "x":
+                self._x = <double>value
+                return
+            if key == "y":
+                self._y = <double>value
+                return
+        raise IndexError(f"Invalid key: {key}")
+
+    def __add__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        other_coord[0] += self._x
+        other_coord[1] += self._y
+        return Coord.build(other_coord)
+
+    def __radd__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        other_coord[0] += self._x
+        other_coord[1] += self._y
+        return Coord.build(other_coord)
+
+    def __iadd__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        self._x += other_coord[0]
+        self._y += other_coord[1]
+        return self
+
+    def __sub__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        other_coord[0] -= self._x
+        other_coord[1] -= self._y
+        return Coord.build(other_coord)
+
+    def __rsub__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        other_coord[0] -= self._x
+        other_coord[1] -= self._y
+        return Coord.build(other_coord)
+
+    def __isub__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        self._x -= other_coord[0]
+        self._y -= other_coord[1]
+        return self
+
+    def __mul__(self, other):
+        cdef double[2] other_coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(other_coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            other_coord[0] = other
+            other_coord[1] = other
+        other_coord[0] *= self._x
+        other_coord[1] *= self._y
+        return Coord.build(other_coord)
+
+    def __rmul__(self, other):
+        cdef double[2] other_coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(other_coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            other_coord[0] = other
+            other_coord[1] = other
+        other_coord[0] *= self._x
+        other_coord[1] *= self._y
+        return Coord.build(other_coord)
+
+    def __imul__(self, other):
+        cdef double[2] other_coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(other_coord, other)
+            except TypeError:
+                return NotImplemented
+            self._x *= other_coord[0]
+            self._y *= other_coord[1]
+        else:
+            # scalar
+            other_coord[0] = other 
+            self._x *= other_coord[0]
+            self._y *= other_coord[0]
+        return self
+
+    def __truediv__(self, other):
+        cdef double[2] other_coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(other_coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            other_coord[0] = other
+            other_coord[1] = other
+        other_coord[0] = self._x / other_coord[0]
+        other_coord[1] = self._y / other_coord[1]
+        return Coord.build(other_coord)
+
+    def __rtruediv__(self, other):
+        cdef double[2] other_coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(other_coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            other_coord[0] = other
+            other_coord[1] = other
+        other_coord[0] = other_coord[0] / self._x
+        other_coord[1] = other_coord[1] / self._y
+        return Coord.build(other_coord)
+
+    def __itruediv__(self, other):
+        cdef double[2] other_coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(other_coord, other)
+            except TypeError:
+                return NotImplemented
+            self._x /= other_coord[0]
+            self._y /= other_coord[1]
+        else:
+            # scalar
+            other_coord[0] = other 
+            self._x /= other_coord[0]
+            self._y /= other_coord[0]
+        return self
+
+    def __neg__(self):
+        cdef double[2] other_coord
+        other_coord[0] = -self._x
+        other_coord[1] = -self._y
+        return Coord.build(other_coord)
+
+    def __pos__(self):
+        cdef double[2] other_coord
+        other_coord[0] = self._x
+        other_coord[1] = self._y
+        return Coord.build(other_coord)
+
+    def __abs__(self):
+        cdef double[2] other_coord
+        other_coord[0] = abs(self._x)
+        other_coord[1] = abs(self._y)
+        return Coord.build(other_coord)
+
+    # lexicographic ordering
+    def __lt__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        if self._x < other_coord[0]:
+            return True
+        if self._x == other_coord[0] and self._y < other_coord[1]:
+            return True
+        return False
+
+    def __le__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        if self._x < other_coord[0]:
+            return True
+        if self._x == other_coord[0] and self._y <= other_coord[1]:
+            return True
+        return False
+
+    def __eq__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        return self._x == other_coord[0] and self._y == other_coord[1]
+
+    def __ne__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        return self._x != other_coord[0] or self._y != other_coord[1]
+
+    def __gt__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        if self._x > other_coord[0]:
+            return True
+        if self._x == other_coord[0] and self._y > other_coord[1]:
+            return True
+        return False
+
+    def __ge__(self, other):
+        cdef double[2] other_coord
+        try:
+             read_coord(other_coord, other)
+        except TypeError:
+             return NotImplemented
+        if self._x > other_coord[0]:
+            return True
+        if self._x == other_coord[0] and self._y >= other_coord[1]:
+            return True
+        return False
+
+    def __hash__(self):
+        return hash((self._x, self._y))
+
+    def __bool__(self):
+        return self._x == 0 and self._y == 0
+
+    def __str__(self):
+        return str((self._x, self._y))
+
+    def __repr__(self):
+        return f"Coord({self._x}, {self._y})"
+
+    # Fast instanciation from Cython
+    @staticmethod
+    cdef Coord build(double[2] &coord):
+        cdef Coord item = Coord.__new__(Coord)
+        item._x = coord[0]
+        item._y = coord[1]
+        return item
 
 class ChildType(IntFlag):
     NOCHILD = 0,

@@ -181,7 +181,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self._p1)
+        return Coord.build(self._p1)
 
     @p1.setter
     def p1(self, value):
@@ -197,7 +197,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return list(self._p2)
+        return Coord.build(self._p2)
 
     @p2.setter
     def p2(self, value):

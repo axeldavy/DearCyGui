@@ -44,14 +44,15 @@ def indent(s: list[str] | str, trim_start=False, short=False):
 
 hardcoded = {
     "parent": "baseItem | None",
+    "pos_policy": "tuple[Positioning, Positioning]",
     "font": "Font",
     "children": "list[baseItem]",
     "previous_sibling": "baseItem | None",
     "next_sibling": "baseItem | None",
     "callback": "DCGCallable | None",
     "callbacks" : "list[DCGCallable]",
-    "color" : "int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]",
-    "fill" : "int | tuple[int, int, int] | tuple[int, int, int, int] | tuple[float, float, float] | tuple[float, float, float, float]"
+    "color" : "Color",
+    "fill" : "Color"
 }
 
 
@@ -73,7 +74,7 @@ def typename(object_class, instance, name, value):
                 instance.children = [dcg.DrawLine(instance.context)]
                 return "list[drawingItem]"
             except:
-                return "None " 
+                return "None "
         if issubclass(object_class, dcg.uiItem) or \
            issubclass(object_class, dcg.plotElement):
             try:
@@ -98,6 +99,8 @@ def typename(object_class, instance, name, value):
     if name == "parent":
         if issubclass(object_class, dcg.Window):
             return "Viewport | None"
+        if issubclass(object_class, dcg.MenuBar):
+            return "Viewport | Window | ChildWindow"
         if issubclass(object_class, dcg.drawingItem):
             return "DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None"
         if issubclass(object_class, dcg.uiItem):
@@ -136,12 +139,14 @@ def typename(object_class, instance, name, value):
                 return "int | None"
             except:
                 pass
+    if isinstance(value, dcg.Coord):
+        return "Sequence[float] | tuple[float, float]"
 
     return default
 
 
 def generate_docstring_for_class(object_class, instance):
-    class_attributes = [v[0] for v in inspect.getmembers_static(object_class)]
+    class_attributes = [v[0] for v in inspect.getmembers(object_class)]
     try:
         attributes = dir(instance)
     except:
@@ -248,6 +253,13 @@ def generate_docstring_for_class(object_class, instance):
                     additional_properties.append("callback")
                     docs["callback"] = docs["callbacks"]
                     default_values["callback"] = None
+                if not(isinstance(object_class, dcg.Viewport)) and issubclass(object_class, dcg.baseItem):
+                    additional_properties.append("attach")
+                    docs["attach"] = "Whether to attach the item to a parent. Default is None (auto)"
+                    default_values["attach"] = None
+                    additional_properties.append("before")
+                    docs["before"] = "Attach the item just before the target item. Default is None (disabled)"
+                    default_values["before"] = None
                 for prop in sorted(additional_properties):
                     if docs[prop] is not None:
                         doc = docs[prop]
@@ -303,6 +315,11 @@ def generate_docstring_for_class(object_class, instance):
 
     if hasattr(object_class, "__enter__"):
         result.append(f"{level1}def __enter__(self) -> {object_class.__name__}:")
+        result.append(f"{level2}...")
+        result.append("\n")
+
+    if hasattr(object_class, "__exit__"):
+        result.append(f"{level1}def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:")
         result.append(f"{level2}...")
         result.append("\n")
 

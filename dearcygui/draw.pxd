@@ -1,4 +1,4 @@
-from dearcygui.wrapper cimport imgui, double4
+from dearcygui.wrapper cimport imgui, double2
 from .core cimport baseItem, drawingItem, Texture, Font
 
 from libcpp.string cimport string
@@ -64,7 +64,7 @@ cdef class DrawEllipse(drawingItem):
     cdef imgui.ImU32 fill
     cdef float thickness
     cdef int segments
-    cdef vector[double4] points
+    cdef vector[double2] points
     cdef void __fill_points(self)
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
@@ -100,14 +100,14 @@ cdef class DrawPolyline(drawingItem):
     cdef imgui.ImU32 color
     cdef float thickness
     cdef bint closed
-    cdef vector[double4] points
+    cdef vector[double2] points
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawPolygon(drawingItem):
     cdef imgui.ImU32 color
     cdef imgui.ImU32 fill
     cdef float thickness
-    cdef vector[double4] points
+    cdef vector[double2] points
     cdef int[:,:] triangulation_indices
     cdef void __triangulate(self)
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil

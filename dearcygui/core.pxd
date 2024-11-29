@@ -1,4 +1,4 @@
-from dearcygui.wrapper cimport imgui, implot, imnodes, double4
+from dearcygui.wrapper cimport imgui, implot, imnodes
 from dearcygui.backends.backend cimport mvViewport, mvGraphics
 from libcpp.string cimport string
 from libcpp cimport bool
