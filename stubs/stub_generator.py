@@ -52,7 +52,8 @@ hardcoded = {
     "callback": "DCGCallable | None",
     "callbacks" : "list[DCGCallable]",
     "color" : "Color",
-    "fill" : "Color"
+    "fill" : "Color",
+    "texture" : "Texture | None"
 }
 
 
@@ -140,7 +141,7 @@ def typename(object_class, instance, name, value):
             except:
                 pass
     if isinstance(value, dcg.Coord):
-        return "Sequence[float] | tuple[float, float]"
+        return "Sequence[float] | tuple[float, float] | Coord"
 
     return default
 
@@ -331,7 +332,12 @@ def generate_docstring_for_class(object_class, instance):
         if tname is None:
             result.append(f"{level1}{definition}:")
         else:
-            result.append(f"{level1}{definition} -> {tname}:")
+            tname_read = tname
+            if isinstance(default_value, dcg.Coord):
+                # property read is always Coord 
+                tname_read = "Coord"
+
+            result.append(f"{level1}{definition} -> {tname_read}:")
         docstring = docs[property]
         if docstring is not None:
             if docstring[0] == " ":

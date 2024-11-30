@@ -373,7 +373,7 @@ cdef class HorizontalLayout(Layout):
                 # Center right away (not waiting the second row) with wrap_x
                 target_x = (end_x + wrap_x) // 2 - \
                     expected_size // 2 # integer rounding to avoid blurring
-            elif self._alignment_mode == Alignment.JUSTIFIED:
+            else: #self._alignment_mode == Alignment.JUSTIFIED:
                 target_x = 0 if row == 0 else wrap_x
                 # Increase spacing to fit target space
                 spacing_x = self.spacing.x + \

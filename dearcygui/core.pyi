@@ -14883,7 +14883,7 @@ class DraggingHandler(baseHandler):
 
 
 class DrawArrow(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -14924,7 +14924,7 @@ class DrawArrow(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -15141,22 +15141,22 @@ class DrawArrow(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -15311,7 +15311,7 @@ class DrawArrow(drawingItem):
 
 
 class DrawBezierCubic(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., p4 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -15352,7 +15352,7 @@ class DrawBezierCubic(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., p4 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -15569,42 +15569,42 @@ class DrawBezierCubic(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p3(self) -> Sequence[float] | tuple[float, float]:
+    def p3(self) -> Coord:
         ...
 
 
     @p3.setter
-    def p3(self, value : Sequence[float] | tuple[float, float]):
+    def p3(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p4(self) -> Sequence[float] | tuple[float, float]:
+    def p4(self) -> Coord:
         ...
 
 
     @p4.setter
-    def p4(self, value : Sequence[float] | tuple[float, float]):
+    def p4(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -15759,7 +15759,7 @@ class DrawBezierCubic(drawingItem):
 
 
 class DrawBezierQuadratic(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -15800,7 +15800,7 @@ class DrawBezierQuadratic(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -16017,32 +16017,32 @@ class DrawBezierQuadratic(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p3(self) -> Sequence[float] | tuple[float, float]:
+    def p3(self) -> Coord:
         ...
 
 
     @p3.setter
-    def p3(self, value : Sequence[float] | tuple[float, float]):
+    def p3(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -16197,7 +16197,7 @@ class DrawBezierQuadratic(drawingItem):
 
 
 class DrawCircle(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -16238,7 +16238,7 @@ class DrawCircle(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -16347,12 +16347,12 @@ class DrawCircle(drawingItem):
 
 
     @property
-    def center(self) -> Sequence[float] | tuple[float, float]:
+    def center(self) -> Coord:
         ...
 
 
     @center.setter
-    def center(self, value : Sequence[float] | tuple[float, float]):
+    def center(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -16635,7 +16635,7 @@ class DrawCircle(drawingItem):
 
 
 class DrawEllipse(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] = ..., pmin : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -16676,7 +16676,7 @@ class DrawEllipse(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] = ..., pmin : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -16961,22 +16961,22 @@ class DrawEllipse(drawingItem):
 
 
     @property
-    def pmax(self) -> Sequence[float] | tuple[float, float]:
+    def pmax(self) -> Coord:
         ...
 
 
     @pmax.setter
-    def pmax(self, value : Sequence[float] | tuple[float, float]):
+    def pmax(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pmin(self) -> Sequence[float] | tuple[float, float]:
+    def pmin(self) -> Coord:
         ...
 
 
     @pmin.setter
-    def pmin(self, value : Sequence[float] | tuple[float, float]):
+    def pmin(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -17073,25 +17073,69 @@ class DrawEllipse(drawingItem):
 
 
 class DrawImage(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] = ..., pmin : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0]):
+    """
+    Draw an image in coordinate space.
+
+    DrawImage supports three ways to express its position in space:
+    - p1, p2, p3, p4, the positions of the corners of the image, in
+       a clockwise order
+    - pmin and pmax, where pmin = p1, and pmax = p3, and p2/p4
+        are automatically set such that the image is parallel
+        to the axes.
+    - center, direction, width, height for the coordinate of the center,
+        the angle of (center, middle of p2 and p3) against the x horizontal axis,
+        and the width/height of the image at direction 0.
+
+    uv1/uv2/uv3/uv4 are the normalized texture coordinates at p1/p2/p3/p4
+
+    The systems are similar, but writing to p1/p2/p3/p4 is more expressive
+    as it allows to have non-rectangular shapes.
+    The last system enables to indicate a size in screen space rather
+    than in coordinate space by passing negative values to width and height.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], direction : float = 0.0, height : float = 0.0, next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, texture : Texture | None = None, user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [1.0, 0.0], uv3 : list = [1.0, 1.0], uv4 : list = [0.0, 1.0], uv_max : list = [1.0, 1.0], uv_min : list = [0.0, 0.0], width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
+        center: Center of pmin/pmax
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color_multiplier: The image is mixed with this color.
+        direction: Angle of (center, middle of p2/p3) with the horizontal axis
+        height: Height of the shape. Negative means screen space.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p1: Top left corner
+        p2: Top right corner
+        p3: Bottom right corner
+        p4: Bottom left corner
         parent: parent of the item in the rendering tree.
+        pmax: Bottom right corner
+        pmin: Top left corner
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
+        rounding: Rounding of the corners of the shape.
+            
+            If non-zero, the renderered image will be rectangular
+            and parallel to the axes.
+            (p1/p2/p3/p4 will behave like pmin/pmax)
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        texture: Image content
         user_data: User data of any type.
+        uv1: Texture coordinate for p1
+        uv2: Texture coordinate for p2
+        uv3: Texture coordinate for p3
+        uv4: Texture coordinate for p4
+        uv_max: Texture coordinate for pmax. Writes to uv2/3/4.
+        uv_min: Texture coordinate for pmin. Writes to uv1/2/4.
+        width: Width of the shape. Negative means screen space.
         """
         ...
 
@@ -17114,24 +17158,47 @@ class DrawImage(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] = ..., pmin : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0]):
+    def configure(self, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], direction : float = 0.0, height : float = 0.0, next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, texture : Texture | None = None, user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [1.0, 0.0], uv3 : list = [1.0, 1.0], uv4 : list = [0.0, 1.0], uv_max : list = [1.0, 1.0], uv_min : list = [0.0, 0.0], width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
+        center: Center of pmin/pmax
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color_multiplier: The image is mixed with this color.
+        direction: Angle of (center, middle of p2/p3) with the horizontal axis
+        height: Height of the shape. Negative means screen space.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p1: Top left corner
+        p2: Top right corner
+        p3: Bottom right corner
+        p4: Bottom left corner
         parent: parent of the item in the rendering tree.
+        pmax: Bottom right corner
+        pmin: Top left corner
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
+        rounding: Rounding of the corners of the shape.
+            
+            If non-zero, the renderered image will be rectangular
+            and parallel to the axes.
+            (p1/p2/p3/p4 will behave like pmin/pmax)
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        texture: Image content
         user_data: User data of any type.
+        uv1: Texture coordinate for p1
+        uv2: Texture coordinate for p2
+        uv3: Texture coordinate for p3
+        uv4: Texture coordinate for p4
+        uv_max: Texture coordinate for pmax. Writes to uv2/3/4.
+        uv_min: Texture coordinate for pmin. Writes to uv1/2/4.
+        width: Width of the shape. Negative means screen space.
         """
         ...
 
@@ -17223,6 +17290,18 @@ class DrawImage(drawingItem):
 
 
     @property
+    def center(self) -> Coord:
+        """Center of pmin/pmax
+        """
+        ...
+
+
+    @center.setter
+    def center(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
     def children(self) -> None :
         """
         Writable attribute: List of all the children of the item,
@@ -17251,6 +17330,10 @@ class DrawImage(drawingItem):
 
     @property
     def color_multiplier(self) -> list:
+        """
+        The image is mixed with this color.
+        
+        """
         ...
 
 
@@ -17265,6 +17348,30 @@ class DrawImage(drawingItem):
         Read-only attribute: Context in which the item resides
         
         """
+        ...
+
+
+    @property
+    def direction(self) -> float:
+        """Angle of (center, middle of p2/p3) with the horizontal axis
+        """
+        ...
+
+
+    @direction.setter
+    def direction(self, value : float):
+        ...
+
+
+    @property
+    def height(self) -> float:
+        """Height of the shape. Negative means screen space.
+        """
+        ...
+
+
+    @height.setter
+    def height(self, value : float):
         ...
 
 
@@ -17331,470 +17438,50 @@ class DrawImage(drawingItem):
 
 
     @property
-    def parent(self) -> DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None:
+    def p1(self) -> Coord:
+        """Top left corner
         """
-        Writable attribute: parent of the item in the rendering tree.
-
-        Rendering starts from the viewport. Then recursively each child
-        is rendered from the first to the last, and each child renders
-        their subtree.
-
-        Only an item inserted in the rendering tree is rendered.
-        An item that is not in the rendering tree can have children.
-        Thus it is possible to build and configure various items, and
-        attach them to the tree in a second phase.
-
-        The children hold a reference to their parent, and the parent
-        holds a reference to its children. Thus to be release memory
-        held by an item, two options are possible:
-        . Remove the item from the tree, remove all your references.
-          If the item has children or siblings, the item will not be
-          released until Python's garbage collection detects a
-          circular reference.
-        . Use delete_item to remove the item from the tree, and remove
-          all the internal references inside the item structure and
-          the item's children, thus allowing them to be removed from
-          memory as soon as the user doesn't hold a reference on them.
-
-        Note the viewport is referenced by the context.
-
-        If you set this attribute, the item will be inserted at the last
-        position of the children of the parent (regardless whether this
-        item is already a child of the parent).
-        If you set None, the item will be removed from its parent's children
-        list.
-        
-        """
-        ...
-
-
-    @parent.setter
-    def parent(self, value : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None):
-        ...
-
-
-    @property
-    def parents_mutex(self) -> wrap_this_and_parents_mutex:
-        """Context manager instance for the item mutex and all its parents
-        
-        Similar to mutex but locks not only this item, but also all
-        its current parents.
-        If you want to access parent fields, or if you are unsure,
-        lock this mutex rather than self.mutex.
-        This mutex will lock the item and all its parent in a safe
-        way that does not deadlock.
-        
-        """
-        ...
-
-
-    @property
-    def pmax(self) -> Sequence[float] | tuple[float, float]:
-        ...
-
-
-    @pmax.setter
-    def pmax(self, value : Sequence[float] | tuple[float, float]):
-        ...
-
-
-    @property
-    def pmin(self) -> Sequence[float] | tuple[float, float]:
-        ...
-
-
-    @pmin.setter
-    def pmin(self, value : Sequence[float] | tuple[float, float]):
-        ...
-
-
-    @property
-    def previous_sibling(self) -> baseItem | None:
-        """
-        Writable attribute: child of the parent of the item that
-        is rendered just before this item.
-
-        It is not possible to have siblings if you have no parent,
-        thus if you intend to attach together items outside the
-        rendering tree, there must be a toplevel parent item.
-
-        If you write to this attribute, the item will be moved
-        to be inserted just after the target item.
-        In case of failure, the item remains in a detached state.
-
-        Note that a parent can have several child queues, and thus
-        child elements are not guaranteed to be siblings of each other.
-        
-        """
-        ...
-
-
-    @previous_sibling.setter
-    def previous_sibling(self, value : baseItem | None):
-        ...
-
-
-    @property
-    def show(self) -> bool:
-        """
-        Writable attribute: Should the object be drawn/shown ?
-        In case show is set to False, this disables any
-        callback (for example the close callback won't be called
-        if a window is hidden with show = False).
-        In the case of items that can be closed,
-        show is set to False automatically on close.
-        
-        """
-        ...
-
-
-    @show.setter
-    def show(self, value : bool):
-        ...
-
-
-    @property
-    def texture(self):
-        ...
-
-
-    @texture.setter
-    def texture(self, value):
-        ...
-
-
-    @property
-    def user_data(self):
-        """
-        User data of any type.
-        
-        """
-        ...
-
-
-    @user_data.setter
-    def user_data(self, value):
-        ...
-
-
-    @property
-    def uuid(self) -> int:
-        """
-        Readonly attribute: uuid is an unique identifier created
-        by the context for the item.
-        uuid can be used to access the object by name for parent=,
-        previous_sibling=, next_sibling= arguments, but it is
-        preferred to pass the objects directly. 
-        
-        """
-        ...
-
-
-    @property
-    def uv(self) -> list:
-        ...
-
-
-    @uv.setter
-    def uv(self, value : list):
-        ...
-
-
-class DrawImageQuad(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., p4 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [0.0, 0.0], uv3 : list = [0.0, 0.0], uv4 : list = [0.0, 0.0]):
-        """
-
-        attach: Whether to attach the item to a parent. Default is None (auto)
-        before: Attach the item just before the target item. Default is None (disabled)
-        children: List of all the children of the item,
-            from first rendered, to last rendered.
-        next_sibling: child of the parent of the item that
-            is rendered just after this item.
-        parent: parent of the item in the rendering tree.
-        previous_sibling: child of the parent of the item that
-            is rendered just before this item.
-        show: Should the object be drawn/shown ?
-            In case show is set to False, this disables any
-            callback (for example the close callback won't be called
-            if a window is hidden with show = False).
-            In the case of items that can be closed,
-            show is set to False automatically on close.
-        user_data: User data of any type.
-        """
-        ...
-
-
-    def attach_before(self, target):
-        """
-        Same as item.next_sibling = target,
-        but target must not be None
-        
-        """
-        ...
-
-
-    def attach_to_parent(self, target):
-        """
-        Same as item.parent = target, but
-        target must not be None
-        
-        """
-        ...
-
-
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., p4 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, texture : Any = ..., user_data : Any = ..., uv1 : list = [0.0, 0.0], uv2 : list = [0.0, 0.0], uv3 : list = [0.0, 0.0], uv4 : list = [0.0, 0.0]):
-        """
-        attach: Whether to attach the item to a parent. Default is None (auto)
-        before: Attach the item just before the target item. Default is None (disabled)
-        children: List of all the children of the item,
-            from first rendered, to last rendered.
-        next_sibling: child of the parent of the item that
-            is rendered just after this item.
-        parent: parent of the item in the rendering tree.
-        previous_sibling: child of the parent of the item that
-            is rendered just before this item.
-        show: Should the object be drawn/shown ?
-            In case show is set to False, this disables any
-            callback (for example the close callback won't be called
-            if a window is hidden with show = False).
-            In the case of items that can be closed,
-            show is set to False automatically on close.
-        user_data: User data of any type.
-        """
-        ...
-
-
-    def delete_item(self):
-        """
-        When an item is not referenced anywhere, it might
-        not get deleted immediately, due to circular references.
-        The Python garbage collector will eventually catch
-        the circular references, but to speedup the process,
-        delete_item will recursively detach the item
-        and all elements in its subtree, as well as bound
-        items. As a result, items with no more references
-        will be freed immediately.
-        
-        """
-        ...
-
-
-    def detach_item(self):
-        """
-        Same as item.parent = None
-
-        The item states (if any) are updated
-        to indicate it is not rendered anymore,
-        and the information propagated to the
-        children.
-        
-        """
-        ...
-
-
-    def lock_mutex(self, wait=False):
-        """
-        Lock the internal item mutex.
-        **Know what you are doing**
-        Locking the mutex will prevent:
-        . Other threads from reading/writing
-          attributes or calling methods with this item,
-          editing the children/parent of the item
-        . Any rendering of this item and its children.
-          If the viewport attemps to render this item,
-          it will be blocked until the mutex is released.
-          (if the rendering thread is holding the mutex,
-           no blocking occurs)
-        This is useful if you want to edit several attributes
-        in several commands of an item or its subtree,
-        and prevent rendering or other threads from accessing
-        the item until you have finished.
-        If you plan on moving the item position in the rendering
-        tree, to avoid deadlock you must hold the mutex of a
-        parent of all the items involved in the motion (a common
-        parent of the source and target parent). This mutex has to
-        be locked before you lock any mutex of your child item
-        if this item is already in the rendering tree (to avoid
-        deadlock with the rendering thread).
-        If you are unsure and plans to move an item already
-        in the rendering tree, it is thus best to lock the viewport
-        mutex first.
-
-        Input argument:
-        . wait (default = False): if locking the mutex fails (mutex
-          held by another thread), wait it is released
-
-        Returns: True if the mutex is held, False else.
-
-        The mutex is a recursive mutex, thus you can lock it several
-        times in the same thread. Each lock has to be matched to an unlock.
-        
-        """
-        ...
-
-
-    def unlock_mutex(self):
-        """
-        Unlock a previously held mutex on this object by this thread.
-        Returns True on success, False if no lock was held by this thread.
-        
-        """
-        ...
-
-
-    def __enter__(self) -> DrawImageQuad:
-        ...
-
-
-    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
-        ...
-
-
-    @property
-    def children(self) -> None :
-        """
-        Writable attribute: List of all the children of the item,
-        from first rendered, to last rendered.
-
-        When written to, an error is raised if the children already
-        have other parents. This error is meant to prevent programming
-        mistakes, as users might not realize the children were
-        unattached from their former parents.
-        
-        """
-        ...
-
-
-    @children.setter
-    def children(self, value : None ):
-        ...
-
-
-    @property
-    def children_types(self) -> ChildType:
-        """Returns which types of children can be attached to this item
-        """
-        ...
-
-
-    @property
-    def color_multiplier(self) -> list:
-        ...
-
-
-    @color_multiplier.setter
-    def color_multiplier(self, value : list):
-        ...
-
-
-    @property
-    def context(self) -> Context:
-        """
-        Read-only attribute: Context in which the item resides
-        
-        """
-        ...
-
-
-    @property
-    def item_type(self) -> ChildType:
-        """Returns which type of child this item is
-        """
-        ...
-
-
-    @property
-    def mutex(self) -> wrap_mutex:
-        """
-        Context manager instance for the item mutex
-
-        Locking the mutex will prevent:
-        . Other threads from reading/writing
-          attributes or calling methods with this item,
-          editing the children/parent of the item
-        . Any rendering of this item and its children.
-          If the viewport attemps to render this item,
-          it will be blocked until the mutex is released.
-          (if the rendering thread is holding the mutex,
-           no blocking occurs)
-
-        In general, you don't need to use any mutex in your code,
-        unless you are writing a library and cannot make assumptions
-        on what the users will do, or if you know your code manipulates
-        the same objects with multiple threads.
-
-        All attribute accesses are mutex protected.
-
-        If you want to subclass and add attributes, you
-        can use this mutex to protect your new attributes.
-        Be careful not to hold the mutex if your thread
-        intends to access the attributes of a parent item.
-        In case of doubt use parents_mutex instead.
-        
-        """
-        ...
-
-
-    @property
-    def next_sibling(self) -> baseItem | None:
-        """
-        Writable attribute: child of the parent of the item that
-        is rendered just after this item.
-
-        It is not possible to have siblings if you have no parent,
-        thus if you intend to attach together items outside the
-        rendering tree, there must be a toplevel parent item.
-
-        If you write to this attribute, the item will be moved
-        to be inserted just before the target item.
-        In case of failure, the item remains in a detached state.
-        
-        """
-        ...
-
-
-    @next_sibling.setter
-    def next_sibling(self, value : baseItem | None):
-        ...
-
-
-    @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
+        """Top right corner
+        """
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p3(self) -> Sequence[float] | tuple[float, float]:
+    def p3(self) -> Coord:
+        """Bottom right corner
+        """
         ...
 
 
     @p3.setter
-    def p3(self, value : Sequence[float] | tuple[float, float]):
+    def p3(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p4(self) -> Sequence[float] | tuple[float, float]:
+    def p4(self) -> Coord:
+        """Bottom left corner
+        """
         ...
 
 
     @p4.setter
-    def p4(self, value : Sequence[float] | tuple[float, float]):
+    def p4(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -17857,6 +17544,30 @@ class DrawImageQuad(drawingItem):
 
 
     @property
+    def pmax(self) -> Coord:
+        """Bottom right corner
+        """
+        ...
+
+
+    @pmax.setter
+    def pmax(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def pmin(self) -> Coord:
+        """Top left corner
+        """
+        ...
+
+
+    @pmin.setter
+    def pmin(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
     def previous_sibling(self) -> baseItem | None:
         """
         Writable attribute: child of the parent of the item that
@@ -17883,6 +17594,23 @@ class DrawImageQuad(drawingItem):
 
 
     @property
+    def rounding(self) -> float:
+        """Rounding of the corners of the shape.
+        
+        If non-zero, the renderered image will be rectangular
+        and parallel to the axes.
+        (p1/p2/p3/p4 will behave like pmin/pmax)
+        
+        """
+        ...
+
+
+    @rounding.setter
+    def rounding(self, value : float):
+        ...
+
+
+    @property
     def show(self) -> bool:
         """
         Writable attribute: Should the object be drawn/shown ?
@@ -17902,12 +17630,14 @@ class DrawImageQuad(drawingItem):
 
 
     @property
-    def texture(self):
+    def texture(self) -> Texture | None:
+        """Image content
+        """
         ...
 
 
     @texture.setter
-    def texture(self, value):
+    def texture(self, value : Texture | None):
         ...
 
 
@@ -17940,6 +17670,8 @@ class DrawImageQuad(drawingItem):
 
     @property
     def uv1(self) -> list:
+        """Texture coordinate for p1
+        """
         ...
 
 
@@ -17950,6 +17682,8 @@ class DrawImageQuad(drawingItem):
 
     @property
     def uv2(self) -> list:
+        """Texture coordinate for p2
+        """
         ...
 
 
@@ -17960,6 +17694,8 @@ class DrawImageQuad(drawingItem):
 
     @property
     def uv3(self) -> list:
+        """Texture coordinate for p3
+        """
         ...
 
 
@@ -17970,11 +17706,49 @@ class DrawImageQuad(drawingItem):
 
     @property
     def uv4(self) -> list:
+        """Texture coordinate for p4
+        """
         ...
 
 
     @uv4.setter
     def uv4(self, value : list):
+        ...
+
+
+    @property
+    def uv_max(self) -> list:
+        """Texture coordinate for pmax. Writes to uv2/3/4.
+        """
+        ...
+
+
+    @uv_max.setter
+    def uv_max(self, value : list):
+        ...
+
+
+    @property
+    def uv_min(self) -> list:
+        """Texture coordinate for pmin. Writes to uv1/2/4.
+        """
+        ...
+
+
+    @uv_min.setter
+    def uv_min(self, value : list):
+        ...
+
+
+    @property
+    def width(self) -> float:
+        """Width of the shape. Negative means screen space.
+        """
+        ...
+
+
+    @width.setter
+    def width(self, value : float):
         ...
 
 
@@ -19730,7 +19504,7 @@ class DrawInvisibleButton(drawingItem):
     where top left is (0, 0) and bottom right is (1, 1).
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -19797,7 +19571,7 @@ class DrawInvisibleButton(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -20212,7 +19986,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         """
         Corner of the invisible button in plot/drawing
         space
@@ -20222,12 +19996,12 @@ class DrawInvisibleButton(drawingItem):
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
         """
         Opposite corner of the invisible button in plot/drawing
         space
@@ -20237,7 +20011,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -20425,15 +20199,32 @@ class DrawInvisibleButton(drawingItem):
 
 
 class DrawLine(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    """
+    A line segment is coordinate space.
+
+    DrawLine supports two ways to express its position in space:
+    - p1 and p2 for the coordinate of its extremities
+    - center, direction, length for the coordinate of the center,
+        the angle of (center, p2) against the x horizontal axis,
+        and the segment length.
+
+    Both systems are equivalent and the related fields are always valid.
+    The main difference is that length can be set to a negative value,
+    to indicate a length in screen space rather than in coordinate space.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], direction : float = 0.0, length : float = 0.0, next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        direction: Angle (rad) of the line segment relative to the horizontal axis.
+        length: Length of the line segment. Negatives mean screen space.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p2: Coordinates of one of the extremities of the line segment
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -20466,14 +20257,17 @@ class DrawLine(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], direction : float = 0.0, length : float = 0.0, next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        direction: Angle (rad) of the line segment relative to the horizontal axis.
+        length: Length of the line segment. Negatives mean screen space.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p2: Coordinates of one of the extremities of the line segment
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -20575,6 +20369,16 @@ class DrawLine(drawingItem):
 
 
     @property
+    def center(self) -> Coord:
+        ...
+
+
+    @center.setter
+    def center(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
     def children(self) -> None :
         """
         Writable attribute: List of all the children of the item,
@@ -20621,9 +20425,37 @@ class DrawLine(drawingItem):
 
 
     @property
+    def direction(self) -> float:
+        """
+        Angle (rad) of the line segment relative to the horizontal axis.
+        
+        """
+        ...
+
+
+    @direction.setter
+    def direction(self, value : float):
+        ...
+
+
+    @property
     def item_type(self) -> ChildType:
         """Returns which type of child this item is
         """
+        ...
+
+
+    @property
+    def length(self) -> float:
+        """
+        Length of the line segment. Negatives mean screen space.
+        
+        """
+        ...
+
+
+    @length.setter
+    def length(self, value : float):
         ...
 
 
@@ -20683,22 +20515,26 @@ class DrawLine(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
+        """
+        Coordinates of one of the extremities of the line segment
+        
+        """
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -21679,7 +21515,7 @@ class DrawPolyline(drawingItem):
 
 
 class DrawQuad(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., p4 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -21720,7 +21556,7 @@ class DrawQuad(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., p4 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -21947,42 +21783,42 @@ class DrawQuad(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p3(self) -> Sequence[float] | tuple[float, float]:
+    def p3(self) -> Coord:
         ...
 
 
     @p3.setter
-    def p3(self, value : Sequence[float] | tuple[float, float]):
+    def p3(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p4(self) -> Sequence[float] | tuple[float, float]:
+    def p4(self) -> Coord:
         ...
 
 
     @p4.setter
-    def p4(self, value : Sequence[float] | tuple[float, float]):
+    def p4(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -22127,7 +21963,7 @@ class DrawQuad(drawingItem):
 
 
 class DrawRect(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], color_bottom_left : list = [0.0, 0.0, 0.0, 0.0], color_bottom_right : list = [0.0, 0.0, 0.0, 0.0], color_upper_left : list = [0.0, 0.0, 0.0, 0.0], color_upper_right : list = [0.0, 0.0, 0.0, 0.0], fill : Color = [0.0, 0.0, 0.0, 0.0], multicolor : bool = False, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] = ..., pmin : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], fill_p1 : list = [0.0, 0.0, 0.0, 0.0], fill_p2 : list = [0.0, 0.0, 0.0, 0.0], fill_p3 : list = [0.0, 0.0, 0.0, 0.0], fill_p4 : list = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (1.0, 1.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -22168,7 +22004,7 @@ class DrawRect(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], color_bottom_left : list = [0.0, 0.0, 0.0, 0.0], color_bottom_right : list = [0.0, 0.0, 0.0, 0.0], color_upper_left : list = [0.0, 0.0, 0.0, 0.0], color_upper_right : list = [0.0, 0.0, 0.0, 0.0], fill : Color = [0.0, 0.0, 0.0, 0.0], multicolor : bool = False, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] = ..., pmin : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], fill_p1 : list = [0.0, 0.0, 0.0, 0.0], fill_p2 : list = [0.0, 0.0, 0.0, 0.0], fill_p3 : list = [0.0, 0.0, 0.0, 0.0], fill_p4 : list = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (1.0, 1.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -22314,46 +22150,6 @@ class DrawRect(drawingItem):
 
 
     @property
-    def color_bottom_left(self) -> list:
-        ...
-
-
-    @color_bottom_left.setter
-    def color_bottom_left(self, value : list):
-        ...
-
-
-    @property
-    def color_bottom_right(self) -> list:
-        ...
-
-
-    @color_bottom_right.setter
-    def color_bottom_right(self, value : list):
-        ...
-
-
-    @property
-    def color_upper_left(self) -> list:
-        ...
-
-
-    @color_upper_left.setter
-    def color_upper_left(self, value : list):
-        ...
-
-
-    @property
-    def color_upper_right(self) -> list:
-        ...
-
-
-    @color_upper_right.setter
-    def color_upper_right(self, value : list):
-        ...
-
-
-    @property
     def context(self) -> Context:
         """
         Read-only attribute: Context in which the item resides
@@ -22373,19 +22169,49 @@ class DrawRect(drawingItem):
 
 
     @property
-    def item_type(self) -> ChildType:
-        """Returns which type of child this item is
-        """
+    def fill_p1(self) -> list:
+        ...
+
+
+    @fill_p1.setter
+    def fill_p1(self, value : list):
         ...
 
 
     @property
-    def multicolor(self) -> bool:
+    def fill_p2(self) -> list:
         ...
 
 
-    @multicolor.setter
-    def multicolor(self, value : bool):
+    @fill_p2.setter
+    def fill_p2(self, value : list):
+        ...
+
+
+    @property
+    def fill_p3(self) -> list:
+        ...
+
+
+    @fill_p3.setter
+    def fill_p3(self, value : list):
+        ...
+
+
+    @property
+    def fill_p4(self) -> list:
+        ...
+
+
+    @fill_p4.setter
+    def fill_p4(self, value : list):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
         ...
 
 
@@ -22503,22 +22329,22 @@ class DrawRect(drawingItem):
 
 
     @property
-    def pmax(self) -> Sequence[float] | tuple[float, float]:
+    def pmax(self) -> Coord:
         ...
 
 
     @pmax.setter
-    def pmax(self, value : Sequence[float] | tuple[float, float]):
+    def pmax(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pmin(self) -> Sequence[float] | tuple[float, float]:
+    def pmin(self) -> Coord:
         ...
 
 
     @pmin.setter
-    def pmin(self, value : Sequence[float] | tuple[float, float]):
+    def pmin(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -22614,8 +22440,399 @@ class DrawRect(drawingItem):
         ...
 
 
+class DrawSplitBatch(drawingItem):
+    """
+    By default the rendering algorithms tries
+    to batch drawing primitives together as much
+    as possible. It detects when items need to be
+    draw in separate batches (for instance UI rendering,
+    or drawing an image), but it is not always enough.
+
+    When you need to force some items to be
+    drawn after others, for instance to have a line
+    overlap another, this item will force later items
+    to be drawn in separate batches to the previous one.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> DrawSplitBatch:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class DrawText(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -22657,7 +22874,7 @@ class DrawText(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : Sequence[float] | tuple[float, float] = ..., previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -22947,12 +23164,12 @@ class DrawText(drawingItem):
 
 
     @property
-    def pos(self) -> Sequence[float] | tuple[float, float]:
+    def pos(self) -> Coord:
         ...
 
 
     @pos.setter
-    def pos(self, value : Sequence[float] | tuple[float, float]):
+    def pos(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -23049,7 +23266,7 @@ class DrawText(drawingItem):
 
 
 class DrawTriangle(drawingItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -23090,7 +23307,7 @@ class DrawTriangle(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] = ..., p2 : Sequence[float] | tuple[float, float] = ..., p3 : Sequence[float] | tuple[float, float] = ..., parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], cull_mode : int = 0, fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -23327,32 +23544,32 @@ class DrawTriangle(drawingItem):
 
 
     @property
-    def p1(self) -> Sequence[float] | tuple[float, float]:
+    def p1(self) -> Coord:
         ...
 
 
     @p1.setter
-    def p1(self, value : Sequence[float] | tuple[float, float]):
+    def p1(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p2(self) -> Sequence[float] | tuple[float, float]:
+    def p2(self) -> Coord:
         ...
 
 
     @p2.setter
-    def p2(self, value : Sequence[float] | tuple[float, float]):
+    def p2(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def p3(self) -> Sequence[float] | tuple[float, float]:
+    def p3(self) -> Coord:
         ...
 
 
     @p3.setter
-    def p3(self, value : Sequence[float] | tuple[float, float]):
+    def p3(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -23496,9 +23713,528 @@ class DrawTriangle(drawingItem):
         ...
 
 
+class DrawingClip(drawingItem):
+    """
+    A DrawingList, but with clipping.
+
+    By default, all items are submitted to the GPU.
+    The GPU handles efficiently clipping items that are outside
+    the clipping regions.
+
+    In most cases, that's enough and you don't need
+    this item.
+
+    However if you have a really huge amount of drawing
+    primitives, the submission can be CPU intensive.
+    In this case you might want to skip submitting
+    groups of drawing primitives that are known to be
+    outside the visible region.
+
+    Another use case, is when you want to have a different
+    density of items depending on the zoom level.
+
+    Both the above use-cases can be done manually
+    using a DrawingList and setting the show
+    attribute programmatically.
+
+    This item enables to do this automatically.
+
+    This item defines a clipping rectangle space-wise
+    and zoom-wise. If this clipping rectangle is not
+    in the visible space, the children are not rendered.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], next_sibling : baseItem | None = None, no_global_scaling : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (1e+300, 1e+300), pmin : Sequence[float] | tuple[float, float] | Coord = (-1e+300, -1e+300), previous_sibling : baseItem | None = None, scale_max : float = inf, scale_min : float = 0.0, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_global_scaling: By default, the pixel size of scale_min/max
+            is multiplied by the global scale in order
+            to have the same behaviour of various screens.
+        parent: parent of the item in the rendering tree.
+        pmax: (xmax, ymax) corner of the rect that
+            must be on screen for the children to be rendered.
+        pmin: (xmin, ymin) corner of the rect that
+            must be on screen for the children to be rendered.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        scale_max: The coordinate space to screen space scaling
+            must be lower or equal to this amount (measured pixel size
+            between the coordinate (x=0, y=0) and (x=1, y=0))
+            for the children to be rendered.
+        scale_min: The coordinate space to screen space scaling
+            must be strictly above this amount (measured pixel size
+            between the coordinate (x=0, y=0) and (x=1, y=0))
+            for the children to be rendered.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., children : None  = [], next_sibling : baseItem | None = None, no_global_scaling : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (1e+300, 1e+300), pmin : Sequence[float] | tuple[float, float] | Coord = (-1e+300, -1e+300), previous_sibling : baseItem | None = None, scale_max : float = inf, scale_min : float = 0.0, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_global_scaling: By default, the pixel size of scale_min/max
+            is multiplied by the global scale in order
+            to have the same behaviour of various screens.
+        parent: parent of the item in the rendering tree.
+        pmax: (xmax, ymax) corner of the rect that
+            must be on screen for the children to be rendered.
+        pmin: (xmin, ymin) corner of the rect that
+            must be on screen for the children to be rendered.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        scale_max: The coordinate space to screen space scaling
+            must be lower or equal to this amount (measured pixel size
+            between the coordinate (x=0, y=0) and (x=1, y=0))
+            for the children to be rendered.
+        scale_min: The coordinate space to screen space scaling
+            must be strictly above this amount (measured pixel size
+            between the coordinate (x=0, y=0) and (x=1, y=0))
+            for the children to be rendered.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> DrawingClip:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def no_global_scaling(self) -> bool:
+        """
+        By default, the pixel size of scale_min/max
+        is multiplied by the global scale in order
+        to have the same behaviour of various screens.
+
+        Setting to True this field disables that.
+        
+        """
+        ...
+
+
+    @no_global_scaling.setter
+    def no_global_scaling(self, value : bool):
+        ...
+
+
+    @property
+    def parent(self) -> DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def pmax(self) -> Coord:
+        """(xmax, ymax) corner of the rect that
+        must be on screen for the children to be rendered.
+        
+        """
+        ...
+
+
+    @pmax.setter
+    def pmax(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def pmin(self) -> Coord:
+        """(xmin, ymin) corner of the rect that
+        must be on screen for the children to be rendered.
+        
+        """
+        ...
+
+
+    @pmin.setter
+    def pmin(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def scale_max(self) -> float:
+        """
+        The coordinate space to screen space scaling
+        must be lower or equal to this amount (measured pixel size
+        between the coordinate (x=0, y=0) and (x=1, y=0))
+        for the children to be rendered.
+        
+        """
+        ...
+
+
+    @scale_max.setter
+    def scale_max(self, value : float):
+        ...
+
+
+    @property
+    def scale_min(self) -> float:
+        """
+        The coordinate space to screen space scaling
+        must be strictly above this amount (measured pixel size
+        between the coordinate (x=0, y=0) and (x=1, y=0))
+        for the children to be rendered.
+        
+        """
+        ...
+
+
+    @scale_min.setter
+    def scale_min(self, value : float):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class DrawingList(drawingItem):
     """
     A simple drawing item that renders its children.
+
     Useful to arrange your items and quickly
     hide/show/delete them by manipulating the list.
     
@@ -23880,13 +24616,12 @@ class DrawingList(drawingItem):
         ...
 
 
-class DrawingListScale(drawingItem):
+class DrawingScale(drawingItem):
     """
-    Similar to a DrawingList, but
-    can apply shift and scale to the data
+    A DrawingList, with a change in origin and scaling.
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_parent_scale : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : Sequence[float] | tuple[float, float] = ..., shifts : Sequence[float] | tuple[float, float] = ..., show : bool = True, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_global_scaling : bool = False, no_parent_scaling : bool = False, origin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : Sequence[float] | tuple[float, float] | Coord = (1.0, 1.0), show : bool = True, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -23895,25 +24630,15 @@ class DrawingListScale(drawingItem):
             from first rendered, to last rendered.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
-        no_parent_scale: Resets any previous scaling to screen space.
-            shifts are transformed to screen space using
-            the parent transform and serves as origin (0, 0)
-            for the child coordinates.
+        no_global_scaling: Disables the global scale when no_parent_scaling is True.
+        no_parent_scaling: Resets any previous scaling to screen space.
+        origin: Position in coordinate space of the
+            new origin for the children.
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         scales: Scales applied to the x and y axes
-            Default is (1., 1.).
-            The scales multiply any previous scales
-            already set (including plot scales).
-            Use no_parent_scale to remove that behaviour.
-        shifts: Shifts applied to the x and y axes.
-            Default is (0., 0.)
-            The shifts are applied any previous
-            shift and scale.
-            For instance on x, the transformation to
-            screen space is:
-            parent_x_transform(x * scales[0] + shifts[0])
+            for the children.
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
@@ -23943,7 +24668,7 @@ class DrawingListScale(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_parent_scale : bool = False, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : Sequence[float] | tuple[float, float] = ..., shifts : Sequence[float] | tuple[float, float] = ..., show : bool = True, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], next_sibling : baseItem | None = None, no_global_scaling : bool = False, no_parent_scaling : bool = False, origin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, scales : Sequence[float] | tuple[float, float] | Coord = (1.0, 1.0), show : bool = True, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -23951,25 +24676,15 @@ class DrawingListScale(drawingItem):
             from first rendered, to last rendered.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
-        no_parent_scale: Resets any previous scaling to screen space.
-            shifts are transformed to screen space using
-            the parent transform and serves as origin (0, 0)
-            for the child coordinates.
+        no_global_scaling: Disables the global scale when no_parent_scaling is True.
+        no_parent_scaling: Resets any previous scaling to screen space.
+        origin: Position in coordinate space of the
+            new origin for the children.
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         scales: Scales applied to the x and y axes
-            Default is (1., 1.).
-            The scales multiply any previous scales
-            already set (including plot scales).
-            Use no_parent_scale to remove that behaviour.
-        shifts: Shifts applied to the x and y axes.
-            Default is (0., 0.)
-            The shifts are applied any previous
-            shift and scale.
-            For instance on x, the transformation to
-            screen space is:
-            parent_x_transform(x * scales[0] + shifts[0])
+            for the children.
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
@@ -24059,7 +24774,7 @@ class DrawingListScale(drawingItem):
         ...
 
 
-    def __enter__(self) -> DrawingListScale:
+    def __enter__(self) -> DrawingScale:
         ...
 
 
@@ -24166,19 +24881,54 @@ class DrawingListScale(drawingItem):
 
 
     @property
-    def no_parent_scale(self) -> bool:
+    def no_global_scaling(self) -> bool:
         """
-        Resets any previous scaling to screen space.
-        shifts are transformed to screen space using
-        the parent transform and serves as origin (0, 0)
-        for the child coordinates.
+        Disables the global scale when no_parent_scaling is True.
         
         """
         ...
 
 
-    @no_parent_scale.setter
-    def no_parent_scale(self, value : bool):
+    @no_global_scaling.setter
+    def no_global_scaling(self, value : bool):
+        ...
+
+
+    @property
+    def no_parent_scaling(self) -> bool:
+        """
+        Resets any previous scaling to screen space.
+
+        Note origin is still transformed to screen space
+        using the parent transform.
+
+        When set to True, the global scale still
+        impacts the scaling. Use no_global_scaling to
+        disable this behaviour.
+        
+        """
+        ...
+
+
+    @no_parent_scaling.setter
+    def no_parent_scaling(self, value : bool):
+        ...
+
+
+    @property
+    def origin(self) -> Coord:
+        """
+        Position in coordinate space of the
+        new origin for the children.
+
+        Default is (0., 0.)
+        
+        """
+        ...
+
+
+    @origin.setter
+    def origin(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -24267,40 +25017,23 @@ class DrawingListScale(drawingItem):
 
 
     @property
-    def scales(self) -> Sequence[float] | tuple[float, float]:
+    def scales(self) -> Coord:
         """
         Scales applied to the x and y axes
+        for the children.
+
         Default is (1., 1.).
-        The scales multiply any previous scales
-        already set (including plot scales).
-        Use no_parent_scale to remove that behaviour.
+
+        Unless no_parent_scale is True,
+        when applied, scales multiplies any previous
+        scales already set (including plot scales).
         
         """
         ...
 
 
     @scales.setter
-    def scales(self, value : Sequence[float] | tuple[float, float]):
-        ...
-
-
-    @property
-    def shifts(self) -> Sequence[float] | tuple[float, float]:
-        """
-        Shifts applied to the x and y axes.
-        Default is (0., 0.)
-        The shifts are applied any previous
-        shift and scale.
-        For instance on x, the transformation to
-        screen space is:
-        parent_x_transform(x * scales[0] + shifts[0])
-        
-        """
-        ...
-
-
-    @shifts.setter
-    def shifts(self, value : Sequence[float] | tuple[float, float]):
+    def scales(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -25487,7 +26220,7 @@ class Font(baseItem):
 
 
     @property
-    def texture(self):
+    def texture(self) -> Texture | None:
         ...
 
 
@@ -25547,7 +26280,7 @@ class FontTexture(baseItem):
     scale, and implement 1) or 2) yourself.
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, texture : Any = ..., user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, texture : Texture | None = None, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -25628,7 +26361,7 @@ class FontTexture(baseItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, texture : Any = ..., user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, texture : Texture | None = None, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -25920,7 +26653,7 @@ class FontTexture(baseItem):
 
 
     @property
-    def texture(self):
+    def texture(self) -> Texture | None:
         """
         Readonly texture containing the font data.
         build() must be called first
@@ -25930,7 +26663,7 @@ class FontTexture(baseItem):
 
 
     @texture.setter
-    def texture(self, value):
+    def texture(self, value : Texture | None):
         ...
 
 
@@ -27526,7 +28259,7 @@ class HorizontalLayout(Layout):
     horizontally.
     
     """
-    def __init__(self, context : Context, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_wrap : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0, wrap_x : float = 0.0):
         """
 
         alignment_mode: Horizontal alignment mode of the items.
@@ -27595,6 +28328,8 @@ class HorizontalLayout(Layout):
             scale which is defined by the dpi and the
             viewport/window scale.
             If set, disables this automated scaling.
+        no_wrap: Disable wrapping to the next row when the
+            elements cannot fit in the available region.
         parent: parent of the item in the rendering tree.
         pos_policy: Positioning policy
         pos_to_default: Relative position to the item's default position.
@@ -27647,6 +28382,14 @@ class HorizontalLayout(Layout):
                   of the parent's content region from the current position,
                   and subtract this value'. For example -1 will stretch to the
                   remaining area minus one pixel.
+        wrap_x: When wrapping, on the second row and later rows,
+            start from the wrap_x position relative to the
+            starting position. Note the value is in pixel value
+            and you must scale it if needed. The wrapping position
+            is clamped such that you always start at a position >= 0
+            relative to the window content area, thus passing
+            a significant negative value will bring back to
+            the start of the window.
         """
         ...
 
@@ -27669,7 +28412,7 @@ class HorizontalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_wrap : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0, wrap_x : float = 0.0):
         """
         alignment_mode: Horizontal alignment mode of the items.
             LEFT: items are appended from the left
@@ -27737,6 +28480,8 @@ class HorizontalLayout(Layout):
             scale which is defined by the dpi and the
             viewport/window scale.
             If set, disables this automated scaling.
+        no_wrap: Disable wrapping to the next row when the
+            elements cannot fit in the available region.
         parent: parent of the item in the rendering tree.
         pos_policy: Positioning policy
         pos_to_default: Relative position to the item's default position.
@@ -27789,6 +28534,14 @@ class HorizontalLayout(Layout):
                   of the parent's content region from the current position,
                   and subtract this value'. For example -1 will stretch to the
                   remaining area minus one pixel.
+        wrap_x: When wrapping, on the second row and later rows,
+            start from the wrap_x position relative to the
+            starting position. Note the value is in pixel value
+            and you must scale it if needed. The wrapping position
+            is clamped such that you always start at a position >= 0
+            relative to the window content area, thus passing
+            a significant negative value will bring back to
+            the start of the window.
         """
         ...
 
@@ -27872,6 +28625,11 @@ class HorizontalLayout(Layout):
 
 
     def update_layout(self):
+        """
+        Force an update of the layout next time the scene
+        is rendered
+        
+        """
         ...
 
 
@@ -28288,6 +29046,21 @@ class HorizontalLayout(Layout):
 
     @no_scaling.setter
     def no_scaling(self, value : bool):
+        ...
+
+
+    @property
+    def no_wrap(self) -> bool:
+        """
+        Disable wrapping to the next row when the
+        elements cannot fit in the available region.
+        
+        """
+        ...
+
+
+    @no_wrap.setter
+    def no_wrap(self, value : bool):
         ...
 
 
@@ -28760,6 +29533,27 @@ class HorizontalLayout(Layout):
         ...
 
 
+    @property
+    def wrap_x(self) -> float:
+        """
+        When wrapping, on the second row and later rows,
+        start from the wrap_x position relative to the
+        starting position. Note the value is in pixel value
+        and you must scale it if needed. The wrapping position
+        is clamped such that you always start at a position >= 0
+        relative to the window content area, thus passing
+        a significant negative value will bring back to
+        the start of the window.
+        
+        """
+        ...
+
+
+    @wrap_x.setter
+    def wrap_x(self, value : float):
+        ...
+
+
 class HoverHandler(baseHandler):
     """
     Handler that calls the callback when
@@ -29143,7 +29937,7 @@ class HoverHandler(baseHandler):
 
 
 class Image(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -29274,7 +30068,7 @@ class Image(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -30139,12 +30933,12 @@ class Image(uiItem):
 
 
     @property
-    def texture(self):
+    def texture(self) -> Texture | None:
         ...
 
 
     @texture.setter
-    def texture(self, value):
+    def texture(self, value : Texture | None):
         ...
 
 
@@ -30270,7 +31064,7 @@ class Image(uiItem):
 
 
 class ImageButton(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -30401,7 +31195,7 @@ class ImageButton(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, texture : Any = ..., theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedBool = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -31276,12 +32070,12 @@ class ImageButton(uiItem):
 
 
     @property
-    def texture(self):
+    def texture(self) -> Texture | None:
         ...
 
 
     @texture.setter
-    def texture(self, value):
+    def texture(self, value : Texture | None):
         ...
 
 
@@ -78942,6 +79736,11 @@ class VerticalLayout(Layout):
 
 
     def update_layout(self):
+        """
+        Force an update of the layout next time the scene
+        is rendered
+        
+        """
         ...
 
 
@@ -80677,17 +81476,13 @@ class ViewportDrawList(baseItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        front: Display the drawings in front of all items (rather than behind)
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
-            In case show is set to False, this disables any
-            callback (for example the close callback won't be called
-            if a window is hidden with show = False).
-            In the case of items that can be closed,
-            show is set to False automatically on close.
         user_data: User data of any type.
         """
         ...
@@ -80717,17 +81512,13 @@ class ViewportDrawList(baseItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        front: Display the drawings in front of all items (rather than behind)
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
-            In case show is set to False, this disables any
-            callback (for example the close callback won't be called
-            if a window is hidden with show = False).
-            In the case of items that can be closed,
-            show is set to False automatically on close.
         user_data: User data of any type.
         """
         ...
@@ -80857,6 +81648,8 @@ class ViewportDrawList(baseItem):
 
     @property
     def front(self) -> bool:
+        """Writable attribute: Display the drawings in front of all items (rather than behind)
+        """
         ...
 
 
@@ -81015,6 +81808,7 @@ class ViewportDrawList(baseItem):
     def show(self) -> bool:
         """
         Writable attribute: Should the object be drawn/shown ?
+
         In case show is set to False, this disables any
         callback (for example the close callback won't be called
         if a window is hidden with show = False).

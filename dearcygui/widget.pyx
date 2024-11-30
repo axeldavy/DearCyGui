@@ -522,6 +522,9 @@ cdef class DrawInvisibleButton(drawingItem):
             self.context._viewport.shifts[1] = <double>top_left.y
             self.context._viewport.scales = [<double>size.x, <double>size.y]
             self.context._viewport.in_plot = False
+            # TODO: Unsure...
+            self.context._viewport.thickness_multiplier = 1.
+            self.context._viewport.size_multiplier = 1.
             draw_drawing_children(self, drawlist)
 
         # restore states
@@ -661,6 +664,8 @@ cdef class DrawInWindow(uiItem):
         self.context._viewport.shifts[1] = <double>starty
         cdef double scale = <double>self.context._viewport.global_scale if self.dpi_scaling else 1.
         self.context._viewport.scales = [scale, scale]
+        self.context._viewport.thickness_multiplier = scale
+        self.context._viewport.size_multiplier = scale
 
         imgui.PushClipRect(imgui.ImVec2(startx, starty),
                            imgui.ImVec2(startx + clip_width,

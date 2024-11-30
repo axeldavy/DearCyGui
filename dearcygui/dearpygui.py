@@ -3454,7 +3454,7 @@ def image_series(texture_tag : Union[int, str], bounds_min : Union[List[float], 
     # TODO: tint color if set should be attributed to the legend color
     parent_item =  dcg.DrawInPlot(CONTEXT, parent=plot, axes=(dcg.Axis.X1, axis_y.axis), no_legend=False, label=label, user_data=user_data, **kwargs)
 
-    dcg.DrawImage(CONTEXT, parent=parent_item, texture=CONTEXT.get(texture_tag), pmin=bounds_min, pmax=bounds_max, show=show, uv_min=uv_min, uv_max=uv_max, color=tint_color)
+    dcg.DrawImage(CONTEXT, parent=parent_item, texture=CONTEXT.get(texture_tag), pmin=bounds_min, pmax=bounds_max, show=show, uv_min=uv_min, uv_max=uv_max, color_multiplier=tint_color)
 
     return parent_item
 
@@ -6868,7 +6868,7 @@ def draw_image(texture_tag : Union[int, str], pmin : Union[List[float], Tuple[fl
         tag=kwargs['id']
 
     texture = CONTEXT.get(texture_tag)
-    return dcg.DrawImage(CONTEXT, texture=texture, pmin=pmin, pmax=pmax, label=label, user_data=user_data, show=show, uv_min=uv_min, uv_max=uv_max, color=color, **kwargs)
+    return dcg.DrawImage(CONTEXT, texture=CONTEXT.get(texture_tag), pmin=pmin, pmax=pmax, label=label, user_data=user_data, show=show, uv_min=uv_min, uv_max=uv_max, color_multiplier=color, **kwargs)
 
 def draw_image_quad(texture_tag : Union[int, str], p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], p3 : Union[List[float], Tuple[float, ...]], p4 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, uv1: Union[List[float], Tuple[float, ...]] =(0.0, 0.0), uv2: Union[List[float], Tuple[float, ...]] =(1.0, 0.0), uv3: Union[List[float], Tuple[float, ...]] =(1.0, 1.0), uv4: Union[List[float], Tuple[float, ...]] =(0.0, 1.0), color: Union[int, List[int], Tuple[int, ...]] =-1, **kwargs) -> Union[int, str]:
     """     Adds an image (for a drawing).
@@ -6900,7 +6900,7 @@ def draw_image_quad(texture_tag : Union[int, str], p1 : Union[List[float], Tuple
         tag=kwargs['id']
 
     texture = CONTEXT.get(texture_tag)
-    return dcg.DrawImageQuad(CONTEXT, texture=texture, p1=p1, p2=p2, p3=p3, p4=p4, label=label, user_data=user_data, show=show, uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4, color=color, **kwargs)
+    return dcg.DrawImage(CONTEXT, texture=CONTEXT.get(texture_tag), p1=p1, p2=p2, p3=p3, p4=p4, label=label, user_data=user_data, show=show, uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4, color_multiplier=color, **kwargs)
 
 def draw_line(p1 : Union[List[float], Tuple[float, ...]], p2 : Union[List[float], Tuple[float, ...]], *, label: str =None, user_data: Any =None, show: bool =True, color: Union[int, List[int], Tuple[int, ...]] =-1, thickness: float =1.0, **kwargs) -> Union[int, str]:
     """     Adds a line.

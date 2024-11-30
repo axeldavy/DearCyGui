@@ -2859,6 +2859,13 @@ cdef class DrawInPlot(plotElementWithLegend):
 
         implot.SetAxes(self._axes[0], self._axes[1])
 
+        cdef bint render = True
+
+        if self._legend:
+            render = implot.BeginItem(self.imgui_label.c_str(), self.flags, -1)
+        else:
+            implot.PushPlotClipRect(0.)
+
         # Reset current drawInfo
         self.context._viewport.scales = [1., 1.]
         self.context._viewport.shifts = [0., 0.]
@@ -2866,15 +2873,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         self.context._viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
         self.context._viewport.thickness_multiplier = implot.GetStyle().LineWeight
         self.context._viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
-        self.context._viewport.thickness_multiplier = self.context._viewport.thickness_multiplier * self.context._viewport.size_multiplier
         self.context._viewport.parent_pos = implot.GetPlotPos()
-
-        cdef bint render = True
-
-        if self._legend:
-            render = implot.BeginItem(self.imgui_label.c_str(), self.flags, -1)
-        else:
-            implot.PushPlotClipRect(0.)
 
         if render:
             draw_drawing_children(self, implot.GetPlotDrawList())
