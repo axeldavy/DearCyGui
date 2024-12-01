@@ -1,4 +1,4 @@
-from dearcygui.wrapper cimport imgui, double2
+from dearcygui.wrapper cimport imgui, double2, float2
 from .core cimport baseItem, drawingItem, Texture, Font
 
 from libcpp.string cimport string
@@ -152,6 +152,33 @@ cdef class DrawRect(drawingItem):
     cdef bint _multicolor
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
+cdef class DrawRegularPolygon(drawingItem):
+    cdef double[2] _center
+    cdef float _radius
+    cdef double _direction
+    cdef imgui.ImU32 _color
+    cdef imgui.ImU32 _fill
+    cdef float _thickness
+    cdef int _num_points
+    cdef vector[float2] _points
+    cdef bint dirty
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
+
+cdef class DrawStar(drawingItem):
+    cdef double[2] _center
+    cdef float _radius
+    cdef float _inner_radius
+    cdef double _direction
+    cdef imgui.ImU32 _color
+    cdef imgui.ImU32 _fill
+    cdef float _thickness
+    cdef int _num_points
+    cdef vector[float2] _points
+    cdef vector[float2] _inner_points
+    cdef bint dirty
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
+
+
 cdef class DrawText(drawingItem):
     cdef double[2] _pos
     cdef string _text
@@ -167,6 +194,4 @@ cdef class DrawTriangle(drawingItem):
     cdef imgui.ImU32 _color
     cdef imgui.ImU32 _fill
     cdef float _thickness
-    cdef int _cull_mode
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
-

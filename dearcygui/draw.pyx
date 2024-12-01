@@ -18,7 +18,7 @@ from dearcygui.wrapper cimport imgui
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from .core cimport baseItem, drawingItem, \
     lock_gil_friendly, draw_drawing_children, read_point, read_coord, \
-    unparse_color, parse_color, read_vec4
+    unparse_color, parse_color
 from .types cimport child_type, Coord
 
 from libcpp.algorithm cimport swap
@@ -142,6 +142,7 @@ cdef class DrawingClip(drawingItem):
     in the visible space, the children are not rendered.
     """
     def __cinit__(self):
+        self.can_have_drawing_child = True
         self._scale_max = 1e300
         self._pmin = [-1e300, -1e300]
         self._pmax = [1e300, 1e300]
@@ -429,7 +430,7 @@ cdef class DrawSplitBatch(drawingItem):
     By default the rendering algorithms tries
     to batch drawing primitives together as much
     as possible. It detects when items need to be
-    draw in separate batches (for instance UI rendering,
+    drawn in separate batches (for instance UI rendering,
     or drawing an image), but it is not always enough.
 
     When you need to force some items to be
@@ -853,6 +854,8 @@ cdef class DrawCircle(drawingItem):
             thickness *= self.context._viewport.size_multiplier
         if radius > 0:
             radius *= self.context._viewport.size_multiplier
+        else:
+            radius *= self.context._viewport.global_scale
         thickness = abs(thickness)
         radius = abs(radius)
 
@@ -1769,8 +1772,6 @@ cdef class DrawPolygon(drawingItem):
         if self._points.size() > 2:
             drawlist.AddLine(ipoints[0], ipoints[<int>self._points.size()-1], self._color, thickness)
 
-
-
 cdef class DrawQuad(drawingItem):
     def __cinit__(self):
         # p1, p2, p3, p4 are zero init by cython
@@ -2085,6 +2086,7 @@ cdef class DrawRect(drawingItem):
             if col_up_left == col_up_right and \
                col_up_left == col_bot_left and \
                col_up_left == col_up_right:
+                self._fill = col_up_left
                 self._multicolor = False
 
         if self._multicolor:
@@ -2111,6 +2113,422 @@ cdef class DrawRect(drawingItem):
                                 imgui.ImDrawFlags_RoundCornersAll,
                                 thickness)
 
+
+cdef class DrawRegularPolygon(drawingItem):
+    """
+    Draws a regular polygon with n points
+
+    The polygon is defined by the center,
+    the direction of the first point, and
+    the radius.
+
+    Radius can be negative to mean screen space.
+    """
+    def __cinit__(self):
+        # p1, p2 are zero init by cython
+        self._color = 4294967295 # 0xffffffff
+        self._thickness = 1.
+        self._num_points = 1
+
+    @property
+    def center(self):
+        cdef unique_lock[recursive_mutex] m
+        """
+        Coordinates of the center of the shape
+        """
+        lock_gil_friendly(m, self.mutex)
+        return Coord.build(self._center)
+    @center.setter
+    def center(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        read_coord(self._center, value)
+    @property
+    def radius(self):
+        """
+        Radius of the shape. Negative means screen space.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._radius
+    @radius.setter
+    def radius(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._radius = value
+    @property
+    def direction(self):
+        """
+        Angle (rad) of the first point of the shape.
+
+        The angle is relative to the horizontal axis.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._direction
+    @direction.setter
+    def direction(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._direction = value
+        self.dirty = True
+    @property
+    def num_points(self):
+        """
+        Number of points in the shape.
+        num_points=1 gives a circle.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._num_points
+    @num_points.setter
+    def num_points(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._num_points = value
+        self.dirty = True
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._color = parse_color(value)
+    @property
+    def fill(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._fill)
+        return list(color)
+    @fill.setter
+    def fill(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._fill = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._thickness = value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* drawlist) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(self._show):
+            return
+
+        cdef float thickness = self._thickness
+        thickness *= self.context._viewport.thickness_multiplier
+        if thickness > 0:
+            thickness *= self.context._viewport.size_multiplier
+        thickness = abs(thickness)
+        cdef float radius = self._radius
+        cdef int num_points = self._num_points
+
+        if radius == 0 or num_points <= 0:
+            return
+
+        # Angle of the first point
+        cdef float start_angle = -self._direction # - because inverted y
+
+        cdef float[2] center
+        cdef imgui.ImVec2 icenter
+
+        cdef float[2] p
+        cdef imgui.ImVec2 ip
+        cdef vector[imgui.ImVec2] ipoints
+        cdef int i
+        cdef float angle
+        cdef float2 pp
+
+        if self.dirty and num_points >= 2:
+            self._points.clear()
+            for i in range(num_points):
+                # Similar to imgui draw code, we guarantee
+                # increasing angle to force a specific order.
+                angle = start_angle + (<float>i / <float>num_points) * (M_PI * 2.)
+                pp.p[0] = cos(angle)
+                pp.p[1] = sin(angle)
+                self._points.push_back(pp)
+            self.dirty = False
+
+        if radius < 0:
+            # screen space radius
+            radius = -radius * self.context._viewport.global_scale
+        else:
+            radius = radius * self.context._viewport.size_multiplier
+
+        self.context._viewport.apply_current_transform(center, self._center)
+        icenter = imgui.ImVec2(center[0], center[1])
+
+        if num_points == 1:
+            if self._fill & imgui.IM_COL32_A_MASK != 0:
+                drawlist.AddCircleFilled(icenter, radius, self._fill, 0)
+            drawlist.AddCircle(icenter, radius, self._color, 0, thickness)
+            return
+
+        # TODO: imgui does (radius - 0.5) for outline and radius for fill... Should we ? Is it correct with thickness != 1 ?
+        ipoints.reserve(self._points.size())
+        for i in range(<int>self._points.size()):
+            p[0] = center[0] + radius * self._points[i].p[0]
+            p[1] = center[1] + radius * self._points[i].p[1]
+            ip = imgui.ImVec2(p[0], p[1])
+            ipoints.push_back(ip)
+
+        if num_points == 2:
+            drawlist.AddLine(ipoints[0], ipoints[1], self._color, thickness)
+            return
+
+        if self._fill & imgui.IM_COL32_A_MASK != 0:
+            drawlist.AddConvexPolyFilled(ipoints.data(), <int>ipoints.size(), self._fill)
+        drawlist.AddPolyline(ipoints.data(), <int>ipoints.size(), self._color, imgui.ImDrawFlags_Closed, thickness)
+
+
+cdef class DrawStar(drawingItem):
+    """
+    Draws a star shaped polygon with n points
+    on the exterior circle.
+
+    The polygon is defined by the center,
+    the direction of the first point, the radius
+    of the exterior circle and the inner radius.
+
+    Crosses, astrisks, etc can be obtained using
+    a radius of 0.
+
+    Radius can be negative to mean screen space.
+    """
+    def __cinit__(self):
+        # p1, p2 are zero init by cython
+        self._color = 4294967295 # 0xffffffff
+        self._thickness = 1.
+        self._num_points = 5
+        self.dirty = True
+
+    @property
+    def center(self):
+        cdef unique_lock[recursive_mutex] m
+        """
+        Coordinates of the center of the shape
+        """
+        lock_gil_friendly(m, self.mutex)
+        return Coord.build(self._center)
+    @center.setter
+    def center(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        read_coord(self._center, value)
+    @property
+    def radius(self):
+        """
+        Radius of the shape. Negative means screen space.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._radius
+    @radius.setter
+    def radius(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._radius = value
+    @property
+    def inner_radius(self):
+        """
+        Radius of the inner shape.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._inner_radius
+    @inner_radius.setter
+    def inner_radius(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._inner_radius = value
+    @property
+    def direction(self):
+        """
+        Angle (rad) of the first point of the shape.
+
+        The angle is relative to the horizontal axis.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._direction
+    @direction.setter
+    def direction(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._direction = value
+        self.dirty = True
+    @property
+    def num_points(self):
+        """
+        Number of points in the shape.
+        Must be >= 3.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._num_points
+    @num_points.setter
+    def num_points(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._num_points = value
+        self.dirty = True
+    @property
+    def color(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._color = parse_color(value)
+    @property
+    def fill(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._fill)
+        return list(color)
+    @fill.setter
+    def fill(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._fill = parse_color(value)
+    @property
+    def thickness(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._thickness
+    @thickness.setter
+    def thickness(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._thickness = value
+
+    cdef void draw(self,
+                   imgui.ImDrawList* drawlist) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(self._show):
+            return
+
+        cdef float thickness = self._thickness
+        thickness *= self.context._viewport.thickness_multiplier
+        if thickness > 0:
+            thickness *= self.context._viewport.size_multiplier
+        thickness = abs(thickness)
+        cdef float radius = self._radius
+        cdef float inner_radius = self._inner_radius
+        cdef int num_points = self._num_points
+        cdef int num_segments = max(1, num_points - 1)
+
+        if radius == 0 or num_points <= 2:
+            return
+
+        # In coordinate space. We can't assume that the axis is not in log scale
+        # thus we pass the points via the transform, fix later...
+
+        # Angle of the first point
+        cdef float angle
+        cdef float start_angle = -self._direction # - because inverted y
+        cdef float start_angle_inner = -self._direction - M_PI / <float>num_points
+        
+        cdef float[2] center
+        cdef imgui.ImVec2 icenter, ip
+        cdef float[2] p
+        cdef float2 pp
+        cdef int i
+        cdef vector[imgui.ImVec2] ipoints
+        cdef vector[imgui.ImVec2] inner_ipoints
+
+        if self.dirty:
+            self._points.clear()
+            for i in range(num_points):
+                # Similar to imgui draw code, we guarantee
+                # increasing angle to force a specific order.
+                angle = start_angle + (<float>i / <float>num_points) * (M_PI * 2.)
+                pp.p[0] = cos(angle)
+                pp.p[1] = sin(angle)
+                self._points.push_back(pp)
+            self._inner_points.clear()
+            for i in range(num_points):
+                # Similar to imgui draw code, we guarantee
+                # increasing angle to force a specific order.
+                angle = start_angle_inner + (<float>i / <float>num_points) * (M_PI * 2.)
+                pp.p[0] = cos(angle)
+                pp.p[1] = sin(angle)
+                self._inner_points.push_back(pp)
+            self.dirty = False
+
+        if radius < 0:
+            # screen space radius
+            radius = -radius * self.context._viewport.global_scale
+            inner_radius = abs(inner_radius) * self.context._viewport.global_scale
+        else:
+            radius = radius * self.context._viewport.size_multiplier
+            inner_radius = abs(inner_radius) * self.context._viewport.size_multiplier
+        inner_radius = min(radius, inner_radius)
+
+        self.context._viewport.apply_current_transform(center, self._center)
+        icenter = imgui.ImVec2(center[0], center[1])
+
+        ipoints.reserve(self._points.size())
+        for i in range(<int>self._points.size()):
+            p[0] = center[0] + radius * self._points[i].p[0]
+            p[1] = center[1] + radius * self._points[i].p[1]
+            ip = imgui.ImVec2(p[0], p[1])
+            ipoints.push_back(ip)
+
+        if inner_radius == 0.:
+            if num_points % 2 == 0:
+                for i in range(num_points//2):
+                    drawlist.AddLine(ipoints[i], ipoints[i+num_points//2], self._color, thickness)
+            else:
+                for i in range(num_points):
+                    drawlist.AddLine(ipoints[i], icenter, self._color, thickness)
+            return
+
+        inner_ipoints.reserve(self._inner_points.size())
+        for i in range(<int>self._inner_points.size()):
+            p[0] = center[0] + inner_radius * self._inner_points[i].p[0]
+            p[1] = center[1] + inner_radius * self._inner_points[i].p[1]
+            ip = imgui.ImVec2(p[0], p[1])
+            inner_ipoints.push_back(ip)
+
+        if self._fill & imgui.IM_COL32_A_MASK != 0:
+            # fill inner region
+            drawlist.AddConvexPolyFilled(inner_ipoints.data(), <int>inner_ipoints.size(), self._fill)
+            # fill the rest
+            for i in range(num_points-1):
+                drawlist.AddTriangleFilled(ipoints[i],
+                                           inner_ipoints[i],
+                                           inner_ipoints[i+1],
+                                           self._fill)
+            drawlist.AddTriangleFilled(ipoints[num_points-1],
+                                       inner_ipoints[num_points-1],
+                                       inner_ipoints[0],
+                                       self._fill)
+
+        for i in range(num_points-1):
+            drawlist.AddLine(ipoints[i], inner_ipoints[i], self._color, thickness)
+            drawlist.AddLine(ipoints[i], inner_ipoints[i+1], self._color, thickness)
+        drawlist.AddLine(ipoints[num_points-1], inner_ipoints[num_points-1], self._color, thickness)
+        drawlist.AddLine(ipoints[num_points-1], inner_ipoints[0], self._color, thickness)
 
 cdef class DrawText(drawingItem):
     def __cinit__(self):
@@ -2186,8 +2604,10 @@ cdef class DrawText(drawingItem):
         self.context._viewport.apply_current_transform(p, self._pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
         cdef float size = self._size
-        if size > 0 and self.context._viewport.in_plot:
+        if size > 0:
             size *= self.context._viewport.size_multiplier
+        else:
+            size *= self.context._viewport.global_scale
         size = abs(size)
         if size == 0:
             drawlist.AddText(ip, self._color, self._text.c_str())
@@ -2202,7 +2622,6 @@ cdef class DrawTriangle(drawingItem):
         self._color = 4294967295 # 0xffffffff
         self._fill = 0
         self._thickness = 1.
-        self._cull_mode = 0
 
     @property
     def p1(self):
@@ -2268,16 +2687,6 @@ cdef class DrawTriangle(drawingItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._thickness = value
-    @property
-    def cull_mode(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._cull_mode
-    @cull_mode.setter
-    def cull_mode(self, int value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._cull_mode = value
 
     cdef void draw(self,
                    imgui.ImDrawList* drawlist) noexcept nogil:
@@ -2308,11 +2717,6 @@ cdef class DrawTriangle(drawingItem):
         ccw = is_counter_clockwise(ip1,
                                    ip2,
                                    ip3)
-
-        if self._cull_mode == 1 and ccw:
-            return
-        if self._cull_mode == 2 and not(ccw):
-            return
 
         # imgui requires clockwise order + convex for correct AA
         if ccw:
