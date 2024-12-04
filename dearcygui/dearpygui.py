@@ -4162,7 +4162,7 @@ def key_down_handler(key : int =mvKey_None, *, label: str =None, user_data: Any 
         tag=kwargs['id']
 
     if key is mvKey_None:
-        return dcg.utils.AnyKeyDownHandlerdcg.KeyDownHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
+        return dcg.utils.AnyKeyDownHandler(CONTEXT, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
     else:
         return dcg.KeyDownHandler(CONTEXT, key=key, label=label, user_data=user_data, callback=wrap_callback(callback), show=show, **kwargs)
 
