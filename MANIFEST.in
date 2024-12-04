@@ -10,4 +10,5 @@ recursive-include dearcygui/ *.pyx
 recursive-include dearcygui/ *.pxd
 recursive-include dearcygui/ *.py
 recursive-include dearcygui/ *.typed
+recursive-include dearcygui/docs/ *.md
 include dearcygui/imgui_config.h
