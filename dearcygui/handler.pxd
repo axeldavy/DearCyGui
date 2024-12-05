@@ -79,6 +79,10 @@ cdef class LostFocusHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
 
+cdef class MouseOverHandler(baseHandler):
+    cdef void check_bind(self, baseItem)
+    cdef bint check_state(self, baseItem) noexcept nogil
+
 cdef class HoverHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
@@ -88,6 +92,15 @@ cdef class GotHoverHandler(baseHandler):
     cdef bint check_state(self, baseItem) noexcept nogil
 
 cdef class LostHoverHandler(baseHandler):
+    cdef void check_bind(self, baseItem)
+    cdef bint check_state(self, baseItem) noexcept nogil
+
+cdef class MotionHandler(baseHandler):
+    cdef Positioning[2] _positioning
+    cdef void check_bind(self, baseItem)
+    cdef bint check_state(self, baseItem) noexcept nogil
+
+cdef class ContentResizeHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
 

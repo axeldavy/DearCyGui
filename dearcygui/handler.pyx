@@ -627,6 +627,41 @@ cdef class LostFocusHandler(baseHandler):
         cdef itemState *state = item.p_state
         return state.cur.focused and not(state.prev.focused)
 
+cdef class MouseOverHandler(baseHandler):
+    """Prefer HoverHandler unless you really need to (see below)
+
+    Handler that calls the callback when
+    the mouse is over the item. In most cases,
+    this is equivalent to HoverHandler,
+    with the difference that a single item
+    is considered hovered, while in
+    some specific cases, several items could
+    have the mouse above them.
+
+    Prefer using HoverHandler for general use,
+    and reserve MouseOverHandler for custom
+    drag & drop operations.
+    """
+    cdef void check_bind(self, baseItem item):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if item.p_state == NULL or \
+           not(item.p_state.cap.has_position) or \
+           not(item.p_state.cap.has_rect_size):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+    cdef bint check_state(self, baseItem item) noexcept nogil:
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if not(imgui.IsMousePosValid()):
+            return False
+        cdef float x1 = item.p_state.cur.pos_to_viewport.x
+        cdef float y1 = item.p_state.cur.pos_to_viewport.y
+        cdef float x2 = x1 + item.p_state.cur.rect_size.x
+        cdef float y2 = y1 + item.p_state.cur.rect_size.y
+        return x1 <= io.MousePos.x and \
+               y1 <= io.MousePos.y and \
+               x2 > io.MousePos.x and \
+               y2 > io.MousePos.y
+
 cdef class HoverHandler(baseHandler):
     """
     Handler that calls the callback when
@@ -670,7 +705,108 @@ cdef class LostHoverHandler(baseHandler):
         cdef itemState *state = item.p_state
         return not(state.cur.hovered) and state.prev.hovered
 
-# TODO: ContentResizeHandler. Add size as data to the callback
+
+cdef class MotionHandler(baseHandler):
+    """
+    Handler that calls the callback when
+    the target item is moved relative to
+    the positioning reference (by default the parent)
+    """
+    def __cinit__(self):
+        self._positioning[0] = Positioning.REL_PARENT
+        self._positioning[1] = Positioning.REL_PARENT
+
+    @property
+    def pos_policy(self):
+        """positioning policy used as reference for the motion
+
+        REL_PARENT: motion relative to the parent
+        REL_WINDOW: motion relative to the window
+        REL_VIEWPORT: motion relative to the viewport
+        DEFAULT: Disabled motion detection for the axis
+
+        pos_policy is a tuple of Positioning where the
+        first element refers to the x axis and the second
+        to the y axis
+
+        Defaults to REL_PARENT on both axes.
+        """
+        (<Positioning>self._positioning[0], <Positioning>self._positioning[1])
+
+    @pos_policy.setter
+    def pos_policy(self, Positioning value):
+        if hasattr(value, "__len__"):
+            (x, y) = value
+            if x not in Positioning or y not in Positioning:
+                raise ValueError("Invalid Positioning policy")
+            self._positioning[0] = x
+            self._positioning[1] = y
+        else:
+            if value not in Positioning:
+                raise ValueError("Invalid Positioning policy")
+            self._positioning[0] = value
+            self._positioning[1] = value
+
+    cdef void check_bind(self, baseItem item):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if item.p_state == NULL or not(item.p_state.cap.has_position):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+
+    cdef bint check_state(self, baseItem item) noexcept nogil:
+        cdef itemState *state = item.p_state
+        cdef imgui.ImVec2 prev_pos, cur_pos
+        if self._positioning[0] == Positioning.REL_PARENT:
+            prev_pos.x = state.prev.pos_to_parent.x
+            cur_pos.x = state.cur.pos_to_parent.x
+        elif self._positioning[0] == Positioning.REL_WINDOW:
+            prev_pos.x = state.prev.pos_to_window.x
+            cur_pos.x = state.cur.pos_to_window.x
+        elif self._positioning[0] == Positioning.REL_VIEWPORT:
+            prev_pos.x = state.prev.pos_to_viewport.x
+            cur_pos.x = state.cur.pos_to_viewport.x
+        elif self._positioning[0] == Positioning.REL_DEFAULT:
+            prev_pos.x = state.prev.pos_to_default.x
+            cur_pos.x = state.cur.pos_to_default.x
+        else:
+            prev_pos.x = 0.
+            cur_pos.x = 0.
+        if self._positioning[1] == Positioning.REL_PARENT:
+            prev_pos.y = state.prev.pos_to_parent.y
+            cur_pos.y = state.cur.pos_to_parent.y
+        elif self._positioning[1] == Positioning.REL_WINDOW:
+            prev_pos.y = state.prev.pos_to_window.y
+            cur_pos.y = state.cur.pos_to_window.y
+        elif self._positioning[1] == Positioning.REL_VIEWPORT:
+            prev_pos.y = state.prev.pos_to_viewport.y
+            cur_pos.y = state.cur.pos_to_viewport.y
+        elif self._positioning[1] == Positioning.REL_DEFAULT:
+            prev_pos.y = state.prev.pos_to_default.y
+            cur_pos.y = state.cur.pos_to_default.y
+        else:
+            prev_pos.y = 0.
+            cur_pos.y = 0.
+        return cur_pos.x != prev_pos.x or cur_pos.y != prev_pos.y
+
+
+# TODO: Add size as data to the resize callbacks
+cdef class ContentResizeHandler(baseHandler):
+    """
+    Handler for item containers (windows, etc)
+    that triggers the callback
+    whenever the item's content region box (the
+    area available to the children) changes size.
+    """
+    cdef void check_bind(self, baseItem item):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if item.p_state == NULL or not(item.p_state.cap.has_content_region):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+    cdef bint check_state(self, baseItem item) noexcept nogil:
+        cdef itemState *state = item.p_state
+        return state.cur.content_region_size.x != state.prev.content_region_size.x or \
+               state.cur.content_region_size.y != state.prev.content_region_size.y
+
 cdef class ResizeHandler(baseHandler):
     """
     Handler that triggers the callback
@@ -1129,6 +1265,8 @@ cdef class MouseDragHandler(baseHandler):
 cdef class MouseMoveHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef imgui.ImGuiIO io = imgui.GetIO()
+        if not(imgui.IsMousePosValid()):
+            return False
         if io.MousePos.x != io.MousePosPrev.x or \
            io.MousePos.y != io.MousePosPrev.y:
             return True
@@ -1137,6 +1275,8 @@ cdef class MouseMoveHandler(baseHandler):
     cdef void run_handler(self, baseItem item) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._enabled):
+            return
+        if not(imgui.IsMousePosValid()):
             return
         cdef imgui.ImGuiIO io = imgui.GetIO()
         if io.MousePos.x != io.MousePosPrev.x or \

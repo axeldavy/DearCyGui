@@ -3838,7 +3838,7 @@ cdef class uiItem(baseItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -4007,22 +4007,15 @@ cdef class uiItem(baseItem):
 
     @pos_policy.setter
     def pos_policy(self, Positioning value):
-        policies = [
-            Positioning.DEFAULT,
-            Positioning.REL_DEFAULT,
-            Positioning.REL_PARENT,
-            Positioning.REL_WINDOW,
-            Positioning.REL_VIEWPORT
-        ]
         if hasattr(value, "__len__"):
             (x, y) = value
-            if x not in policies or y not in policies:
+            if x not in Positioning or y not in Positioning:
                 raise ValueError("Invalid Positioning policy")
             self._pos_policy[0] = x
             self._pos_policy[1] = y
             self.pos_update_requested = True
         else:
-            if value not in policies:
+            if value not in Positioning:
                 raise ValueError("Invalid Positioning policy")
             self._pos_policy[0] = value
             self._pos_policy[1] = value
