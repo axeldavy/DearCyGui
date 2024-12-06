@@ -124,11 +124,15 @@ def setup_package():
     elif get_platform() == "OS X":
         compile_args += ["-fobjc-arc", "-fno-common", "-dynamic", "-DNDEBUG",\
                          "-fwrapv" ,"-O3", "-DAPPLE"]
-        libraries = []
-
+        libraries = ["Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "OpenGL"]
+        linking_args += ["-framework", "Cocoa", "-framework", "IOKit", "-framework", "CoreFoundation", "-framework", "CoreVideo", "-framework", "OpenGL"]
+    elif get_platform() == "Windows":
+        compile_args += ["/O2", "/DNDEBUG", "/D_WINDOWS", "/D_UNICODE", "/DWIN32_LEAN_AND_MEAN"]
+        libraries = ["user32", "gdi32", "shell32", "advapi32", "ole32", "oleaut32", "uuid", "opengl32"]
+        linking_args += ["/MACHINE:X64"]
     else:
         # Please test and tell us what changes are needed to the build
-        raise ValueError("Unsupported plateform")
+        raise ValueError("Unsupported platform")
     cython_sources = [
         "dearcygui/core.pyx",
         "dearcygui/constants.pyx",
