@@ -105,6 +105,15 @@ cdef class Context:
     Main class managing the DearCyGui items and imgui context.
     There is exactly one viewport per context.
     The last created context can be accessed as dearcygui.C.
+
+    Attributes:
+    - queue: Executor for managing threads.
+    - item_creation_callback: Callback for item creation.
+    - item_unused_configure_args_callback: Callback for unused configure arguments.
+    - item_deletion_callback: Callback for item deletion.
+    - viewport: Root item from where rendering starts.
+    - running: Boolean indicating if the context is running.
+    - clipboard: Content of the clipboard.
     """
     def __init__(self,
                  queue=None,
@@ -2192,6 +2201,39 @@ cdef class Viewport(baseItem):
     """
     The viewport corresponds to the main item containing all the visuals.
     It is decorated by the operating system and can be minimized/maximized/made fullscreen.
+
+    Attributes:
+    - clear_color: Color used to clear the viewport.
+    - small_icon: Small icon for the viewport.
+    - large_icon: Large icon for the viewport.
+    - x_pos: X position of the viewport.
+    - y_pos: Y position of the viewport.
+    - width: Width of the viewport.
+    - height: Height of the viewport.
+    - resizable: Boolean indicating if the viewport is resizable.
+    - vsync: Boolean indicating if vsync is enabled.
+    - dpi: Requested scaling (DPI) from the OS for this window.
+    - scale: Multiplicative scale used to scale automatically all items.
+    - min_width: Minimum width of the viewport.
+    - max_width: Maximum width of the viewport.
+    - min_height: Minimum height of the viewport.
+    - max_height: Maximum height of the viewport.
+    - always_on_top: Boolean indicating if the viewport is always on top.
+    - decorated: Boolean indicating if the viewport is decorated.
+    - handlers: Bound handler (or handlerList) for the viewport.
+    - cursor: Mouse cursor for the viewport.
+    - font: Global font for the viewport.
+    - theme: Global theme for the viewport.
+    - title: Title of the viewport.
+    - disable_close: Boolean indicating if the close button is disabled.
+    - fullscreen: Boolean indicating if the viewport is in fullscreen mode.
+    - minimized: Boolean indicating if the viewport is minimized.
+    - maximized: Boolean indicating if the viewport is maximized.
+    - wait_for_input: Boolean indicating if rendering should wait for input.
+    - shown: Boolean indicating if the viewport window has been created by the OS.
+    - resize_callback: Callback to be issued when the viewport is resized.
+    - close_callback: Callback to be issued when the viewport is closed.
+    - metrics: Rendering related metrics relative to the last frame.
     """
     def __cinit__(self, context):
         self.resize_callback = None
@@ -3207,14 +3249,13 @@ cdef class Viewport(baseItem):
 
 cdef class Callback:
     """
-    Wrapper class that automatically encapsulate
-    callbacks.
+    Wrapper class that automatically encapsulate callbacks.
 
     Callbacks in DCG mode can take up to 3 arguments:
-    . source_item: the item to which the callback was attached
-    . target_item: the item for which the callback was raised.
+    - source_item: the item to which the callback was attached
+    - target_item: the item for which the callback was raised.
         Is only different to source_item for handlers' callback.
-    . call_info: If applicable information about the call (key button, etc)
+    - call_info: If applicable information about the call (key button, etc)
     """
     def __init__(self, *args, **kwargs):
         if self.num_args > 3:
@@ -3378,6 +3419,13 @@ Sources
 cdef class SharedValue:
     """
     Represents a shared value that can be used by multiple items.
+
+    Attributes:
+    - value: Main value of the shared object.
+    - shareable_value: Shareable value of the shared object.
+    - last_frame_update: Last frame index when the value was updated.
+    - last_frame_change: Last frame index when the value was changed.
+    - num_attached: Number of items sharing this value.
     """
     def __init__(self, *args, **kwargs):
         # We create all shared objects using __new__, thus
@@ -3453,6 +3501,10 @@ UI input event handlers
 cdef class baseHandler(baseItem):
     """
     Base class for UI input event handlers.
+
+    Attributes:
+    - enabled: Boolean indicating if the handler is enabled.
+    - callback: Callback function for the handler.
     """
     def __cinit__(self):
         self._enabled = True
@@ -3525,6 +3577,41 @@ cdef class baseHandler(baseItem):
 cdef class uiItem(baseItem):
     """
     Base class for UI items with various properties and states.
+
+    Attributes:
+    - active: Boolean indicating if the item is active.
+    - activated: Boolean indicating if the item has just turned active.
+    - clicked: Boolean indicating if the item has just been clicked.
+    - double_clicked: Boolean indicating if the item has just been double-clicked.
+    - deactivated: Boolean indicating if the item has just turned un-active.
+    - deactivated_after_edited: Boolean indicating if the item has just turned un-active after being edited.
+    - edited: Boolean indicating if the item has just been edited.
+    - focused: Boolean indicating if the item is focused.
+    - hovered: Boolean indicating if the mouse is inside the region of the item.
+    - resized: Boolean indicating if the item size has just changed.
+    - toggled: Boolean indicating if a menu/bar trigger has been hit for the item.
+    - visible: Boolean indicating if the item was rendered.
+    - callbacks: List of callback objects for the item.
+    - enabled: Boolean indicating if the item should be displayed as enabled.
+    - font: Font used for the text rendered of this item and its subitems.
+    - label: Label assigned to the item.
+    - value: Main internal value for the item.
+    - shareable_value: Shareable value of the item.
+    - show: Boolean indicating if the item should be drawn/shown.
+    - handlers: List of bound handlers for the item.
+    - theme: Theme for the item.
+    - no_scaling: Boolean indicating if scaling should be disabled for the item.
+    - pos_to_viewport: Position of the item relative to the viewport.
+    - pos_to_window: Position of the item relative to the window.
+    - pos_to_parent: Position of the item relative to the parent.
+    - pos_to_default: Default position of the item.
+    - rect_size: Size of the item rectangle.
+    - content_region_avail: Available content region for the item.
+    - pos_policy: Positioning policy for the item.
+    - height: Height of the item.
+    - width: Width of the item.
+    - indent: Indentation of the item.
+    - no_newline: Boolean indicating if newline should be disabled for the item.
     """
     def __cinit__(self):
         # mvAppItemInfo
@@ -4590,8 +4677,7 @@ Complex ui items
 
 cdef class TimeWatcher(uiItem):
     """
-    A placeholder uiItem parent that doesn't draw
-    or have any impact on rendering.
+    A placeholder uiItem parent that doesn't draw or have any impact on rendering.
     This item calls the callback with times in ns.
     These times can be compared with the times in the metrics
     that can be obtained from the viewport in order to
@@ -4642,6 +4728,36 @@ cdef class TimeWatcher(uiItem):
 cdef class Window(uiItem):
     """
     Represents a window in the UI with various configurable properties.
+
+    Attributes:
+    - no_title_bar: Boolean indicating if the title bar should be hidden.
+    - no_resize: Boolean indicating if resizing should be disabled.
+    - no_move: Boolean indicating if moving should be disabled.
+    - no_scrollbar: Boolean indicating if the scrollbar should be hidden.
+    - no_scroll_with_mouse: Boolean indicating if scrolling with the mouse should be disabled.
+    - no_collapse: Boolean indicating if collapsing should be disabled.
+    - autosize: Boolean indicating if the window should autosize.
+    - no_background: Boolean indicating if the background should be hidden.
+    - no_saved_settings: Boolean indicating if saved settings should be disabled.
+    - no_mouse_inputs: Boolean indicating if mouse inputs should be disabled.
+    - no_keyboard_inputs: Boolean indicating if keyboard inputs should be disabled.
+    - menubar: Boolean indicating if the menubar should be shown.
+    - horizontal_scrollbar: Boolean indicating if the horizontal scrollbar should be shown.
+    - no_focus_on_appearing: Boolean indicating if focus on appearing should be disabled.
+    - no_bring_to_front_on_focus: Boolean indicating if bringing to front on focus should be disabled.
+    - always_show_vertical_scrollvar: Boolean indicating if the vertical scrollbar should always be shown.
+    - always_show_horizontal_scrollvar: Boolean indicating if the horizontal scrollbar should always be shown.
+    - unsaved_document: Boolean indicating if the document is unsaved.
+    - disallow_docking: Boolean indicating if docking should be disallowed.
+    - no_open_over_existing_popup: Boolean indicating if opening over existing popup should be disabled.
+    - modal: Boolean indicating if the window is modal.
+    - popup: Boolean indicating if the window is a popup.
+    - has_close_button: Boolean indicating if the close button should be shown.
+    - collapsed: Boolean indicating if the window is collapsed.
+    - on_close: Callback function for the close event.
+    - primary: Boolean indicating if the window is primary.
+    - min_size: Minimum size of the window.
+    - max_size: Maximum size of the window.
     """
     def __cinit__(self):
         self.window_flags = imgui.ImGuiWindowFlags_None
@@ -5412,6 +5528,12 @@ cdef class Window(uiItem):
 cdef class plotElement(baseItem):
     """
     Base class for plot children.
+
+    Attributes:
+    - show: Boolean indicating if the plot element should be shown.
+    - axes: Axes for the plot element.
+    - label: Label for the plot element.
+    - theme: Theme for the plot element.
     """
     def __cinit__(self):
         self.imgui_label = b'###%ld'% self.uuid
@@ -5524,6 +5646,13 @@ Textures
 cdef class Texture(baseItem):
     """
     Represents a texture that can be used in the UI.
+
+    Attributes:
+    - hint_dynamic: Boolean indicating if the texture is dynamic.
+    - nearest_neighbor_upsampling: Boolean indicating if nearest neighbor upsampling is used.
+    - width: Width of the texture.
+    - height: Height of the texture.
+    - num_chans: Number of channels in the texture.
     """
     def __cinit__(self):
         self.hint_dynamic = False
@@ -5746,6 +5875,12 @@ def get_system_fonts():
 cdef class Font(baseItem):
     """
     Represents a font that can be used in the UI.
+
+    Attributes:
+    - texture: Texture for the font.
+    - size: Size of the font.
+    - scale: Scale of the font.
+    - no_scaling: Boolean indicating if scaling should be disabled for the font.
     """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_sibling = False
@@ -6081,8 +6216,10 @@ cdef class FontTexture(baseItem):
 
 cdef class baseTheme(baseItem):
     """
-    Base theme element. Contains a set of theme elements
-    to apply for a given category (color, style)/(imgui/implot/imnode)
+    Base theme element. Contains a set of theme elements to apply for a given category (color, style)/(imgui/implot/imnode).
+
+    Attributes:
+    - enabled: Boolean indicating if the theme is enabled.
     """
     def __cinit__(self):
         self.element_child_category = child_type.cat_theme
