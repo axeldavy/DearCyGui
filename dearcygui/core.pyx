@@ -2608,10 +2608,17 @@ cdef class Viewport(baseItem):
                             imgui.PushStyleVar(<imgui.ImGuiStyleVar>action.theme_index,
                                                action.value.value_float)
                         elif action.value_type == theme_value_types.t_float2:
-                            value_float2 = imgui.ImVec2(action.value.value_float2[0],
-                                                        action.value.value_float2[1])
-                            imgui.PushStyleVar(<imgui.ImGuiStyleVar>action.theme_index,
-                                               value_float2)
+                            if action.float2_mask == theme_value_float2_mask.t_left:
+                                imgui.PushStyleVarX(<imgui.ImGuiStyleVar>action.theme_index,
+                                                    action.value.value_float2[0])
+                            elif action.float2_mask == theme_value_float2_mask.t_right:
+                                imgui.PushStyleVarY(<imgui.ImGuiStyleVar>action.theme_index,
+                                                    action.value.value_float2[1])
+                            else:
+                                value_float2 = imgui.ImVec2(action.value.value_float2[0],
+                                                            action.value.value_float2[1])
+                                imgui.PushStyleVar(<imgui.ImGuiStyleVar>action.theme_index,
+                                                   value_float2)
                 elif action.backend == theme_backends.t_implot:
                     if action.type == theme_types.t_color:
                         # can only be theme_value_types.t_u32
@@ -2625,10 +2632,17 @@ cdef class Viewport(baseItem):
                             implot.PushStyleVar(<implot.ImPlotStyleVar>action.theme_index,
                                                action.value.value_int)
                         elif action.value_type == theme_value_types.t_float2:
-                            value_float2 = imgui.ImVec2(action.value.value_float2[0],
-                                                        action.value.value_float2[1])
-                            implot.PushStyleVar(<implot.ImPlotStyleVar>action.theme_index,
-                                               value_float2)
+                            if action.float2_mask == theme_value_float2_mask.t_left:
+                                implot.PushStyleVarX(<implot.ImPlotStyleVar>action.theme_index,
+                                                     action.value.value_float2[0])
+                            elif action.float2_mask == theme_value_float2_mask.t_right:
+                                implot.PushStyleVarY(<implot.ImPlotStyleVar>action.theme_index,
+                                                     action.value.value_float2[1])
+                            else:
+                                value_float2 = imgui.ImVec2(action.value.value_float2[0],
+                                                            action.value.value_float2[1])
+                                implot.PushStyleVar(<implot.ImPlotStyleVar>action.theme_index,
+                                                    value_float2)
                 elif action.backend == theme_backends.t_imnodes:
                     if action.type == theme_types.t_color:
                         # can only be theme_value_types.t_u32
@@ -2639,6 +2653,7 @@ cdef class Viewport(baseItem):
                             imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>action.theme_index,
                                                action.value.value_float)
                         elif action.value_type == theme_value_types.t_float2:
+                            # TODO X/Y when needed
                             value_float2 = imnodes.ImVec2(action.value.value_float2[0],
                                                         action.value.value_float2[1])
                             imnodes.PushStyleVar(<imnodes.ImNodesStyleVar>action.theme_index,

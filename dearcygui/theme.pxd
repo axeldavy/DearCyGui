@@ -29,6 +29,7 @@ cdef class ThemeColorImNodes(baseTheme):
 ctypedef struct theme_value_info:
     theme_value value
     theme_value_types value_type
+    theme_value_float2_mask float2_mask
     bint should_round
     bint should_scale
 

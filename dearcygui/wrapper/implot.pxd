@@ -613,6 +613,8 @@ cdef extern from "implot.h" namespace "ImPlot" nogil:
     void PushStyleVar(ImPlotStyleVar, float)
     void PushStyleVar(ImPlotStyleVar, int)
     void PushStyleVar(ImPlotStyleVar, ImVec2&)
+    void PushStyleVarX(ImPlotStyleVar, float)
+    void PushStyleVarY(ImPlotStyleVar, float)
     void PopStyleVar(int)
     void SetNextLineStyle()
     void SetNextLineStyle(ImVec4&)

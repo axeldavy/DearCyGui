@@ -113,6 +113,11 @@ cpdef enum class ThemeCategories:
     t_window,
     t_plot
 
+cdef enum theme_value_float2_mask:
+    t_full,
+    t_left,
+    t_right
+
 cdef enum theme_value_types:
     t_int,
     t_float,
@@ -133,6 +138,7 @@ ctypedef struct theme_action:
     int theme_index
     theme_value_types value_type
     theme_value value
+    theme_value_float2_mask float2_mask
 
 ctypedef fused point_type:
     int

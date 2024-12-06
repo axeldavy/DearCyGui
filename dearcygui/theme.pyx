@@ -277,6 +277,7 @@ cdef class ThemeColorImGui(baseTheme):
             action.theme_index = element_content.first
             action.value_type = theme_value_types.t_u32
             action.value.value_u32 = element_content.second
+            action.float2_mask = theme_value_float2_mask.t_full # Not used
             v.push_back(action)
 
     cdef void pop(self) noexcept nogil:
@@ -427,6 +428,7 @@ cdef class ThemeColorImPlot(baseTheme):
             action.theme_index = element_content.first
             action.value_type = theme_value_types.t_u32
             action.value.value_u32 = element_content.second
+            action.float2_mask = theme_value_float2_mask.t_full # Not used
             v.push_back(action)
 
     cdef void pop(self) noexcept nogil:
@@ -601,6 +603,7 @@ cdef class ThemeColorImNodes(baseTheme):
             action.theme_index = element_content.first
             action.value_type = theme_value_types.t_u32
             action.value.value_u32 = element_content.second
+            action.float2_mask = theme_value_float2_mask.t_full # Not used
             v.push_back(action)
 
     cdef void pop(self) noexcept nogil:
@@ -694,7 +697,12 @@ cdef class baseThemeStyle(baseTheme):
             elif element_content.second.value_type == theme_value_types.t_float:
                 result.append((name, element_content.second.value.value_float))
             elif element_content.second.value_type == theme_value_types.t_float2:
-                result.append((name, element_content.second.value.value_float2))
+                if element_content.second.float2_mask == theme_value_float2_mask.t_left:
+                    result.append((name, (element_content.second.value.value_float2[0], None)))
+                elif element_content.second.float2_mask == theme_value_float2_mask.t_right:
+                    result.append((name, (None, element_content.second.value.value_float2[1])))
+                else: # t_full
+                    result.append((name, element_content.second.value.value_float2))
             elif element_content.second.value_type == theme_value_types.t_u32:
                 result.append((name, element_content.second.value.value_u32))
         return iter(result)
@@ -712,7 +720,12 @@ cdef class baseThemeStyle(baseTheme):
         elif value.value_type == theme_value_types.t_float:
             return value.value.value_float
         elif value.value_type == theme_value_types.t_float2:
-            return value.value.value_float2
+            if value.float2_mask == theme_value_float2_mask.t_left:
+                return (value.value.value_float2[0], None)
+            elif value.float2_mask == theme_value_float2_mask.t_right:
+                return (None, value.value.value_float2[1])
+            else:
+                return value.value.value_float2 # t_full
         elif value.value_type == theme_value_types.t_u32:
             return value.value.value_u32
         return None
@@ -731,8 +744,23 @@ cdef class baseThemeStyle(baseTheme):
         elif type == theme_value_types.t_float2:
             if not(hasattr(py_value, '__len__')) or len(py_value) != 2:
                 raise ValueError(f"Expected a tuple, got {py_value}")
-            value.value.value_float2[0] = float(py_value[0])
-            value.value.value_float2[1] = float(py_value[1])
+            left = py_value[0]
+            right = py_value[1]
+            if left is None and right is None:
+                # Or maybe behave as if py_value is None
+                raise ValueError("Both values in the tuple cannot be None")
+            elif left is None:
+                value.float2_mask = theme_value_float2_mask.t_right
+                value.value.value_float2[0] = 0.
+                value.value.value_float2[1] = float(right)
+            elif right is None:
+                value.float2_mask = theme_value_float2_mask.t_left
+                value.value.value_float2[0] = float(left)
+                value.value.value_float2[1] = 0.
+            else:
+                value.float2_mask = theme_value_float2_mask.t_full
+                value.value.value_float2[0] = float(left)
+                value.value.value_float2[1] = float(right)
         elif type == theme_value_types.t_int:
             value.value.value_int = int(py_value)
         elif type == theme_value_types.t_u32:
@@ -785,6 +813,10 @@ cdef class baseThemeStyle(baseTheme):
             action.theme_index = element_content.first
             action.value_type = element_content.second.value_type
             action.value = element_content.second.value
+            if element_content.second.value_type == theme_value_types.t_float2:
+                action.float2_mask = element_content.second.float2_mask
+            else:
+                action.float2_mask = theme_value_float2_mask.t_full # Not used
             v.push_back(action)
 
     cdef void push(self) noexcept nogil:
@@ -799,21 +831,32 @@ cdef class baseThemeStyle(baseTheme):
             for element_content in self.index_to_value_for_dpi:
                 if element_content.second.value_type == theme_value_types.t_float:
                     imgui.PushStyleVar(element_content.first, element_content.second.value.value_float)
-                else:
-                    imgui_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
+                else: # t_float2
+                    if element_content.second.float2_mask == theme_value_float2_mask.t_left:
+                        imgui.PushStyleVarX(element_content.first, element_content.second.value.value_float2[0])
+                    elif element_content.second.float2_mask == theme_value_float2_mask.t_right:
+                        imgui.PushStyleVarY(element_content.first, element_content.second.value.value_float2[1])
+                    else:
+                        imgui_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
         elif self.backend == theme_backends.t_implot:
             for element_content in self.index_to_value_for_dpi:
                 if element_content.second.value_type == theme_value_types.t_float:
                     implot.PushStyleVar(element_content.first, element_content.second.value.value_float)
                 elif element_content.second.value_type == theme_value_types.t_int:
                     implot.PushStyleVar(element_content.first, element_content.second.value.value_int)
-                else:
-                    implot_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
+                else: # t_float2
+                    if element_content.second.float2_mask == theme_value_float2_mask.t_left:
+                        implot.PushStyleVarX(element_content.first, element_content.second.value.value_float2[0])
+                    elif element_content.second.float2_mask == theme_value_float2_mask.t_right:
+                        implot.PushStyleVarY(element_content.first, element_content.second.value.value_float2[1])
+                    else:
+                        implot_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
         elif self.backend == theme_backends.t_imnodes:
             for element_content in self.index_to_value_for_dpi:
                 if element_content.second.value_type == theme_value_types.t_float:
                     imnodes.PushStyleVar(element_content.first, element_content.second.value.value_float)
                 else:
+                    # TODO: Add VarX/Y when needed
                     imnodes_PushStyleVar2(element_content.first, element_content.second.value.value_float2)
         self.last_push_size.push_back(<int>self.index_to_value_for_dpi.size())
 
