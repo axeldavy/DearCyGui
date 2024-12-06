@@ -134,16 +134,32 @@ cdef bint check_state_from_list(baseHandler start_handler,
         cdef bint child_state
         if op == HandlerListOP.ALL:
             current_state = True
+        if (<baseHandler>child) is not None:
+            while (<baseItem>child)._prev_sibling is not None:
+                child = <PyObject *>(<baseItem>child)._prev_sibling
         while (<baseHandler>child) is not None:
             child_state = (<baseHandler>child).check_state(item)
             if not((<baseHandler>child)._enabled):
-                child = <PyObject*>((<baseHandler>child)._prev_sibling)
+                child = <PyObject*>((<baseHandler>child)._next_sibling)
                 continue
             if op == HandlerListOP.ALL:
                 current_state = current_state and child_state
-            else:
+                if not(current_state):
+                    # Leave early. Useful to skip expensive check_states,
+                    # for instance from custom handlers.
+                    # We will return FALSE (not all are conds met)
+                    break
+            elif op == HandlerListOP.ANY:
                 current_state = current_state or child_state
-            child = <PyObject*>((<baseHandler>child)._prev_sibling)
+                if current_state:
+                    # We will return TRUE (at least one cond is met)
+                    break
+            else: # NONE:
+                current_state = current_state or child_state
+                if current_state:
+                    # We will return FALSE (at least one cond is met)
+                    break
+            child = <PyObject*>((<baseHandler>child)._next_sibling)
         if op == HandlerListOP.NONE:
             # NONE = not(ANY)
             current_state = not(current_state)
@@ -661,6 +677,78 @@ cdef class MouseOverHandler(baseHandler):
                y1 <= io.MousePos.y and \
                x2 > io.MousePos.x and \
                y2 > io.MousePos.y
+
+cdef class GotMouseOverHandler(baseHandler):
+    """Prefer GotHoverHandler unless you really need to (see MouseOverHandler)
+    """
+    cdef void check_bind(self, baseItem item):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if item.p_state == NULL or \
+           not(item.p_state.cap.has_position) or \
+           not(item.p_state.cap.has_rect_size):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+    cdef bint check_state(self, baseItem item) noexcept nogil:
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if not(imgui.IsMousePosValid()):
+            return False
+        # Check the mouse is over the item
+        cdef float x1 = item.p_state.cur.pos_to_viewport.x
+        cdef float y1 = item.p_state.cur.pos_to_viewport.y
+        cdef float x2 = x1 + item.p_state.cur.rect_size.x
+        cdef float y2 = y1 + item.p_state.cur.rect_size.y
+        if not(x1 <= io.MousePos.x and \
+               y1 <= io.MousePos.y and \
+               x2 > io.MousePos.x and \
+               y2 > io.MousePos.y):
+            return False
+        # Check the mouse was not over the item
+        if io.MousePosPrev.x == -1 or io.MousePosPrev.y == -1: # Invalid pos
+            return True
+        x1 = item.p_state.prev.pos_to_viewport.x
+        y1 = item.p_state.prev.pos_to_viewport.y
+        x2 = x1 + item.p_state.prev.rect_size.x
+        y2 = y1 + item.p_state.prev.rect_size.y
+        return not(x1 <= io.MousePosPrev.x and \
+                   y1 <= io.MousePosPrev.y and \
+                   x2 > io.MousePosPrev.x and \
+                   y2 > io.MousePosPrev.y)
+
+cdef class LostMouseOverHandler(baseHandler):
+    """Prefer LostHoverHandler unless you really need to (see MouseOverHandler)
+    """
+    cdef void check_bind(self, baseItem item):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if item.p_state == NULL or \
+           not(item.p_state.cap.has_position) or \
+           not(item.p_state.cap.has_rect_size):
+            raise TypeError(f"Cannot bind handler {self} for {item}")
+    cdef bint check_state(self, baseItem item) noexcept nogil:
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        # Check the mouse was over the item
+        if io.MousePosPrev.x == -1 or io.MousePosPrev.y == -1: # Invalid pos
+            return False
+        cdef float x1 = item.p_state.prev.pos_to_viewport.x
+        cdef float y1 = item.p_state.prev.pos_to_viewport.y
+        cdef float x2 = x1 + item.p_state.prev.rect_size.x
+        cdef float y2 = y1 + item.p_state.prev.rect_size.y
+        if not(x1 <= io.MousePosPrev.x and \
+               y1 <= io.MousePosPrev.y and \
+               x2 > io.MousePosPrev.x and \
+               y2 > io.MousePosPrev.y):
+            return False
+        if not(imgui.IsMousePosValid()):
+            return True
+        # Check the mouse is not over the item
+        x1 = item.p_state.cur.pos_to_viewport.x
+        y1 = item.p_state.cur.pos_to_viewport.y
+        x2 = x1 + item.p_state.cur.rect_size.x
+        y2 = y1 + item.p_state.cur.rect_size.y
+        return not(x1 <= io.MousePos.x and \
+                   y1 <= io.MousePos.y and \
+                   x2 > io.MousePos.x and \
+                   y2 > io.MousePos.y)
 
 cdef class HoverHandler(baseHandler):
     """

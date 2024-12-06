@@ -170,6 +170,7 @@ cdef class baseItem:
     cdef bint can_have_plot_element_child
     cdef bint can_have_tab_child
     cdef bint can_have_theme_child
+    cdef bint can_have_viewport_drawlist_child
     cdef bint can_have_widget_child
     cdef bint can_have_window_child
     # Allowed siblings:
@@ -199,6 +200,7 @@ cdef class baseItem:
     cdef plotElement last_plot_element_child
     cdef uiItem last_tab_child
     cdef baseTheme last_theme_child
+    cdef drawingItem last_viewport_drawlist_child
     cdef uiItem last_widgets_child
     cdef Window last_window_child
     cdef void lock_parent_and_item_mutex(self, unique_lock[recursive_mutex]&, unique_lock[recursive_mutex]&)
@@ -363,6 +365,16 @@ cdef inline void draw_tab_children(baseItem item) noexcept nogil:
         child = <PyObject *>(<baseItem>child)._prev_sibling
     while (<baseItem>child) is not None:
         (<uiItem>child).draw()
+        child = <PyObject *>(<baseItem>child)._next_sibling
+
+cdef inline void draw_viewport_drawlist_children(baseItem item) noexcept nogil:
+    if item.last_viewport_drawlist_child is None:
+        return
+    cdef PyObject *child = <PyObject*> item.last_viewport_drawlist_child
+    while (<baseItem>child)._prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child) is not None:
+        (<drawingItem>child).draw(NULL)
         child = <PyObject *>(<baseItem>child)._next_sibling
 
 cdef inline void draw_ui_children(baseItem item) noexcept nogil:

@@ -83,6 +83,14 @@ cdef class MouseOverHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
 
+cdef class GotMouseOverHandler(baseHandler):
+    cdef void check_bind(self, baseItem)
+    cdef bint check_state(self, baseItem) noexcept nogil
+
+cdef class LostMouseOverHandler(baseHandler):
+    cdef void check_bind(self, baseItem)
+    cdef bint check_state(self, baseItem) noexcept nogil
+
 cdef class HoverHandler(baseHandler):
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil

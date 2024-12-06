@@ -29,7 +29,7 @@ import scipy
 import scipy.spatial
 
 
-cdef class ViewportDrawList(baseItem):
+cdef class ViewportDrawList(drawingItem):
     def __cinit__(self):
         self.element_child_category = child_type.cat_viewport_drawlist
         self.can_have_drawing_child = True
@@ -46,27 +46,9 @@ cdef class ViewportDrawList(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._front = value
-    @property
-    def show(self):
-        """
-        Writable attribute: Should the object be drawn/shown ?
 
-        In case show is set to False, this disables any
-        callback (for example the close callback won't be called
-        if a window is hidden with show = False).
-        In the case of items that can be closed,
-        show is set to False automatically on close.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return self._show
-    @show.setter
-    def show(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._show = value
-
-    cdef void draw(self) noexcept nogil:
+    cdef void draw(self, imgui.ImDrawList* unused) noexcept nogil:
+        # drawlist is an unused argument set to NULL
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return

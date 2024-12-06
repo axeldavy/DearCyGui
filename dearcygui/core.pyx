@@ -1022,8 +1022,8 @@ cdef class baseItem:
             type = type | ChildType.TAB
         if self.can_have_theme_child:
             type = type | ChildType.THEME
-        #if self.can_ha:
-        #    type = type | ChildType.VIEWPORTDRAWLIST
+        if self.can_have_viewport_drawlist_child:
+            type = type | ChildType.VIEWPORTDRAWLIST
         if self.can_have_widget_child:
             type = type | ChildType.WIDGET
         if self.can_have_window_child:
@@ -1198,6 +1198,9 @@ cdef class baseItem:
         elif self.element_child_category == child_type.cat_theme:
             if target_parent.can_have_theme_child:
                 compatible = True
+        elif self.element_child_category == child_type.cat_viewport_drawlist:
+            if target_parent.can_have_viewport_drawlist_child:
+                compatible = True
         elif self.element_child_category == child_type.cat_widget:
             if target_parent.can_have_widget_child:
                 compatible = True
@@ -1277,6 +1280,15 @@ cdef class baseItem:
                 self._prev_sibling = target_parent.last_theme_child
                 self._parent = target_parent
                 target_parent.last_theme_child = <baseTheme>self
+                attached = True
+        elif self.element_child_category == child_type.cat_viewport_drawlist:
+            if target_parent.can_have_viewport_drawlist_child:
+                if target_parent.last_viewport_drawlist_child is not None:
+                    lock_gil_friendly(m3, target_parent.last_viewport_drawlist_child.mutex)
+                    target_parent.last_viewport_drawlist_child._next_sibling = self
+                self._prev_sibling = target_parent.last_viewport_drawlist_child
+                self._parent = target_parent
+                target_parent.last_viewport_drawlist_child = <drawingItem>self
                 attached = True
         elif self.element_child_category == child_type.cat_widget:
             if target_parent.can_have_widget_child:
@@ -1839,6 +1851,7 @@ cdef class Viewport(baseItem):
     def __cinit__(self, context):
         self.resize_callback = None
         self.can_have_window_child = True
+        self.can_have_viewport_drawlist_child = True
         self.can_have_menubar_child = True
         self.can_have_sibling = False
         self.last_t_before_event_handling = ctime.monotonic_ns()
@@ -2490,15 +2503,12 @@ cdef class Viewport(baseItem):
         self.scales = [1., 1.]
         self.in_plot = False
         self.start_pending_theme_actions = 0
-        #if self.filedialogRoots is not None:
-        #    self.filedialogRoots.draw(<imgui.ImDrawList*>NULL, 0., 0.)
         self.parent_pos = imgui.ImVec2(0., 0.)
         self.window_pos = imgui.ImVec2(0., 0.)
         imgui.PushID(self.uuid)
         draw_menubar_children(self)
         draw_window_children(self)
-        #if self.last_viewport_drawlist_child is not None:
-        #    self.last_viewport_drawlist_child.draw(<imgui.ImDrawList*>NULL, 0., 0.)
+        draw_viewport_drawlist_children(self)
         imgui.PopID()
         if self._theme is not None:
             self._theme.pop()
@@ -2925,6 +2935,7 @@ cdef class PlaceHolderParent(baseItem):
         self.can_have_plot_element_child = True
         self.can_have_tab_child = True
         self.can_have_theme_child = True
+        self.can_have_viewport_drawlist_child = True
         self.can_have_widget_child = True
         self.can_have_window_child = True
 

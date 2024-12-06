@@ -4,10 +4,9 @@ from .core cimport baseItem, drawingItem, Texture, Font
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef class ViewportDrawList(baseItem):
+cdef class ViewportDrawList(drawingItem):
     cdef bint _front
-    cdef bint _show
-    cdef void draw(self) noexcept nogil
+    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawingList(drawingItem):
     pass
