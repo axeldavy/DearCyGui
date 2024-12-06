@@ -28,7 +28,10 @@ def color_as_floats(val) -> tuple[float, float, float, float]:
 
 @cython.freelist(8)
 cdef class Coord:
-    """Fast writable 2D coordinate tuple (x, y) which supports a lot of operations"""
+    """
+    Fast writable 2D coordinate tuple (x, y) which supports a lot of operations.
+    Provides various arithmetic operations and properties for easy manipulation.
+    """
     #def __cinit__(self): Commented as trivial. Commenting enables auto-generated __reduce__
     #    self._x = 0
     #    self._y = 0
@@ -340,6 +343,9 @@ cdef class Coord:
         return item
 
 class ChildType(IntFlag):
+    """
+    Enum representing different types of child elements that can be attached to items.
+    """
     NOCHILD = 0,
     DRAWING = 1,
     HANDLER = 2,
@@ -352,6 +358,9 @@ class ChildType(IntFlag):
     WINDOW = 256
 
 class Key(IntEnum):
+    """
+    Enum representing various keyboard keys.
+    """
     TAB = imgui.ImGuiKey_Tab,
     LEFTARROW = imgui.ImGuiKey_LeftArrow,
     RIGHTARROW = imgui.ImGuiKey_RightArrow,
@@ -508,6 +517,9 @@ class Key(IntEnum):
     RESERVEDFORMODSUPER = imgui.ImGuiKey_ReservedForModSuper
 
 class KeyMod(IntFlag):
+    """
+    Enum representing key modifiers (Ctrl, Shift, Alt, Super).
+    """
     NOMOD = 0,
     CTRL = imgui.ImGuiKey_ModCtrl,
     SHIFT = imgui.ImGuiKey_ModShift,
@@ -515,6 +527,9 @@ class KeyMod(IntFlag):
     SUPER = imgui.ImGuiKey_ModSuper
 
 class KeyOrMod(IntFlag):
+    """
+    Enum representing both keys and key modifiers.
+    """
     NOMOD = 0,
     TAB = imgui.ImGuiKey_Tab,
     LEFTARROW = imgui.ImGuiKey_LeftArrow,

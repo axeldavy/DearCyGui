@@ -104,8 +104,7 @@ cdef class Context:
     """
     Main class managing the DearCyGui items and imgui context.
     There is exactly one viewport per context.
-
-    The last created context can be accessed as deacygui.C
+    The last created context can be accessed as dearcygui.C.
     """
     def __init__(self,
                  queue=None,
@@ -113,10 +112,17 @@ cdef class Context:
                  item_unused_configure_args_callback=None,
                  item_deletion_callback=None):
         """
+        Initialize the Context.
+
         Parameters:
-            queue (optional, defaults to ThreadPoolExecutor(max_workers=1)):
-                Subclass of concurrent.futures.Executor used to submit
-                callbacks during the frame.
+        queue : Executor, optional
+            Executor for managing threads. Defaults to ThreadPoolExecutor with max_workers=1.
+        item_creation_callback : callable, optional
+            Callback for item creation.
+        item_unused_configure_args_callback : callable, optional
+            Callback for unused configure arguments.
+        item_deletion_callback : callable, optional
+            Callback for item deletion.
         """
         global C
         self.on_close_callback = None
@@ -132,6 +138,9 @@ cdef class Context:
         C = self
 
     def __cinit__(self):
+        """
+        Cython-specific initializer for Context.
+        """
         self.next_uuid.store(21)
         self.waitOneFrame = False
         self.started = True
@@ -144,6 +153,9 @@ cdef class Context:
         self.imnodes_context = imnodes.CreateContext()
 
     def __dealloc__(self):
+        """
+        Deallocate resources for Context.
+        """
         self.started = True
         if self.imnodes_context != NULL:
             imnodes.DestroyContext(self.imnodes_context)
@@ -153,6 +165,9 @@ cdef class Context:
             imgui.DestroyContext(self.imgui_context)
 
     def __del__(self):
+        """
+        Destructor for Context.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if self.on_close_callback is not None:
@@ -167,30 +182,48 @@ cdef class Context:
 
     @property
     def viewport(self) -> Viewport:
-        """Readonly attribute: root item from where rendering starts"""
+        """
+        Readonly attribute: root item from where rendering starts.
+        """
         return self._viewport
 
     @property
     def item_creation_callback(self):
-        """Callback called during item creation before configuration"""
+        """
+        Callback called during item creation before configuration.
+        """
         return self._item_creation_callback
 
     @property
     def item_unused_configure_args_callback(self) -> Viewport:
-        """Callback called during item creation before configuration"""
+        """
+        Callback called during item creation before configuration.
+        """
         return self._item_unused_configure_args_callback
 
     @property
     def item_deletion_callback(self) -> Viewport:
-        """Callback called during item deletion.
-        
-        If the item is released by the gc it is not guaranteed that
+        """
+        Callback called during item deletion.
+
+        If the item is released by the garbage collector, it is not guaranteed that
         this callback is called, as the item might have lost its
         pointer on the context.
         """
         return self._item_deletion_callback
 
     cdef void queue_callback_noarg(self, Callback callback, baseItem parent_item, baseItem target_item) noexcept nogil:
+        """
+        Queue a callback with no arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        """
         if callback is None:
             return
         with gil:
@@ -200,6 +233,19 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg1obj(self, Callback callback, baseItem parent_item, baseItem target_item, baseItem arg1) noexcept nogil:
+        """
+        Queue a callback with one object argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : baseItem
+            The first argument.
+        """
         if callback is None:
             return
         with gil:
@@ -209,6 +255,19 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg1key(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1) noexcept nogil:
+        """
+        Queue a callback with one key argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        """
         if callback is None:
             return
         with gil:
@@ -218,6 +277,19 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg1button(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1) noexcept nogil:
+        """
+        Queue a callback with one button argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        """
         if callback is None:
             return
         with gil:
@@ -228,6 +300,19 @@ cdef class Context:
 
 
     cdef void queue_callback_arg1float(self, Callback callback, baseItem parent_item, baseItem target_item, float arg1) noexcept nogil:
+        """
+        Queue a callback with one float argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : float
+            The first argument.
+        """
         if callback is None:
             return
         with gil:
@@ -237,6 +322,19 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg1value(self, Callback callback, baseItem parent_item, baseItem target_item, SharedValue arg1) noexcept nogil:
+        """
+        Queue a callback with one shared value argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : SharedValue
+            The first argument.
+        """
         if callback is None:
             return
         with gil:
@@ -247,6 +345,21 @@ cdef class Context:
 
 
     cdef void queue_callback_arg1key1float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2) noexcept nogil:
+        """
+        Queue a callback with one key and one float argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        arg2 : float
+            The second argument.
+        """
         if callback is None:
             return
         with gil:
@@ -256,6 +369,21 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg1button1float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2) noexcept nogil:
+        """
+        Queue a callback with one button and one float argument.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        arg2 : float
+            The second argument.
+        """
         if callback is None:
             return
         with gil:
@@ -265,6 +393,21 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg2float(self, Callback callback, baseItem parent_item, baseItem target_item, float arg1, float arg2) noexcept nogil:
+        """
+        Queue a callback with two float arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : float
+            The first argument.
+        arg2 : float
+            The second argument.
+        """
         if callback is None:
             return
         with gil:
@@ -274,6 +417,21 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg2double(self, Callback callback, baseItem parent_item, baseItem target_item, double arg1, double arg2) noexcept nogil:
+        """
+        Queue a callback with two double arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : double
+            The first argument.
+        arg2 : double
+            The second argument.
+        """
         if callback is None:
             return
         with gil:
@@ -283,6 +441,23 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg1button2float(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, float arg2, float arg3) noexcept nogil:
+        """
+        Queue a callback with one button and two float arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        arg2 : float
+            The second argument.
+        arg3 : float
+            The third argument.
+        """
         if callback is None:
             return
         with gil:
@@ -292,6 +467,25 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg4int(self, Callback callback, baseItem parent_item, baseItem target_item, int arg1, int arg2, int arg3, int arg4) noexcept nogil:
+        """
+        Queue a callback with four integer arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        arg2 : int
+            The second argument.
+        arg3 : int
+            The third argument.
+        arg4 : int
+            The fourth argument.
+        """
         if callback is None:
             return
         with gil:
@@ -301,6 +495,25 @@ cdef class Context:
                 print(traceback.format_exc())
 
     cdef void queue_callback_arg3long1int(self, Callback callback, baseItem parent_item, baseItem target_item, long long arg1, long long arg2, long long arg3, int arg4) noexcept nogil:
+        """
+        Queue a callback with three long and one integer arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : long long
+            The first argument.
+        arg2 : long long
+            The second argument.
+        arg3 : long long
+            The third argument.
+        arg4 : int
+            The fourth argument.
+        """
         if callback is None:
             return
         with gil:
@@ -312,6 +525,29 @@ cdef class Context:
     cdef void queue_callback_argdoubletriplet(self, Callback callback, baseItem parent_item, baseItem target_item,
                                               double arg1_1, double arg1_2, double arg1_3,
                                               double arg2_1, double arg2_2, double arg2_3) noexcept nogil:
+        """
+        Queue a callback with two triplets of double arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1_1 : double
+            The first argument of the first triplet.
+        arg1_2 : double
+            The second argument of the first triplet.
+        arg1_3 : double
+            The third argument of the first triplet.
+        arg2_1 : double
+            The first argument of the second triplet.
+        arg2_2 : double
+            The second argument of the second triplet.
+        arg2_3 : double
+            The third argument of the second triplet.
+        """
         if callback is None:
             return
         with gil:
@@ -324,12 +560,12 @@ cdef class Context:
     cpdef void push_next_parent(self, baseItem next_parent):
         """
         Each time 'with' is used on an item, it is pushed
-        to the list of potentialy parents to use if
+        to the list of potential parents to use if
         no parent (or before) is set when an item is created.
         If the list is empty, items are left unattached and
         can be attached later.
 
-        In order to enable multiple threads from using
+        In order to enable multiple threads to use
         the 'with' syntax, thread local storage is used,
         such that each thread has its own list.
         """
@@ -356,13 +592,21 @@ cdef class Context:
 
     cpdef object fetch_parent_queue_back(self):
         """
-        Retrieve the last item from the potential parent list
+        Retrieve the last item from the potential parent list.
+
+        Returns:
+        object
+            The last item from the potential parent list.
         """
         return getattr(self.threadlocal_data, 'current_parent', None)
 
     cpdef object fetch_parent_queue_front(self):
         """
-        Retrieve the top item from the potential parent list
+        Retrieve the top item from the potential parent list.
+
+        Returns:
+        object
+            The top item from the potential parent list.
         """
         cdef list parent_queue = getattr(self.threadlocal_data, 'parent_queue', [])
         if len(parent_queue) == 0:
@@ -371,13 +615,17 @@ cdef class Context:
 
     def is_key_down(self, key : Key, keymod : KeyMod = None):
         """
-        Is key being held.
+        Check if a key is being held down.
 
-        key is a key constant (see constants)
-        keymod is a mask if keymod constants (ctrl, shift, alt, super)
-        if keymod is None, ignores any key modifiers.
-        Else returns True only if the modifiers
-        correspond as well as the key.
+        Parameters:
+        key : Key
+            Key constant.
+        keymod : KeyMod, optional
+            Key modifier mask (ctrl, shift, alt, super). If None, ignores any key modifiers.
+
+        Returns:
+        bool
+            True if the key is down, False otherwise.
         """
         cdef unique_lock[recursive_mutex] m
         if key is None or not(isinstance(key, Key)):
@@ -393,13 +641,19 @@ cdef class Context:
 
     def is_key_pressed(self, key : Key, keymod : KeyMod = None, bint repeat=True):
         """
-        Was key pressed (went from !Down to Down)?
+        Check if a key was pressed (went from !Down to Down).
 
-        if repeat=true, the pressed state is repeated
-        if the user continue pressing the key.
-        If keymod is not None, returns True only if the modifiers
-        correspond as well as the key.
+        Parameters:
+        key : Key
+            Key constant.
+        keymod : KeyMod, optional
+            Key modifier mask (ctrl, shift, alt, super). If None, ignores any key modifiers.
+        repeat : bool, optional
+            If True, the pressed state is repeated if the user continues pressing the key. Defaults to True.
 
+        Returns:
+        bool
+            True if the key was pressed, False otherwise.
         """
         cdef unique_lock[recursive_mutex] m
         if key is None or not(isinstance(key, Key)):
@@ -415,10 +669,17 @@ cdef class Context:
 
     def is_key_released(self, key : Key, keymod : KeyMod = None):
         """
-        Was key released (went from Down to !Down)?
+        Check if a key was released (went from Down to !Down).
 
-        If keymod is not None, returns True also if the
-        required modifiers are not pressed.
+        Parameters:
+        key : Key
+            Key constant.
+        keymod : KeyMod, optional
+            Key modifier mask (ctrl, shift, alt, super). If None, ignores any key modifiers.
+
+        Returns:
+        bool
+            True if the key was released, False otherwise.
         """
         cdef unique_lock[recursive_mutex] m
         if key is None or not(isinstance(key, Key)):
@@ -433,7 +694,17 @@ cdef class Context:
         return imgui.IsKeyReleased(keycode)
 
     def is_mouse_down(self, MouseButton button):
-        """is mouse button held?"""
+        """
+        Check if a mouse button is held down.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        bool
+            True if the mouse button is down, False otherwise.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -442,7 +713,19 @@ cdef class Context:
         return imgui.IsMouseDown(<int>button)
 
     def is_mouse_clicked(self, MouseButton button, bint repeat=False):
-        """did mouse button clicked? (went from !Down to Down). Same as get_mouse_clicked_count() >= 1."""
+        """
+        Check if a mouse button was clicked (went from !Down to Down).
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        repeat : bool, optional
+            If True, the clicked state is repeated if the user continues pressing the button. Defaults to False.
+
+        Returns:
+        bool
+            True if the mouse button was clicked, False otherwise.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -451,7 +734,17 @@ cdef class Context:
         return imgui.IsMouseClicked(<int>button, repeat)
 
     def is_mouse_double_clicked(self, MouseButton button):
-        """did mouse button double-clicked?. Same as get_mouse_clicked_count() == 2."""
+        """
+        Check if a mouse button was double-clicked.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        bool
+            True if the mouse button was double-clicked, False otherwise.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -460,7 +753,17 @@ cdef class Context:
         return imgui.IsMouseDoubleClicked(<int>button)
 
     def get_mouse_clicked_count(self, MouseButton button):
-        """how many times a mouse button is clicked in a row"""
+        """
+        Get the number of times a mouse button is clicked in a row.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        int
+            Number of times the mouse button is clicked in a row.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -469,7 +772,17 @@ cdef class Context:
         return imgui.GetMouseClickedCount(<int>button)
 
     def is_mouse_released(self, MouseButton button):
-        """did mouse button released? (went from Down to !Down)"""
+        """
+        Check if a mouse button was released (went from Down to !Down).
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        bool
+            True if the mouse button was released, False otherwise.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -478,7 +791,17 @@ cdef class Context:
         return imgui.IsMouseReleased(<int>button)
 
     def get_mouse_position(self):
-        """Retrieves the mouse position (x, y). Raises KeyError if there is no mouse"""
+        """
+        Retrieve the mouse position (x, y).
+
+        Returns:
+        tuple
+            Tuple containing the mouse position (x, y).
+
+        Raises:
+        KeyError
+            If there is no mouse.
+        """
         cdef unique_lock[recursive_mutex] m
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
@@ -488,7 +811,19 @@ cdef class Context:
         return (pos.x, pos.y)
 
     def is_mouse_dragging(self, MouseButton button, float lock_threshold=-1.):
-        """is mouse dragging? (uses default distance threshold if lock_threshold < 0.0f"""
+        """
+        Check if the mouse is dragging.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        lock_threshold : float, optional
+            Distance threshold for locking the drag. Uses default distance if lock_threshold < 0.0f. Defaults to -1.
+
+        Returns:
+        bool
+            True if the mouse is dragging, False otherwise.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -499,9 +834,17 @@ cdef class Context:
     def get_mouse_drag_delta(self, MouseButton button, float lock_threshold=-1.):
         """
         Return the delta (dx, dy) from the initial clicking position while the mouse button is pressed or was just released.
-        
-        This is locked and return 0.0f until the mouse moves past a distance threshold at least once
-        (uses default distance if lock_threshold < 0.0f)"""
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        lock_threshold : float, optional
+            Distance threshold for locking the drag. Uses default distance if lock_threshold < 0.0f. Defaults to -1.
+
+        Returns:
+        tuple
+            Tuple containing the drag delta (dx, dy).
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -511,7 +854,13 @@ cdef class Context:
         return (delta.x, delta.y)
 
     def reset_mouse_drag_delta(self, MouseButton button):
-        """Reset to 0 the drag delta for the target button"""
+        """
+        Reset the drag delta for the target button to 0.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        """
         cdef unique_lock[recursive_mutex] m
         if <int>button < 0 or <int>button >= imgui.ImGuiMouseButton_COUNT:
             raise ValueError("Invalid button")
@@ -1841,12 +2190,8 @@ class wrap_this_and_parents_mutex:
 @cython.no_gc_clear
 cdef class Viewport(baseItem):
     """
-    The viewport corresponds to the main item containing
-    all the visuals. It is decorated by the operating system,
-    and can be minimized/maximized/made fullscreen.
-
-    Rendering starts from the viewports and recursively
-    every item renders itself and its children.
+    The viewport corresponds to the main item containing all the visuals.
+    It is decorated by the operating system and can be minimized/maximized/made fullscreen.
     """
     def __cinit__(self, context):
         self.resize_callback = None
@@ -2909,7 +3254,7 @@ cdef class Callback:
 
 cdef class DPGCallback(Callback):
     """
-    Used to run callbacks created for DPG
+    Used to run callbacks created for DPG.
     """
     def __call__(self, source_item, target_item, call_info):
         try:
@@ -2943,6 +3288,10 @@ Can be parent to anything.
 Cannot have any parent. Thus cannot render.
 """
 cdef class PlaceHolderParent(baseItem):
+    """
+    Placeholder parent to store items outside the rendering tree.
+    Can be a parent to anything but cannot have any parent itself.
+    """
     def __cinit__(self):
         self.can_have_drawing_child = True
         self.can_have_handler_child = True
@@ -2989,9 +3338,7 @@ cdef void update_current_mouse_states(itemState& state) noexcept nogil:
 
 cdef class drawingItem(baseItem):
     """
-    A simple item with no UI state,
-    that inherit from the drawing area of its
-    parent
+    A simple item with no UI state that inherits from the drawing area of its parent.
     """
     def __cinit__(self):
         self._show = True
@@ -3029,6 +3376,9 @@ Sources
 """
 
 cdef class SharedValue:
+    """
+    Represents a shared value that can be used by multiple items.
+    """
     def __init__(self, *args, **kwargs):
         # We create all shared objects using __new__, thus
         # bypassing __init__. If __init__ is called, it's
@@ -3101,6 +3451,9 @@ UI input event handlers
 """
 
 cdef class baseHandler(baseItem):
+    """
+    Base class for UI input event handlers.
+    """
     def __cinit__(self):
         self._enabled = True
         self.can_have_sibling = True
@@ -3170,6 +3523,9 @@ cdef class baseHandler(baseItem):
 
 
 cdef class uiItem(baseItem):
+    """
+    Base class for UI items with various properties and states.
+    """
     def __cinit__(self):
         # mvAppItemInfo
         self.imgui_label = b'###%ld'% self.uuid
@@ -4248,8 +4604,7 @@ cdef class TimeWatcher(uiItem):
     children have finished rendering.
 
     The third time corresponds to the time when viewport
-    started rendering items for this frame. It is a duplicate of
-    context.viewport.metrics.last_t_before_rendering. It is
+    started rendering items for this frame. It is
     given to prevent the user from having to keep track of the
     viewport metrics (since the callback might be called
     after or before the viewport updated its metrics for this
@@ -4285,6 +4640,9 @@ cdef class TimeWatcher(uiItem):
         
 
 cdef class Window(uiItem):
+    """
+    Represents a window in the UI with various configurable properties.
+    """
     def __cinit__(self):
         self.window_flags = imgui.ImGuiWindowFlags_None
         self.main_window = False
@@ -5164,6 +5522,9 @@ Textures
 
 
 cdef class Texture(baseItem):
+    """
+    Represents a texture that can be used in the UI.
+    """
     def __cinit__(self):
         self.hint_dynamic = False
         self.dynamic = False
@@ -5383,6 +5744,9 @@ def get_system_fonts():
     return fonts_filename
 
 cdef class Font(baseItem):
+    """
+    Represents a font that can be used in the UI.
+    """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_sibling = False
         self.font = NULL
