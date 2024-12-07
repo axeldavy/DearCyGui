@@ -4325,6 +4325,56 @@ cdef class CollapsingHeader(uiItem):
         return not(was_open) and self.state.cur.open
 
 cdef class ChildWindow(uiItem):
+    """A child window container that enables hierarchical UI layout.
+
+    A child window creates a scrollable/clippable region within a parent window that can contain any UI elements 
+    and apply its own visual styling.
+
+    Key Features:
+    - Independent scrolling/clipping region 
+    - Optional borders and background
+    - Can contain most UI elements including other child windows
+    - Automatic size fitting to content or parent
+    - Optional scrollbars (vertical & horizontal)
+    - Optional menu bar
+    - DPI-aware scaling
+
+    Properties:
+    -----------
+    always_show_vertical_scrollvar : bool
+        Always show vertical scrollbar even when content fits. Default is False.
+
+    always_show_horizontal_scrollvar : bool
+        Always show horizontal scrollbar when enabled. Default is False. 
+
+    no_scrollbar : bool
+        Hide scrollbars but still allow scrolling with mouse/keyboard. Default is False.
+
+    no_scroll_with_mouse : bool
+        If set, mouse wheel scrolls parent instead of this child (unless no_scrollbar is set). Default is False.
+
+    horizontal_scrollbar : bool
+        Enable horizontal scrollbar. Default is False.
+
+    menubar : bool 
+        Enable menu bar at top of window. Default is False.
+
+    border : bool
+        Show window border and enable padding. Default is True.
+
+    flattened_navigation: bool
+        Share focus scope and allow keyboard/gamepad navigation to cross between parent and child.
+        Default is True.
+
+    Notes:
+    ------
+    - Child windows provide independent scrolling regions within a parent window
+    - Content is automatically clipped to the visible region
+    - Content size can be fixed or dynamic based on settings
+    - Can enable borders and backgrounds independently
+    - Keyboard focus and navigation can be customized
+    - Menu bar support allows structured layouts
+    """
     def __cinit__(self):
         self.child_flags = imgui.ImGuiChildFlags_Borders | imgui.ImGuiChildFlags_NavFlattened
         self.window_flags = imgui.ImGuiWindowFlags_NoSavedSettings

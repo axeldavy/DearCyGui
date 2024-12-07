@@ -24,54 +24,39 @@ import traceback
 
 cdef class CustomHandler(baseHandler):
     """
-    A base class to be subclassed in python
-    for custom state checking.
-    As this is called every frame rendered,
-    and locks the GIL, be careful not do perform
-    anything heavy.
+    A base class to be subclassed in python for custom state checking.
 
-    The functions that need to be implemented by
-    subclasses are:
-    -> check_can_bind(self, item)
-    = Must return a boolean to indicate
-    if this handler can be bound to
-    the target item. Use isinstance to check
-    the target class of the item.
-    Note isinstance can recognize parent classes as
-    well as subclasses. You can raise an exception.
+    This class provides a framework for implementing custom handlers that can monitor
+    and respond to specific item states. As this is called every frame rendered,
+    and locks the GIL, be careful not to perform anything computationally heavy.
 
-    -> check_status(self, item)
-    = Must return a boolean to indicate if the
-    condition this handler looks at is met.
-    Should not perform any action.
+    Required Methods:
+        check_can_bind(self, item): 
+            Must return a boolean indicating if this handler can be bound to the target item.
+            Use isinstance() to check item types.
+        
+        check_status(self, item):
+            Must return a boolean indicating if the watched condition is met.
+            Should only check state, not perform actions.
+        
+        run(self, item) (Optional):
+            If implemented, handles the response when conditions are met.
+            Even with run() implemented, check_status() is still required.
 
-    -> run(self, item)
-    Optional. If implemented, must perform
-    the check this handler is meant to do,
-    and take the appropriate actions in response
-    (callbacks, etc). returns None.
-    Note even if you implement run, check_status
-    is still required. But it will not trigger calls
-    to the callback. If you don't implement run(),
-    returning True in check_status will trigger
-    the callback.
-    As a good practice try to not perform anything
-    heavy to not block rendering.
-
-    Warning: DO NOT change any item's parent, sibling
-    or child. Rendering might rely on the tree being
-    unchanged.
-    You can change item values or status (show, theme, etc),
-    except for parents of the target item.
-    If you want to do that, delay the changes to when
-    you are outside render_frame() or queue the change
-    to be executed in another thread (mutexes protect
-    states that need to not change during rendering,
-    when accessed from a different thread). 
-
-    If you need to access specific DCG internal item states,
-    you must use Cython and subclass baseHandler instead.
+    Warning:
+        DO NOT modify item parent/sibling/child relationships during rendering.
+        Changes to values or status are allowed except for parent modifications.
+        For tree structure changes, delay until outside render_frame() or queue 
+        for execution in another thread.
     """
+    def __cinit__(self):
+        self._has_run = False  # Cache whether run() method exists
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Check and cache if the subclass has a run method
+        self._has_run = hasattr(self, "run")
+
     cdef void check_bind(self, baseItem item):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -93,9 +78,14 @@ cdef class CustomHandler(baseHandler):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._enabled):
             return
+        
+        # Early exit if no callback and no run method
+        if self._callback is None and not(self._has_run):
+            return
+
         cdef bint condition = False
         with gil:
-            if hasattr(self, "run"):
+            if self._has_run:
                 try:
                     self.run(item)
                 except Exception as e:
@@ -178,13 +168,23 @@ cdef inline void run_handler_children(baseItem item, baseItem target) noexcept n
 
 cdef class HandlerList(baseHandler):
     """
-    A list of handlers in order to attach several
-    handlers to an item.
-    In addition if you attach a callback to this handler,
-    it will be issued if ALL or ANY of the children handler
-    states are met. NONE is also possible.
-    Note however that the handlers are not checked if an item
-    is not rendered. This corresponds to the visible state.
+    A container for multiple handlers that can be attached to an item.
+
+    This handler allows grouping multiple handlers together and optionally 
+    executing a callback based on the combined state of all child handlers.
+
+    The callback can be triggered based on three conditions:
+    - ALL: All child handlers' states must be true (default)
+    - ANY: At least one child handler's state must be true
+    - NONE: No child handler's states are true
+
+    Skipping heavy CustomHandlers:
+        One use case is to skip expensive check_status() calls from CustomHandlers.
+        If the status of the first children is incompatible with the checked condition,
+        the status of further children is not checked.
+
+    Note:
+        Handlers are not checked if their parent item is not rendered.
     """
     def __cinit__(self):
         self.can_have_handler_child = True
@@ -228,21 +228,23 @@ cdef class HandlerList(baseHandler):
 
 cdef class ConditionalHandler(baseHandler):
     """
-    A handler that runs the handler of his FIRST handler
-    child if the other ones have their condition checked.
-    The other handlers are not run. Just their condition
-    is checked.
+    A handler that runs the FIRST handler child if all other handler children conditions are met.
 
-    For example this is useful to combine conditions. For example
-    detecting clicks when a key is pressed. The interest
-    of using this handler, rather than handling it yourself, is
-    that if the callback queue is laggy the condition might not
-    hold true anymore by the time you process the handler.
-    In this case this handler enables to test right away
-    the intended conditions.
+    Unlike HandlerList, this handler:
+    1. Only executes the first handler when conditions are met
+    2. Uses other handlers only for condition checking (their callbacks are not called)
 
-    Note that handlers that get their condition checked do
-    not call their callbacks.
+    One interest of this handler is to tests conditions immediately, rather than in a callback,
+    avoiding timing issues with callback queues
+
+    Useful for combining conditions, such as detecting clicks when specific keys are pressed.
+
+    Skipping heavy CustomHandlers:
+        One use case is to skip expensive run() calls from CustomHandlers.
+
+    Note:
+        Only the first handler's callback is executed when all conditions are met.
+        Other handlers are used purely for their state conditions.
     """
     def __cinit__(self):
         self.can_have_handler_child = True
@@ -297,16 +299,18 @@ cdef class ConditionalHandler(baseHandler):
 
 cdef class OtherItemHandler(HandlerList):
     """
-    Handler that imports the states from a different
-    item than the one is attached to, and runs the
-    children handlers using the states of the other
-    item. The 'target' field in the callbacks will
-    still be the current item and not the other item.
+    A handler that monitors states from a different item than the one it's attached to.
 
-    This is useful when you need to do a AND/OR combination
-    of the current item state with another item state, or
-    when you need to check the state of an item that might be
-    not be rendered.
+    This handler allows checking states of an item different from its attachment point,
+    while still sending callbacks with the attached item as the target.
+
+    Use cases:
+    - Combining states between different items (AND/OR operations)
+    - Monitoring items that might not be rendered
+    - Creating dependencies between different interface elements
+
+    Note:
+        Callbacks still reference the attached item as target, not the monitored item.
     """
     def __cinit__(self):
         self._target = None
@@ -819,7 +823,7 @@ cdef class MotionHandler(baseHandler):
 
         Defaults to REL_PARENT on both axes.
         """
-        (<Positioning>self._positioning[0], <Positioning>self._positioning[1])
+        return (<Positioning>self._positioning[0], <Positioning>self._positioning[1])
 
     @pos_policy.setter
     def pos_policy(self, Positioning value):
@@ -1108,6 +1112,16 @@ to be executed.
 """
 
 cdef class KeyDownHandler(baseHandler):
+    """
+    Handler that triggers when a key is held down.
+
+    Properties:
+        key (Key): Target key to monitor.
+        
+    Callback receives:
+        - key: The key being pressed
+        - duration: How long the key has been held down
+    """
     def __cinit__(self):
         self._key = imgui.ImGuiKey_Enter
     @property
@@ -1140,6 +1154,16 @@ cdef class KeyDownHandler(baseHandler):
             self.context.queue_callback_arg1key1float(self._callback, self, item, self._key, key_info.DownDuration)
 
 cdef class KeyPressHandler(baseHandler):
+    """
+    Handler that triggers when a key is initially pressed.
+
+    Properties:
+        key (Key): Target key to monitor
+        repeat (bool): Whether to trigger repeatedly while key is held
+
+    Callback receives:
+        - key: The key that was pressed
+    """
     def __cinit__(self):
         self._key = imgui.ImGuiKey_Enter
         self._repeat = True
@@ -1179,6 +1203,15 @@ cdef class KeyPressHandler(baseHandler):
 
 
 cdef class KeyReleaseHandler(baseHandler):
+    """
+    Handler that triggers when a key is released.
+
+    Properties:
+        key (Key): Target key to monitor
+
+    Callback receives:
+        - key: The key that was released
+    """
     def __cinit__(self):
         self._key = imgui.ImGuiKey_Enter
 
@@ -1210,6 +1243,16 @@ cdef class KeyReleaseHandler(baseHandler):
 
 
 cdef class MouseClickHandler(baseHandler):
+    """
+    Handler for mouse button clicks anywhere.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+        repeat (bool): Whether to trigger repeatedly while button held
+
+    Callback receives:
+        - button: The button that was clicked
+    """
     def __cinit__(self):
         self._button = MouseButton.LEFT
         self._repeat = False
@@ -1250,6 +1293,15 @@ cdef class MouseClickHandler(baseHandler):
 
 
 cdef class MouseDoubleClickHandler(baseHandler):
+    """
+    Handler for mouse button double-clicks anywhere.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+
+    Callback receives:
+        - button: The button that was double-clicked
+    """
     def __cinit__(self):
         self._button = MouseButton.LEFT
     @property
@@ -1279,6 +1331,16 @@ cdef class MouseDoubleClickHandler(baseHandler):
 
 
 cdef class MouseDownHandler(baseHandler):
+    """
+    Handler for mouse button being held down.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+
+    Callback receives:
+        - button: The button being held
+        - duration: How long the button has been held
+    """
     def __cinit__(self):
         self._button = MouseButton.LEFT
 
@@ -1309,6 +1371,19 @@ cdef class MouseDownHandler(baseHandler):
 
 
 cdef class MouseDragHandler(baseHandler):
+    """
+    Handler for mouse dragging motions.
+
+    Properties:
+        button (MouseButton): Target mouse button for drag
+        threshold (float): Movement threshold to trigger drag.
+                         Negative means use default.
+
+    Callback receives:
+        - button: The button used for dragging
+        - delta_x: Horizontal drag distance
+        - delta_y: Vertical drag distance
+    """
     def __cinit__(self):
         self._button = MouseButton.LEFT
         self._threshold = -1 # < 0. means use default
@@ -1351,6 +1426,16 @@ cdef class MouseDragHandler(baseHandler):
             self.context.queue_callback_arg1button2float(self._callback, self, item, <int>self._button, delta.x, delta.y)
 
 cdef class MouseMoveHandler(baseHandler):
+    """
+    Handler that triggers when the mouse cursor moves.
+
+    Callback receives:
+        - x: New mouse x position
+        - y: New mouse y position
+        
+    Note:
+        Position is relative to the viewport.
+    """
     cdef bint check_state(self, baseItem item) noexcept nogil:
         cdef imgui.ImGuiIO io = imgui.GetIO()
         if not(imgui.IsMousePosValid()):
@@ -1373,6 +1458,15 @@ cdef class MouseMoveHandler(baseHandler):
 
 
 cdef class MouseReleaseHandler(baseHandler):
+    """
+    Handler for mouse button releases.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+
+    Callback receives:  
+        - button: The button that was released
+    """
     def __cinit__(self):
         self._button = MouseButton.LEFT
 
@@ -1402,6 +1496,20 @@ cdef class MouseReleaseHandler(baseHandler):
             self.context.queue_callback_arg1button(self._callback, self, item, <int>self._button)
 
 cdef class MouseWheelHandler(baseHandler):
+    """
+    A handler that monitors mouse wheel scrolling events.
+
+    Detects both vertical (default) and horizontal scrolling movements.
+    For horizontal scrolling, either use Shift+vertical wheel or a horizontal
+    wheel if available on the input device.
+
+    Properties:
+        horizontal (bool): When True, monitors horizontal scrolling instead of vertical.
+                         Defaults to False (vertical scrolling).
+
+    Note:
+        Holding Shift while using vertical scroll wheel generates horizontal scroll events.
+    """
     def __cinit__(self, *args, **kwargs):
         self._horizontal = False
 

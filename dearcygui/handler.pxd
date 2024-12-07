@@ -2,6 +2,7 @@ from .core cimport *
 from .types cimport *
 
 cdef class CustomHandler(baseHandler):
+    cdef bint _has_run
     cdef void check_bind(self, baseItem)
     cdef bint check_state(self, baseItem) noexcept nogil
     cdef void run_handler(self, baseItem) noexcept nogil

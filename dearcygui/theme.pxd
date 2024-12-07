@@ -4,27 +4,28 @@ from dearcygui.wrapper cimport imgui
 from .core cimport *
 from .types cimport *
 
-cdef class ThemeColorImGui(baseTheme):
-    cdef unordered_map[string, int] name_to_index
-    cdef unordered_map[int, imgui.ImU32] index_to_value
-    cdef void push(self) noexcept nogil
-    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
-    cdef void pop(self) noexcept nogil
-
-cdef class ThemeColorImPlot(baseTheme):
-    cdef unordered_map[string, int] name_to_index
-    cdef unordered_map[int, imgui.ImU32] index_to_value
-    cdef void push(self) noexcept nogil
-    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
-    cdef void pop(self) noexcept nogil
-
-cdef class ThemeColorImNodes(baseTheme):
+cdef class baseThemeColor(baseTheme):
     cdef list names
-    cdef unordered_map[string, int] name_to_index
     cdef unordered_map[int, imgui.ImU32] index_to_value
+    cdef object __common_getter(self, int)
+    cdef void __common_setter(self, int, object)
+
+cdef class ThemeColorImGui(baseThemeColor):
     cdef void push(self) noexcept nogil
     cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
     cdef void pop(self) noexcept nogil
+
+cdef class ThemeColorImPlot(baseThemeColor):
+    cdef void push(self) noexcept nogil
+    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
+    cdef void pop(self) noexcept nogil
+
+'''
+cdef class ThemeColorImNodes(baseThemeColor):
+    cdef void push(self) noexcept nogil
+    cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
+    cdef void pop(self) noexcept nogil
+'''
 
 ctypedef struct theme_value_info:
     theme_value value

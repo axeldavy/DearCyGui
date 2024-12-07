@@ -115,9 +115,7 @@ def typename(object_class, instance, name, value):
     default = None if value is None else type(value).__name__
     default = hardcoded.get(name, default)
     if issubclass(object_class, dcg.baseTheme) and default is None:
-        if issubclass(object_class, dcg.ThemeColorImGui) or \
-           issubclass(object_class, dcg.ThemeColorImPlot) or \
-           issubclass(object_class, dcg.ThemeColorImNodes):
+        if issubclass(object_class, dcg.baseThemeColor):
             return hardcoded["color"] + "| None"
         if issubclass(object_class, dcg.baseThemeStyle):
             try:

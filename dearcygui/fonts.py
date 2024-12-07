@@ -562,3 +562,108 @@ def make_extended_latin_font(size : int,
     height, character_positioning_merged, _ = center_font(height, character_positioning_merged, origin)
 
     return height, character_images_merged, character_positioning_merged
+
+class TextRenderer:
+    def __init__(self, font_path, size, hinter="light", allow_color=True):
+        self.font_path = font_path
+        self.size = size
+        self.hinter = hinter
+        self.allow_color = allow_color
+        self.face = freetype.Face(font_path)
+        self.face.set_pixel_sizes(0, size)
+        self.load_flags = self._prepare_load_flags(hinter, allow_color)
+
+    def _prepare_load_flags(self, hinter, allow_color):
+        load_flags = 0
+        if hinter == "none":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_HINTING"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_AUTOHINT"]
+        elif hinter == "font":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
+        elif hinter == "light":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_LIGHT"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
+        elif hinter == "strong":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
+        elif hinter == "monochrome":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_MONO"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_MONOCHROME"]
+        else:
+            raise ValueError("Invalid hinter. Must be none, font, light, strong or monochrome")
+
+        if allow_color:
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_COLOR"]
+
+        return load_flags
+
+    def render_text_to_array(self, text, align_to_pixels=True, enable_kerning=True):
+        width, height, max_top, max_bottom = 0, 0, 0, 0
+        previous_char = None
+        kerning_mode = freetype.FT_KERNING_DEFAULT if align_to_pixels else freetype.FT_KERNING_UNFITTED
+        for char in text:
+            self.face.load_char(char, flags=self.load_flags)
+            glyph = self.face.glyph
+            bitmap = glyph.bitmap
+            top = glyph.bitmap_top
+            bottom = bitmap.rows - top
+            max_top = max(max_top, top)
+            max_bottom = max(max_bottom, bottom)
+            if align_to_pixels:
+                width += glyph.advance.x/64
+            else:
+                width += glyph.linearHoriAdvance/65536
+            if enable_kerning and previous_char is not None:
+                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
+                width += kerning.x / 64.0
+            previous_char = char
+
+        height = max_top + max_bottom
+        image = np.zeros((height + 10, int(np.ceil(width)) + 10, 4), dtype=np.uint8)
+
+        x_offset = 0.0
+        previous_char = None
+        for char in text:
+            self.face.load_char(char, flags=self.load_flags)
+            glyph = self.face.glyph
+            bitmap = glyph.bitmap
+            top = glyph.bitmap_top
+            left = glyph.bitmap_left
+
+            if enable_kerning and previous_char is not None:
+                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
+                x_offset += kerning.x / 64.0
+
+            y_offset = max_top - top
+            if glyph.format == freetype.FT_GLYPH_FORMAT_BITMAP:
+                for y in range(bitmap.rows):
+                    for x in range(bitmap.width):
+                        if bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
+                            image[y + y_offset, int(x + x_offset), 3] = bitmap.buffer[y * bitmap.pitch + x]
+                        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
+                            image[y + y_offset, int(x + x_offset), :] = bitmap.buffer[y * bitmap.pitch + x * 4:(y + 1) * bitmap.pitch + x * 4]
+            else:
+                # Handle non-bitmap glyphs
+                if align_to_pixels and False:
+                    subpixel_offset = freetype.FT_Vector(0, 0)
+                else:
+                    subpixel_offset = freetype.FT_Vector(int((x_offset - float(int(x_offset))) * 64), 0)
+                gglyph = glyph.get_glyph()
+                bglyph = gglyph.to_bitmap(freetype.FT_RENDER_MODE_NORMAL, subpixel_offset, True)
+                bitmap = bglyph.bitmap
+                
+                for y in range(bitmap.rows):
+                    for x in range(bitmap.width):
+                        if bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
+                            image[y + y_offset, int(x + x_offset), 3] = bitmap.buffer[y * bitmap.pitch + x]
+                        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
+                            image[y + y_offset, int(x + x_offset), :] = bitmap.buffer[y * bitmap.pitch + x * 4:(y + 1) * bitmap.pitch + x * 4]
+
+            if align_to_pixels:
+                x_offset += round(glyph.advance.x/64)
+            else:
+                x_offset += glyph.linearHoriAdvance/65536
+            previous_char = char
+
+        return image

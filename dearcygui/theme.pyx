@@ -65,7 +65,83 @@ cdef inline void pop_theme_children(baseItem item) noexcept nogil:
         (<baseTheme>child).pop()
         child = <PyObject *>(<baseItem>child)._prev_sibling
 
-cdef class ThemeColorImGui(baseTheme):
+cdef class baseThemeColor(baseTheme):
+    """
+    Base class for theme colors that provides common color-related functionality.
+    
+    This class provides the core implementation for managing color themes in different 
+    contexts (ImGui/ImPlot/ImNodes). Color themes allow setting colors for various UI 
+    elements using different color formats:
+    - unsigned int (encodes rgba little-endian)
+    - (r, g, b, a) with values as integers [0-255]  
+    - (r, g, b, a) with values as normalized floats [0.0-1.0]
+    - If alpha is omitted, it defaults to 255
+
+    The class implements common dictionary-style access to colors through string names
+    or numeric indices.
+    """
+
+    def __getitem__(self, key):
+        """Get color by string name or numeric index"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef int color_index
+        if isinstance(key, str):
+            return getattr(self, key)
+        elif isinstance(key, int):
+            color_index = key
+            if color_index < 0 or color_index >= len(self.names):
+                raise KeyError("No color of index %d" % key)
+            return getattr(self, self.names[color_index])
+        else:
+            raise TypeError("%s is an invalid index type" % str(type(key)))
+
+    def __setitem__(self, key, value):
+        """Set color by string name or numeric index"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef int color_index
+        if isinstance(key, str):
+            setattr(self, key, value)
+        elif isinstance(key, int):
+            color_index = key
+            if color_index < 0 or color_index >= len(self.names):
+                raise KeyError("No color of index %d" % key)
+            setattr(self, self.names[color_index], value)
+        else:
+            raise TypeError("%s is an invalid index type" % str(type(key)))
+
+    def __iter__(self):
+        """Iterate over (color_name, color_value) pairs"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef list result = []
+        cdef pair[int, imgui.ImU32] element_content
+        for element_content in self.index_to_value:
+            name = self.names[element_content.first] 
+            result.append((name, int(element_content.second)))
+        return iter(result)
+
+    cdef object __common_getter(self, int index):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef unordered_map[int, imgui.ImU32].iterator element_content = self.index_to_value.find(index)
+        if element_content == self.index_to_value.end():
+            # None: default
+            return None
+        cdef imgui.ImU32 value = dereference(element_content).second
+        return value
+
+    cdef void __common_setter(self, int index, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value is None:
+            self.index_to_value.erase(index)
+            return
+        cdef imgui.ImU32 color = parse_color(value)
+        self.index_to_value[index] = color
+
+cdef class ThemeColorImGui(baseThemeColor):
     """
     Theme color parameters that affect how ImGui
     renders items.
@@ -131,126 +207,631 @@ cdef class ThemeColorImGui(baseTheme):
         TextLink: Hyperlink color
         TextSelectedBg: Color of the background of selected text
         DragDropTarget: Rectangle highlighting a drop target
-        NavHighlight: Gamepad/keyboard: current highlighted item
+        NavCursor: Gamepad/keyboard: current highlighted item
         NavWindowingHighlight: Highlight window when using CTRL+TAB
         NavWindowingDimBg: Darken/colorize entire screen behind the CTRL+TAB window list, when active
         ModalWindowDimBg: Darken/colorize entire screen behind a modal window, when one is active
     """
 
     def __cinit__(self):
-        cdef int i
-        cdef string col_name
-        for i in range(imgui.ImGuiCol_COUNT):
-            col_name = string(imgui.GetStyleColorName(<imgui.ImGuiCol>i))
-            self.name_to_index[col_name] = i
+        self.names = [
+            "Text",
+            "TextDisabled", 
+            "WindowBg",
+            "ChildBg",
+            "PopupBg",
+            "Border",
+            "BorderShadow",
+            "FrameBg",
+            "FrameBgHovered",
+            "FrameBgActive",
+            "TitleBg",
+            "TitleBgActive", 
+            "TitleBgCollapsed",
+            "MenuBarBg",
+            "ScrollbarBg",
+            "ScrollbarGrab",
+            "ScrollbarGrabHovered",
+            "ScrollbarGrabActive",
+            "CheckMark",
+            "SliderGrab",
+            "SliderGrabActive",
+            "Button",
+            "ButtonHovered",
+            "ButtonActive",
+            "Header",
+            "HeaderHovered",
+            "HeaderActive",
+            "Separator",
+            "SeparatorHovered",
+            "SeparatorActive",
+            "ResizeGrip",
+            "ResizeGripHovered",
+            "ResizeGripActive",
+            "TabHovered",
+            "Tab",
+            "TabSelected",  
+            "TabSelectedOverline",
+            "TabDimmed",
+            "TabDimmedSelected",
+            "TabDimmedSelectedOverline",
+            "PlotLines",
+            "PlotLinesHovered",
+            "PlotHistogram",
+            "PlotHistogramHovered",
+            "TableHeaderBg",
+            "TableBorderStrong",
+            "TableBorderLight", 
+            "TableRowBg",
+            "TableRowBgAlt",
+            "TextLink",
+            "TextSelectedBg",
+            "DragDropTarget",
+            "NavCursor",
+            "NavWindowingHighlight",
+            "NavWindowingDimBg",
+            "ModalWindowDimBg"
+        ]
 
-    def __dir__(self):
-        cdef list results = []
-        cdef int i
-        cdef str name
-        for i in range(imgui.ImGuiCol_COUNT):
-            name = str(imgui.GetStyleColorName(<imgui.ImGuiCol>i), encoding='utf-8')
-            results.append(name)
-        return results + dir(baseTheme)
+    @property 
+    def Text(self):
+        """Color for text rendering. 
+        Default: (1.00, 1.00, 1.00, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_Text)
+        
+    @Text.setter
+    def Text(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_Text, value)
 
-    def __getattr__(self, name):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Color %s not found" % name)
-        cdef int color_index = dereference(element).second
-        cdef unordered_map[int, imgui.ImU32].iterator element_content = self.index_to_value.find(color_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImU32 value = dereference(element_content).second
-        # TODO: maybe use unparse_color
-        return value
+    @property
+    def TextDisabled(self):
+        """Color for the text of disabled items.
+        Default: (0.50, 0.50, 0.50, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TextDisabled)
 
-    def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
-        cdef int color_index
-        cdef unordered_map[int, imgui.ImU32].iterator element_content
-        cdef string name_str
-        if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Color %s not found" % key)
-            color_index = dereference(element).second
-        elif isinstance(key, int):
-            color_index = key
-            if color_index < 0 or color_index >= imgui.ImGuiCol_COUNT:
-                raise KeyError("No color of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        element_content = self.index_to_value.find(color_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImU32 value = dereference(element_content).second
-        return value
+    @TextDisabled.setter
+    def TextDisabled(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TextDisabled, value)
 
-    def __setattr__(self, name, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef bint found
-        cdef string name_str
-        cdef unordered_map[string, int].iterator element
-        try:
-            name_str = bytes(name, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            found = element != self.name_to_index.end()
-        except Exception:
-            found = False
-        if not(found):
-            PyObject_GenericSetAttr(self, name, value)
-            return
-        cdef int color_index = dereference(element).second
-        if value is None:
-            self.index_to_value.erase(color_index)
-            return
-        cdef imgui.ImU32 color = parse_color(value)
-        self.index_to_value[color_index] = color
+    @property
+    def WindowBg(self):
+        """Background of normal windows.
+        Default: (0.06, 0.06, 0.06, 0.94)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_WindowBg)
+        
+    @WindowBg.setter
+    def WindowBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_WindowBg, value)
 
-    def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
-        cdef int color_index
-        cdef string name_str
-        if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Color %s not found" % key)
-            color_index = dereference(element).second
-        elif isinstance(key, int):
-            color_index = key
-            if color_index < 0 or color_index >= imgui.ImGuiCol_COUNT:
-                raise KeyError("No color of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        if value is None:
-            self.index_to_value.erase(color_index)
-            return
-        cdef imgui.ImU32 color = parse_color(value)
-        self.index_to_value[color_index] = color
+    @property
+    def ChildBg(self):
+        """Background of child windows.
+        Default: (0.00, 0.00, 0.00, 0.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ChildBg)
 
-    def __iter__(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef list result = []
-        cdef pair[int, imgui.ImU32] element_content
-        cdef str name
-        for element_content in self.index_to_value:
-            name = str(imgui.GetStyleColorName(<imgui.ImGuiCol>element_content.first), encoding='utf-8')
-            result.append((name, int(element_content.second)))
-        return iter(result)
+    @ChildBg.setter
+    def ChildBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ChildBg, value)
+
+    @property
+    def PopupBg(self):
+        """Background of popups, menus, tooltips windows.
+        Default: (0.08, 0.08, 0.08, 0.94)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_PopupBg)
+
+    @PopupBg.setter
+    def PopupBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_PopupBg, value)
+
+    @property
+    def Border(self):
+        """Color of borders.
+        Default: (0.43, 0.43, 0.50, 0.50)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_Border)
+
+    @Border.setter
+    def Border(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_Border, value)
+
+    @property
+    def BorderShadow(self):
+        """Color of border shadows.
+        Default: (0.00, 0.00, 0.00, 0.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_BorderShadow)
+
+    @BorderShadow.setter
+    def BorderShadow(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_BorderShadow, value)
+
+    @property 
+    def FrameBg(self):
+        """Background of checkbox, radio button, plot, slider, text input.
+        Default: (0.16, 0.29, 0.48, 0.54)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_FrameBg)
+
+    @FrameBg.setter
+    def FrameBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_FrameBg, value)
+
+    @property
+    def FrameBgHovered(self):
+        """Color of FrameBg when the item is hovered.
+        Default: (0.26, 0.59, 0.98, 0.40)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_FrameBgHovered)
+
+    @FrameBgHovered.setter 
+    def FrameBgHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_FrameBgHovered, value)
+
+    @property
+    def FrameBgActive(self):  
+        """Color of FrameBg when the item is active.
+        Default: (0.26, 0.59, 0.98, 0.67)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_FrameBgActive)
+
+    @FrameBgActive.setter
+    def FrameBgActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_FrameBgActive, value)
+
+    @property
+    def TitleBg(self):
+        """Title bar color.
+        Default: (0.04, 0.04, 0.04, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TitleBg)
+
+    @TitleBg.setter
+    def TitleBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TitleBg, value)
+
+    @property
+    def TitleBgActive(self):
+        """Title bar color when focused.
+        Default: (0.16, 0.29, 0.48, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TitleBgActive)
+
+    @TitleBgActive.setter
+    def TitleBgActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TitleBgActive, value)
+
+    @property
+    def TitleBgCollapsed(self):
+        """Title bar color when collapsed.
+        Default: (0.00, 0.00, 0.00, 0.51)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TitleBgCollapsed)
+
+    @TitleBgCollapsed.setter
+    def TitleBgCollapsed(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TitleBgCollapsed, value)
+
+    @property
+    def MenuBarBg(self):
+        """Menu bar background color.
+        Default: (0.14, 0.14, 0.14, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_MenuBarBg)
+
+    @MenuBarBg.setter
+    def MenuBarBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_MenuBarBg, value)
+
+    @property  
+    def ScrollbarBg(self):
+        """Scrollbar background color.
+        Default: (0.02, 0.02, 0.02, 0.53)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ScrollbarBg)
+
+    @ScrollbarBg.setter
+    def ScrollbarBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ScrollbarBg, value)
+
+    @property
+    def ScrollbarGrab(self):
+        """Scrollbar grab color.
+        Default: (0.31, 0.31, 0.31, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ScrollbarGrab)
+
+    @ScrollbarGrab.setter  
+    def ScrollbarGrab(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ScrollbarGrab, value)
+
+    @property
+    def ScrollbarGrabHovered(self):
+        """Scrollbar grab color when hovered. 
+        Default: (0.41, 0.41, 0.41, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ScrollbarGrabHovered)
+
+    @ScrollbarGrabHovered.setter
+    def ScrollbarGrabHovered(self, value): 
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ScrollbarGrabHovered, value)
+
+    @property
+    def ScrollbarGrabActive(self):
+        """Scrollbar grab color when active.
+        Default: (0.51, 0.51, 0.51, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ScrollbarGrabActive)
+
+    @ScrollbarGrabActive.setter
+    def ScrollbarGrabActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ScrollbarGrabActive, value)
+
+    @property
+    def CheckMark(self):
+        """Checkmark color.
+        Default: (0.26, 0.59, 0.98, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_CheckMark)
+
+    @CheckMark.setter
+    def CheckMark(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_CheckMark, value)
+
+    @property
+    def SliderGrab(self):
+        """Slider grab color.
+        Default: (0.24, 0.52, 0.88, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_SliderGrab)
+
+    @SliderGrab.setter
+    def SliderGrab(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_SliderGrab, value)
+
+    @property 
+    def SliderGrabActive(self):
+        """Slider grab color when active.
+        Default: (0.26, 0.59, 0.98, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_SliderGrabActive)
+
+    @SliderGrabActive.setter
+    def SliderGrabActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_SliderGrabActive, value)
+
+    @property
+    def Button(self):
+        """Button color.
+        Default: (0.26, 0.59, 0.98, 0.40)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_Button)
+
+    @Button.setter
+    def Button(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_Button, value)
+
+    @property
+    def ButtonHovered(self):
+        """Button color when hovered.
+        Default: (0.26, 0.59, 0.98, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ButtonHovered)
+
+    @ButtonHovered.setter
+    def ButtonHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ButtonHovered, value)
+
+    @property
+    def ButtonActive(self):
+        """Button color when active.
+        Default: (0.06, 0.53, 0.98, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ButtonActive)
+
+    @ButtonActive.setter
+    def ButtonActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ButtonActive, value)
+
+    @property
+    def Header(self):
+        """Colors used for CollapsingHeader, TreeNode, Selectable, MenuItem.
+        Default: (0.26, 0.59, 0.98, 0.31)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_Header)
+
+    @Header.setter
+    def Header(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_Header, value)
+
+    @property 
+    def HeaderHovered(self):
+        """Header colors when hovered.
+        Default: (0.26, 0.59, 0.98, 0.80)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_HeaderHovered)
+
+    @HeaderHovered.setter
+    def HeaderHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_HeaderHovered, value)
+
+    @property
+    def HeaderActive(self):
+        """Header colors when activated/clicked.
+        Default: (0.26, 0.59, 0.98, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_HeaderActive) 
+
+    @HeaderActive.setter
+    def HeaderActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_HeaderActive, value)
+
+    @property
+    def Separator(self):
+        """Color of separating lines.
+        Default: Same as Border color (0.43, 0.43, 0.50, 0.50)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_Separator)
+
+    @Separator.setter
+    def Separator(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_Separator, value)
+
+    @property
+    def SeparatorHovered(self):
+        """Separator color when hovered.
+        Default: (0.10, 0.40, 0.75, 0.78)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_SeparatorHovered)
+
+    @SeparatorHovered.setter
+    def SeparatorHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_SeparatorHovered, value)
+
+    @property
+    def SeparatorActive(self):
+        """Separator color when active.
+        Default: (0.10, 0.40, 0.75, 1.00)""" 
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_SeparatorActive)
+
+    @SeparatorActive.setter
+    def SeparatorActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_SeparatorActive, value)
+
+    @property
+    def ResizeGrip(self):
+        """Resize grip in lower-right and lower-left corners of windows.
+        Default: (0.26, 0.59, 0.98, 0.20)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ResizeGrip)
+    
+    @ResizeGrip.setter 
+    def ResizeGrip(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ResizeGrip, value)
+    
+    @property
+    def ResizeGripHovered(self):
+        """ResizeGrip color when hovered.
+        Default: (0.26, 0.59, 0.98, 0.67)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ResizeGripHovered)
+    
+    @ResizeGripHovered.setter
+    def ResizeGripHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ResizeGripHovered, value)
+    
+    @property
+    def ResizeGripActive(self):
+        """ResizeGrip color when clicked.
+        Default: (0.26, 0.59, 0.98, 0.95)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ResizeGripActive)
+    
+    @ResizeGripActive.setter
+    def ResizeGripActive(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ResizeGripActive, value)
+    
+    @property
+    def TabHovered(self):
+        """Tab background when hovered.
+        Default: Same as HeaderHovered color"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TabHovered)
+    
+    @TabHovered.setter
+    def TabHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TabHovered, value)
+    
+    @property
+    def Tab(self):
+        """Tab background when tab-bar is focused & tab is unselected.
+        Default: Value interpolated between Header and TitleBgActive colors with factor 0.80"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_Tab)
+    
+    @Tab.setter
+    def Tab(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_Tab, value)
+    
+    @property
+    def TabSelected(self):
+        """Tab background when tab-bar is focused & tab is selected.
+        Default: Value interpolated between HeaderActive and TitleBgActive colors with factor 0.60"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TabSelected)
+    
+    @TabSelected.setter
+    def TabSelected(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TabSelected, value)
+    
+    @property
+    def TabSelectedOverline(self):
+        """Tab horizontal overline when tab-bar is focused & tab is selected.
+        Default: Same as HeaderActive color"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TabSelectedOverline)
+    
+    @TabSelectedOverline.setter
+    def TabSelectedOverline(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TabSelectedOverline, value)
+    
+    @property
+    def TabDimmed(self):
+        """Tab background when tab-bar is unfocused & tab is unselected.
+        Default: Value interpolated between Tab and TitleBg colors with factor 0.80"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TabDimmed)
+    
+    @TabDimmed.setter
+    def TabDimmed(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TabDimmed, value)
+    
+    @property
+    def TabDimmedSelected(self):
+        """Tab background when tab-bar is unfocused & tab is selected.
+        Default: Value interpolated between TabSelected and TitleBg colors with factor 0.40""" 
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TabDimmedSelected)
+    
+    @TabDimmedSelected.setter
+    def TabDimmedSelected(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TabDimmedSelected, value)
+    
+    @property
+    def TabDimmedSelectedOverline(self):
+        """Tab horizontal overline when tab-bar is unfocused & tab is selected.
+        Default: (0.50, 0.50, 0.50, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TabDimmedSelectedOverline)
+    
+    @TabDimmedSelectedOverline.setter
+    def TabDimmedSelectedOverline(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TabDimmedSelectedOverline, value)
+    
+    @property
+    def PlotLines(self):
+        """Color of SimplePlot lines.
+        Default: (0.61, 0.61, 0.61, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_PlotLines) 
+    
+    @PlotLines.setter
+    def PlotLines(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_PlotLines, value)
+    
+    @property
+    def PlotLinesHovered(self):
+        """Color of SimplePlot lines when hovered.
+        Default: (1.00, 0.43, 0.35, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_PlotLinesHovered)
+    
+    @PlotLinesHovered.setter
+    def PlotLinesHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_PlotLinesHovered, value)
+    
+    @property
+    def PlotHistogram(self):
+        """Color of SimplePlot histogram.
+        Default: (0.90, 0.70, 0.00, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_PlotHistogram)
+    
+    @PlotHistogram.setter
+    def PlotHistogram(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_PlotHistogram, value)
+    
+    @property
+    def PlotHistogramHovered(self):
+        """Color of SimplePlot histogram when hovered.
+        Default: (1.00, 0.60, 0.00, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_PlotHistogramHovered)
+    
+    @PlotHistogramHovered.setter
+    def PlotHistogramHovered(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_PlotHistogramHovered, value)
+    
+    @property
+    def TableHeaderBg(self):
+        """Table header background.
+        Default: (0.19, 0.19, 0.20, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TableHeaderBg)
+    
+    @TableHeaderBg.setter
+    def TableHeaderBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TableHeaderBg, value)
+    
+    @property
+    def TableBorderStrong(self):
+        """Table outer borders and headers (prefer using Alpha=1.0 here).
+        Default: (0.31, 0.31, 0.35, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TableBorderStrong)
+    
+    @TableBorderStrong.setter
+    def TableBorderStrong(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TableBorderStrong, value)
+    
+    @property
+    def TableBorderLight(self):
+        """Table inner borders (prefer using Alpha=1.0 here).
+        Default: (0.23, 0.23, 0.25, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TableBorderLight)
+    
+    @TableBorderLight.setter
+    def TableBorderLight(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TableBorderLight, value)
+    
+    @property
+    def TableRowBg(self):
+        """Table row background (even rows).
+        Default: (0.00, 0.00, 0.00, 0.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TableRowBg)
+    
+    @TableRowBg.setter
+    def TableRowBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TableRowBg, value)
+    
+    @property
+    def TableRowBgAlt(self):
+        """Table row background (odd rows).
+        Default: (1.00, 1.00, 1.00, 0.06)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TableRowBgAlt)
+    
+    @TableRowBgAlt.setter
+    def TableRowBgAlt(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TableRowBgAlt, value)
+    
+    @property
+    def TextLink(self):
+        """Hyperlink color.
+        Default: Same as HeaderActive color"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TextLink)
+    
+    @TextLink.setter
+    def TextLink(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TextLink, value)
+
+    @property
+    def TextSelectedBg(self):
+        """Background color of selected text.
+        Default: (0.26, 0.59, 0.98, 0.35)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_TextSelectedBg)
+
+    @TextSelectedBg.setter
+    def TextSelectedBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_TextSelectedBg, value)
+
+    @property
+    def DragDropTarget(self):
+        """Rectangle highlighting a drop target.
+        Default: (1.00, 1.00, 0.00, 0.90)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_DragDropTarget)
+    
+    @DragDropTarget.setter
+    def DragDropTarget(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_DragDropTarget, value)
+
+    @property
+    def NavCursor(self):
+        """Color of keyboard/gamepad navigation cursor/rectangle, when visible.
+        Default: Same as HeaderHovered (0.26, 0.59, 0.98, 1.00)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_NavCursor)
+
+    @NavCursor.setter
+    def NavCursor(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_NavCursor, value)
+
+    @property
+    def NavWindowingHighlight(self):
+        """Highlight window when using CTRL+TAB.
+        Default: (1.00, 1.00, 1.00, 0.70)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_NavWindowingHighlight)
+
+    @NavWindowingHighlight.setter
+    def NavWindowingHighlight(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_NavWindowingHighlight, value)
+
+    @property 
+    def NavWindowingDimBg(self):
+        """Darken/colorize entire screen behind CTRL+TAB window list.
+        Default: (0.80, 0.80, 0.80, 0.20)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_NavWindowingDimBg)
+
+    @NavWindowingDimBg.setter
+    def NavWindowingDimBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_NavWindowingDimBg, value)
+
+    @property
+    def ModalWindowDimBg(self):
+        """Darken/colorize entire screen behind a modal window.
+        Default: (0.80, 0.80, 0.80, 0.35)"""
+        return baseThemeColor.__common_getter(self, imgui.ImGuiCol_ModalWindowDimBg)
+
+    @ModalWindowDimBg.setter
+    def ModalWindowDimBg(self, value):
+        baseThemeColor.__common_setter(self, imgui.ImGuiCol_ModalWindowDimBg, value)
 
     cdef void push(self) noexcept nogil:
         self.mutex.lock()
@@ -287,121 +868,276 @@ cdef class ThemeColorImGui(baseTheme):
             imgui.PopStyleColor(count)
         self.mutex.unlock()
 
-@cython.no_gc_clear
-cdef class ThemeColorImPlot(baseTheme):
+
+cdef class ThemeColorImPlot(baseThemeColor):
+    """
+    Theme color parameters that affect how ImPlot renders plots.
+    All colors accept three formats:
+    - unsigned (encodes a rgba little-endian)
+    - (r, g, b, a) with r, g, b, a as integers.
+    - (r, g, b, a) with r, g, b, a as floats.
+
+    When r, g, b, a are floats, they should be normalized
+    between 0 and 1, while integers are between 0 and 255.
+    If a is missing, it defaults to 255.
+
+    Keyword Arguments:
+        Line: Plot line color. Auto - derived from Text color
+        Fill: Plot fill color. Auto - derived from Line color
+        MarkerOutline: Plot marker outline color. Auto - derived from Line color
+        MarkerFill: Plot marker fill color. Auto - derived from Line color 
+        ErrorBar: Error bar color. Auto - derived from Text color
+        FrameBg: Plot frame background color. Auto - derived from FrameBg color
+        PlotBg: Plot area background color. Auto - derived from WindowBg color
+        PlotBorder: Plot area border color. Auto - derived from Border color
+        LegendBg: Legend background color. Auto - derived from PopupBg color
+        LegendBorder: Legend border color. Auto - derived from Border color
+        LegendText: Legend text color. Auto - derived from Text color
+        TitleText: Plot title text color. Auto - derived from Text color
+        InlayText: Color of text appearing inside plots. Auto - derived from Text color
+        AxisText: Axis text labels color. Auto - derived from Text color
+        AxisGrid: Axis grid color. Auto - derived from Text color with reduced alpha
+        AxisTick: Axis tick marks color. Auto - derived from AxisGrid color
+        AxisBg: Background color of axis hover region. Auto - transparent
+        AxisBgHovered: Axis background color when hovered. Auto - derived from ButtonHovered color
+        AxisBgActive: Axis background color when clicked. Auto - derived from ButtonActive color
+        Selection: Box-selection color. Default: (1.00, 1.00, 0.00, 1.00)
+        Crosshairs: Crosshairs color. Auto - derived from PlotBorder color
+    """
     def __cinit__(self):
-        cdef int i
-        cdef string col_name
-        for i in range(implot.ImPlotCol_COUNT):
-            col_name = string(implot.GetStyleColorName(<implot.ImPlotCol>i))
-            self.name_to_index[col_name] = i
+        self.names = [
+            "Line",
+            "Fill",
+            "MarkerOutline",
+            "MarkerFill",
+            "ErrorBar",
+            "FrameBg",
+            "PlotBg",
+            "PlotBorder",
+            "LegendBg",
+            "LegendBorder",
+            "LegendText",
+            "TitleText",
+            "InlayText",
+            "AxisText",
+            "AxisGrid",
+            "AxisTick",
+            "AxisBg",
+            "AxisBgHovered",
+            "AxisBgActive",
+            "Selection",
+            "Crosshairs"
+        ]
 
-    def __dir__(self):
-        cdef list results = []
-        cdef int i
-        cdef str name
-        for i in range(implot.ImPlotCol_COUNT):
-            name = str(implot.GetStyleColorName(<implot.ImPlotCol>i), encoding='utf-8')
-            results.append(name)
-        return results + dir(baseTheme)
+    @property
+    def Line(self):
+        """Plot line color.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_Line)
 
-    def __getattr__(self, name):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef string name_str = bytes(name, 'utf-8')
-        cdef unordered_map[string, int].iterator element = self.name_to_index.find(name_str)
-        if element == self.name_to_index.end():
-            raise AttributeError("Color %s not found" % name)
-        cdef int color_index = dereference(element).second
-        cdef unordered_map[int, imgui.ImU32].iterator element_content = self.index_to_value.find(color_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImU32 value = dereference(element_content).second
-        return value
+    @Line.setter
+    def Line(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_Line, value)
 
-    def __getitem__(self, key):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
-        cdef int color_index
-        cdef unordered_map[int, imgui.ImU32].iterator element_content
-        cdef string name_str
-        if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Color %s not found" % key)
-            color_index = dereference(element).second
-        elif isinstance(key, int):
-            color_index = key
-            if color_index < 0 or color_index >= implot.ImPlotCol_COUNT:
-                raise KeyError("No color of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        element_content = self.index_to_value.find(color_index)
-        if element_content == self.index_to_value.end():
-            # None: default
-            return None
-        cdef imgui.ImU32 value = dereference(element_content).second
-        return value
+    @property
+    def Fill(self):
+        """Plot fill color.
+        Default: Auto - derived from Line color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_Fill)
 
-    def __setattr__(self, name, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef bint found
-        cdef string name_str
-        cdef unordered_map[string, int].iterator element
-        try:
-            name_str = bytes(name, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            found = element != self.name_to_index.end()
-        except Exception:
-            found = False
-        if not(found):
-            PyObject_GenericSetAttr(self, name, value)
-            return
-        cdef int color_index = dereference(element).second
-        if value is None:
-            self.index_to_value.erase(color_index)
-            return
-        cdef imgui.ImU32 color = parse_color(value)
-        self.index_to_value[color_index] = color
+    @Fill.setter
+    def Fill(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_Fill, value)
 
-    def __setitem__(self, key, value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[string, int].iterator element
-        cdef int color_index
-        cdef string name_str
-        if isinstance(key, str):
-            name_str = bytes(key, 'utf-8')
-            element = self.name_to_index.find(name_str)
-            if element == self.name_to_index.end():
-                raise KeyError("Color %s not found" % key)
-            color_index = dereference(element).second
-        elif isinstance(key, int):
-            color_index = key
-            if color_index < 0 or color_index >= implot.ImPlotCol_COUNT:
-                raise KeyError("No color of index %d" % key)
-        else:
-            raise TypeError("%s is an invalid index type" % str(type(key)))
-        if value is None:
-            self.index_to_value.erase(color_index)
-            return
-        cdef imgui.ImU32 color = parse_color(value)
-        self.index_to_value[color_index] = color
+    @property
+    def MarkerOutline(self):
+        """Plot marker outline color.
+        Default: Auto - derived from Line color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_MarkerOutline)
 
-    def __iter__(self):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        cdef list result = []
-        cdef pair[int, imgui.ImU32] element_content
-        cdef str name
-        for element_content in self.index_to_value:
-            name = str(implot.GetStyleColorName(<implot.ImPlotCol>element_content.first), encoding='utf-8')
-            result.append((name, int(element_content.second)))
-        return iter(result)
+    @MarkerOutline.setter
+    def MarkerOutline(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_MarkerOutline, value)
+
+    @property
+    def MarkerFill(self):
+        """Plot marker fill color.
+        Default: Auto - derived from Line color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_MarkerFill)
+
+    @MarkerFill.setter
+    def MarkerFill(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_MarkerFill, value)
+
+    @property
+    def ErrorBar(self):
+        """Error bar color.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_ErrorBar)
+
+    @ErrorBar.setter
+    def ErrorBar(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_ErrorBar, value)
+
+    @property
+    def FrameBg(self):
+        """Plot frame background color.
+        Default: Auto - derived from FrameBg color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_FrameBg)
+
+    @FrameBg.setter
+    def FrameBg(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_FrameBg, value)
+
+    @property
+    def PlotBg(self):
+        """Plot area background color.
+        Default: Auto - derived from WindowBg color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_PlotBg)
+
+    @PlotBg.setter
+    def PlotBg(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_PlotBg, value)
+
+    @property
+    def PlotBorder(self):
+        """Plot area border color.
+        Default: Auto - derived from Border color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_PlotBorder)
+
+    @PlotBorder.setter
+    def PlotBorder(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_PlotBorder, value)
+
+    @property
+    def LegendBg(self):
+        """Legend background color.
+        Default: Auto - derived from PopupBg color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_LegendBg)
+
+    @LegendBg.setter
+    def LegendBg(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_LegendBg, value)
+
+    @property
+    def LegendBorder(self):
+        """Legend border color.
+        Default: Auto - derived from Border color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_LegendBorder)
+
+    @LegendBorder.setter
+    def LegendBorder(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_LegendBorder, value)
+
+    @property
+    def LegendText(self):
+        """Legend text color.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_LegendText)
+
+    @LegendText.setter
+    def LegendText(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_LegendText, value)
+
+    @property
+    def TitleText(self):
+        """Plot title text color.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_TitleText)
+
+    @TitleText.setter
+    def TitleText(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_TitleText, value)
+
+    @property
+    def InlayText(self):
+        """Color of text appearing inside of plots.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_InlayText)
+
+    @InlayText.setter
+    def InlayText(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_InlayText, value)
+
+    @property
+    def AxisText(self):
+        """Axis text labels color.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_AxisText)
+
+    @AxisText.setter
+    def AxisText(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_AxisText, value)
+
+    @property
+    def AxisGrid(self):
+        """Axis grid color.
+        Default: Auto - derived from Text color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_AxisGrid)
+
+    @AxisGrid.setter
+    def AxisGrid(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_AxisGrid, value)
+
+    @property
+    def AxisTick(self):
+        """Axis tick marks color.
+        Default: Auto - derived from AxisGrid color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_AxisTick)
+
+    @AxisTick.setter
+    def AxisTick(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_AxisTick, value)
+
+    @property
+    def AxisBg(self):
+        """Background color of axis hover region.
+        Default: transparent"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_AxisBg)
+
+    @AxisBg.setter
+    def AxisBg(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_AxisBg, value)
+
+    @property
+    def AxisBgHovered(self):
+        """Axis background color when hovered.
+        Default: Auto - derived from ButtonHovered color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_AxisBgHovered)
+
+    @AxisBgHovered.setter
+    def AxisBgHovered(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_AxisBgHovered, value)
+
+    @property
+    def AxisBgActive(self):
+        """Axis background color when clicked.
+        Default: Auto - derived from ButtonActive color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_AxisBgActive)
+
+    @AxisBgActive.setter
+    def AxisBgActive(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_AxisBgActive, value)
+
+    @property
+    def Selection(self):
+        """Box-selection color.
+        Default: (1.00, 1.00, 0.00, 1.00)"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_Selection)
+
+    @Selection.setter
+    def Selection(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_Selection, value)
+
+    @property
+    def Crosshairs(self):
+        """Crosshairs color.
+        Default: Auto - derived from PlotBorder color"""
+        return baseThemeColor.__common_getter(self, implot.ImPlotCol_Crosshairs)
+
+    @Crosshairs.setter
+    def Crosshairs(self, value):
+        baseThemeColor.__common_setter(self, implot.ImPlotCol_Crosshairs, value)
 
     cdef void push(self) noexcept nogil:
         self.mutex.lock()
@@ -438,39 +1174,40 @@ cdef class ThemeColorImPlot(baseTheme):
             implot.PopStyleColor(count)
         self.mutex.unlock()
 
+'''
 @cython.no_gc_clear
-cdef class ThemeColorImNodes(baseTheme):
+cdef class ThemeColorImNodes(baseThemeColor):
     def __cinit__(self):
         self.names = [
-            b"NodeBackground",
-            b"NodeBackgroundHovered",
-            b"NodeBackgroundSelected",
-            b"NodeOutline",
-            b"TitleBar",
-            b"TitleBarHovered",
-            b"TitleBarSelected",
-            b"Link",
-            b"LinkHovered",
-            b"LinkSelected",
-            b"Pin",
-            b"PinHovered",
-            b"BoxSelector",
-            b"BoxSelectorOutline",
-            b"GridBackground",
-            b"GridLine",
-            b"GridLinePrimary",
-            b"MiniMapBackground",
-            b"MiniMapBackgroundHovered",
-            b"MiniMapOutline",
-            b"MiniMapOutlineHovered",
-            b"MiniMapNodeBackground",
-            b"MiniMapNodeBackgroundHovered",
-            b"MiniMapNodeBackgroundSelected",
-            b"MiniMapNodeOutline",
-            b"MiniMapLink",
-            b"MiniMapLinkSelected",
-            b"MiniMapCanvas",
-            b"MiniMapCanvasOutline"
+            "NodeBackground",
+            "NodeBackgroundHovered",
+            "NodeBackgroundSelected",
+            "NodeOutline",
+            "TitleBar",
+            "TitleBarHovered",
+            "TitleBarSelected",
+            "Link",
+            "LinkHovered",
+            "LinkSelected",
+            "Pin",
+            "PinHovered",
+            "BoxSelector",
+            "BoxSelectorOutline",
+            "GridBackground",
+            "GridLine",
+            "GridLinePrimary",
+            "MiniMapBackground",
+            "MiniMapBackgroundHovered",
+            "MiniMapOutline",
+            "MiniMapOutlineHovered",
+            "MiniMapNodeBackground",
+            "MiniMapNodeBackgroundHovered",
+            "MiniMapNodeBackgroundSelected",
+            "MiniMapNodeOutline",
+            "MiniMapLink",
+            "MiniMapLinkSelected",
+            "MiniMapCanvas",
+            "MiniMapCanvasOutline"
         ]
         cdef int i
         cdef string name_str
@@ -614,7 +1351,7 @@ cdef class ThemeColorImNodes(baseTheme):
             for i in range(count):
                 imnodes.PopColorStyle()
         self.mutex.unlock()
-
+'''
 
 cdef class baseThemeStyle(baseTheme):
     def __cinit__(self):

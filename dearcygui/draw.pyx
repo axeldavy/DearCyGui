@@ -30,6 +30,15 @@ import scipy.spatial
 
 
 cdef class ViewportDrawList(drawingItem):
+    """
+    A drawing item that renders its children on the viewport's background or foreground.
+
+    This is typically used to draw items that should always be visible,
+    regardless of the current window or plot being displayed.
+
+    Attributes:
+        front (bool): When True, renders drawings in front of all items. When False, renders behind.
+    """
     def __cinit__(self):
         self.element_child_category = child_type.cat_viewport_drawlist
         self.can_have_drawing_child = True
@@ -429,6 +438,18 @@ Draw items
 """
 
 cdef class DrawArrow(drawingItem):
+    """
+    Draws an arrow in coordinate space.
+
+    The arrow consists of a line with a triangle at one end.
+
+    Attributes:
+        p1 (tuple): End point coordinates (x, y) 
+        p2 (tuple): Start point coordinates (x, y)
+        color (list): RGBA color of the arrow
+        thickness (float): Line thickness
+        size (float): Size of the arrow head
+    """
     def __cinit__(self):
         # p1, p2, etc are zero init by cython
         self._color = 4294967295 # 0xffffffff
@@ -551,6 +572,20 @@ cdef class DrawArrow(drawingItem):
 
 
 cdef class DrawBezierCubic(drawingItem):
+    """
+    Draws a cubic Bezier curve in coordinate space.
+
+    The curve is defined by four control points.
+
+    Attributes:
+        p1 (tuple): First control point coordinates (x, y)
+        p2 (tuple): Second control point coordinates (x, y)
+        p3 (tuple): Third control point coordinates (x, y)
+        p4 (tuple): Fourth control point coordinates (x, y)
+        color (list): RGBA color of the curve
+        thickness (float): Line thickness
+        segments (int): Number of line segments used to approximate the curve
+    """
     def __cinit__(self):
         # p1, etc are zero init by cython
         self._color = 4294967295 # 0xffffffff
@@ -657,6 +692,19 @@ cdef class DrawBezierCubic(drawingItem):
         drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self._color, self._thickness, self._segments)
 
 cdef class DrawBezierQuadratic(drawingItem):
+    """
+    Draws a quadratic Bezier curve in coordinate space.
+
+    The curve is defined by three control points.
+
+    Attributes:
+        p1 (tuple): First control point coordinates (x, y)
+        p2 (tuple): Second control point coordinates (x, y)
+        p3 (tuple): Third control point coordinates (x, y)
+        color (list): RGBA color of the curve
+        thickness (float): Line thickness
+        segments (int): Number of line segments used to approximate the curve
+    """
     def __cinit__(self):
         # p1, etc are zero init by cython
         self._color = 4294967295 # 0xffffffff
@@ -750,6 +798,19 @@ cdef class DrawBezierQuadratic(drawingItem):
         drawlist.AddBezierQuadratic(ip1, ip2, ip3, self._color, self._thickness, self._segments)
 
 cdef class DrawCircle(drawingItem):
+    """
+    Draws a circle in coordinate space.
+
+    The circle can be filled and/or outlined.
+
+    Attributes:
+        center (tuple): Center coordinates (x, y)
+        radius (float): Circle radius
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+        segments (int): Number of segments used to approximate the circle
+    """
     def __cinit__(self):
         # center is zero init by cython
         self._color = 4294967295 # 0xffffffff
@@ -850,6 +911,19 @@ cdef class DrawCircle(drawingItem):
 
 
 cdef class DrawEllipse(drawingItem):
+    """
+    Draws an ellipse in coordinate space.
+
+    The ellipse is defined by its bounding box and can be filled and/or outlined.
+
+    Attributes:
+        pmin (tuple): Top-left corner coordinates (x, y)
+        pmax (tuple): Bottom-right corner coordinates (x, y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+        segments (int): Number of segments used to approximate the ellipse
+    """
     # TODO: I adapted the original code,
     # But these deserves rewrite: call the imgui Ellipse functions instead
     # and add rotation parameter
@@ -1527,6 +1601,18 @@ cdef class DrawLine(drawingItem):
         drawlist.AddLine(ip1, ip2, self._color, thickness)
 
 cdef class DrawPolyline(drawingItem):
+    """
+    Draws a sequence of connected line segments in coordinate space.
+
+    The line segments connect consecutive points in the given sequence.
+    Can optionally be closed to form a complete loop.
+
+    Attributes:
+        points (list): List of (x,y) coordinates defining the vertices
+        color (list): RGBA color of the lines
+        thickness (float): Line thickness
+        closed (bool): Whether to connect the last point back to the first
+    """
     def __cinit__(self):
         # points is empty init by cython
         self._color = 4294967295 # 0xffffffff
@@ -1625,6 +1711,19 @@ cdef inline bint is_counter_clockwise(imgui.ImVec2 p1,
 
 
 cdef class DrawPolygon(drawingItem):
+    """
+    Draws a filled polygon in coordinate space.
+
+    The polygon is defined by a sequence of points that form its vertices.
+    Can be filled and/or outlined. Non-convex polygons are automatically
+    triangulated for proper filling.
+
+    Attributes:
+        points (list): List of (x,y) coordinates defining the vertices 
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+    """
     def __cinit__(self):
         # points is empty init by cython
         self._color = 4294967295 # 0xffffffff
@@ -1755,6 +1854,21 @@ cdef class DrawPolygon(drawingItem):
             drawlist.AddLine(ipoints[0], ipoints[<int>self._points.size()-1], self._color, thickness)
 
 cdef class DrawQuad(drawingItem):
+    """
+    Draws a quadrilateral in coordinate space.
+
+    The quad is defined by four corner points in clockwise order.
+    Can be filled and/or outlined.
+
+    Attributes:
+        p1 (tuple): First corner coordinates (x,y)
+        p2 (tuple): Second corner coordinates (x,y)
+        p3 (tuple): Third corner coordinates (x,y) 
+        p4 (tuple): Fourth corner coordinates (x,y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+    """
     def __cinit__(self):
         # p1, p2, p3, p4 are zero init by cython
         self._color = 4294967295 # 0xffffffff
@@ -1890,6 +2004,22 @@ cdef class DrawQuad(drawingItem):
         drawlist.AddLine(ip4, ip1, self._color, thickness)
 
 cdef class DrawRect(drawingItem):
+    """
+    Draws a rectangle in coordinate space.
+
+    The rectangle is defined by its min/max corners.
+    Can be filled with a solid color, a color gradient, and/or outlined.
+    Corners can be rounded.
+
+    Attributes:
+        pmin (tuple): Top-left corner coordinates (x,y)
+        pmax (tuple): Bottom-right corner coordinates (x,y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color for solid fill
+        fill_p1/p2/p3/p4 (list): RGBA colors for gradient fill at each corner
+        thickness (float): Outline thickness
+        rounding (float): Radius of rounded corners
+    """
     def __cinit__(self):
         self._pmin = [0., 0.]
         self._pmax = [1., 1.]
@@ -2513,6 +2643,19 @@ cdef class DrawStar(drawingItem):
         drawlist.AddLine(ipoints[num_points-1], inner_ipoints[0], self._color, thickness)
 
 cdef class DrawText(drawingItem):
+    """
+    Draws text in coordinate space.
+
+    The text is positioned at a specific point and can use a custom font and size.
+    The size can be specified in coordinate space (positive values) or screen space (negative values).
+
+    Attributes:
+        pos (tuple): Position coordinates (x,y) of the text
+        text (str): The text string to display
+        color (list): RGBA color of the text
+        font (Font): Optional custom font to use
+        size (float): Text size. Negative means screen space units.
+    """
     def __cinit__(self):
         self._color = 4294967295 # 0xffffffff
         self._size = 0. # 0: default size. DearPyGui uses 1. internally, then 10. in the wrapper.
@@ -2599,6 +2742,20 @@ cdef class DrawText(drawingItem):
 
 
 cdef class DrawTriangle(drawingItem):
+    """
+    Draws a triangle in coordinate space.
+
+    The triangle is defined by three points.
+    Can be filled and/or outlined.
+
+    Attributes:
+        p1 (tuple): First vertex coordinates (x,y)
+        p2 (tuple): Second vertex coordinates (x,y)
+        p3 (tuple): Third vertex coordinates (x,y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness 
+    """
     def __cinit__(self):
         # p1, p2, p3 are zero init by cython
         self._color = 4294967295 # 0xffffffff

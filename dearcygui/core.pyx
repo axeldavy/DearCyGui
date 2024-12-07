@@ -101,37 +101,83 @@ C : Context = None
 # and vice-versa
 
 cdef class Context:
-    """
-    Main class managing the DearCyGui items and imgui context.
-    There is exactly one viewport per context.
-    The last created context can be accessed as dearcygui.C.
+    """Main class managing the DearCyGui items and imgui context.
 
-    Attributes:
-    - queue: Executor for managing threads.
-    - item_creation_callback: Callback for item creation.
-    - item_unused_configure_args_callback: Callback for unused configure arguments.
-    - item_deletion_callback: Callback for item deletion.
-    - viewport: Root item from where rendering starts.
-    - running: Boolean indicating if the context is running.
-    - clipboard: Content of the clipboard.
+    The Context class serves as the central manager for the DearCyGui application, handling:
+    - GUI rendering and event processing
+    - Item creation and lifecycle management
+    - Thread-safe callback execution
+    - Global viewport management
+    - ImGui/ImPlot/ImNodes context management
+
+    There is exactly one viewport per context. The last created context can be accessed 
+    as dearcygui.C.
+
+    Attributes
+    ----------
+    queue : Executor
+        Executor for managing thread-pooled callbacks. Defaults to ThreadPoolExecutor with max_workers=1.
+    
+    item_creation_callback : callable, optional
+        Callback function called when any new item is created, before configuration.
+        Signature: func(item)
+    
+    item_unused_configure_args_callback : callable, optional  
+        Callback function called when unused configuration arguments are found.
+        Signature: func(item, unused_args_dict)
+    
+    item_deletion_callback : callable, optional
+        Callback function called when any item is deleted.
+        Signature: func(item)
+        Note: May not be called if item is garbage collected without holding context reference.
+
+    viewport : Viewport
+        Root item from where rendering starts. Read-only attribute.
+
+    running : bool
+        Whether the context is currently running and processing frames.
+        
+    clipboard : str
+        Content of the system clipboard. Can be read/written.
+
+    Implementation Notes
+    -------------------
+    - Thread safety is achieved through recursive mutexes on items and ImGui context
+    - Callbacks are executed in a separate thread pool to prevent blocking the render loop
+    - References between items form a tree structure with viewport as root
+    - ImGui/ImPlot/ImNodes contexts are managed to support multiple contexts
     """
+
     def __init__(self,
-                 queue=None,
+                 queue=None, 
                  item_creation_callback=None,
                  item_unused_configure_args_callback=None,
                  item_deletion_callback=None):
-        """
-        Initialize the Context.
+        """Initialize the Context.
 
-        Parameters:
-        queue : Executor, optional
-            Executor for managing threads. Defaults to ThreadPoolExecutor with max_workers=1.
+        Parameters
+        ----------
+        queue : concurrent.futures.Executor, optional
+            Executor for managing thread-pooled callbacks. 
+            Defaults to ThreadPoolExecutor(max_workers=1)
+            
         item_creation_callback : callable, optional
-            Callback for item creation.
-        item_unused_configure_args_callback : callable, optional
-            Callback for unused configure arguments.
+            Function called during item creation before configuration.
+            Signature: func(item)
+
+        item_unused_configure_args_callback : callable, optional  
+            Function called when configure() has unused arguments.
+            Signature: func(item, unused_args_dict)
+
         item_deletion_callback : callable, optional
-            Callback for item deletion.
+            Function called during item deletion.
+            Signature: func(item)
+            Note: May not be called if item is garbage collected without context reference.
+        
+        Raises
+        ------
+        TypeError
+            If queue is provided but is not a subclass of concurrent.futures.Executor
         """
         global C
         self.on_close_callback = None
@@ -877,8 +923,15 @@ cdef class Context:
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.ResetMouseDragDelta(<int>button)
 
-    @property
+    @property 
     def running(self):
+        """Whether the context is currently running and processing frames.
+        
+        Returns
+        -------
+        bool
+            True if the context is running, False otherwise.
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self.started
@@ -891,7 +944,16 @@ cdef class Context:
 
     @property
     def clipboard(self):
-        """Writable attribute: content of the clipboard"""
+        """Content of the system clipboard.
+
+        The clipboard can be read and written to interact with the system clipboard.
+        Reading returns an empty string if the viewport is not yet initialized.
+
+        Returns
+        -------
+        str
+            Current content of the system clipboard
+        """
         cdef unique_lock[recursive_mutex] m
         if not(self._viewport.initialized):
             return ""
@@ -911,63 +973,47 @@ cdef class Context:
 
 
 cdef class baseItem:
+    """Base class for all items (except shared values).
+
+    To be rendered, an item must be in the child tree of the viewport (context.viewport).
+
+    Parent-Child Relationships:
+    -------------------------
+    The parent of an item can be set in several ways:
+    1. Using the parent attribute: `item.parent = target_item`
+    2. Passing `parent=target_item` during item creation 
+    3. Using the context manager ('with' statement) - if no parent is explicitly set, the last item in the 'with' block becomes the parent
+    4. Setting previous_sibling or next_sibling attributes to insert the item between existing siblings
+
+    Tree Structure:
+    --------------
+    - Items are rendered in order from first child to last child
+    - New items are inserted last by default unless previous_sibling/next_sibling is used
+    - Items can be manually detached by setting parent = None
+    - Most items have restrictions on what parents/children they can have
+    - Some items can have multiple incompatible child lists that are concatenated when reading item.children
+
+    Special Cases:
+    -------------
+    Some items cannot be children in the rendering tree:
+    - PlaceHolderParent: Can be parent to any item but cannot be in rendering tree
+    - Textures, themes, colormaps and fonts: Cannot be children but can be bound to items
+
+    Attributes:
+        context (Context): The context this item belongs to
+        user_data (Any): Custom user data that can be attached to the item
+        uuid (int): Unique identifier for this item
+        parent (baseItem): Parent item in the rendering tree
+        previous_sibling (baseItem): Previous sibling in parent's child list
+        next_sibling (baseItem): Next sibling in parent's child list
+        children (List[baseItem]): List of child items in rendering order
+        children_types (ChildType): Bitmask of allowed child types
+        item_type (ChildType): Type of this item as a child
+
+    The parent, previous_sibling and next_sibling relationships form a doubly-linked tree structure that determines rendering order and hierarchy.
+    The children attribute provides access to all child items.
     """
-    Base class for all items (except shared values)
 
-    To be rendered, an item must be in the child tree
-    of the viewport (context.viewport).
-
-    The parent of an item can be set with various ways:
-    1) Using the parent attribute. item.parent = target_item
-    2) Passing (parent=target_item) during item creation
-    3) If the context manager is not empty ('with' on an item),
-       and no parent is set (parent = None passed or nothing),
-       the last item in 'with' is taken as parent. The context
-       manager can be managed directly with context.push_next_parent()
-       and context.pop_next_parent()
-    4) if you set the previous_sibling or next_sibling attribute,
-       the item will be inserted respectively after and before the
-       respective items in the parent item children list. For legacy
-       support, the 'before=target_item' attribute can be used during item creation,
-       and is equivalent to item.next_sibling = target_item
-
-    parent, previous_sibling and next_sibling are baseItem attributes
-    and can be read at any time.
-    It is possible to get the list of children of an item as well
-    with the 'children' attribute: item.children.
-
-    During rendering the children of each item are rendered in
-    order from the first one to the last one.
-    When an item is attached to a parent, it is by default inserted
-    last, unless previous_sibling or next_sibling is used.
-
-    previous_sibling and next_sibling enable to insert an item
-    between elements.
-
-    When parent, previous_sibling or next_sibling are set, the item
-    is detached from any parent or sibling it had previously.
-
-    An item can be manually detached from a parent
-    by setting parent = None.
-
-    Most items have restrictions for the parents and children it can
-    have. In addition some items can have several children lists
-    of incompatible types. These children list will be concatenated
-    when reading item.children. In a given list are items of a similar
-    type.
-
-    Finally some items cannot be children of any item in the rendering
-    tree. One such item is PlaceHolderParent, which can be parent
-    of any item which can have a parent. PlaceHolderParent cannot
-    be inserted in the rendering tree, but can be used to store items
-    before their insertion in the rendering tree.
-    Other such items are textures, themes, colormaps and fonts. Those
-    items cannot be made children of items of the rendering tree, but
-    can be bound to them. For example item.theme = theme_item will
-    bind theme_item to item. It is possible to bind such an item to
-    several items, and as long as one item reference them, they will
-    not be deleted by the garbage collector.
-    """
     def __init__(self, context, *args, **kwargs):
         if self.context._item_creation_callback is not None:
             self.context._item_creation_callback(self)
@@ -3575,43 +3621,68 @@ cdef class baseHandler(baseItem):
 
 
 cdef class uiItem(baseItem):
-    """
-    Base class for UI items with various properties and states.
+    """Base class for UI items with various properties and states.
 
-    Attributes:
-    - active: Boolean indicating if the item is active.
-    - activated: Boolean indicating if the item has just turned active.
-    - clicked: Boolean indicating if the item has just been clicked.
-    - double_clicked: Boolean indicating if the item has just been double-clicked.
-    - deactivated: Boolean indicating if the item has just turned un-active.
-    - deactivated_after_edited: Boolean indicating if the item has just turned un-active after being edited.
-    - edited: Boolean indicating if the item has just been edited.
-    - focused: Boolean indicating if the item is focused.
-    - hovered: Boolean indicating if the mouse is inside the region of the item.
-    - resized: Boolean indicating if the item size has just changed.
-    - toggled: Boolean indicating if a menu/bar trigger has been hit for the item.
-    - visible: Boolean indicating if the item was rendered.
-    - callbacks: List of callback objects for the item.
-    - enabled: Boolean indicating if the item should be displayed as enabled.
-    - font: Font used for the text rendered of this item and its subitems.
-    - label: Label assigned to the item.
-    - value: Main internal value for the item.
-    - shareable_value: Shareable value of the item.
-    - show: Boolean indicating if the item should be drawn/shown.
-    - handlers: List of bound handlers for the item.
-    - theme: Theme for the item.
-    - no_scaling: Boolean indicating if scaling should be disabled for the item.
-    - pos_to_viewport: Position of the item relative to the viewport.
-    - pos_to_window: Position of the item relative to the window.
-    - pos_to_parent: Position of the item relative to the parent.
-    - pos_to_default: Default position of the item.
-    - rect_size: Size of the item rectangle.
-    - content_region_avail: Available content region for the item.
-    - pos_policy: Positioning policy for the item.
-    - height: Height of the item.
-    - width: Width of the item.
-    - indent: Indentation of the item.
-    - no_newline: Boolean indicating if newline should be disabled for the item.
+    Core class for items that can be interacted with and displayed in the UI. Handles positioning,
+    state tracking, themes, callbacks, and layout management.
+
+    State Properties:
+    ---------------
+    - active: Whether the item is currently active (pressed, selected, etc.)
+    - activated: Whether the item just became active this frame  
+    - clicked: Whether any mouse button was clicked on the item
+    - double_clicked: Whether any mouse button was double-clicked
+    - deactivated: Whether the item just became inactive
+    - deactivated_after_edited: Whether the item was edited and then deactivated
+    - edited: Whether the item's value was modified
+    - focused: Whether the item has keyboard focus
+    - hovered: Whether the mouse is over the item
+    - resized: Whether the item's size changed
+    - toggled: Whether a menu/tree node was opened/closed
+    - visible: Whether the item is currently rendered
+
+    Appearance Properties:
+    -------------------
+    - enabled: Whether the item is interactive or greyed out
+    - font: Font used for text rendering
+    - theme: Visual theme/style settings
+    - show: Whether the item should be drawn
+    - no_scaling: Disable DPI/viewport scaling
+    
+    Layout Properties:
+    ----------------
+    - pos_to_viewport: Position relative to viewport top-left
+    - pos_to_window: Position relative to containing window 
+    - pos_to_parent: Position relative to parent item
+    - pos_to_default: Position relative to default layout flow
+    - rect_size: Current size in pixels including padding
+    - content_region_avail: Available content area within item for children
+    - pos_policy: How the item should be positioned
+    - height/width: Requested size of the item
+    - indent: Left indentation amount
+    - no_newline: Don't advance position after item
+
+    Value Properties:
+    ---------------
+    - value: Main value stored by the item 
+    - shareable_value: Allows sharing values between items
+    - label: Text label shown with the item
+
+    Event Properties:  
+    ---------------
+    - handlers: Event handlers attached to the item
+    - callbacks: Functions called when value changes
+
+    Positioning Rules:
+    ----------------
+    Items use a combination of absolute and relative positioning:
+    - Default flow places items vertically with automatic width
+    - pos_policy controls how position attributes are enforced
+    - Positions can be relative to viewport, window, parent or flow
+    - Size can be fixed, automatic, or stretch to fill space
+    - indent and no_newline provide fine-grained layout control
+
+    All attributes are protected by mutexes to enable thread-safe access.
     """
     def __cinit__(self):
         # mvAppItemInfo

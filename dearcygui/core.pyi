@@ -2087,7 +2087,7 @@ class Button(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -2459,14 +2459,13 @@ class Button(uiItem):
 
 class Callback(object):
     """
-    Wrapper class that automatically encapsulate
-    callbacks.
+    Wrapper class that automatically encapsulate callbacks.
 
     Callbacks in DCG mode can take up to 3 arguments:
-    . source_item: the item to which the callback was attached
-    . target_item: the item for which the callback was raised.
+    - source_item: the item to which the callback was attached
+    - target_item: the item for which the callback was raised.
         Is only different to source_item for handlers' callback.
-    . call_info: If applicable information about the call (key button, etc)
+    - call_info: If applicable information about the call (key button, etc)
     
     """
     def __init__(self, callback : DCGCallable):
@@ -3222,7 +3221,7 @@ class Checkbox(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -3564,6 +3563,58 @@ class Checkbox(uiItem):
 
 
 class ChildWindow(uiItem):
+    """
+A child window container that enables hierarchical UI layout.
+
+    A child window creates a scrollable/clippable region within a parent window that can contain any UI elements 
+    and apply its own visual styling.
+
+    Key Features:
+    - Independent scrolling/clipping region 
+    - Optional borders and background
+    - Can contain most UI elements including other child windows
+    - Automatic size fitting to content or parent
+    - Optional scrollbars (vertical & horizontal)
+    - Optional menu bar
+    - DPI-aware scaling
+
+    Properties:
+    -----------
+    always_show_vertical_scrollvar : bool
+        Always show vertical scrollbar even when content fits. Default is False.
+
+    always_show_horizontal_scrollvar : bool
+        Always show horizontal scrollbar when enabled. Default is False. 
+
+    no_scrollbar : bool
+        Hide scrollbars but still allow scrolling with mouse/keyboard. Default is False.
+
+    no_scroll_with_mouse : bool
+        If set, mouse wheel scrolls parent instead of this child (unless no_scrollbar is set). Default is False.
+
+    horizontal_scrollbar : bool
+        Enable horizontal scrollbar. Default is False.
+
+    menubar : bool 
+        Enable menu bar at top of window. Default is False.
+
+    border : bool
+        Show window border and enable padding. Default is True.
+
+    flattened_navigation: bool
+        Share focus scope and allow keyboard/gamepad navigation to cross between parent and child.
+        Default is True.
+
+    Notes:
+    ------
+    - Child windows provide independent scrolling regions within a parent window
+    - Content is automatically clipped to the visible region
+    - Content size can be fixed or dynamic based on settings
+    - Can enable borders and backgrounds independently
+    - Keyboard focus and navigation can be customized
+    - Menu bar support allows structured layouts
+    
+    """
     def __init__(self, context : Context, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, attach : Any = ..., auto_resize_x : bool = False, auto_resize_y : bool = False, before : Any = ..., border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
@@ -4590,7 +4641,7 @@ class ChildWindow(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -6631,7 +6682,7 @@ class CollapsingHeader(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -7826,7 +7877,7 @@ class ColorButton(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -9074,7 +9125,7 @@ class ColorEdit(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -10290,7 +10341,7 @@ class ColorPicker(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -11544,7 +11595,7 @@ class Combo(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -11898,21 +11949,23 @@ class Combo(uiItem):
 
 class ConditionalHandler(baseHandler):
     """
-    A handler that runs the handler of his FIRST handler
-    child if the other ones have their condition checked.
-    The other handlers are not run. Just their condition
-    is checked.
+    A handler that runs the FIRST handler child if all other handler children conditions are met.
 
-    For example this is useful to combine conditions. For example
-    detecting clicks when a key is pressed. The interest
-    of using this handler, rather than handling it yourself, is
-    that if the callback queue is laggy the condition might not
-    hold true anymore by the time you process the handler.
-    In this case this handler enables to test right away
-    the intended conditions.
+    Unlike HandlerList, this handler:
+    1. Only executes the first handler when conditions are met
+    2. Uses other handlers only for condition checking (their callbacks are not called)
 
-    Note that handlers that get their condition checked do
-    not call their callbacks.
+    One interest of this handler is to tests conditions immediately, rather than in a callback,
+    avoiding timing issues with callback queues
+
+    Useful for combining conditions, such as detecting clicks when specific keys are pressed.
+
+    Skipping heavy CustomHandlers:
+        One use case is to skip expensive run() calls from CustomHandlers.
+
+    Note:
+        Only the first handler's callback is executed when all conditions are met.
+        Other handlers are used purely for their state conditions.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
@@ -12291,17 +12344,446 @@ class ConditionalHandler(baseHandler):
         ...
 
 
+class ContentResizeHandler(baseHandler):
+    """
+    Handler for item containers (windows, etc)
+    that triggers the callback
+    whenever the item's content region box (the
+    area available to the children) changes size.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> ContentResizeHandler:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callback(self) -> DCGCallable | None:
+        ...
+
+
+    @callback.setter
+    def callback(self, value : DCGCallable | None):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseTheme | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseTheme | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class Context(object):
     """
-    Main class managing the DearCyGui items and imgui context.
-    There is exactly one viewport per context.
+Main class managing the DearCyGui items and imgui context.
 
-    The last created context can be accessed as deacygui.C
+    The Context class serves as the central manager for the DearCyGui application, handling:
+    - GUI rendering and event processing
+    - Item creation and lifecycle management
+    - Thread-safe callback execution
+    - Global viewport management
+    - ImGui/ImPlot/ImNodes context management
+
+    There is exactly one viewport per context. The last created context can be accessed 
+    as dearcygui.C.
+
+    Attributes
+    ----------
+    queue : Executor
+        Executor for managing thread-pooled callbacks. Defaults to ThreadPoolExecutor with max_workers=1.
+    
+    item_creation_callback : callable, optional
+        Callback function called when any new item is created, before configuration.
+        Signature: func(item)
+    
+    item_unused_configure_args_callback : callable, optional  
+        Callback function called when unused configuration arguments are found.
+        Signature: func(item, unused_args_dict)
+    
+    item_deletion_callback : callable, optional
+        Callback function called when any item is deleted.
+        Signature: func(item)
+        Note: May not be called if item is garbage collected without holding context reference.
+
+    viewport : Viewport
+        Root item from where rendering starts. Read-only attribute.
+
+    running : bool
+        Whether the context is currently running and processing frames.
+        
+    clipboard : str
+        Content of the system clipboard. Can be read/written.
+
+    Implementation Notes
+    -------------------
+    - Thread safety is achieved through recursive mutexes on items and ImGui context
+    - Callbacks are executed in a separate thread pool to prevent blocking the render loop
+    - References between items form a tree structure with viewport as root
+    - ImGui/ImPlot/ImNodes contexts are managed to support multiple contexts
     
     """
     def fetch_parent_queue_back(self):
         """
-        Retrieve the last item from the potential parent list
+        Retrieve the last item from the potential parent list.
+
+        Returns:
+        object
+            The last item from the potential parent list.
         
         """
         ...
@@ -12309,7 +12791,11 @@ class Context(object):
 
     def fetch_parent_queue_front(self):
         """
-        Retrieve the top item from the potential parent list
+        Retrieve the top item from the potential parent list.
+
+        Returns:
+        object
+            The top item from the potential parent list.
         
         """
         ...
@@ -12317,7 +12803,16 @@ class Context(object):
 
     def get_mouse_clicked_count(self, button):
         """
-how many times a mouse button is clicked in a row
+        Get the number of times a mouse button is clicked in a row.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        int
+            Number of times the mouse button is clicked in a row.
+        
         """
         ...
 
@@ -12325,29 +12820,50 @@ how many times a mouse button is clicked in a row
     def get_mouse_drag_delta(self, button, lock_threshold=-1.0):
         """
         Return the delta (dx, dy) from the initial clicking position while the mouse button is pressed or was just released.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        lock_threshold : float, optional
+            Distance threshold for locking the drag. Uses default distance if lock_threshold < 0.0f. Defaults to -1.
+
+        Returns:
+        tuple
+            Tuple containing the drag delta (dx, dy).
         
-        This is locked and return 0.0f until the mouse moves past a distance threshold at least once
-        (uses default distance if lock_threshold < 0.0f)
         """
         ...
 
 
     def get_mouse_position(self):
         """
-Retrieves the mouse position (x, y). Raises KeyError if there is no mouse
+        Retrieve the mouse position (x, y).
+
+        Returns:
+        tuple
+            Tuple containing the mouse position (x, y).
+
+        Raises:
+        KeyError
+            If there is no mouse.
+        
         """
         ...
 
 
     def is_key_down(self, key: 'Key', keymod: 'KeyMod' = None):
         """
-        Is key being held.
+        Check if a key is being held down.
 
-        key is a key constant (see constants)
-        keymod is a mask if keymod constants (ctrl, shift, alt, super)
-        if keymod is None, ignores any key modifiers.
-        Else returns True only if the modifiers
-        correspond as well as the key.
+        Parameters:
+        key : Key
+            Key constant.
+        keymod : KeyMod, optional
+            Key modifier mask (ctrl, shift, alt, super). If None, ignores any key modifiers.
+
+        Returns:
+        bool
+            True if the key is down, False otherwise.
         
         """
         ...
@@ -12355,13 +12871,19 @@ Retrieves the mouse position (x, y). Raises KeyError if there is no mouse
 
     def is_key_pressed(self, key: 'Key', keymod: 'KeyMod' = None, repeat=True):
         """
-        Was key pressed (went from !Down to Down)?
+        Check if a key was pressed (went from !Down to Down).
 
-        if repeat=true, the pressed state is repeated
-        if the user continue pressing the key.
-        If keymod is not None, returns True only if the modifiers
-        correspond as well as the key.
+        Parameters:
+        key : Key
+            Key constant.
+        keymod : KeyMod, optional
+            Key modifier mask (ctrl, shift, alt, super). If None, ignores any key modifiers.
+        repeat : bool, optional
+            If True, the pressed state is repeated if the user continues pressing the key. Defaults to True.
 
+        Returns:
+        bool
+            True if the key was pressed, False otherwise.
         
         """
         ...
@@ -12369,10 +12891,17 @@ Retrieves the mouse position (x, y). Raises KeyError if there is no mouse
 
     def is_key_released(self, key: 'Key', keymod: 'KeyMod' = None):
         """
-        Was key released (went from Down to !Down)?
+        Check if a key was released (went from Down to !Down).
 
-        If keymod is not None, returns True also if the
-        required modifiers are not pressed.
+        Parameters:
+        key : Key
+            Key constant.
+        keymod : KeyMod, optional
+            Key modifier mask (ctrl, shift, alt, super). If None, ignores any key modifiers.
+
+        Returns:
+        bool
+            True if the key was released, False otherwise.
         
         """
         ...
@@ -12380,35 +12909,84 @@ Retrieves the mouse position (x, y). Raises KeyError if there is no mouse
 
     def is_mouse_clicked(self, button, repeat=False):
         """
-did mouse button clicked? (went from !Down to Down). Same as get_mouse_clicked_count() >= 1.
+        Check if a mouse button was clicked (went from !Down to Down).
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        repeat : bool, optional
+            If True, the clicked state is repeated if the user continues pressing the button. Defaults to False.
+
+        Returns:
+        bool
+            True if the mouse button was clicked, False otherwise.
+        
         """
         ...
 
 
     def is_mouse_double_clicked(self, button):
         """
-did mouse button double-clicked?. Same as get_mouse_clicked_count() == 2.
+        Check if a mouse button was double-clicked.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        bool
+            True if the mouse button was double-clicked, False otherwise.
+        
         """
         ...
 
 
     def is_mouse_down(self, button):
         """
-is mouse button held?
+        Check if a mouse button is held down.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        bool
+            True if the mouse button is down, False otherwise.
+        
         """
         ...
 
 
     def is_mouse_dragging(self, button, lock_threshold=-1.0):
         """
-is mouse dragging? (uses default distance threshold if lock_threshold < 0.0f
+        Check if the mouse is dragging.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        lock_threshold : float, optional
+            Distance threshold for locking the drag. Uses default distance if lock_threshold < 0.0f. Defaults to -1.
+
+        Returns:
+        bool
+            True if the mouse is dragging, False otherwise.
+        
         """
         ...
 
 
     def is_mouse_released(self, button):
         """
-did mouse button released? (went from Down to !Down)
+        Check if a mouse button was released (went from Down to !Down).
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+
+        Returns:
+        bool
+            True if the mouse button was released, False otherwise.
+        
         """
         ...
 
@@ -12424,12 +13002,12 @@ did mouse button released? (went from Down to !Down)
     def push_next_parent(self, next_parent):
         """
         Each time 'with' is used on an item, it is pushed
-        to the list of potentialy parents to use if
+        to the list of potential parents to use if
         no parent (or before) is set when an item is created.
         If the list is empty, items are left unattached and
         can be attached later.
 
-        In order to enable multiple threads from using
+        In order to enable multiple threads to use
         the 'with' syntax, thread local storage is used,
         such that each thread has its own list.
         
@@ -12439,14 +13017,28 @@ did mouse button released? (went from Down to !Down)
 
     def reset_mouse_drag_delta(self, button):
         """
-Reset to 0 the drag delta for the target button
+        Reset the drag delta for the target button to 0.
+
+        Parameters:
+        button : MouseButton
+            Mouse button constant.
+        
         """
         ...
 
 
     @property
     def clipboard(self) -> str:
-        """Writable attribute: content of the clipboard
+        """Content of the system clipboard.
+
+        The clipboard can be read and written to interact with the system clipboard.
+        Reading returns an empty string if the viewport is not yet initialized.
+
+        Returns
+        -------
+        str
+            Current content of the system clipboard
+        
         """
         ...
 
@@ -12458,16 +13050,19 @@ Reset to 0 the drag delta for the target button
 
     @property
     def item_creation_callback(self):
-        """Callback called during item creation before configuration
+        """
+        Callback called during item creation before configuration.
+        
         """
         ...
 
 
     @property
     def item_deletion_callback(self):
-        """Callback called during item deletion.
-        
-        If the item is released by the gc it is not guaranteed that
+        """
+        Callback called during item deletion.
+
+        If the item is released by the garbage collector, it is not guaranteed that
         this callback is called, as the item might have lost its
         pointer on the context.
         
@@ -12477,13 +13072,23 @@ Reset to 0 the drag delta for the target button
 
     @property
     def item_unused_configure_args_callback(self):
-        """Callback called during item creation before configuration
+        """
+        Callback called during item creation before configuration.
+        
         """
         ...
 
 
     @property
     def running(self) -> bool:
+        """Whether the context is currently running and processing frames.
+        
+        Returns
+        -------
+        bool
+            True if the context is running, False otherwise.
+        
+        """
         ...
 
 
@@ -12494,60 +13099,39 @@ Reset to 0 the drag delta for the target button
 
     @property
     def viewport(self) -> Viewport:
-        """Readonly attribute: root item from where rendering starts
+        """
+        Readonly attribute: root item from where rendering starts.
+        
         """
         ...
 
 
 class CustomHandler(baseHandler):
     """
-    A base class to be subclassed in python
-    for custom state checking.
-    As this is called every frame rendered,
-    and locks the GIL, be careful not do perform
-    anything heavy.
+    A base class to be subclassed in python for custom state checking.
 
-    The functions that need to be implemented by
-    subclasses are:
-    -> check_can_bind(self, item)
-    = Must return a boolean to indicate
-    if this handler can be bound to
-    the target item. Use isinstance to check
-    the target class of the item.
-    Note isinstance can recognize parent classes as
-    well as subclasses. You can raise an exception.
+    This class provides a framework for implementing custom handlers that can monitor
+    and respond to specific item states. As this is called every frame rendered,
+    and locks the GIL, be careful not to perform anything computationally heavy.
 
-    -> check_status(self, item)
-    = Must return a boolean to indicate if the
-    condition this handler looks at is met.
-    Should not perform any action.
+    Required Methods:
+        check_can_bind(self, item): 
+            Must return a boolean indicating if this handler can be bound to the target item.
+            Use isinstance() to check item types.
+        
+        check_status(self, item):
+            Must return a boolean indicating if the watched condition is met.
+            Should only check state, not perform actions.
+        
+        run(self, item) (Optional):
+            If implemented, handles the response when conditions are met.
+            Even with run() implemented, check_status() is still required.
 
-    -> run(self, item)
-    Optional. If implemented, must perform
-    the check this handler is meant to do,
-    and take the appropriate actions in response
-    (callbacks, etc). returns None.
-    Note even if you implement run, check_status
-    is still required. But it will not trigger calls
-    to the callback. If you don't implement run(),
-    returning True in check_status will trigger
-    the callback.
-    As a good practice try to not perform anything
-    heavy to not block rendering.
-
-    Warning: DO NOT change any item's parent, sibling
-    or child. Rendering might rely on the tree being
-    unchanged.
-    You can change item values or status (show, theme, etc),
-    except for parents of the target item.
-    If you want to do that, delay the changes to when
-    you are outside render_frame() or queue the change
-    to be executed in another thread (mutexes protect
-    states that need to not change during rendering,
-    when accessed from a different thread). 
-
-    If you need to access specific DCG internal item states,
-    you must use Cython and subclass baseHandler instead.
+    Warning:
+        DO NOT modify item parent/sibling/child relationships during rendering.
+        Changes to values or status are allowed except for parent modifications.
+        For tree structure changes, delay until outside render_frame() or queue 
+        for execution in another thread.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
@@ -12928,7 +13512,7 @@ class CustomHandler(baseHandler):
 
 class DPGCallback(Callback):
     """
-    Used to run callbacks created for DPG
+    Used to run callbacks created for DPG.
     
     """
     def __init__(self, callback : DCGCallable):
@@ -14883,6 +15467,19 @@ class DraggingHandler(baseHandler):
 
 
 class DrawArrow(drawingItem):
+    """
+    Draws an arrow in coordinate space.
+
+    The arrow consists of a line with a triangle at one end.
+
+    Attributes:
+        p1 (tuple): End point coordinates (x, y) 
+        p2 (tuple): Start point coordinates (x, y)
+        color (list): RGBA color of the arrow
+        thickness (float): Line thickness
+        size (float): Size of the arrow head
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, size : float = 4.0, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -15311,6 +15908,21 @@ class DrawArrow(drawingItem):
 
 
 class DrawBezierCubic(drawingItem):
+    """
+    Draws a cubic Bezier curve in coordinate space.
+
+    The curve is defined by four control points.
+
+    Attributes:
+        p1 (tuple): First control point coordinates (x, y)
+        p2 (tuple): Second control point coordinates (x, y)
+        p3 (tuple): Third control point coordinates (x, y)
+        p4 (tuple): Fourth control point coordinates (x, y)
+        color (list): RGBA color of the curve
+        thickness (float): Line thickness
+        segments (int): Number of line segments used to approximate the curve
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
 
@@ -15759,6 +16371,20 @@ class DrawBezierCubic(drawingItem):
 
 
 class DrawBezierQuadratic(drawingItem):
+    """
+    Draws a quadratic Bezier curve in coordinate space.
+
+    The curve is defined by three control points.
+
+    Attributes:
+        p1 (tuple): First control point coordinates (x, y)
+        p2 (tuple): Second control point coordinates (x, y)
+        p3 (tuple): Third control point coordinates (x, y)
+        color (list): RGBA color of the curve
+        thickness (float): Line thickness
+        segments (int): Number of line segments used to approximate the curve
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 0.0, user_data : Any = ...):
         """
 
@@ -16197,6 +16823,20 @@ class DrawBezierQuadratic(drawingItem):
 
 
 class DrawCircle(drawingItem):
+    """
+    Draws a circle in coordinate space.
+
+    The circle can be filled and/or outlined.
+
+    Attributes:
+        center (tuple): Center coordinates (x, y)
+        radius (float): Circle radius
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+        segments (int): Number of segments used to approximate the circle
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., center : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -16635,6 +17275,20 @@ class DrawCircle(drawingItem):
 
 
 class DrawEllipse(drawingItem):
+    """
+    Draws an ellipse in coordinate space.
+
+    The ellipse is defined by its bounding box and can be filled and/or outlined.
+
+    Attributes:
+        pmin (tuple): Top-left corner coordinates (x, y)
+        pmax (tuple): Bottom-right corner coordinates (x, y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+        segments (int): Number of segments used to approximate the ellipse
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, segments : int = 0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -19118,7 +19772,7 @@ class DrawInWindow(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -20679,6 +21333,20 @@ class DrawLine(drawingItem):
 
 
 class DrawPolygon(drawingItem):
+    """
+    Draws a filled polygon in coordinate space.
+
+    The polygon is defined by a sequence of points that form its vertices.
+    Can be filled and/or outlined. Non-convex polygons are automatically
+    triangulated for proper filling.
+
+    Attributes:
+        points (list): List of (x,y) coordinates defining the vertices 
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -21097,6 +21765,19 @@ class DrawPolygon(drawingItem):
 
 
 class DrawPolyline(drawingItem):
+    """
+    Draws a sequence of connected line segments in coordinate space.
+
+    The line segments connect consecutive points in the given sequence.
+    Can optionally be closed to form a complete loop.
+
+    Attributes:
+        points (list): List of (x,y) coordinates defining the vertices
+        color (list): RGBA color of the lines
+        thickness (float): Line thickness
+        closed (bool): Whether to connect the last point back to the first
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], closed : bool = False, color : Color = [1.0, 1.0, 1.0, 1.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, points : list = [], previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -21515,6 +22196,22 @@ class DrawPolyline(drawingItem):
 
 
 class DrawQuad(drawingItem):
+    """
+    Draws a quadrilateral in coordinate space.
+
+    The quad is defined by four corner points in clockwise order.
+    Can be filled and/or outlined.
+
+    Attributes:
+        p1 (tuple): First corner coordinates (x,y)
+        p2 (tuple): Second corner coordinates (x,y)
+        p3 (tuple): Third corner coordinates (x,y) 
+        p4 (tuple): Fourth corner coordinates (x,y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p4 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -21963,6 +22660,23 @@ class DrawQuad(drawingItem):
 
 
 class DrawRect(drawingItem):
+    """
+    Draws a rectangle in coordinate space.
+
+    The rectangle is defined by its min/max corners.
+    Can be filled with a solid color, a color gradient, and/or outlined.
+    Corners can be rounded.
+
+    Attributes:
+        pmin (tuple): Top-left corner coordinates (x,y)
+        pmax (tuple): Bottom-right corner coordinates (x,y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color for solid fill
+        fill_p1/p2/p3/p4 (list): RGBA colors for gradient fill at each corner
+        thickness (float): Outline thickness
+        rounding (float): Radius of rounded corners
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], fill_p1 : list = [0.0, 0.0, 0.0, 0.0], fill_p2 : list = [0.0, 0.0, 0.0, 0.0], fill_p3 : list = [0.0, 0.0, 0.0, 0.0], fill_p4 : list = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pmax : Sequence[float] | tuple[float, float] | Coord = (1.0, 1.0), pmin : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, rounding : float = 0.0, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -23814,6 +24528,20 @@ class DrawStar(drawingItem):
 
 
 class DrawText(drawingItem):
+    """
+    Draws text in coordinate space.
+
+    The text is positioned at a specific point and can use a custom font and size.
+    The size can be specified in coordinate space (positive values) or screen space (negative values).
+
+    Attributes:
+        pos (tuple): Position coordinates (x,y) of the text
+        text (str): The text string to display
+        color (list): RGBA color of the text
+        font (Font): Optional custom font to use
+        size (float): Text size. Negative means screen space units.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], font : Font = None, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, pos : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, show : bool = True, size : float = 0.0, text : str = "", user_data : Any = ...):
         """
 
@@ -24248,6 +24976,21 @@ class DrawText(drawingItem):
 
 
 class DrawTriangle(drawingItem):
+    """
+    Draws a triangle in coordinate space.
+
+    The triangle is defined by three points.
+    Can be filled and/or outlined.
+
+    Attributes:
+        p1 (tuple): First vertex coordinates (x,y)
+        p2 (tuple): Second vertex coordinates (x,y)
+        p3 (tuple): Third vertex coordinates (x,y)
+        color (list): RGBA color of the outline
+        fill (list): RGBA color of the fill
+        thickness (float): Outline thickness 
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], color : Color = [1.0, 1.0, 1.0, 1.0], fill : Color = [0.0, 0.0, 0.0, 0.0], next_sibling : baseItem | None = None, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p3 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, thickness : float = 1.0, user_data : Any = ...):
         """
 
@@ -26823,6 +27566,16 @@ class FocusHandler(baseHandler):
 
 
 class Font(baseItem):
+    """
+    Represents a font that can be used in the UI.
+
+    Attributes:
+    - texture: Texture for the font.
+    - size: Size of the font.
+    - scale: Scale of the font.
+    - no_scaling: Boolean indicating if scaling should be disabled for the font.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, no_scaling : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, scale : float = 1.0, size : Any = ..., user_data : Any = ...):
         """
 
@@ -28430,6 +29183,387 @@ class GotHoverHandler(baseHandler):
         ...
 
 
+class GotMouseOverHandler(baseHandler):
+    """
+Prefer GotHoverHandler unless you really need to (see MouseOverHandler)
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> GotMouseOverHandler:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callback(self) -> DCGCallable | None:
+        ...
+
+
+    @callback.setter
+    def callback(self, value : DCGCallable | None):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseTheme | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseTheme | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class GotRenderHandler(baseHandler):
     """
     Same as RenderHandler, but only calls the
@@ -28815,13 +29949,23 @@ class GotRenderHandler(baseHandler):
 
 class HandlerList(baseHandler):
     """
-    A list of handlers in order to attach several
-    handlers to an item.
-    In addition if you attach a callback to this handler,
-    it will be issued if ALL or ANY of the children handler
-    states are met. NONE is also possible.
-    Note however that the handlers are not checked if an item
-    is not rendered. This corresponds to the visible state.
+    A container for multiple handlers that can be attached to an item.
+
+    This handler allows grouping multiple handlers together and optionally 
+    executing a callback based on the combined state of all child handlers.
+
+    The callback can be triggered based on three conditions:
+    - ALL: All child handlers' states must be true (default)
+    - ANY: At least one child handler's state must be true
+    - NONE: No child handler's states are true
+
+    Skipping heavy CustomHandlers:
+        One use case is to skip expensive check_status() calls from CustomHandlers.
+        If the status of the first children is incompatible with the checked condition,
+        the status of further children is not checked.
+
+    Note:
+        Handlers are not checked if their parent item is not rendered.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
@@ -30126,7 +31270,7 @@ class HorizontalLayout(Layout):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -31674,7 +32818,7 @@ class Image(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -32811,7 +33955,7 @@ class ImageButton(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -34227,7 +35371,7 @@ class InputText(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -35692,7 +36836,7 @@ class InputValue(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -36127,6 +37271,17 @@ class InputValue(uiItem):
 
 
 class KeyDownHandler(baseHandler):
+    """
+    Handler that triggers when a key is held down.
+
+    Properties:
+        key (Key): Target key to monitor.
+        
+    Callback receives:
+        - key: The key being pressed
+        - duration: How long the key has been held down
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : Key = 525, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -36514,6 +37669,17 @@ class KeyDownHandler(baseHandler):
 
 
 class KeyPressHandler(baseHandler):
+    """
+    Handler that triggers when a key is initially pressed.
+
+    Properties:
+        key (Key): Target key to monitor
+        repeat (bool): Whether to trigger repeatedly while key is held
+
+    Callback receives:
+        - key: The key that was pressed
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : Key = 525, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = True, show : bool = True, user_data : Any = ...):
         """
 
@@ -36911,6 +38077,16 @@ class KeyPressHandler(baseHandler):
 
 
 class KeyReleaseHandler(baseHandler):
+    """
+    Handler that triggers when a key is released.
+
+    Properties:
+        key (Key): Target key to monitor
+
+    Callback receives:
+        - key: The key that was released
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, key : Key = 525, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -38135,7 +39311,7 @@ class Layout(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -39324,7 +40500,7 @@ class ListBox(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -40184,6 +41360,387 @@ class LostHoverHandler(baseHandler):
 
 
     def __enter__(self) -> LostHoverHandler:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callback(self) -> DCGCallable | None:
+        ...
+
+
+    @callback.setter
+    def callback(self, value : DCGCallable | None):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseTheme | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseTheme | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+class LostMouseOverHandler(baseHandler):
+    """
+Prefer LostHoverHandler unless you really need to (see MouseOverHandler)
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> LostMouseOverHandler:
         ...
 
 
@@ -41595,7 +43152,7 @@ class Menu(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -42698,7 +44255,7 @@ class MenuBar(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -43859,7 +45416,7 @@ class MenuItem(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -44214,7 +45771,427 @@ class MenuItem(uiItem):
         ...
 
 
+class MotionHandler(baseHandler):
+    """
+    Handler that calls the callback when
+    the target item is moved relative to
+    the positioning reference (by default the parent)
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, pos_policy : tuple[Positioning, Positioning] = ..., previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        pos_policy: positioning policy used as reference for the motion
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, pos_policy : tuple[Positioning, Positioning] = ..., previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        pos_policy: positioning policy used as reference for the motion
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> MotionHandler:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callback(self) -> DCGCallable | None:
+        ...
+
+
+    @callback.setter
+    def callback(self, value : DCGCallable | None):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseTheme | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseTheme | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def pos_policy(self) -> tuple[Positioning, Positioning]:
+        """positioning policy used as reference for the motion
+
+        REL_PARENT: motion relative to the parent
+        REL_WINDOW: motion relative to the window
+        REL_VIEWPORT: motion relative to the viewport
+        DEFAULT: Disabled motion detection for the axis
+
+        pos_policy is a tuple of Positioning where the
+        first element refers to the x axis and the second
+        to the y axis
+
+        Defaults to REL_PARENT on both axes.
+        
+        """
+        ...
+
+
+    @pos_policy.setter
+    def pos_policy(self, value : tuple[Positioning, Positioning]):
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class MouseClickHandler(baseHandler):
+    """
+    Handler for mouse button clicks anywhere.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+        repeat (bool): Whether to trigger repeatedly while button held
+
+    Callback receives:
+        - button: The button that was clicked
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, repeat : bool = False, show : bool = True, user_data : Any = ...):
         """
 
@@ -45019,6 +46996,16 @@ class MouseCursorHandler(baseHandler):
 
 
 class MouseDoubleClickHandler(baseHandler):
+    """
+    Handler for mouse button double-clicks anywhere.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+
+    Callback receives:
+        - button: The button that was double-clicked
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -45406,6 +47393,17 @@ class MouseDoubleClickHandler(baseHandler):
 
 
 class MouseDownHandler(baseHandler):
+    """
+    Handler for mouse button being held down.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+
+    Callback receives:
+        - button: The button being held
+        - duration: How long the button has been held
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -45793,6 +47791,20 @@ class MouseDownHandler(baseHandler):
 
 
 class MouseDragHandler(baseHandler):
+    """
+    Handler for mouse dragging motions.
+
+    Properties:
+        button (MouseButton): Target mouse button for drag
+        threshold (float): Movement threshold to trigger drag.
+                         Negative means use default.
+
+    Callback receives:
+        - button: The button used for dragging
+        - delta_x: Horizontal drag distance
+        - delta_y: Vertical drag distance
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, threshold : float = -1.0, user_data : Any = ...):
         """
 
@@ -46190,6 +48202,17 @@ class MouseDragHandler(baseHandler):
 
 
 class MouseMoveHandler(baseHandler):
+    """
+    Handler that triggers when the mouse cursor moves.
+
+    Callback receives:
+        - x: New mouse x position
+        - y: New mouse y position
+        
+    Note:
+        Position is relative to the viewport.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -46566,7 +48589,410 @@ class MouseMoveHandler(baseHandler):
         ...
 
 
+class MouseOverHandler(baseHandler):
+    """
+Prefer HoverHandler unless you really need to (see below)
+
+    Handler that calls the callback when
+    the mouse is over the item. In most cases,
+    this is equivalent to HoverHandler,
+    with the difference that a single item
+    is considered hovered, while in
+    some specific cases, several items could
+    have the mouse above them.
+
+    Prefer using HoverHandler for general use,
+    and reserve MouseOverHandler for custom
+    drag & drop operations.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> MouseOverHandler:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callback(self) -> DCGCallable | None:
+        ...
+
+
+    @callback.setter
+    def callback(self, value : DCGCallable | None):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseTheme | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseTheme | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class MouseReleaseHandler(baseHandler):
+    """
+    Handler for mouse button releases.
+
+    Properties:
+        button (MouseButton): Target mouse button to monitor
+
+    Callback receives:  
+        - button: The button that was released
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButton = 0, callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -46954,6 +49380,21 @@ class MouseReleaseHandler(baseHandler):
 
 
 class MouseWheelHandler(baseHandler):
+    """
+    A handler that monitors mouse wheel scrolling events.
+
+    Detects both vertical (default) and horizontal scrolling movements.
+    For horizontal scrolling, either use Shift+vertical wheel or a horizontal
+    wheel if available on the input device.
+
+    Properties:
+        horizontal (bool): When True, monitors horizontal scrolling instead of vertical.
+                         Defaults to False (vertical scrolling).
+
+    Note:
+        Holding Shift while using vertical scroll wheel generates horizontal scroll events.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, horizontal : bool = False, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -47740,16 +50181,18 @@ class OpenHandler(baseHandler):
 
 class OtherItemHandler(HandlerList):
     """
-    Handler that imports the states from a different
-    item than the one is attached to, and runs the
-    children handlers using the states of the other
-    item. The 'target' field in the callbacks will
-    still be the current item and not the other item.
+    A handler that monitors states from a different item than the one it's attached to.
 
-    This is useful when you need to do a AND/OR combination
-    of the current item state with another item state, or
-    when you need to check the state of an item that might be
-    not be rendered.
+    This handler allows checking states of an item different from its attachment point,
+    while still sending callbacks with the attached item as the target.
+
+    Use cases:
+    - Combining states between different items (AND/OR operations)
+    - Monitoring items that might not be rendered
+    - Creating dependencies between different interface elements
+
+    Note:
+        Callbacks still reference the attached item as target, not the monitored item.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : list[baseHandler] = [], enabled : bool = True, next_sibling : baseItem | None = None, op : HandlerListOP = 0, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, target : Any = ..., user_data : Any = ...):
@@ -48173,6 +50616,11 @@ class OtherItemHandler(HandlerList):
 
 
 class PlaceHolderParent(baseItem):
+    """
+    Placeholder parent to store items outside the rendering tree.
+    Can be a parent to anything but cannot have any parent itself.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
@@ -49642,7 +52090,7 @@ class Plot(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -56683,7 +59131,7 @@ class ProgressBar(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -57858,7 +60306,7 @@ class RadioButton(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -59822,7 +62270,7 @@ class Selectable(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -60855,7 +63303,7 @@ class Separator(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -61737,6 +64185,17 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 
 class SharedValue(object):
+    """
+    Represents a shared value that can be used by multiple items.
+
+    Attributes:
+    - value: Main value of the shared object.
+    - shareable_value: Shareable value of the shared object.
+    - last_frame_update: Last frame index when the value was updated.
+    - last_frame_change: Last frame index when the value was changed.
+    - num_attached: Number of items sharing this value.
+    
+    """
     def __init__(self, context : Context, value : Any):
         """
 Initialize self.  See help(type(self)) for accurate signature.
@@ -62624,7 +65083,7 @@ class SimplePlot(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -63960,7 +66419,7 @@ class Slider(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -65072,7 +67531,7 @@ class Spacer(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -66266,7 +68725,7 @@ class Tab(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -67508,7 +69967,7 @@ class TabBar(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -68752,7 +71211,7 @@ class TabButton(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -69934,7 +72393,7 @@ class Text(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -70308,6 +72767,17 @@ class Text(uiItem):
 
 
 class Texture(baseItem):
+    """
+    Represents a texture that can be used in the UI.
+
+    Attributes:
+    - hint_dynamic: Boolean indicating if the texture is dynamic.
+    - nearest_neighbor_upsampling: Boolean indicating if nearest neighbor upsampling is used.
+    - width: Width of the texture.
+    - height: Height of the texture.
+    - num_chans: Number of channels in the texture.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], hint_dynamic : bool = False, nearest_neighbor_upsampling : int = 0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
         """
 
@@ -70752,7 +73222,7 @@ class Texture(baseItem):
         ...
 
 
-class ThemeColorImGui(baseTheme):
+class ThemeColorImGui(baseThemeColor):
     """
     Theme color parameters that affect how ImGui
     renders items.
@@ -70818,7 +73288,7 @@ class ThemeColorImGui(baseTheme):
         TextLink: Hyperlink color
         TextSelectedBg: Color of the background of selected text
         DragDropTarget: Rectangle highlighting a drop target
-        NavHighlight: Gamepad/keyboard: current highlighted item
+        NavCursor: Gamepad/keyboard: current highlighted item
         NavWindowingHighlight: Highlight window when using CTRL+TAB
         NavWindowingDimBg: Darken/colorize entire screen behind the CTRL+TAB window list, when active
         ModalWindowDimBg: Darken/colorize entire screen behind a modal window, when one is active
@@ -70827,6 +73297,118 @@ class ThemeColorImGui(baseTheme):
     def __init__(self, context : Context, Border : Color| None = None, BorderShadow : Color| None = None, Button : Color| None = None, ButtonActive : Color| None = None, ButtonHovered : Color| None = None, CheckMark : Color| None = None, ChildBg : Color| None = None, DragDropTarget : Color| None = None, FrameBg : Color| None = None, FrameBgActive : Color| None = None, FrameBgHovered : Color| None = None, Header : Color| None = None, HeaderActive : Color| None = None, HeaderHovered : Color| None = None, MenuBarBg : Color| None = None, ModalWindowDimBg : Color| None = None, NavCursor : Color| None = None, NavWindowingDimBg : Color| None = None, NavWindowingHighlight : Color| None = None, PlotHistogram : Color| None = None, PlotHistogramHovered : Color| None = None, PlotLines : Color| None = None, PlotLinesHovered : Color| None = None, PopupBg : Color| None = None, ResizeGrip : Color| None = None, ResizeGripActive : Color| None = None, ResizeGripHovered : Color| None = None, ScrollbarBg : Color| None = None, ScrollbarGrab : Color| None = None, ScrollbarGrabActive : Color| None = None, ScrollbarGrabHovered : Color| None = None, Separator : Color| None = None, SeparatorActive : Color| None = None, SeparatorHovered : Color| None = None, SliderGrab : Color| None = None, SliderGrabActive : Color| None = None, Tab : Color| None = None, TabDimmed : Color| None = None, TabDimmedSelected : Color| None = None, TabDimmedSelectedOverline : Color| None = None, TabHovered : Color| None = None, TabSelected : Color| None = None, TabSelectedOverline : Color| None = None, TableBorderLight : Color| None = None, TableBorderStrong : Color| None = None, TableHeaderBg : Color| None = None, TableRowBg : Color| None = None, TableRowBgAlt : Color| None = None, Text : Color| None = None, TextDisabled : Color| None = None, TextLink : Color| None = None, TextSelectedBg : Color| None = None, TitleBg : Color| None = None, TitleBgActive : Color| None = None, TitleBgCollapsed : Color| None = None, WindowBg : Color| None = None, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
         """
 
+        Border: Color of borders.
+            Default: (0.43, 0.43, 0.50, 0.50)
+        BorderShadow: Color of border shadows.
+            Default: (0.00, 0.00, 0.00, 0.00)
+        Button: Button color.
+            Default: (0.26, 0.59, 0.98, 0.40)
+        ButtonActive: Button color when active.
+            Default: (0.06, 0.53, 0.98, 1.00)
+        ButtonHovered: Button color when hovered.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        CheckMark: Checkmark color.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        ChildBg: Background of child windows.
+            Default: (0.00, 0.00, 0.00, 0.00)
+        DragDropTarget: Rectangle highlighting a drop target.
+            Default: (1.00, 1.00, 0.00, 0.90)
+        FrameBg: Background of checkbox, radio button, plot, slider, text input.
+            Default: (0.16, 0.29, 0.48, 0.54)
+        FrameBgActive: Color of FrameBg when the item is active.
+            Default: (0.26, 0.59, 0.98, 0.67)
+        FrameBgHovered: Color of FrameBg when the item is hovered.
+            Default: (0.26, 0.59, 0.98, 0.40)
+        Header: Colors used for CollapsingHeader, TreeNode, Selectable, MenuItem.
+            Default: (0.26, 0.59, 0.98, 0.31)
+        HeaderActive: Header colors when activated/clicked.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        HeaderHovered: Header colors when hovered.
+            Default: (0.26, 0.59, 0.98, 0.80)
+        MenuBarBg: Menu bar background color.
+            Default: (0.14, 0.14, 0.14, 1.00)
+        ModalWindowDimBg: Darken/colorize entire screen behind a modal window.
+            Default: (0.80, 0.80, 0.80, 0.35)
+        NavCursor: Color of keyboard/gamepad navigation cursor/rectangle, when visible.
+            Default: Same as HeaderHovered (0.26, 0.59, 0.98, 1.00)
+        NavWindowingDimBg: Darken/colorize entire screen behind CTRL+TAB window list.
+            Default: (0.80, 0.80, 0.80, 0.20)
+        NavWindowingHighlight: Highlight window when using CTRL+TAB.
+            Default: (1.00, 1.00, 1.00, 0.70)
+        PlotHistogram: Color of SimplePlot histogram.
+            Default: (0.90, 0.70, 0.00, 1.00)
+        PlotHistogramHovered: Color of SimplePlot histogram when hovered.
+            Default: (1.00, 0.60, 0.00, 1.00)
+        PlotLines: Color of SimplePlot lines.
+            Default: (0.61, 0.61, 0.61, 1.00)
+        PlotLinesHovered: Color of SimplePlot lines when hovered.
+            Default: (1.00, 0.43, 0.35, 1.00)
+        PopupBg: Background of popups, menus, tooltips windows.
+            Default: (0.08, 0.08, 0.08, 0.94)
+        ResizeGrip: Resize grip in lower-right and lower-left corners of windows.
+            Default: (0.26, 0.59, 0.98, 0.20)
+        ResizeGripActive: ResizeGrip color when clicked.
+            Default: (0.26, 0.59, 0.98, 0.95)
+        ResizeGripHovered: ResizeGrip color when hovered.
+            Default: (0.26, 0.59, 0.98, 0.67)
+        ScrollbarBg: Scrollbar background color.
+            Default: (0.02, 0.02, 0.02, 0.53)
+        ScrollbarGrab: Scrollbar grab color.
+            Default: (0.31, 0.31, 0.31, 1.00)
+        ScrollbarGrabActive: Scrollbar grab color when active.
+            Default: (0.51, 0.51, 0.51, 1.00)
+        ScrollbarGrabHovered: Scrollbar grab color when hovered.
+            Default: (0.41, 0.41, 0.41, 1.00)
+        Separator: Color of separating lines.
+            Default: Same as Border color (0.43, 0.43, 0.50, 0.50)
+        SeparatorActive: Separator color when active.
+            Default: (0.10, 0.40, 0.75, 1.00)
+        SeparatorHovered: Separator color when hovered.
+            Default: (0.10, 0.40, 0.75, 0.78)
+        SliderGrab: Slider grab color.
+            Default: (0.24, 0.52, 0.88, 1.00)
+        SliderGrabActive: Slider grab color when active.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        Tab: Tab background when tab-bar is focused & tab is unselected.
+            Default: Value interpolated between Header and TitleBgActive colors with factor 0.80
+        TabDimmed: Tab background when tab-bar is unfocused & tab is unselected.
+            Default: Value interpolated between Tab and TitleBg colors with factor 0.80
+        TabDimmedSelected: Tab background when tab-bar is unfocused & tab is selected.
+            Default: Value interpolated between TabSelected and TitleBg colors with factor 0.40
+        TabDimmedSelectedOverline: Tab horizontal overline when tab-bar is unfocused & tab is selected.
+            Default: (0.50, 0.50, 0.50, 1.00)
+        TabHovered: Tab background when hovered.
+            Default: Same as HeaderHovered color
+        TabSelected: Tab background when tab-bar is focused & tab is selected.
+            Default: Value interpolated between HeaderActive and TitleBgActive colors with factor 0.60
+        TabSelectedOverline: Tab horizontal overline when tab-bar is focused & tab is selected.
+            Default: Same as HeaderActive color
+        TableBorderLight: Table inner borders (prefer using Alpha=1.0 here).
+            Default: (0.23, 0.23, 0.25, 1.00)
+        TableBorderStrong: Table outer borders and headers (prefer using Alpha=1.0 here).
+            Default: (0.31, 0.31, 0.35, 1.00)
+        TableHeaderBg: Table header background.
+            Default: (0.19, 0.19, 0.20, 1.00)
+        TableRowBg: Table row background (even rows).
+            Default: (0.00, 0.00, 0.00, 0.00)
+        TableRowBgAlt: Table row background (odd rows).
+            Default: (1.00, 1.00, 1.00, 0.06)
+        Text: Color for text rendering.
+            Default: (1.00, 1.00, 1.00, 1.00)
+        TextDisabled: Color for the text of disabled items.
+            Default: (0.50, 0.50, 0.50, 1.00)
+        TextLink: Hyperlink color.
+            Default: Same as HeaderActive color
+        TextSelectedBg: Background color of selected text.
+            Default: (0.26, 0.59, 0.98, 0.35)
+        TitleBg: Title bar color.
+            Default: (0.04, 0.04, 0.04, 1.00)
+        TitleBgActive: Title bar color when focused.
+            Default: (0.16, 0.29, 0.48, 1.00)
+        TitleBgCollapsed: Title bar color when collapsed.
+            Default: (0.00, 0.00, 0.00, 0.51)
+        WindowBg: Background of normal windows.
+            Default: (0.06, 0.06, 0.06, 0.94)
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
@@ -70861,6 +73443,118 @@ class ThemeColorImGui(baseTheme):
 
     def configure(self, Border : Color| None = None, BorderShadow : Color| None = None, Button : Color| None = None, ButtonActive : Color| None = None, ButtonHovered : Color| None = None, CheckMark : Color| None = None, ChildBg : Color| None = None, DragDropTarget : Color| None = None, FrameBg : Color| None = None, FrameBgActive : Color| None = None, FrameBgHovered : Color| None = None, Header : Color| None = None, HeaderActive : Color| None = None, HeaderHovered : Color| None = None, MenuBarBg : Color| None = None, ModalWindowDimBg : Color| None = None, NavCursor : Color| None = None, NavWindowingDimBg : Color| None = None, NavWindowingHighlight : Color| None = None, PlotHistogram : Color| None = None, PlotHistogramHovered : Color| None = None, PlotLines : Color| None = None, PlotLinesHovered : Color| None = None, PopupBg : Color| None = None, ResizeGrip : Color| None = None, ResizeGripActive : Color| None = None, ResizeGripHovered : Color| None = None, ScrollbarBg : Color| None = None, ScrollbarGrab : Color| None = None, ScrollbarGrabActive : Color| None = None, ScrollbarGrabHovered : Color| None = None, Separator : Color| None = None, SeparatorActive : Color| None = None, SeparatorHovered : Color| None = None, SliderGrab : Color| None = None, SliderGrabActive : Color| None = None, Tab : Color| None = None, TabDimmed : Color| None = None, TabDimmedSelected : Color| None = None, TabDimmedSelectedOverline : Color| None = None, TabHovered : Color| None = None, TabSelected : Color| None = None, TabSelectedOverline : Color| None = None, TableBorderLight : Color| None = None, TableBorderStrong : Color| None = None, TableHeaderBg : Color| None = None, TableRowBg : Color| None = None, TableRowBgAlt : Color| None = None, Text : Color| None = None, TextDisabled : Color| None = None, TextLink : Color| None = None, TextSelectedBg : Color| None = None, TitleBg : Color| None = None, TitleBgActive : Color| None = None, TitleBgCollapsed : Color| None = None, WindowBg : Color| None = None, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
         """
+        Border: Color of borders.
+            Default: (0.43, 0.43, 0.50, 0.50)
+        BorderShadow: Color of border shadows.
+            Default: (0.00, 0.00, 0.00, 0.00)
+        Button: Button color.
+            Default: (0.26, 0.59, 0.98, 0.40)
+        ButtonActive: Button color when active.
+            Default: (0.06, 0.53, 0.98, 1.00)
+        ButtonHovered: Button color when hovered.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        CheckMark: Checkmark color.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        ChildBg: Background of child windows.
+            Default: (0.00, 0.00, 0.00, 0.00)
+        DragDropTarget: Rectangle highlighting a drop target.
+            Default: (1.00, 1.00, 0.00, 0.90)
+        FrameBg: Background of checkbox, radio button, plot, slider, text input.
+            Default: (0.16, 0.29, 0.48, 0.54)
+        FrameBgActive: Color of FrameBg when the item is active.
+            Default: (0.26, 0.59, 0.98, 0.67)
+        FrameBgHovered: Color of FrameBg when the item is hovered.
+            Default: (0.26, 0.59, 0.98, 0.40)
+        Header: Colors used for CollapsingHeader, TreeNode, Selectable, MenuItem.
+            Default: (0.26, 0.59, 0.98, 0.31)
+        HeaderActive: Header colors when activated/clicked.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        HeaderHovered: Header colors when hovered.
+            Default: (0.26, 0.59, 0.98, 0.80)
+        MenuBarBg: Menu bar background color.
+            Default: (0.14, 0.14, 0.14, 1.00)
+        ModalWindowDimBg: Darken/colorize entire screen behind a modal window.
+            Default: (0.80, 0.80, 0.80, 0.35)
+        NavCursor: Color of keyboard/gamepad navigation cursor/rectangle, when visible.
+            Default: Same as HeaderHovered (0.26, 0.59, 0.98, 1.00)
+        NavWindowingDimBg: Darken/colorize entire screen behind CTRL+TAB window list.
+            Default: (0.80, 0.80, 0.80, 0.20)
+        NavWindowingHighlight: Highlight window when using CTRL+TAB.
+            Default: (1.00, 1.00, 1.00, 0.70)
+        PlotHistogram: Color of SimplePlot histogram.
+            Default: (0.90, 0.70, 0.00, 1.00)
+        PlotHistogramHovered: Color of SimplePlot histogram when hovered.
+            Default: (1.00, 0.60, 0.00, 1.00)
+        PlotLines: Color of SimplePlot lines.
+            Default: (0.61, 0.61, 0.61, 1.00)
+        PlotLinesHovered: Color of SimplePlot lines when hovered.
+            Default: (1.00, 0.43, 0.35, 1.00)
+        PopupBg: Background of popups, menus, tooltips windows.
+            Default: (0.08, 0.08, 0.08, 0.94)
+        ResizeGrip: Resize grip in lower-right and lower-left corners of windows.
+            Default: (0.26, 0.59, 0.98, 0.20)
+        ResizeGripActive: ResizeGrip color when clicked.
+            Default: (0.26, 0.59, 0.98, 0.95)
+        ResizeGripHovered: ResizeGrip color when hovered.
+            Default: (0.26, 0.59, 0.98, 0.67)
+        ScrollbarBg: Scrollbar background color.
+            Default: (0.02, 0.02, 0.02, 0.53)
+        ScrollbarGrab: Scrollbar grab color.
+            Default: (0.31, 0.31, 0.31, 1.00)
+        ScrollbarGrabActive: Scrollbar grab color when active.
+            Default: (0.51, 0.51, 0.51, 1.00)
+        ScrollbarGrabHovered: Scrollbar grab color when hovered.
+            Default: (0.41, 0.41, 0.41, 1.00)
+        Separator: Color of separating lines.
+            Default: Same as Border color (0.43, 0.43, 0.50, 0.50)
+        SeparatorActive: Separator color when active.
+            Default: (0.10, 0.40, 0.75, 1.00)
+        SeparatorHovered: Separator color when hovered.
+            Default: (0.10, 0.40, 0.75, 0.78)
+        SliderGrab: Slider grab color.
+            Default: (0.24, 0.52, 0.88, 1.00)
+        SliderGrabActive: Slider grab color when active.
+            Default: (0.26, 0.59, 0.98, 1.00)
+        Tab: Tab background when tab-bar is focused & tab is unselected.
+            Default: Value interpolated between Header and TitleBgActive colors with factor 0.80
+        TabDimmed: Tab background when tab-bar is unfocused & tab is unselected.
+            Default: Value interpolated between Tab and TitleBg colors with factor 0.80
+        TabDimmedSelected: Tab background when tab-bar is unfocused & tab is selected.
+            Default: Value interpolated between TabSelected and TitleBg colors with factor 0.40
+        TabDimmedSelectedOverline: Tab horizontal overline when tab-bar is unfocused & tab is selected.
+            Default: (0.50, 0.50, 0.50, 1.00)
+        TabHovered: Tab background when hovered.
+            Default: Same as HeaderHovered color
+        TabSelected: Tab background when tab-bar is focused & tab is selected.
+            Default: Value interpolated between HeaderActive and TitleBgActive colors with factor 0.60
+        TabSelectedOverline: Tab horizontal overline when tab-bar is focused & tab is selected.
+            Default: Same as HeaderActive color
+        TableBorderLight: Table inner borders (prefer using Alpha=1.0 here).
+            Default: (0.23, 0.23, 0.25, 1.00)
+        TableBorderStrong: Table outer borders and headers (prefer using Alpha=1.0 here).
+            Default: (0.31, 0.31, 0.35, 1.00)
+        TableHeaderBg: Table header background.
+            Default: (0.19, 0.19, 0.20, 1.00)
+        TableRowBg: Table row background (even rows).
+            Default: (0.00, 0.00, 0.00, 0.00)
+        TableRowBgAlt: Table row background (odd rows).
+            Default: (1.00, 1.00, 1.00, 0.06)
+        Text: Color for text rendering.
+            Default: (1.00, 1.00, 1.00, 1.00)
+        TextDisabled: Color for the text of disabled items.
+            Default: (0.50, 0.50, 0.50, 1.00)
+        TextLink: Hyperlink color.
+            Default: Same as HeaderActive color
+        TextSelectedBg: Background color of selected text.
+            Default: (0.26, 0.59, 0.98, 0.35)
+        TitleBg: Title bar color.
+            Default: (0.04, 0.04, 0.04, 1.00)
+        TitleBgActive: Title bar color when focused.
+            Default: (0.16, 0.29, 0.48, 1.00)
+        TitleBgCollapsed: Title bar color when collapsed.
+            Default: (0.00, 0.00, 0.00, 0.51)
+        WindowBg: Background of normal windows.
+            Default: (0.06, 0.06, 0.06, 0.94)
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
@@ -70963,6 +73657,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def Border(self) -> Color| None:
+        """Color of borders.
+        Default: (0.43, 0.43, 0.50, 0.50)
+        """
         ...
 
 
@@ -70973,6 +73670,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def BorderShadow(self) -> Color| None:
+        """Color of border shadows.
+        Default: (0.00, 0.00, 0.00, 0.00)
+        """
         ...
 
 
@@ -70983,6 +73683,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def Button(self) -> Color| None:
+        """Button color.
+        Default: (0.26, 0.59, 0.98, 0.40)
+        """
         ...
 
 
@@ -70993,6 +73696,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ButtonActive(self) -> Color| None:
+        """Button color when active.
+        Default: (0.06, 0.53, 0.98, 1.00)
+        """
         ...
 
 
@@ -71003,6 +73709,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ButtonHovered(self) -> Color| None:
+        """Button color when hovered.
+        Default: (0.26, 0.59, 0.98, 1.00)
+        """
         ...
 
 
@@ -71013,6 +73722,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def CheckMark(self) -> Color| None:
+        """Checkmark color.
+        Default: (0.26, 0.59, 0.98, 1.00)
+        """
         ...
 
 
@@ -71023,6 +73735,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ChildBg(self) -> Color| None:
+        """Background of child windows.
+        Default: (0.00, 0.00, 0.00, 0.00)
+        """
         ...
 
 
@@ -71033,6 +73748,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def DragDropTarget(self) -> Color| None:
+        """Rectangle highlighting a drop target.
+        Default: (1.00, 1.00, 0.00, 0.90)
+        """
         ...
 
 
@@ -71043,6 +73761,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def FrameBg(self) -> Color| None:
+        """Background of checkbox, radio button, plot, slider, text input.
+        Default: (0.16, 0.29, 0.48, 0.54)
+        """
         ...
 
 
@@ -71053,6 +73774,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def FrameBgActive(self) -> Color| None:
+        """Color of FrameBg when the item is active.
+        Default: (0.26, 0.59, 0.98, 0.67)
+        """
         ...
 
 
@@ -71063,6 +73787,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def FrameBgHovered(self) -> Color| None:
+        """Color of FrameBg when the item is hovered.
+        Default: (0.26, 0.59, 0.98, 0.40)
+        """
         ...
 
 
@@ -71073,6 +73800,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def Header(self) -> Color| None:
+        """Colors used for CollapsingHeader, TreeNode, Selectable, MenuItem.
+        Default: (0.26, 0.59, 0.98, 0.31)
+        """
         ...
 
 
@@ -71083,6 +73813,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def HeaderActive(self) -> Color| None:
+        """Header colors when activated/clicked.
+        Default: (0.26, 0.59, 0.98, 1.00)
+        """
         ...
 
 
@@ -71093,6 +73826,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def HeaderHovered(self) -> Color| None:
+        """Header colors when hovered.
+        Default: (0.26, 0.59, 0.98, 0.80)
+        """
         ...
 
 
@@ -71103,6 +73839,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def MenuBarBg(self) -> Color| None:
+        """Menu bar background color.
+        Default: (0.14, 0.14, 0.14, 1.00)
+        """
         ...
 
 
@@ -71113,6 +73852,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ModalWindowDimBg(self) -> Color| None:
+        """Darken/colorize entire screen behind a modal window.
+        Default: (0.80, 0.80, 0.80, 0.35)
+        """
         ...
 
 
@@ -71123,6 +73865,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def NavCursor(self) -> Color| None:
+        """Color of keyboard/gamepad navigation cursor/rectangle, when visible.
+        Default: Same as HeaderHovered (0.26, 0.59, 0.98, 1.00)
+        """
         ...
 
 
@@ -71133,6 +73878,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def NavWindowingDimBg(self) -> Color| None:
+        """Darken/colorize entire screen behind CTRL+TAB window list.
+        Default: (0.80, 0.80, 0.80, 0.20)
+        """
         ...
 
 
@@ -71143,6 +73891,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def NavWindowingHighlight(self) -> Color| None:
+        """Highlight window when using CTRL+TAB.
+        Default: (1.00, 1.00, 1.00, 0.70)
+        """
         ...
 
 
@@ -71153,6 +73904,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def PlotHistogram(self) -> Color| None:
+        """Color of SimplePlot histogram.
+        Default: (0.90, 0.70, 0.00, 1.00)
+        """
         ...
 
 
@@ -71163,6 +73917,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def PlotHistogramHovered(self) -> Color| None:
+        """Color of SimplePlot histogram when hovered.
+        Default: (1.00, 0.60, 0.00, 1.00)
+        """
         ...
 
 
@@ -71173,6 +73930,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def PlotLines(self) -> Color| None:
+        """Color of SimplePlot lines.
+        Default: (0.61, 0.61, 0.61, 1.00)
+        """
         ...
 
 
@@ -71183,6 +73943,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def PlotLinesHovered(self) -> Color| None:
+        """Color of SimplePlot lines when hovered.
+        Default: (1.00, 0.43, 0.35, 1.00)
+        """
         ...
 
 
@@ -71193,6 +73956,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def PopupBg(self) -> Color| None:
+        """Background of popups, menus, tooltips windows.
+        Default: (0.08, 0.08, 0.08, 0.94)
+        """
         ...
 
 
@@ -71203,6 +73969,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ResizeGrip(self) -> Color| None:
+        """Resize grip in lower-right and lower-left corners of windows.
+        Default: (0.26, 0.59, 0.98, 0.20)
+        """
         ...
 
 
@@ -71213,6 +73982,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ResizeGripActive(self) -> Color| None:
+        """ResizeGrip color when clicked.
+        Default: (0.26, 0.59, 0.98, 0.95)
+        """
         ...
 
 
@@ -71223,6 +73995,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ResizeGripHovered(self) -> Color| None:
+        """ResizeGrip color when hovered.
+        Default: (0.26, 0.59, 0.98, 0.67)
+        """
         ...
 
 
@@ -71233,6 +74008,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ScrollbarBg(self) -> Color| None:
+        """Scrollbar background color.
+        Default: (0.02, 0.02, 0.02, 0.53)
+        """
         ...
 
 
@@ -71243,6 +74021,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ScrollbarGrab(self) -> Color| None:
+        """Scrollbar grab color.
+        Default: (0.31, 0.31, 0.31, 1.00)
+        """
         ...
 
 
@@ -71253,6 +74034,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ScrollbarGrabActive(self) -> Color| None:
+        """Scrollbar grab color when active.
+        Default: (0.51, 0.51, 0.51, 1.00)
+        """
         ...
 
 
@@ -71263,6 +74047,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def ScrollbarGrabHovered(self) -> Color| None:
+        """Scrollbar grab color when hovered. 
+        Default: (0.41, 0.41, 0.41, 1.00)
+        """
         ...
 
 
@@ -71273,6 +74060,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def Separator(self) -> Color| None:
+        """Color of separating lines.
+        Default: Same as Border color (0.43, 0.43, 0.50, 0.50)
+        """
         ...
 
 
@@ -71283,6 +74073,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def SeparatorActive(self) -> Color| None:
+        """Separator color when active.
+        Default: (0.10, 0.40, 0.75, 1.00)
+        """
         ...
 
 
@@ -71293,6 +74086,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def SeparatorHovered(self) -> Color| None:
+        """Separator color when hovered.
+        Default: (0.10, 0.40, 0.75, 0.78)
+        """
         ...
 
 
@@ -71303,6 +74099,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def SliderGrab(self) -> Color| None:
+        """Slider grab color.
+        Default: (0.24, 0.52, 0.88, 1.00)
+        """
         ...
 
 
@@ -71313,6 +74112,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def SliderGrabActive(self) -> Color| None:
+        """Slider grab color when active.
+        Default: (0.26, 0.59, 0.98, 1.00)
+        """
         ...
 
 
@@ -71323,6 +74125,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def Tab(self) -> Color| None:
+        """Tab background when tab-bar is focused & tab is unselected.
+        Default: Value interpolated between Header and TitleBgActive colors with factor 0.80
+        """
         ...
 
 
@@ -71333,6 +74138,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TabDimmed(self) -> Color| None:
+        """Tab background when tab-bar is unfocused & tab is unselected.
+        Default: Value interpolated between Tab and TitleBg colors with factor 0.80
+        """
         ...
 
 
@@ -71343,6 +74151,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TabDimmedSelected(self) -> Color| None:
+        """Tab background when tab-bar is unfocused & tab is selected.
+        Default: Value interpolated between TabSelected and TitleBg colors with factor 0.40
+        """
         ...
 
 
@@ -71353,6 +74164,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TabDimmedSelectedOverline(self) -> Color| None:
+        """Tab horizontal overline when tab-bar is unfocused & tab is selected.
+        Default: (0.50, 0.50, 0.50, 1.00)
+        """
         ...
 
 
@@ -71363,6 +74177,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TabHovered(self) -> Color| None:
+        """Tab background when hovered.
+        Default: Same as HeaderHovered color
+        """
         ...
 
 
@@ -71373,6 +74190,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TabSelected(self) -> Color| None:
+        """Tab background when tab-bar is focused & tab is selected.
+        Default: Value interpolated between HeaderActive and TitleBgActive colors with factor 0.60
+        """
         ...
 
 
@@ -71383,6 +74203,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TabSelectedOverline(self) -> Color| None:
+        """Tab horizontal overline when tab-bar is focused & tab is selected.
+        Default: Same as HeaderActive color
+        """
         ...
 
 
@@ -71393,6 +74216,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TableBorderLight(self) -> Color| None:
+        """Table inner borders (prefer using Alpha=1.0 here).
+        Default: (0.23, 0.23, 0.25, 1.00)
+        """
         ...
 
 
@@ -71403,6 +74229,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TableBorderStrong(self) -> Color| None:
+        """Table outer borders and headers (prefer using Alpha=1.0 here).
+        Default: (0.31, 0.31, 0.35, 1.00)
+        """
         ...
 
 
@@ -71413,6 +74242,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TableHeaderBg(self) -> Color| None:
+        """Table header background.
+        Default: (0.19, 0.19, 0.20, 1.00)
+        """
         ...
 
 
@@ -71423,6 +74255,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TableRowBg(self) -> Color| None:
+        """Table row background (even rows).
+        Default: (0.00, 0.00, 0.00, 0.00)
+        """
         ...
 
 
@@ -71433,6 +74268,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TableRowBgAlt(self) -> Color| None:
+        """Table row background (odd rows).
+        Default: (1.00, 1.00, 1.00, 0.06)
+        """
         ...
 
 
@@ -71443,6 +74281,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def Text(self) -> Color| None:
+        """Color for text rendering. 
+        Default: (1.00, 1.00, 1.00, 1.00)
+        """
         ...
 
 
@@ -71453,6 +74294,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TextDisabled(self) -> Color| None:
+        """Color for the text of disabled items.
+        Default: (0.50, 0.50, 0.50, 1.00)
+        """
         ...
 
 
@@ -71463,6 +74307,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TextLink(self) -> Color| None:
+        """Hyperlink color.
+        Default: Same as HeaderActive color
+        """
         ...
 
 
@@ -71473,6 +74320,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TextSelectedBg(self) -> Color| None:
+        """Background color of selected text.
+        Default: (0.26, 0.59, 0.98, 0.35)
+        """
         ...
 
 
@@ -71483,6 +74333,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TitleBg(self) -> Color| None:
+        """Title bar color.
+        Default: (0.04, 0.04, 0.04, 1.00)
+        """
         ...
 
 
@@ -71493,6 +74346,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TitleBgActive(self) -> Color| None:
+        """Title bar color when focused.
+        Default: (0.16, 0.29, 0.48, 1.00)
+        """
         ...
 
 
@@ -71503,6 +74359,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def TitleBgCollapsed(self) -> Color| None:
+        """Title bar color when collapsed.
+        Default: (0.00, 0.00, 0.00, 0.51)
+        """
         ...
 
 
@@ -71513,6 +74372,9 @@ class ThemeColorImGui(baseTheme):
 
     @property
     def WindowBg(self) -> Color| None:
+        """Background of normal windows.
+        Default: (0.06, 0.06, 0.06, 0.94)
+        """
         ...
 
 
@@ -71740,367 +74602,87 @@ class ThemeColorImGui(baseTheme):
         ...
 
 
-class ThemeColorImNodes(baseTheme):
-    def __init__(self, context : Context, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
-        """
-
-        attach: Whether to attach the item to a parent. Default is None (auto)
-        before: Attach the item just before the target item. Default is None (disabled)
-        children: List of all the children of the item,
-            from first rendered, to last rendered.
-        next_sibling: child of the parent of the item that
-            is rendered just after this item.
-        parent: parent of the item in the rendering tree.
-        previous_sibling: child of the parent of the item that
-            is rendered just before this item.
-        user_data: User data of any type.
-        """
-        ...
-
-
-    def attach_before(self, target):
-        """
-        Same as item.next_sibling = target,
-        but target must not be None
-        
-        """
-        ...
-
-
-    def attach_to_parent(self, target):
-        """
-        Same as item.parent = target, but
-        target must not be None
-        
-        """
-        ...
-
-
-    def configure(self, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
-        """
-        attach: Whether to attach the item to a parent. Default is None (auto)
-        before: Attach the item just before the target item. Default is None (disabled)
-        children: List of all the children of the item,
-            from first rendered, to last rendered.
-        next_sibling: child of the parent of the item that
-            is rendered just after this item.
-        parent: parent of the item in the rendering tree.
-        previous_sibling: child of the parent of the item that
-            is rendered just before this item.
-        user_data: User data of any type.
-        """
-        ...
-
-
-    def delete_item(self):
-        """
-        When an item is not referenced anywhere, it might
-        not get deleted immediately, due to circular references.
-        The Python garbage collector will eventually catch
-        the circular references, but to speedup the process,
-        delete_item will recursively detach the item
-        and all elements in its subtree, as well as bound
-        items. As a result, items with no more references
-        will be freed immediately.
-        
-        """
-        ...
-
-
-    def detach_item(self):
-        """
-        Same as item.parent = None
-
-        The item states (if any) are updated
-        to indicate it is not rendered anymore,
-        and the information propagated to the
-        children.
-        
-        """
-        ...
-
-
-    def lock_mutex(self, wait=False):
-        """
-        Lock the internal item mutex.
-        **Know what you are doing**
-        Locking the mutex will prevent:
-        . Other threads from reading/writing
-          attributes or calling methods with this item,
-          editing the children/parent of the item
-        . Any rendering of this item and its children.
-          If the viewport attemps to render this item,
-          it will be blocked until the mutex is released.
-          (if the rendering thread is holding the mutex,
-           no blocking occurs)
-        This is useful if you want to edit several attributes
-        in several commands of an item or its subtree,
-        and prevent rendering or other threads from accessing
-        the item until you have finished.
-        If you plan on moving the item position in the rendering
-        tree, to avoid deadlock you must hold the mutex of a
-        parent of all the items involved in the motion (a common
-        parent of the source and target parent). This mutex has to
-        be locked before you lock any mutex of your child item
-        if this item is already in the rendering tree (to avoid
-        deadlock with the rendering thread).
-        If you are unsure and plans to move an item already
-        in the rendering tree, it is thus best to lock the viewport
-        mutex first.
-
-        Input argument:
-        . wait (default = False): if locking the mutex fails (mutex
-          held by another thread), wait it is released
-
-        Returns: True if the mutex is held, False else.
-
-        The mutex is a recursive mutex, thus you can lock it several
-        times in the same thread. Each lock has to be matched to an unlock.
-        
-        """
-        ...
-
-
-    def unlock_mutex(self):
-        """
-        Unlock a previously held mutex on this object by this thread.
-        Returns True on success, False if no lock was held by this thread.
-        
-        """
-        ...
-
-
-    def __enter__(self) -> ThemeColorImNodes:
-        ...
-
-
-    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
-        ...
-
-
-    @property
-    def children(self) -> None :
-        """
-        Writable attribute: List of all the children of the item,
-        from first rendered, to last rendered.
-
-        When written to, an error is raised if the children already
-        have other parents. This error is meant to prevent programming
-        mistakes, as users might not realize the children were
-        unattached from their former parents.
-        
-        """
-        ...
-
-
-    @children.setter
-    def children(self, value : None ):
-        ...
-
-
-    @property
-    def children_types(self) -> ChildType:
-        """Returns which types of children can be attached to this item
-        """
-        ...
-
-
-    @property
-    def context(self) -> Context:
-        """
-        Read-only attribute: Context in which the item resides
-        
-        """
-        ...
-
-
-    @property
-    def enabled(self) -> bool:
-        ...
-
-
-    @enabled.setter
-    def enabled(self, value : bool):
-        ...
-
-
-    @property
-    def item_type(self) -> ChildType:
-        """Returns which type of child this item is
-        """
-        ...
-
-
-    @property
-    def mutex(self) -> wrap_mutex:
-        """
-        Context manager instance for the item mutex
-
-        Locking the mutex will prevent:
-        . Other threads from reading/writing
-          attributes or calling methods with this item,
-          editing the children/parent of the item
-        . Any rendering of this item and its children.
-          If the viewport attemps to render this item,
-          it will be blocked until the mutex is released.
-          (if the rendering thread is holding the mutex,
-           no blocking occurs)
-
-        In general, you don't need to use any mutex in your code,
-        unless you are writing a library and cannot make assumptions
-        on what the users will do, or if you know your code manipulates
-        the same objects with multiple threads.
-
-        All attribute accesses are mutex protected.
-
-        If you want to subclass and add attributes, you
-        can use this mutex to protect your new attributes.
-        Be careful not to hold the mutex if your thread
-        intends to access the attributes of a parent item.
-        In case of doubt use parents_mutex instead.
-        
-        """
-        ...
-
-
-    @property
-    def next_sibling(self) -> baseItem | None:
-        """
-        Writable attribute: child of the parent of the item that
-        is rendered just after this item.
-
-        It is not possible to have siblings if you have no parent,
-        thus if you intend to attach together items outside the
-        rendering tree, there must be a toplevel parent item.
-
-        If you write to this attribute, the item will be moved
-        to be inserted just before the target item.
-        In case of failure, the item remains in a detached state.
-        
-        """
-        ...
-
-
-    @next_sibling.setter
-    def next_sibling(self, value : baseItem | None):
-        ...
-
-
-    @property
-    def parent(self) -> baseHandler | None:
-        """
-        Writable attribute: parent of the item in the rendering tree.
-
-        Rendering starts from the viewport. Then recursively each child
-        is rendered from the first to the last, and each child renders
-        their subtree.
-
-        Only an item inserted in the rendering tree is rendered.
-        An item that is not in the rendering tree can have children.
-        Thus it is possible to build and configure various items, and
-        attach them to the tree in a second phase.
-
-        The children hold a reference to their parent, and the parent
-        holds a reference to its children. Thus to be release memory
-        held by an item, two options are possible:
-        . Remove the item from the tree, remove all your references.
-          If the item has children or siblings, the item will not be
-          released until Python's garbage collection detects a
-          circular reference.
-        . Use delete_item to remove the item from the tree, and remove
-          all the internal references inside the item structure and
-          the item's children, thus allowing them to be removed from
-          memory as soon as the user doesn't hold a reference on them.
-
-        Note the viewport is referenced by the context.
-
-        If you set this attribute, the item will be inserted at the last
-        position of the children of the parent (regardless whether this
-        item is already a child of the parent).
-        If you set None, the item will be removed from its parent's children
-        list.
-        
-        """
-        ...
-
-
-    @parent.setter
-    def parent(self, value : baseHandler | None):
-        ...
-
-
-    @property
-    def parents_mutex(self) -> wrap_this_and_parents_mutex:
-        """Context manager instance for the item mutex and all its parents
-        
-        Similar to mutex but locks not only this item, but also all
-        its current parents.
-        If you want to access parent fields, or if you are unsure,
-        lock this mutex rather than self.mutex.
-        This mutex will lock the item and all its parent in a safe
-        way that does not deadlock.
-        
-        """
-        ...
-
-
-    @property
-    def previous_sibling(self) -> baseItem | None:
-        """
-        Writable attribute: child of the parent of the item that
-        is rendered just before this item.
-
-        It is not possible to have siblings if you have no parent,
-        thus if you intend to attach together items outside the
-        rendering tree, there must be a toplevel parent item.
-
-        If you write to this attribute, the item will be moved
-        to be inserted just after the target item.
-        In case of failure, the item remains in a detached state.
-
-        Note that a parent can have several child queues, and thus
-        child elements are not guaranteed to be siblings of each other.
-        
-        """
-        ...
-
-
-    @previous_sibling.setter
-    def previous_sibling(self, value : baseItem | None):
-        ...
-
-
-    @property
-    def user_data(self) -> Color| None:
-        """
-        User data of any type.
-        
-        """
-        ...
-
-
-    @user_data.setter
-    def user_data(self, value : Color| None):
-        ...
-
-
-    @property
-    def uuid(self) -> int:
-        """
-        Readonly attribute: uuid is an unique identifier created
-        by the context for the item.
-        uuid can be used to access the object by name for parent=,
-        previous_sibling=, next_sibling= arguments, but it is
-        preferred to pass the objects directly. 
-        
-        """
-        ...
-
-
-class ThemeColorImPlot(baseTheme):
+class ThemeColorImPlot(baseThemeColor):
+    """
+    Theme color parameters that affect how ImPlot renders plots.
+    All colors accept three formats:
+    - unsigned (encodes a rgba little-endian)
+    - (r, g, b, a) with r, g, b, a as integers.
+    - (r, g, b, a) with r, g, b, a as floats.
+
+    When r, g, b, a are floats, they should be normalized
+    between 0 and 1, while integers are between 0 and 255.
+    If a is missing, it defaults to 255.
+
+    Keyword Arguments:
+        Line: Plot line color. Auto - derived from Text color
+        Fill: Plot fill color. Auto - derived from Line color
+        MarkerOutline: Plot marker outline color. Auto - derived from Line color
+        MarkerFill: Plot marker fill color. Auto - derived from Line color 
+        ErrorBar: Error bar color. Auto - derived from Text color
+        FrameBg: Plot frame background color. Auto - derived from FrameBg color
+        PlotBg: Plot area background color. Auto - derived from WindowBg color
+        PlotBorder: Plot area border color. Auto - derived from Border color
+        LegendBg: Legend background color. Auto - derived from PopupBg color
+        LegendBorder: Legend border color. Auto - derived from Border color
+        LegendText: Legend text color. Auto - derived from Text color
+        TitleText: Plot title text color. Auto - derived from Text color
+        InlayText: Color of text appearing inside plots. Auto - derived from Text color
+        AxisText: Axis text labels color. Auto - derived from Text color
+        AxisGrid: Axis grid color. Auto - derived from Text color with reduced alpha
+        AxisTick: Axis tick marks color. Auto - derived from AxisGrid color
+        AxisBg: Background color of axis hover region. Auto - transparent
+        AxisBgHovered: Axis background color when hovered. Auto - derived from ButtonHovered color
+        AxisBgActive: Axis background color when clicked. Auto - derived from ButtonActive color
+        Selection: Box-selection color. Default: (1.00, 1.00, 0.00, 1.00)
+        Crosshairs: Crosshairs color. Auto - derived from PlotBorder color
+    
+    """
     def __init__(self, context : Context, AxisBg : Color| None = None, AxisBgActive : Color| None = None, AxisBgHovered : Color| None = None, AxisGrid : Color| None = None, AxisText : Color| None = None, AxisTick : Color| None = None, Crosshairs : Color| None = None, ErrorBar : Color| None = None, Fill : Color| None = None, FrameBg : Color| None = None, InlayText : Color| None = None, LegendBg : Color| None = None, LegendBorder : Color| None = None, LegendText : Color| None = None, Line : Color| None = None, MarkerFill : Color| None = None, MarkerOutline : Color| None = None, PlotBg : Color| None = None, PlotBorder : Color| None = None, Selection : Color| None = None, TitleText : Color| None = None, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
         """
 
+        AxisBg: Background color of axis hover region.
+            Default: transparent
+        AxisBgActive: Axis background color when clicked.
+            Default: Auto - derived from ButtonActive color
+        AxisBgHovered: Axis background color when hovered.
+            Default: Auto - derived from ButtonHovered color
+        AxisGrid: Axis grid color.
+            Default: Auto - derived from Text color
+        AxisText: Axis text labels color.
+            Default: Auto - derived from Text color
+        AxisTick: Axis tick marks color.
+            Default: Auto - derived from AxisGrid color
+        Crosshairs: Crosshairs color.
+            Default: Auto - derived from PlotBorder color
+        ErrorBar: Error bar color.
+            Default: Auto - derived from Text color
+        Fill: Plot fill color.
+            Default: Auto - derived from Line color
+        FrameBg: Plot frame background color.
+            Default: Auto - derived from FrameBg color
+        InlayText: Color of text appearing inside of plots.
+            Default: Auto - derived from Text color
+        LegendBg: Legend background color.
+            Default: Auto - derived from PopupBg color
+        LegendBorder: Legend border color.
+            Default: Auto - derived from Border color
+        LegendText: Legend text color.
+            Default: Auto - derived from Text color
+        Line: Plot line color.
+            Default: Auto - derived from Text color
+        MarkerFill: Plot marker fill color.
+            Default: Auto - derived from Line color
+        MarkerOutline: Plot marker outline color.
+            Default: Auto - derived from Line color
+        PlotBg: Plot area background color.
+            Default: Auto - derived from WindowBg color
+        PlotBorder: Plot area border color.
+            Default: Auto - derived from Border color
+        Selection: Box-selection color.
+            Default: (1.00, 1.00, 0.00, 1.00)
+        TitleText: Plot title text color.
+            Default: Auto - derived from Text color
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
@@ -72135,6 +74717,48 @@ class ThemeColorImPlot(baseTheme):
 
     def configure(self, AxisBg : Color| None = None, AxisBgActive : Color| None = None, AxisBgHovered : Color| None = None, AxisGrid : Color| None = None, AxisText : Color| None = None, AxisTick : Color| None = None, Crosshairs : Color| None = None, ErrorBar : Color| None = None, Fill : Color| None = None, FrameBg : Color| None = None, InlayText : Color| None = None, LegendBg : Color| None = None, LegendBorder : Color| None = None, LegendText : Color| None = None, Line : Color| None = None, MarkerFill : Color| None = None, MarkerOutline : Color| None = None, PlotBg : Color| None = None, PlotBorder : Color| None = None, Selection : Color| None = None, TitleText : Color| None = None, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
         """
+        AxisBg: Background color of axis hover region.
+            Default: transparent
+        AxisBgActive: Axis background color when clicked.
+            Default: Auto - derived from ButtonActive color
+        AxisBgHovered: Axis background color when hovered.
+            Default: Auto - derived from ButtonHovered color
+        AxisGrid: Axis grid color.
+            Default: Auto - derived from Text color
+        AxisText: Axis text labels color.
+            Default: Auto - derived from Text color
+        AxisTick: Axis tick marks color.
+            Default: Auto - derived from AxisGrid color
+        Crosshairs: Crosshairs color.
+            Default: Auto - derived from PlotBorder color
+        ErrorBar: Error bar color.
+            Default: Auto - derived from Text color
+        Fill: Plot fill color.
+            Default: Auto - derived from Line color
+        FrameBg: Plot frame background color.
+            Default: Auto - derived from FrameBg color
+        InlayText: Color of text appearing inside of plots.
+            Default: Auto - derived from Text color
+        LegendBg: Legend background color.
+            Default: Auto - derived from PopupBg color
+        LegendBorder: Legend border color.
+            Default: Auto - derived from Border color
+        LegendText: Legend text color.
+            Default: Auto - derived from Text color
+        Line: Plot line color.
+            Default: Auto - derived from Text color
+        MarkerFill: Plot marker fill color.
+            Default: Auto - derived from Line color
+        MarkerOutline: Plot marker outline color.
+            Default: Auto - derived from Line color
+        PlotBg: Plot area background color.
+            Default: Auto - derived from WindowBg color
+        PlotBorder: Plot area border color.
+            Default: Auto - derived from Border color
+        Selection: Box-selection color.
+            Default: (1.00, 1.00, 0.00, 1.00)
+        TitleText: Plot title text color.
+            Default: Auto - derived from Text color
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
@@ -72237,6 +74861,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def AxisBg(self) -> Color| None:
+        """Background color of axis hover region.
+        Default: transparent
+        """
         ...
 
 
@@ -72247,6 +74874,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def AxisBgActive(self) -> Color| None:
+        """Axis background color when clicked.
+        Default: Auto - derived from ButtonActive color
+        """
         ...
 
 
@@ -72257,6 +74887,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def AxisBgHovered(self) -> Color| None:
+        """Axis background color when hovered.
+        Default: Auto - derived from ButtonHovered color
+        """
         ...
 
 
@@ -72267,6 +74900,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def AxisGrid(self) -> Color| None:
+        """Axis grid color.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -72277,6 +74913,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def AxisText(self) -> Color| None:
+        """Axis text labels color.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -72287,6 +74926,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def AxisTick(self) -> Color| None:
+        """Axis tick marks color.
+        Default: Auto - derived from AxisGrid color
+        """
         ...
 
 
@@ -72297,6 +74939,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def Crosshairs(self) -> Color| None:
+        """Crosshairs color.
+        Default: Auto - derived from PlotBorder color
+        """
         ...
 
 
@@ -72307,6 +74952,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def ErrorBar(self) -> Color| None:
+        """Error bar color.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -72317,6 +74965,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def Fill(self) -> Color| None:
+        """Plot fill color.
+        Default: Auto - derived from Line color
+        """
         ...
 
 
@@ -72327,6 +74978,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def FrameBg(self) -> Color| None:
+        """Plot frame background color.
+        Default: Auto - derived from FrameBg color
+        """
         ...
 
 
@@ -72337,6 +74991,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def InlayText(self) -> Color| None:
+        """Color of text appearing inside of plots.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -72347,6 +75004,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def LegendBg(self) -> Color| None:
+        """Legend background color.
+        Default: Auto - derived from PopupBg color
+        """
         ...
 
 
@@ -72357,6 +75017,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def LegendBorder(self) -> Color| None:
+        """Legend border color.
+        Default: Auto - derived from Border color
+        """
         ...
 
 
@@ -72367,6 +75030,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def LegendText(self) -> Color| None:
+        """Legend text color.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -72377,6 +75043,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def Line(self) -> Color| None:
+        """Plot line color.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -72387,6 +75056,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def MarkerFill(self) -> Color| None:
+        """Plot marker fill color.
+        Default: Auto - derived from Line color
+        """
         ...
 
 
@@ -72397,6 +75069,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def MarkerOutline(self) -> Color| None:
+        """Plot marker outline color.
+        Default: Auto - derived from Line color
+        """
         ...
 
 
@@ -72407,6 +75082,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def PlotBg(self) -> Color| None:
+        """Plot area background color.
+        Default: Auto - derived from WindowBg color
+        """
         ...
 
 
@@ -72417,6 +75095,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def PlotBorder(self) -> Color| None:
+        """Plot area border color.
+        Default: Auto - derived from Border color
+        """
         ...
 
 
@@ -72427,6 +75108,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def Selection(self) -> Color| None:
+        """Box-selection color.
+        Default: (1.00, 1.00, 0.00, 1.00)
+        """
         ...
 
 
@@ -72437,6 +75121,9 @@ class ThemeColorImPlot(baseTheme):
 
     @property
     def TitleText(self) -> Color| None:
+        """Plot title text color.
+        Default: Auto - derived from Text color
+        """
         ...
 
 
@@ -76136,8 +78823,7 @@ class ThemeStyleImPlot(baseThemeStyle):
 
 class TimeWatcher(uiItem):
     """
-    A placeholder uiItem parent that doesn't draw
-    or have any impact on rendering.
+    A placeholder uiItem parent that doesn't draw or have any impact on rendering.
     This item calls the callback with times in ns.
     These times can be compared with the times in the metrics
     that can be obtained from the viewport in order to
@@ -76150,8 +78836,7 @@ class TimeWatcher(uiItem):
     children have finished rendering.
 
     The third time corresponds to the time when viewport
-    started rendering items for this frame. It is a duplicate of
-    context.viewport.metrics.last_t_before_rendering. It is
+    started rendering items for this frame. It is
     given to prevent the user from having to keep track of the
     viewport metrics (since the callback might be called
     after or before the viewport updated its metrics for this
@@ -76850,7 +79535,7 @@ class TimeWatcher(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -78745,7 +81430,7 @@ class Tooltip(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -79961,7 +82646,7 @@ class TreeNode(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -81222,7 +83907,7 @@ class VerticalLayout(Layout):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -81603,12 +84288,41 @@ class VerticalLayout(Layout):
 
 class Viewport(baseItem):
     """
-    The viewport corresponds to the main item containing
-    all the visuals. It is decorated by the operating system,
-    and can be minimized/maximized/made fullscreen.
+    The viewport corresponds to the main item containing all the visuals.
+    It is decorated by the operating system and can be minimized/maximized/made fullscreen.
 
-    Rendering starts from the viewports and recursively
-    every item renders itself and its children.
+    Attributes:
+    - clear_color: Color used to clear the viewport.
+    - small_icon: Small icon for the viewport.
+    - large_icon: Large icon for the viewport.
+    - x_pos: X position of the viewport.
+    - y_pos: Y position of the viewport.
+    - width: Width of the viewport.
+    - height: Height of the viewport.
+    - resizable: Boolean indicating if the viewport is resizable.
+    - vsync: Boolean indicating if vsync is enabled.
+    - dpi: Requested scaling (DPI) from the OS for this window.
+    - scale: Multiplicative scale used to scale automatically all items.
+    - min_width: Minimum width of the viewport.
+    - max_width: Maximum width of the viewport.
+    - min_height: Minimum height of the viewport.
+    - max_height: Maximum height of the viewport.
+    - always_on_top: Boolean indicating if the viewport is always on top.
+    - decorated: Boolean indicating if the viewport is decorated.
+    - handlers: Bound handler (or handlerList) for the viewport.
+    - cursor: Mouse cursor for the viewport.
+    - font: Global font for the viewport.
+    - theme: Global theme for the viewport.
+    - title: Title of the viewport.
+    - disable_close: Boolean indicating if the close button is disabled.
+    - fullscreen: Boolean indicating if the viewport is in fullscreen mode.
+    - minimized: Boolean indicating if the viewport is minimized.
+    - maximized: Boolean indicating if the viewport is maximized.
+    - wait_for_input: Boolean indicating if rendering should wait for input.
+    - shown: Boolean indicating if the viewport window has been created by the OS.
+    - resize_callback: Callback to be issued when the viewport is resized.
+    - close_callback: Callback to be issued when the viewport is closed.
+    - metrics: Rendering related metrics relative to the last frame.
     
     """
     def __init__(self, context : Context, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : Any = ..., min_height : int = 250, min_width : int = 250, minimized : Any = ..., next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "b'Dear CyGui'", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
@@ -82440,8 +85154,18 @@ class Viewport(baseItem):
         ...
 
 
-class ViewportDrawList(baseItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+class ViewportDrawList(drawingItem):
+    """
+    A drawing item that renders its children on the viewport's background or foreground.
+
+    This is typically used to draw items that should always be visible,
+    regardless of the current window or plot being displayed.
+
+    Attributes:
+        front (bool): When True, renders drawings in front of all items. When False, renders behind.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -82455,6 +85179,11 @@ class ViewportDrawList(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
         user_data: User data of any type.
         """
         ...
@@ -82478,7 +85207,7 @@ class ViewportDrawList(baseItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., children : list[drawingItem] = [], front : bool = True, next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -82491,6 +85220,11 @@ class ViewportDrawList(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
         user_data: User data of any type.
         """
         ...
@@ -82693,7 +85427,7 @@ class ViewportDrawList(baseItem):
 
 
     @property
-    def parent(self) -> baseItem | None:
+    def parent(self) -> DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None:
         """
         Writable attribute: parent of the item in the rendering tree.
 
@@ -82731,7 +85465,7 @@ class ViewportDrawList(baseItem):
 
 
     @parent.setter
-    def parent(self, value : baseItem | None):
+    def parent(self, value : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None):
         ...
 
 
@@ -82780,7 +85514,6 @@ class ViewportDrawList(baseItem):
     def show(self) -> bool:
         """
         Writable attribute: Should the object be drawn/shown ?
-
         In case show is set to False, this disables any
         callback (for example the close callback won't be called
         if a window is hidden with show = False).
@@ -82824,6 +85557,40 @@ class ViewportDrawList(baseItem):
 
 
 class Window(uiItem):
+    """
+    Represents a window in the UI with various configurable properties.
+
+    Attributes:
+    - no_title_bar: Boolean indicating if the title bar should be hidden.
+    - no_resize: Boolean indicating if resizing should be disabled.
+    - no_move: Boolean indicating if moving should be disabled.
+    - no_scrollbar: Boolean indicating if the scrollbar should be hidden.
+    - no_scroll_with_mouse: Boolean indicating if scrolling with the mouse should be disabled.
+    - no_collapse: Boolean indicating if collapsing should be disabled.
+    - autosize: Boolean indicating if the window should autosize.
+    - no_background: Boolean indicating if the background should be hidden.
+    - no_saved_settings: Boolean indicating if saved settings should be disabled.
+    - no_mouse_inputs: Boolean indicating if mouse inputs should be disabled.
+    - no_keyboard_inputs: Boolean indicating if keyboard inputs should be disabled.
+    - menubar: Boolean indicating if the menubar should be shown.
+    - horizontal_scrollbar: Boolean indicating if the horizontal scrollbar should be shown.
+    - no_focus_on_appearing: Boolean indicating if focus on appearing should be disabled.
+    - no_bring_to_front_on_focus: Boolean indicating if bringing to front on focus should be disabled.
+    - always_show_vertical_scrollvar: Boolean indicating if the vertical scrollbar should always be shown.
+    - always_show_horizontal_scrollvar: Boolean indicating if the horizontal scrollbar should always be shown.
+    - unsaved_document: Boolean indicating if the document is unsaved.
+    - disallow_docking: Boolean indicating if docking should be disallowed.
+    - no_open_over_existing_popup: Boolean indicating if opening over existing popup should be disabled.
+    - modal: Boolean indicating if the window is modal.
+    - popup: Boolean indicating if the window is a popup.
+    - has_close_button: Boolean indicating if the close button should be shown.
+    - collapsed: Boolean indicating if the window is collapsed.
+    - on_close: Callback function for the close event.
+    - primary: Boolean indicating if the window is primary.
+    - min_size: Minimum size of the window.
+    - max_size: Maximum size of the window.
+    
+    """
     def __init__(self, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, attach : Any = ..., autosize : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
@@ -84048,7 +86815,7 @@ class Window(uiItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
@@ -84428,6 +87195,14 @@ class Window(uiItem):
 
 
 class baseHandler(baseItem):
+    """
+    Base class for UI input event handlers.
+
+    Attributes:
+    - enabled: Boolean indicating if the handler is enabled.
+    - callback: Callback function for the handler.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
@@ -84806,61 +87581,45 @@ class baseHandler(baseItem):
 
 class baseItem(object):
     """
-    Base class for all items (except shared values)
+Base class for all items (except shared values).
 
-    To be rendered, an item must be in the child tree
-    of the viewport (context.viewport).
+    To be rendered, an item must be in the child tree of the viewport (context.viewport).
 
-    The parent of an item can be set with various ways:
-    1) Using the parent attribute. item.parent = target_item
-    2) Passing (parent=target_item) during item creation
-    3) If the context manager is not empty ('with' on an item),
-       and no parent is set (parent = None passed or nothing),
-       the last item in 'with' is taken as parent. The context
-       manager can be managed directly with context.push_next_parent()
-       and context.pop_next_parent()
-    4) if you set the previous_sibling or next_sibling attribute,
-       the item will be inserted respectively after and before the
-       respective items in the parent item children list. For legacy
-       support, the 'before=target_item' attribute can be used during item creation,
-       and is equivalent to item.next_sibling = target_item
+    Parent-Child Relationships:
+    -------------------------
+    The parent of an item can be set in several ways:
+    1. Using the parent attribute: `item.parent = target_item`
+    2. Passing `parent=target_item` during item creation 
+    3. Using the context manager ('with' statement) - if no parent is explicitly set, the last item in the 'with' block becomes the parent
+    4. Setting previous_sibling or next_sibling attributes to insert the item between existing siblings
 
-    parent, previous_sibling and next_sibling are baseItem attributes
-    and can be read at any time.
-    It is possible to get the list of children of an item as well
-    with the 'children' attribute: item.children.
+    Tree Structure:
+    --------------
+    - Items are rendered in order from first child to last child
+    - New items are inserted last by default unless previous_sibling/next_sibling is used
+    - Items can be manually detached by setting parent = None
+    - Most items have restrictions on what parents/children they can have
+    - Some items can have multiple incompatible child lists that are concatenated when reading item.children
 
-    During rendering the children of each item are rendered in
-    order from the first one to the last one.
-    When an item is attached to a parent, it is by default inserted
-    last, unless previous_sibling or next_sibling is used.
+    Special Cases:
+    -------------
+    Some items cannot be children in the rendering tree:
+    - PlaceHolderParent: Can be parent to any item but cannot be in rendering tree
+    - Textures, themes, colormaps and fonts: Cannot be children but can be bound to items
 
-    previous_sibling and next_sibling enable to insert an item
-    between elements.
+    Attributes:
+        context (Context): The context this item belongs to
+        user_data (Any): Custom user data that can be attached to the item
+        uuid (int): Unique identifier for this item
+        parent (baseItem): Parent item in the rendering tree
+        previous_sibling (baseItem): Previous sibling in parent's child list
+        next_sibling (baseItem): Next sibling in parent's child list
+        children (List[baseItem]): List of child items in rendering order
+        children_types (ChildType): Bitmask of allowed child types
+        item_type (ChildType): Type of this item as a child
 
-    When parent, previous_sibling or next_sibling are set, the item
-    is detached from any parent or sibling it had previously.
-
-    An item can be manually detached from a parent
-    by setting parent = None.
-
-    Most items have restrictions for the parents and children it can
-    have. In addition some items can have several children lists
-    of incompatible types. These children list will be concatenated
-    when reading item.children. In a given list are items of a similar
-    type.
-
-    Finally some items cannot be children of any item in the rendering
-    tree. One such item is PlaceHolderParent, which can be parent
-    of any item which can have a parent. PlaceHolderParent cannot
-    be inserted in the rendering tree, but can be used to store items
-    before their insertion in the rendering tree.
-    Other such items are textures, themes, colormaps and fonts. Those
-    items cannot be made children of items of the rendering tree, but
-    can be bound to them. For example item.theme = theme_item will
-    bind theme_item to item. It is possible to bind such an item to
-    several items, and as long as one item reference them, they will
-    not be deleted by the garbage collector.
+    The parent, previous_sibling and next_sibling relationships form a doubly-linked tree structure that determines rendering order and hierarchy.
+    The children attribute provides access to all child items.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : list[baseItem] = [], next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
@@ -85211,8 +87970,10 @@ class baseItem(object):
 
 class baseTheme(baseItem):
     """
-    Base theme element. Contains a set of theme elements
-    to apply for a given category (color, style)/(imgui/implot/imnode)
+    Base theme element. Contains a set of theme elements to apply for a given category (color, style)/(imgui/implot/imnode).
+
+    Attributes:
+    - enabled: Boolean indicating if the theme is enabled.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Any = ...):
@@ -85555,6 +88316,378 @@ class baseTheme(baseItem):
 
     @user_data.setter
     def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+class baseThemeColor(baseTheme):
+    """
+    Base class for theme colors that provides common color-related functionality.
+    
+    This class provides the core implementation for managing color themes in different 
+    contexts (ImGui/ImPlot/ImNodes). Color themes allow setting colors for various UI 
+    elements using different color formats:
+    - unsigned int (encodes rgba little-endian)
+    - (r, g, b, a) with values as integers [0-255]  
+    - (r, g, b, a) with values as normalized floats [0.0-1.0]
+    - If alpha is omitted, it defaults to 255
+
+    The class implements common dictionary-style access to colors through string names
+    or numeric indices.
+    
+    """
+    def __init__(self, context : Context, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Color| None = None, before : Color| None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseHandler | None = None, previous_sibling : baseItem | None = None, user_data : Color| None = None):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> baseThemeColor:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseHandler | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseHandler | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def user_data(self) -> Color| None:
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value : Color| None):
         ...
 
 
@@ -85980,9 +89113,7 @@ class baseThemeStyle(baseTheme):
 
 class drawingItem(baseItem):
     """
-    A simple item with no UI state,
-    that inherit from the drawing area of its
-    parent
+    A simple item with no UI state that inherits from the drawing area of its parent.
     
     """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., children : None  = [], next_sibling : baseItem | None = None, parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
@@ -86365,6 +89496,12 @@ class drawingItem(baseItem):
 class plotElement(baseItem):
     """
     Base class for plot children.
+
+    Attributes:
+    - show: Boolean indicating if the plot element should be shown.
+    - axes: Axes for the plot element.
+    - label: Label for the plot element.
+    - theme: Theme for the plot element.
     
     """
     def __init__(self, context : Context, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : None  = [], label : str = "", next_sibling : baseItem | None = None, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
@@ -89180,6 +92317,71 @@ class plotElementXYY(plotElementWithLegend):
 
 
 class uiItem(baseItem):
+    """
+Base class for UI items with various properties and states.
+
+    Core class for items that can be interacted with and displayed in the UI. Handles positioning,
+    state tracking, themes, callbacks, and layout management.
+
+    State Properties:
+    ---------------
+    - active: Whether the item is currently active (pressed, selected, etc.)
+    - activated: Whether the item just became active this frame  
+    - clicked: Whether any mouse button was clicked on the item
+    - double_clicked: Whether any mouse button was double-clicked
+    - deactivated: Whether the item just became inactive
+    - deactivated_after_edited: Whether the item was edited and then deactivated
+    - edited: Whether the item's value was modified
+    - focused: Whether the item has keyboard focus
+    - hovered: Whether the mouse is over the item
+    - resized: Whether the item's size changed
+    - toggled: Whether a menu/tree node was opened/closed
+    - visible: Whether the item is currently rendered
+
+    Appearance Properties:
+    -------------------
+    - enabled: Whether the item is interactive or greyed out
+    - font: Font used for text rendering
+    - theme: Visual theme/style settings
+    - show: Whether the item should be drawn
+    - no_scaling: Disable DPI/viewport scaling
+    
+    Layout Properties:
+    ----------------
+    - pos_to_viewport: Position relative to viewport top-left
+    - pos_to_window: Position relative to containing window 
+    - pos_to_parent: Position relative to parent item
+    - pos_to_default: Position relative to default layout flow
+    - rect_size: Current size in pixels including padding
+    - content_region_avail: Available content area within item for children
+    - pos_policy: How the item should be positioned
+    - height/width: Requested size of the item
+    - indent: Left indentation amount
+    - no_newline: Don't advance position after item
+
+    Value Properties:
+    ---------------
+    - value: Main value stored by the item 
+    - shareable_value: Allows sharing values between items
+    - label: Text label shown with the item
+
+    Event Properties:  
+    ---------------
+    - handlers: Event handlers attached to the item
+    - callbacks: Functions called when value changes
+
+    Positioning Rules:
+    ----------------
+    Items use a combination of absolute and relative positioning:
+    - Default flow places items vertically with automatic width
+    - pos_policy controls how position attributes are enforced
+    - Positions can be relative to viewport, window, parent or flow
+    - Size can be fixed, automatic, or stretch to fill space
+    - indent and no_newline provide fine-grained layout control
+
+    All attributes are protected by mutexes to enable thread-safe access.
+    
+    """
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
         """
 
@@ -89866,7 +93068,7 @@ class uiItem(baseItem):
         and REL_VIEWPORT do not.
 
         Each axis has it's own positioning policy.
-        pos_policy = DEFAULT will update both policies, why
+        pos_policy = DEFAULT will update both policies, while
         pos_policy = (None, DEFAULT) will only update the vertical
         axis policy.
 
