@@ -3,87 +3,85 @@ from libcpp.string cimport string
 
 cdef extern from "backend.h" nogil:
 
-    cdef struct mvViewport:
-        bint running
-        bint shown
-        bint resized
-
-        string title
-        string small_icon
-        string large_icon
-        float[4] clear_color
-
-        bint titleDirty
-        bint modesDirty
-        bint vsync
-        bint resizable
-        bint alwaysOnTop
-        bint decorated
-        bint fullScreen
-        bint disableClose
-        bint waitForEvents
-        bint shouldSkipPresenting
-        atomic[bint] activity
-        atomic[bint] needs_refresh
-
-        bint sizeDirty
-        bint posDirty
-        unsigned width
-        unsigned height
-        unsigned minwidth
-        unsigned minheight
-        unsigned maxwidth
-        unsigned maxheight
-        int actualWidth
-        int actualHeight
-        int clientWidth
-        int clientHeight
-        int xpos
-        int ypos
-        float dpi
     ctypedef void (*on_resize_fun)(void*, int, int)
-    ctypedef void (*on_close_fun)(void*)
+    ctypedef void (*on_close_fun)(void*)  
     ctypedef void (*render_fun)(void*)
 
-    mvViewport* mvCreateViewport  (render_fun,
-                                   on_resize_fun,
-                                   on_close_fun,
-                                   void *)
-    void        mvCleanupViewport (mvViewport& viewport)
-    bint        InitializeViewportWindow    (mvViewport& viewport,
-                                   char start_minimized,
-                                   char start_maximized)
-    void        mvMaximizeViewport(mvViewport& viewport)
-    void        mvMinimizeViewport(mvViewport& viewport)
-    void        mvRestoreViewport (mvViewport& viewport)
-    void        mvProcessEvents(mvViewport* viewport)
-    bint        mvRenderFrame(mvViewport& viewport,
-                              bint can_skip_presenting)
-    void        mvPresent(mvViewport* viewport)
-    void        mvToggleFullScreen(mvViewport& viewport)
-    void        mvWakeRendering(mvViewport& viewport)
-    void        mvMakeUploadContextCurrent(mvViewport& viewport)
-    void        mvReleaseUploadContext(mvViewport& viewport)
+    cdef cppclass platformViewport:        
+        # Virtual methods
+        void cleanup()
+        bint initialize(bint, bint) 
+        void maximize()
+        void minimize()
+        void restore()
+        void processEvents()
+        bint renderFrame(bint)
+        void present()
+        void toggleFullScreen()
+        void wakeRendering()
+        void makeUploadContextCurrent()
+        void releaseUploadContext()
 
-    void* mvAllocateTexture(unsigned width,
-                            unsigned height,
-                            unsigned num_chans,
-                            unsigned dynamic,
-                            unsigned type,
-                            unsigned filtering_mode)
-    void mvFreeTexture(void* texture)
+        # Texture methods
+        void* allocateTexture(unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)
+        void freeTexture(void*)
+        bint updateDynamicTexture(void*, unsigned, unsigned, unsigned, unsigned, void*, unsigned)
+        bint updateStaticTexture(void*, unsigned, unsigned, unsigned, unsigned, void*, unsigned)
 
-    bint mvUpdateDynamicTexture(void* texture,
-                                unsigned width,
-                                unsigned height,
-                                unsigned num_chans,
-                                unsigned type,
-                                void* data,
-                                unsigned src_stride)
-    bint mvUpdateStaticTexture(void* texture,
-                               unsigned width,
-                               unsigned height,
-                               unsigned num_chans,
-                               unsigned type,
-                               void* data,
-                               unsigned src_stride)
+        # Public members
+        bint isActive
+        bint isVisible
+        bint hasResized
+        float dpiScale
+        bint isFullScreen
+        bint isMinimized
+        bint isMaximized
+
+        # Rendering properties
+        float[4] clearColor
+        bint hasModesChanged
+        bint hasVSync
+        bint waitForEvents
+        bint shouldSkipPresenting
+        atomic[bint] activityDetected
+        atomic[bint] needsRefresh
+
+        # Window properties
+        string windowTitle
+        string iconSmall
+        string iconLarge
+        bint titleChangeRequested
+        #bint iconChangeRequested
+        bint windowResizable
+        bint windowAlwaysOnTop
+        bint windowDecorated
+        bint windowClosable
+        bint windowPropertyChangeRequested
+
+        # Window position/size
+        int positionX
+        int positionY
+        bint positionChangeRequested
+        unsigned minWidth
+        unsigned minHeight
+        unsigned maxWidth
+        unsigned maxHeight
+        int frameWidth
+        int frameHeight
+        int windowWidth
+        int windowHeight
+        bint sizeChangeRequested
+
+        # Protected members
+        string windowTitle
+        string iconSmall
+        string iconLarge
+        render_fun renderCallback
+        on_resize_fun resizeCallback
+        on_close_fun closeCallback
+        void* callbackData
+
+    cdef cppclass SDLViewport(platformViewport):
+        @staticmethod
+        platformViewport* create(render_fun, on_resize_fun, on_close_fun, void*)
+

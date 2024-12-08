@@ -1,87 +1,144 @@
 #include <atomic>
+#include <mutex>
 #include <vector>
 #include <string>
-
+#include <SDL3/SDL.h>
 #include <imgui.h>
 
 typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);
 
-struct mvViewport
+class platformViewport
 {
-	bool running = true;
-	bool shown = false;
-	bool resized = false;
+public:
+    platformViewport() = default;
+    virtual ~platformViewport() = default;
 
-	std::string title = "DearCyGui Window";
-	std::string small_icon;
-	std::string large_icon;
-	float clear_color[4] = { 0., 0., 0., 1. };
-		
-	// window modes
-	bool titleDirty  = false;
-	bool modesDirty  = false;
-	bool vsync       = true;
-	bool resizable   = true;
-	bool alwaysOnTop = false;
-	bool decorated   = true;
-    bool fullScreen  = false;
-	bool disableClose = false;
-	bool waitForEvents = false;
-	bool shouldSkipPresenting = false;
-	std::atomic<bool> activity{true};
-	std::atomic<bool> needs_refresh{true};
+    virtual void cleanup() = 0;
+    virtual bool initialize(bool start_minimized, bool start_maximized) = 0;
+    virtual void maximize() = 0;
+    virtual void minimize() = 0;
+    virtual void restore() = 0;
+    virtual void processEvents() = 0;
+    virtual bool renderFrame(bool can_skip_presenting) = 0;
+    virtual void present() = 0;
+    virtual void toggleFullScreen() = 0;
+    virtual void wakeRendering() = 0;
+    virtual void makeUploadContextCurrent() = 0;
+    virtual void releaseUploadContext() = 0;
 
-	// position/size
-	bool  sizeDirty    = false;
-	bool  posDirty     = false;
-	unsigned minwidth     = 250;
-	unsigned minheight    = 250;
-	unsigned maxwidth     = 10000;
-	unsigned maxheight    = 10000;
-	int actualWidth  = 1280; // frame buffer size
-	int actualHeight = 800;
-	int clientWidth  = 1280; // windows size
-	int clientHeight = 800;
-	int xpos         = 100;
-	int ypos         = 100;
-	float dpi        = 1.;
+	// makeUploadContextCurrent must be called before any texture
+	// operations are performed, and releaseUploadContext must be
+	// called after the texture operations are done.
+    virtual void* allocateTexture(unsigned width, unsigned height, unsigned num_chans, 
+                                unsigned dynamic, unsigned type, unsigned filtering_mode) = 0;
+    virtual void freeTexture(void* texture) = 0;
+    virtual bool updateDynamicTexture(void* texture, unsigned width, unsigned height,
+                                   unsigned num_chans, unsigned type, void* data, 
+                                   unsigned src_stride) = 0;
+    virtual bool updateStaticTexture(void* texture, unsigned width, unsigned height,
+                                   unsigned num_chans, unsigned type, void* data, 
+                                   unsigned src_stride) = 0;
 
-	render_fun render;
-	on_resize_fun on_resize;
-	on_close_fun on_close;
-	void *callback_data;
+	// Window state
+    bool isActive = true;
+    bool isVisible = false;
+    bool hasResized = false;
+    float dpiScale = 1.;
+    bool isFullScreen = false;
+    bool isMinimized = false;
+    bool isMaximized = false;
 
-	void* platformSpecifics = nullptr; // platform specifics
+	// Rendering properties
+    float clearColor[4] = { 0., 0., 0., 1. };
+    bool hasModesChanged = false;
+    bool hasVSync = true;
+    bool waitForEvents = false;
+    bool shouldSkipPresenting = false;
+    std::atomic<bool> activityDetected{true};
+    std::atomic<bool> needsRefresh{true};
+
+    // Window properties
+    std::string windowTitle = "DearCyGui Window";
+    std::string iconSmall;
+    std::string iconLarge;
+    bool titleChangeRequested = false;
+    bool iconChangeRequested = false;
+    bool windowResizable = true;
+    bool windowAlwaysOnTop = false;
+    bool windowDecorated = true;
+    bool windowClosable = true;
+    bool windowPropertyChangeRequested = false;
+
+    // Window position/size
+    int positionX = 100;
+    int positionY = 100;
+    bool positionChangeRequested = false;
+    unsigned minWidth = 250;
+    unsigned minHeight = 250;
+    unsigned maxWidth = 10000;
+    unsigned maxHeight = 10000;
+    int frameWidth = 1280;   // frame buffer size
+    int frameHeight = 800;
+    int windowWidth = 1280;  // window size
+    int windowHeight = 800;
+    bool sizeChangeRequested = false;
+
+protected:
+
+    // Callbacks
+    render_fun renderCallback;
+    on_resize_fun resizeCallback;
+    on_close_fun closeCallback;
+    void* callbackData;
+
+    // Utility the does a cheap test for 
+	// there has been any activity the
+	// requires a render.
+    static bool fastActivityCheck();
 };
 
-typedef void (*on_resize_fun)(void*, int width, int height);
-typedef void (*on_close_fun)(void*);
-typedef void (*render_fun)(void*);
+class SDLViewport : public platformViewport 
+{
+public:
+    virtual void cleanup() override;
+    virtual bool initialize(bool start_minimized, bool start_maximized) override;
+    virtual void maximize() override;
+    virtual void minimize() override;
+    virtual void restore() override;
+    virtual void processEvents() override;
+    virtual bool renderFrame(bool can_skip_presenting) override;
+    virtual void present() override;
+    virtual void toggleFullScreen() override;
+    virtual void wakeRendering() override;
+    virtual void makeUploadContextCurrent() override;
+    virtual void releaseUploadContext() override;
 
-mvViewport* mvCreateViewport  (render_fun render,
-							   on_resize_fun on_resize,
-							   on_close_fun on_close,
-							   void *callback_data);
-void        mvCleanupViewport (mvViewport& viewport);
-bool        InitializeViewportWindow    (mvViewport& viewport,
-							   bool start_minimized,
-							   bool start_maximized);
-void        mvMaximizeViewport(mvViewport& viewport);
-void        mvMinimizeViewport(mvViewport& viewport);
-void        mvRestoreViewport (mvViewport& viewport);
-void        mvProcessEvents(mvViewport* viewport);
-bool        mvRenderFrame(mvViewport& viewport,
-						  bool can_skip_presenting);
-void		mvPresent(mvViewport* viewport);
-void        mvToggleFullScreen(mvViewport& viewport);
-void        mvWakeRendering(mvViewport& viewport);
-void        mvMakeUploadContextCurrent(mvViewport& viewport);
-void        mvReleaseUploadContext(mvViewport& viewport);
+    virtual void* allocateTexture(unsigned width, unsigned height, unsigned num_chans, 
+                                  unsigned dynamic, unsigned type, unsigned filtering_mode) override;
+    virtual void freeTexture(void* texture) override;
+    virtual bool updateDynamicTexture(void* texture, unsigned width, unsigned height,
+                                      unsigned num_chans, unsigned type, void* data, 
+                                      unsigned src_stride) override;
+    virtual bool updateStaticTexture(void* texture, unsigned width, unsigned height,
+                                     unsigned num_chans, unsigned type, void* data, 
+                                     unsigned src_stride) override;
 
-void* mvAllocateTexture(unsigned width, unsigned height, unsigned num_chans, unsigned dynamic, unsigned type, unsigned filtering_mode);
-void mvFreeTexture(void* texture);
+    static SDLViewport* create(render_fun render,
+                               on_resize_fun on_resize,
+                               on_close_fun on_close,
+                               void* callback_data);
 
-bool mvUpdateDynamicTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data, unsigned src_stride);
-bool mvUpdateStaticTexture(void* texture, unsigned width, unsigned height, unsigned num_chans, unsigned type, void* data, unsigned src_stride);
+private:
+    SDL_Window* windowHandle = nullptr;
+    SDL_Window* uploadWindowHandle = nullptr;
+    SDL_GLContext glContext = nullptr;
+    SDL_GLContext uploadGLContext = nullptr;
+    std::mutex renderContextLock;
+    std::mutex uploadContextLock;
+    bool hasOpenGL3Init = false;
+    bool hasSDL3Init = false;
+
+    void preparePresentFrame();
+};

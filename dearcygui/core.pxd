@@ -1,5 +1,5 @@
 from dearcygui.wrapper cimport imgui, implot, imnodes
-from dearcygui.backends.backend cimport mvViewport
+from dearcygui.backends.backend cimport platformViewport
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
@@ -266,7 +266,7 @@ cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
-    cdef mvViewport *internal_viewport
+    cdef platformViewport *platform
     cdef bint initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback
@@ -425,9 +425,6 @@ cdef class uiItem(baseItem):
     cdef str user_label
     cdef bool _show
     cdef Positioning[2] _pos_policy
-    # mvAppItemInfo
-    #cdef int location -> for table
-    # mvAppItemState
     cdef itemState state
     cdef bint can_be_disabled
     cdef bint _enabled
@@ -438,16 +435,11 @@ cdef class uiItem(baseItem):
     cdef bint _no_newline
     cdef bint enabled_update_requested
     cdef int last_frame_update
-    # mvAppItemConfig
-    #cdef string filter -> to move
-    #cdef string alias
     cdef bint dpi_scaling
     cdef imgui.ImVec2 requested_size
     cdef float _indent
     cdef ThemeEnablers theme_condition_enabled
     cdef ThemeCategories theme_condition_category
-    #cdef float trackOffset
-    #cdef bint tracked
     cdef Callback dragCallback
     cdef Callback dropCallback
     cdef Font _font
@@ -459,7 +451,6 @@ cdef class uiItem(baseItem):
     cdef void update_current_state_subset(self) noexcept nogil
     cdef imgui.ImVec2 scaled_requested_size(self) noexcept nogil
     cdef void draw(self) noexcept nogil
-    #cdef void draw_children(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
 
 """
