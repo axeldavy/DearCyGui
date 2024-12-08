@@ -840,13 +840,13 @@ cdef class Button(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return <int>self._direction
+        return <ButtonDirection>self._direction
 
     @direction.setter
-    def direction(self, int value):
+    def direction(self, ButtonDirection value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value < imgui.ImGuiDir_None or value >= imgui.ImGuiDir_COUNT:
+        if <imgui.ImGuiDir>value < imgui.ImGuiDir_None or <imgui.ImGuiDir>value >= imgui.ImGuiDir_COUNT:
             raise ValueError("Invalid direction {value}")
         self._direction = <imgui.ImGuiDir>value
 

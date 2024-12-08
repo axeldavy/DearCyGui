@@ -160,6 +160,14 @@ mvProcessEvents(mvViewport* viewport)
             case SDL_EVENT_MOUSE_MOTION:
                 viewport->activity.store(true);
                 break;
+            case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+                viewport->fullScreen = true;
+                viewport->needs_refresh.store(true);
+                break;
+            case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+                viewport->fullScreen = false;
+                viewport->needs_refresh.store(true);
+                break;
             case SDL_EVENT_WINDOW_RESIZED:
                 //viewport->on_resize(...) TODO
             case SDL_EVENT_MOUSE_WHEEL:
@@ -170,8 +178,7 @@ mvProcessEvents(mvViewport* viewport)
             case SDL_EVENT_KEY_DOWN:
             case SDL_EVENT_KEY_UP:
             case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
-            case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
-            case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+            
             case SDL_EVENT_WINDOW_EXPOSED:
             case SDL_EVENT_WINDOW_DESTROYED:
                 viewport->needs_refresh.store(true);
@@ -490,7 +497,7 @@ void
 mvToggleFullScreen(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    SDL_SetWindowFullscreen(viewportData->handle, viewport.fullScreen);
+    SDL_SetWindowFullscreen(viewportData->handle, !viewport.fullScreen);
 }
 
 void mvWakeRendering(mvViewport& viewport)

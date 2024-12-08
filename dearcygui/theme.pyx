@@ -2697,6 +2697,22 @@ cdef class ThemeStyleImNodes(baseThemeStyle):
 '''
 
 cdef class ThemeList(baseTheme):
+    """
+    A set of base theme elements to apply when we render an item.
+    Warning: it is bad practice to bind a theme to every item, and
+    is not free on CPU. Instead set the theme as high as possible in
+    the rendering hierarchy, and only change locally reduced sets
+    of theme elements if needed.
+
+    Contains theme styles and colors.
+    Can contain a theme list.
+    Can be bound to items.
+
+    WARNING: if you bind a theme element to an item,
+    and that theme element belongs to a theme list,
+    the siblings before the theme element will get
+    applied as well.
+    """
     def __cinit__(self):
         self.can_have_theme_child = True
 
@@ -2714,6 +2730,23 @@ cdef class ThemeList(baseTheme):
 
 
 cdef class ThemeListWithCondition(baseTheme):
+    """
+    A ThemeList but with delayed activation.
+    If during rendering of the children the condition
+    is met, then the theme gets applied.
+
+    Contains theme styles and colors.
+    Can contain a theme list.
+    Can be in a theme list
+    Can be bound to items.
+    Concatenates with previous theme lists with
+    conditions during rendering.
+    The condition gets checked on the bound item,
+    not just the children.
+
+    As the elements in this list get checked everytime
+    a item in the child tree is rendered, use this lightly.
+    """
     def __cinit__(self):
         self.can_have_theme_child = True
         self.activation_condition_enabled = ThemeEnablers.ANY
@@ -2840,6 +2873,13 @@ cdef class ThemeListWithCondition(baseTheme):
 
 
 cdef class ThemeStopCondition(baseTheme):
+    """
+    a Theme that blocks any previous theme
+    list with condition from propagating to children
+    of the item bound. Does not affect the bound item.
+
+    Does not work inside a ThemeListWithCondition
+    """
     cdef void push(self) noexcept nogil:
         self.mutex.lock()
         self.start_pending_theme_actions_backup.push_back(self.context._viewport.start_pending_theme_actions)

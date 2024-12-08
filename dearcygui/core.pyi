@@ -1268,7 +1268,7 @@ class AxesResizeHandler(baseHandler):
 
 
 class Button(uiItem):
-    def __init__(self, context : Context, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : int = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
 
         arrow: Whether to display an arrow.
@@ -1405,7 +1405,7 @@ class Button(uiItem):
         ...
 
 
-    def configure(self, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : int = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
         """
         arrow: Whether to display an arrow.
             Not compatible with small
@@ -1724,7 +1724,7 @@ class Button(uiItem):
 
 
     @property
-    def direction(self) -> int:
+    def direction(self) -> ButtonDirection:
         """
         Writable attribute: Direction of the arrow if any
         
@@ -1733,7 +1733,7 @@ class Button(uiItem):
 
 
     @direction.setter
-    def direction(self, value : int):
+    def direction(self, value : ButtonDirection):
         ...
 
 
@@ -17296,17 +17296,41 @@ class DrawEllipse(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        pmax: Bottom-right corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        pmin: Top-left corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
+        segments: Number of segments used to approximate the ellipse.
+            
+            Returns:
+                int: Number of segments
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -17336,17 +17360,41 @@ class DrawEllipse(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        pmax: Bottom-right corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        pmin: Top-left corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
+        segments: Number of segments used to approximate the ellipse.
+            
+            Returns:
+                int: Number of segments
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -17467,6 +17515,13 @@ class DrawEllipse(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -17486,6 +17541,13 @@ class DrawEllipse(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -17616,6 +17678,13 @@ class DrawEllipse(drawingItem):
 
     @property
     def pmax(self) -> Coord:
+        """
+        Bottom-right corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -17626,6 +17695,13 @@ class DrawEllipse(drawingItem):
 
     @property
     def pmin(self) -> Coord:
+        """
+        Top-left corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -17662,6 +17738,13 @@ class DrawEllipse(drawingItem):
 
     @property
     def segments(self) -> int:
+        """
+        Number of segments used to approximate the ellipse.
+        
+        Returns:
+            int: Number of segments
+        
+        """
         ...
 
 
@@ -17691,6 +17774,13 @@ class DrawEllipse(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -17754,20 +17844,51 @@ class DrawImage(drawingItem):
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         center: Center of pmin/pmax
+            
+            Returns:
+                tuple: (x, y) coordinates
         children: List of all the children of the item,
             from first rendered, to last rendered.
         color_multiplier: The image is mixed with this color.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         direction: Angle of (center, middle of p2/p3) with the horizontal axis
+            
+            Returns:
+                float: Angle in radians
         height: Height of the shape. Negative means screen space.
+            
+            Returns:
+                float: Height value
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         p1: Top left corner
+            
+            Returns:
+                tuple: (x, y) coordinates
         p2: Top right corner
+            
+            Returns:
+                tuple: (x, y) coordinates
         p3: Bottom right corner
-        p4: Bottom left corner
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p4: 
+            Bottom left corner
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
-        pmax: Bottom right corner
-        pmin: Top left corner
+        pmax: Bottom-right corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        pmin: Top-left corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         rounding: Rounding of the corners of the shape.
@@ -17775,6 +17896,9 @@ class DrawImage(drawingItem):
             If non-zero, the renderered image will be rectangular
             and parallel to the axes.
             (p1/p2/p3/p4 will behave like pmin/pmax)
+            
+            Returns:
+                float: Rounding radius
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
@@ -17784,12 +17908,33 @@ class DrawImage(drawingItem):
         texture: Image content
         user_data: User data of any type.
         uv1: Texture coordinate for p1
+            
+            Returns:
+                list: UV coordinates
         uv2: Texture coordinate for p2
+            
+            Returns:
+                list: UV coordinates
         uv3: Texture coordinate for p3
+            
+            Returns:
+                list: UV coordinates
         uv4: Texture coordinate for p4
+            
+            Returns:
+                list: UV coordinates
         uv_max: Texture coordinate for pmax. Writes to uv2/3/4.
+            
+            Returns:
+                list: UV coordinates
         uv_min: Texture coordinate for pmin. Writes to uv1/2/4.
+            
+            Returns:
+                list: UV coordinates
         width: Width of the shape. Negative means screen space.
+            
+            Returns:
+                float: Width value
         """
         ...
 
@@ -17817,20 +17962,51 @@ class DrawImage(drawingItem):
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
         center: Center of pmin/pmax
+            
+            Returns:
+                tuple: (x, y) coordinates
         children: List of all the children of the item,
             from first rendered, to last rendered.
         color_multiplier: The image is mixed with this color.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         direction: Angle of (center, middle of p2/p3) with the horizontal axis
+            
+            Returns:
+                float: Angle in radians
         height: Height of the shape. Negative means screen space.
+            
+            Returns:
+                float: Height value
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         p1: Top left corner
+            
+            Returns:
+                tuple: (x, y) coordinates
         p2: Top right corner
+            
+            Returns:
+                tuple: (x, y) coordinates
         p3: Bottom right corner
-        p4: Bottom left corner
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p4: 
+            Bottom left corner
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
-        pmax: Bottom right corner
-        pmin: Top left corner
+        pmax: Bottom-right corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        pmin: Top-left corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         rounding: Rounding of the corners of the shape.
@@ -17838,6 +18014,9 @@ class DrawImage(drawingItem):
             If non-zero, the renderered image will be rectangular
             and parallel to the axes.
             (p1/p2/p3/p4 will behave like pmin/pmax)
+            
+            Returns:
+                float: Rounding radius
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
@@ -17847,12 +18026,33 @@ class DrawImage(drawingItem):
         texture: Image content
         user_data: User data of any type.
         uv1: Texture coordinate for p1
+            
+            Returns:
+                list: UV coordinates
         uv2: Texture coordinate for p2
+            
+            Returns:
+                list: UV coordinates
         uv3: Texture coordinate for p3
+            
+            Returns:
+                list: UV coordinates
         uv4: Texture coordinate for p4
+            
+            Returns:
+                list: UV coordinates
         uv_max: Texture coordinate for pmax. Writes to uv2/3/4.
+            
+            Returns:
+                list: UV coordinates
         uv_min: Texture coordinate for pmin. Writes to uv1/2/4.
+            
+            Returns:
+                list: UV coordinates
         width: Width of the shape. Negative means screen space.
+            
+            Returns:
+                float: Width value
         """
         ...
 
@@ -17945,7 +18145,12 @@ class DrawImage(drawingItem):
 
     @property
     def center(self) -> Coord:
-        """Center of pmin/pmax
+        """
+        Center of pmin/pmax
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -17987,6 +18192,9 @@ class DrawImage(drawingItem):
         """
         The image is mixed with this color.
         
+        Returns:
+            list: RGBA values in [0,1] range
+        
         """
         ...
 
@@ -18007,7 +18215,12 @@ class DrawImage(drawingItem):
 
     @property
     def direction(self) -> float:
-        """Angle of (center, middle of p2/p3) with the horizontal axis
+        """
+        Angle of (center, middle of p2/p3) with the horizontal axis
+        
+        Returns:
+            float: Angle in radians
+        
         """
         ...
 
@@ -18019,7 +18232,12 @@ class DrawImage(drawingItem):
 
     @property
     def height(self) -> float:
-        """Height of the shape. Negative means screen space.
+        """
+        Height of the shape. Negative means screen space.
+        
+        Returns:
+            float: Height value
+        
         """
         ...
 
@@ -18093,7 +18311,12 @@ class DrawImage(drawingItem):
 
     @property
     def p1(self) -> Coord:
-        """Top left corner
+        """
+        Top left corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -18105,7 +18328,12 @@ class DrawImage(drawingItem):
 
     @property
     def p2(self) -> Coord:
-        """Top right corner
+        """
+        Top right corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -18117,7 +18345,12 @@ class DrawImage(drawingItem):
 
     @property
     def p3(self) -> Coord:
-        """Bottom right corner
+        """
+        Bottom right corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -18129,7 +18362,13 @@ class DrawImage(drawingItem):
 
     @property
     def p4(self) -> Coord:
-        """Bottom left corner
+        """
+ 
+        Bottom left corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -18199,7 +18438,12 @@ class DrawImage(drawingItem):
 
     @property
     def pmax(self) -> Coord:
-        """Bottom right corner
+        """
+        Bottom-right corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -18211,7 +18455,12 @@ class DrawImage(drawingItem):
 
     @property
     def pmin(self) -> Coord:
-        """Top left corner
+        """
+        Top-left corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
         """
         ...
 
@@ -18249,11 +18498,15 @@ class DrawImage(drawingItem):
 
     @property
     def rounding(self) -> float:
-        """Rounding of the corners of the shape.
+        """
+        Rounding of the corners of the shape.
         
         If non-zero, the renderered image will be rectangular
         and parallel to the axes.
         (p1/p2/p3/p4 will behave like pmin/pmax)
+        
+        Returns:
+            float: Rounding radius
         
         """
         ...
@@ -18324,7 +18577,12 @@ class DrawImage(drawingItem):
 
     @property
     def uv1(self) -> list:
-        """Texture coordinate for p1
+        """
+        Texture coordinate for p1
+        
+        Returns:
+            list: UV coordinates
+        
         """
         ...
 
@@ -18336,7 +18594,12 @@ class DrawImage(drawingItem):
 
     @property
     def uv2(self) -> list:
-        """Texture coordinate for p2
+        """
+        Texture coordinate for p2
+        
+        Returns:
+            list: UV coordinates
+        
         """
         ...
 
@@ -18348,7 +18611,12 @@ class DrawImage(drawingItem):
 
     @property
     def uv3(self) -> list:
-        """Texture coordinate for p3
+        """
+        Texture coordinate for p3
+        
+        Returns:
+            list: UV coordinates
+        
         """
         ...
 
@@ -18360,7 +18628,12 @@ class DrawImage(drawingItem):
 
     @property
     def uv4(self) -> list:
-        """Texture coordinate for p4
+        """
+        Texture coordinate for p4
+        
+        Returns:
+            list: UV coordinates
+        
         """
         ...
 
@@ -18372,7 +18645,12 @@ class DrawImage(drawingItem):
 
     @property
     def uv_max(self) -> list:
-        """Texture coordinate for pmax. Writes to uv2/3/4.
+        """
+        Texture coordinate for pmax. Writes to uv2/3/4.
+        
+        Returns:
+            list: UV coordinates
+        
         """
         ...
 
@@ -18384,7 +18662,12 @@ class DrawImage(drawingItem):
 
     @property
     def uv_min(self) -> list:
-        """Texture coordinate for pmin. Writes to uv1/2/4.
+        """
+        Texture coordinate for pmin. Writes to uv1/2/4.
+        
+        Returns:
+            list: UV coordinates
+        
         """
         ...
 
@@ -18396,7 +18679,12 @@ class DrawImage(drawingItem):
 
     @property
     def width(self) -> float:
-        """Width of the shape. Negative means screen space.
+        """
+        Width of the shape. Negative means screen space.
+        
+        Returns:
+            float: Width value
+        
         """
         ...
 
@@ -20875,10 +21163,19 @@ class DrawLine(drawingItem):
         children: List of all the children of the item,
             from first rendered, to last rendered.
         direction: Angle (rad) of the line segment relative to the horizontal axis.
+            
+            Returns:
+                float: Angle in radians
         length: Length of the line segment. Negatives mean screen space.
+            
+            Returns:
+                float: Length value
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         p2: Coordinates of one of the extremities of the line segment
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -20918,10 +21215,19 @@ class DrawLine(drawingItem):
         children: List of all the children of the item,
             from first rendered, to last rendered.
         direction: Angle (rad) of the line segment relative to the horizontal axis.
+            
+            Returns:
+                float: Angle in radians
         length: Length of the line segment. Negatives mean screen space.
+            
+            Returns:
+                float: Length value
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         p2: Coordinates of one of the extremities of the line segment
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -21083,6 +21389,9 @@ class DrawLine(drawingItem):
         """
         Angle (rad) of the line segment relative to the horizontal axis.
         
+        Returns:
+            float: Angle in radians
+        
         """
         ...
 
@@ -21103,6 +21412,9 @@ class DrawLine(drawingItem):
     def length(self) -> float:
         """
         Length of the line segment. Negatives mean screen space.
+        
+        Returns:
+            float: Length value
         
         """
         ...
@@ -21182,6 +21494,9 @@ class DrawLine(drawingItem):
     def p2(self) -> Coord:
         """
         Coordinates of one of the extremities of the line segment
+        
+        Returns:
+            tuple: (x, y) coordinates
         
         """
         ...
@@ -21354,9 +21669,21 @@ class DrawPolygon(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        points: List of vertex positions defining the shape.
+            
+            Returns:
+                list: List of (x,y) coordinate tuples
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
@@ -21365,6 +21692,10 @@ class DrawPolygon(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -21394,9 +21725,21 @@ class DrawPolygon(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        points: List of vertex positions defining the shape.
+            
+            Returns:
+                list: List of (x,y) coordinate tuples
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
@@ -21405,6 +21748,10 @@ class DrawPolygon(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -21525,6 +21872,13 @@ class DrawPolygon(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -21544,6 +21898,13 @@ class DrawPolygon(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -21674,6 +22035,13 @@ class DrawPolygon(drawingItem):
 
     @property
     def points(self) -> list:
+        """
+        List of vertex positions defining the shape.
+        
+        Returns:
+            list: List of (x,y) coordinate tuples
+        
+        """
         ...
 
 
@@ -21729,6 +22097,13 @@ class DrawPolygon(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -21785,9 +22160,21 @@ class DrawPolyline(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        closed: Whether the shape is closed by connecting first and last points.
+            
+            Returns:
+                bool: True if shape is closed
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        points: List of vertex positions defining the shape.
+            
+            Returns:
+                list: List of (x,y) coordinate tuples
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
@@ -21796,6 +22183,10 @@ class DrawPolyline(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -21825,9 +22216,21 @@ class DrawPolyline(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        closed: Whether the shape is closed by connecting first and last points.
+            
+            Returns:
+                bool: True if shape is closed
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        points: List of vertex positions defining the shape.
+            
+            Returns:
+                list: List of (x,y) coordinate tuples
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
@@ -21836,6 +22239,10 @@ class DrawPolyline(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -21956,6 +22363,13 @@ class DrawPolyline(drawingItem):
 
     @property
     def closed(self) -> bool:
+        """
+        Whether the shape is closed by connecting first and last points.
+        
+        Returns:
+            bool: True if shape is closed
+        
+        """
         ...
 
 
@@ -21966,6 +22380,13 @@ class DrawPolyline(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22105,6 +22526,13 @@ class DrawPolyline(drawingItem):
 
     @property
     def points(self) -> list:
+        """
+        List of vertex positions defining the shape.
+        
+        Returns:
+            list: List of (x,y) coordinate tuples
+        
+        """
         ...
 
 
@@ -22160,6 +22588,13 @@ class DrawPolyline(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -22219,8 +22654,33 @@ class DrawQuad(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p1: First vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p2: Second vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p3: Third vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p4: 
+            Fourth vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -22230,6 +22690,10 @@ class DrawQuad(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -22259,8 +22723,33 @@ class DrawQuad(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p1: First vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p2: Second vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p3: Third vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p4: 
+            Fourth vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -22270,6 +22759,10 @@ class DrawQuad(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -22390,6 +22883,13 @@ class DrawQuad(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22409,6 +22909,13 @@ class DrawQuad(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22481,6 +22988,13 @@ class DrawQuad(drawingItem):
 
     @property
     def p1(self) -> Coord:
+        """
+        First vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -22491,6 +23005,13 @@ class DrawQuad(drawingItem):
 
     @property
     def p2(self) -> Coord:
+        """
+        Second vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -22501,6 +23022,13 @@ class DrawQuad(drawingItem):
 
     @property
     def p3(self) -> Coord:
+        """
+        Third vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -22511,6 +23039,14 @@ class DrawQuad(drawingItem):
 
     @property
     def p4(self) -> Coord:
+        """
+ 
+        Fourth vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -22624,6 +23160,13 @@ class DrawQuad(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -22684,17 +23227,57 @@ class DrawRect(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p1: Fill color at point p1 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p2: Fill color at point p2 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p3: Fill color at point p3 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p4: Fill color at point p4 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        pmax: Bottom-right corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        pmin: Top-left corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
+        rounding: Rounding of the corners of the shape.
+            
+            Returns:
+                float: Rounding radius
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -22724,17 +23307,57 @@ class DrawRect(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p1: Fill color at point p1 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p2: Fill color at point p2 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p3: Fill color at point p3 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill_p4: Fill color at point p4 for gradient fills.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        pmax: Bottom-right corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        pmin: Top-left corner position of the drawing in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
+        rounding: Rounding of the corners of the shape.
+            
+            Returns:
+                float: Rounding radius
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -22855,6 +23478,13 @@ class DrawRect(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22874,6 +23504,13 @@ class DrawRect(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22884,6 +23521,13 @@ class DrawRect(drawingItem):
 
     @property
     def fill_p1(self) -> list:
+        """
+        Fill color at point p1 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22894,6 +23538,13 @@ class DrawRect(drawingItem):
 
     @property
     def fill_p2(self) -> list:
+        """
+        Fill color at point p2 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22904,6 +23555,13 @@ class DrawRect(drawingItem):
 
     @property
     def fill_p3(self) -> list:
+        """
+        Fill color at point p3 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -22914,6 +23572,13 @@ class DrawRect(drawingItem):
 
     @property
     def fill_p4(self) -> list:
+        """
+        Fill color at point p4 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -23044,6 +23709,13 @@ class DrawRect(drawingItem):
 
     @property
     def pmax(self) -> Coord:
+        """
+        Bottom-right corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -23054,6 +23726,13 @@ class DrawRect(drawingItem):
 
     @property
     def pmin(self) -> Coord:
+        """
+        Top-left corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -23090,6 +23769,13 @@ class DrawRect(drawingItem):
 
     @property
     def rounding(self) -> float:
+        """
+        Rounding of the corners of the shape.
+        
+        Returns:
+            float: Rounding radius
+        
+        """
         ...
 
 
@@ -23119,6 +23805,13 @@ class DrawRect(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -23172,21 +23865,39 @@ class DrawRegularPolygon(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         direction: Angle (rad) of the first point of the shape.
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         num_points: Number of points in the shape.
             num_points=1 gives a circle.
+            
+            Returns:
+                int: Number of points
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         radius: Radius of the shape. Negative means screen space.
+            
+            Returns:
+                float: Radius value
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -23216,21 +23927,39 @@ class DrawRegularPolygon(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         direction: Angle (rad) of the first point of the shape.
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         num_points: Number of points in the shape.
             num_points=1 gives a circle.
+            
+            Returns:
+                int: Number of points
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         radius: Radius of the shape. Negative means screen space.
+            
+            Returns:
+                float: Radius value
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -23361,6 +24090,13 @@ class DrawRegularPolygon(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -23385,6 +24121,9 @@ class DrawRegularPolygon(drawingItem):
 
         The angle is relative to the horizontal axis.
         
+        Returns:
+            float: Angle in radians
+        
         """
         ...
 
@@ -23396,6 +24135,13 @@ class DrawRegularPolygon(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -23471,6 +24217,9 @@ class DrawRegularPolygon(drawingItem):
         """
         Number of points in the shape.
         num_points=1 gives a circle.
+        
+        Returns:
+            int: Number of points
         
         """
         ...
@@ -23570,6 +24319,9 @@ class DrawRegularPolygon(drawingItem):
         """
         Radius of the shape. Negative means screen space.
         
+        Returns:
+            float: Radius value
+        
         """
         ...
 
@@ -23600,6 +24352,13 @@ class DrawRegularPolygon(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -24048,22 +24807,43 @@ class DrawStar(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         direction: Angle (rad) of the first point of the shape.
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         inner_radius: Radius of the inner shape.
+            
+            Returns:
+                float: Inner radius value
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         num_points: Number of points in the shape.
             Must be >= 3.
+            
+            Returns:
+                int: Number of points
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         radius: Radius of the shape. Negative means screen space.
+            
+            Returns:
+                float: Radius value
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -24093,22 +24873,43 @@ class DrawStar(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         direction: Angle (rad) of the first point of the shape.
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         inner_radius: Radius of the inner shape.
+            
+            Returns:
+                float: Inner radius value
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         num_points: Number of points in the shape.
             Must be >= 3.
+            
+            Returns:
+                int: Number of points
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         radius: Radius of the shape. Negative means screen space.
+            
+            Returns:
+                float: Radius value
         show: Should the object be drawn/shown ?
             In case show is set to False, this disables any
             callback (for example the close callback won't be called
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -24239,6 +25040,13 @@ class DrawStar(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -24263,6 +25071,9 @@ class DrawStar(drawingItem):
 
         The angle is relative to the horizontal axis.
         
+        Returns:
+            float: Angle in radians
+        
         """
         ...
 
@@ -24274,6 +25085,13 @@ class DrawStar(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -24286,6 +25104,9 @@ class DrawStar(drawingItem):
     def inner_radius(self) -> float:
         """
         Radius of the inner shape.
+        
+        Returns:
+            float: Inner radius value
         
         """
         ...
@@ -24363,6 +25184,9 @@ class DrawStar(drawingItem):
         """
         Number of points in the shape.
         Must be >= 3.
+        
+        Returns:
+            int: Number of points
         
         """
         ...
@@ -24462,6 +25286,9 @@ class DrawStar(drawingItem):
         """
         Radius of the shape. Negative means screen space.
         
+        Returns:
+            float: Radius value
+        
         """
         ...
 
@@ -24492,6 +25319,13 @@ class DrawStar(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -24549,10 +25383,18 @@ class DrawText(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the text.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         font: font used for the text rendered
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        pos: Position of the drawing element in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
@@ -24561,6 +25403,10 @@ class DrawText(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        size: Text size. Negative means screen space units.
+            
+            Returns:
+                float: Size value
         user_data: User data of any type.
         """
         ...
@@ -24590,10 +25436,18 @@ class DrawText(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the text.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         font: font used for the text rendered
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         parent: parent of the item in the rendering tree.
+        pos: Position of the drawing element in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         show: Should the object be drawn/shown ?
@@ -24602,6 +25456,10 @@ class DrawText(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        size: Text size. Negative means screen space units.
+            
+            Returns:
+                float: Size value
         user_data: User data of any type.
         """
         ...
@@ -24722,6 +25580,13 @@ class DrawText(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the text.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -24875,6 +25740,13 @@ class DrawText(drawingItem):
 
     @property
     def pos(self) -> Coord:
+        """
+        Position of the drawing element in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -24930,6 +25802,13 @@ class DrawText(drawingItem):
 
     @property
     def size(self) -> float:
+        """
+        Text size. Negative means screen space units.
+        
+        Returns:
+            float: Size value
+        
+        """
         ...
 
 
@@ -24998,8 +25877,28 @@ class DrawTriangle(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p1: First vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p2: Second vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p3: Third vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -25009,6 +25908,10 @@ class DrawTriangle(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -25038,8 +25941,28 @@ class DrawTriangle(drawingItem):
         before: Attach the item just before the target item. Default is None (disabled)
         children: List of all the children of the item,
             from first rendered, to last rendered.
+        color: Color of the drawing outline.
+            
+            Returns:
+                list: RGBA values in [0,1] range
+        fill: Fill color of the drawing.
+            
+            Returns:
+                list: RGBA values in [0,1] range
         next_sibling: child of the parent of the item that
             is rendered just after this item.
+        p1: First vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p2: Second vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
+        p3: Third vertex position in coordinate space.
+            
+            Returns:
+                tuple: (x, y) coordinates
         parent: parent of the item in the rendering tree.
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
@@ -25049,6 +25972,10 @@ class DrawTriangle(drawingItem):
             if a window is hidden with show = False).
             In the case of items that can be closed,
             show is set to False automatically on close.
+        thickness: Line thickness of the drawing outline.
+            
+            Returns:
+                float: Thickness value in pixels
         user_data: User data of any type.
         """
         ...
@@ -25169,6 +26096,13 @@ class DrawTriangle(drawingItem):
 
     @property
     def color(self) -> Color:
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -25188,6 +26122,13 @@ class DrawTriangle(drawingItem):
 
     @property
     def fill(self) -> Color:
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
         ...
 
 
@@ -25260,6 +26201,13 @@ class DrawTriangle(drawingItem):
 
     @property
     def p1(self) -> Coord:
+        """
+        First vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -25270,6 +26218,13 @@ class DrawTriangle(drawingItem):
 
     @property
     def p2(self) -> Coord:
+        """
+        Second vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -25280,6 +26235,13 @@ class DrawTriangle(drawingItem):
 
     @property
     def p3(self) -> Coord:
+        """
+        Third vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        
+        """
         ...
 
 
@@ -25393,6 +26355,13 @@ class DrawTriangle(drawingItem):
 
     @property
     def thickness(self) -> float:
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        
+        """
         ...
 
 
@@ -25814,7 +26783,8 @@ class DrawingClip(drawingItem):
 
     @property
     def pmax(self) -> Coord:
-        """(xmax, ymax) corner of the rect that
+        """
+        (xmax, ymax) corner of the rect that
         must be on screen for the children to be rendered.
         
         """
@@ -25828,7 +26798,8 @@ class DrawingClip(drawingItem):
 
     @property
     def pmin(self) -> Coord:
-        """(xmin, ymin) corner of the rect that
+        """
+        (xmin, ymin) corner of the rect that
         must be on screen for the children to be rendered.
         
         """

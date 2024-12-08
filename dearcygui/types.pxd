@@ -65,6 +65,13 @@ cpdef enum class Alignment:
     JUSTIFIED=3,
     MANUAL=4
 
+cpdef enum class ButtonDirection:
+    NONE = imgui.ImGuiDir_None,
+    LEFT = imgui.ImGuiDir_Left,
+    RIGHT = imgui.ImGuiDir_Right,
+    UP = imgui.ImGuiDir_Up,
+    DOWN = imgui.ImGuiDir_Down
+
 cdef enum theme_types:
     t_color,
     t_style

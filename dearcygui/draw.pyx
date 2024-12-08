@@ -140,7 +140,8 @@ cdef class DrawingClip(drawingItem):
 
     @property
     def pmin(self):
-        """(xmin, ymin) corner of the rect that
+        """
+        (xmin, ymin) corner of the rect that
         must be on screen for the children to be rendered.
         """
         cdef unique_lock[recursive_mutex] m
@@ -153,7 +154,8 @@ cdef class DrawingClip(drawingItem):
         read_coord(self._pmin, value)
     @property
     def pmax(self):
-        """(xmax, ymax) corner of the rect that
+        """
+        (xmax, ymax) corner of the rect that
         must be on screen for the children to be rendered.
         """
         cdef unique_lock[recursive_mutex] m
@@ -935,6 +937,12 @@ cdef class DrawEllipse(drawingItem):
         self._segments = 0
     @property
     def pmin(self):
+        """
+        Top-left corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._pmin)
@@ -946,6 +954,12 @@ cdef class DrawEllipse(drawingItem):
         self.__fill_points()
     @property
     def pmax(self):
+        """
+        Bottom-right corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._pmax)
@@ -957,6 +971,12 @@ cdef class DrawEllipse(drawingItem):
         self.__fill_points()
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -969,6 +989,12 @@ cdef class DrawEllipse(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
@@ -981,6 +1007,12 @@ cdef class DrawEllipse(drawingItem):
         self._fill = parse_color(value)
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -991,6 +1023,12 @@ cdef class DrawEllipse(drawingItem):
         self._thickness = value
     @property
     def segments(self):
+        """
+        Number of segments used to approximate the ellipse.
+        
+        Returns:
+            int: Number of segments
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._segments
@@ -1096,7 +1134,12 @@ cdef class DrawImage(drawingItem):
         self._texture = value
     @property
     def pmin(self):
-        """Top left corner"""
+        """
+        Top-left corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p1)
@@ -1110,7 +1153,12 @@ cdef class DrawImage(drawingItem):
         self.update_center()
     @property
     def pmax(self):
-        """Bottom right corner"""
+        """
+        Bottom-right corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p3)
@@ -1124,20 +1172,32 @@ cdef class DrawImage(drawingItem):
         self.update_center()
     @property
     def center(self):
-        """Center of pmin/pmax"""
+        """
+        Center of pmin/pmax
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._center)
     @center.setter
     def center(self, value):
-        """Center of pmin/pmax"""
+        """
+        Center of pmin/pmax
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         read_coord(self._center, value)
         self.update_extremities()
     @property
     def height(self):
-        """Height of the shape. Negative means screen space."""
+        """
+        Height of the shape. Negative means screen space.
+        
+        Returns:
+            float: Height value
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._height
@@ -1149,7 +1209,12 @@ cdef class DrawImage(drawingItem):
         self.update_extremities()
     @property
     def width(self):
-        """Width of the shape. Negative means screen space."""
+        """
+        Width of the shape. Negative means screen space.
+        
+        Returns:
+            float: Width value
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._width
@@ -1161,7 +1226,12 @@ cdef class DrawImage(drawingItem):
         self.update_extremities()
     @property
     def direction(self):
-        """Angle of (center, middle of p2/p3) with the horizontal axis"""
+        """
+        Angle of (center, middle of p2/p3) with the horizontal axis
+        
+        Returns:
+            float: Angle in radians
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._direction
@@ -1172,7 +1242,12 @@ cdef class DrawImage(drawingItem):
         self._direction = value
     @property
     def p1(self):
-        """Top left corner"""
+        """
+        Top left corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p1)
@@ -1184,7 +1259,12 @@ cdef class DrawImage(drawingItem):
         self.update_center()
     @property
     def p2(self):
-        """Top right corner"""
+        """
+        Top right corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p2)
@@ -1195,7 +1275,12 @@ cdef class DrawImage(drawingItem):
         read_coord(self._p2, value)
     @property
     def p3(self):
-        """Bottom right corner"""
+        """
+        Bottom right corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p3)
@@ -1207,7 +1292,12 @@ cdef class DrawImage(drawingItem):
         self.update_center()
     @property
     def p4(self):
-        """Bottom left corner"""
+        """ 
+        Bottom left corner
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p4)
@@ -1218,7 +1308,12 @@ cdef class DrawImage(drawingItem):
         read_coord(self._p4, value)
     @property
     def uv_min(self):
-        """Texture coordinate for pmin. Writes to uv1/2/4."""
+        """
+        Texture coordinate for pmin. Writes to uv1/2/4.
+        
+        Returns:
+            list: UV coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return list(self._uv1)
@@ -1231,7 +1326,12 @@ cdef class DrawImage(drawingItem):
         self._uv4[0] = self._uv1[1]
     @property
     def uv_max(self):
-        """Texture coordinate for pmax. Writes to uv2/3/4."""
+        """
+        Texture coordinate for pmax. Writes to uv2/3/4.
+        
+        Returns:
+            list: UV coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return list(self._uv3)
@@ -1244,7 +1344,12 @@ cdef class DrawImage(drawingItem):
         self._uv4[1] = self._uv3[1]
     @property
     def uv1(self):
-        """Texture coordinate for p1"""
+        """
+        Texture coordinate for p1
+        
+        Returns:
+            list: UV coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return list(self._uv1)
@@ -1255,7 +1360,12 @@ cdef class DrawImage(drawingItem):
         read_point[float](self._uv1, value)
     @property
     def uv2(self):
-        """Texture coordinate for p2"""
+        """
+        Texture coordinate for p2
+        
+        Returns:
+            list: UV coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return list(self._uv2)
@@ -1266,7 +1376,12 @@ cdef class DrawImage(drawingItem):
         read_point[float](self._uv2, value)
     @property
     def uv3(self):
-        """Texture coordinate for p3"""
+        """
+        Texture coordinate for p3
+        
+        Returns:
+            list: UV coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return list(self._uv3)
@@ -1277,7 +1392,12 @@ cdef class DrawImage(drawingItem):
         read_point[float](self._uv3, value)
     @property
     def uv4(self):
-        """Texture coordinate for p4"""
+        """
+        Texture coordinate for p4
+        
+        Returns:
+            list: UV coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return list(self._uv4)
@@ -1290,6 +1410,9 @@ cdef class DrawImage(drawingItem):
     def color_multiplier(self):
         """
         The image is mixed with this color.
+        
+        Returns:
+            list: RGBA values in [0,1] range
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -1303,11 +1426,15 @@ cdef class DrawImage(drawingItem):
         self._color_multiplier = parse_color(value)
     @property
     def rounding(self):
-        """Rounding of the corners of the shape.
+        """
+        Rounding of the corners of the shape.
         
         If non-zero, the renderered image will be rectangular
         and parallel to the axes.
         (p1/p2/p3/p4 will behave like pmin/pmax)
+        
+        Returns:
+            float: Rounding radius
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -1453,6 +1580,9 @@ cdef class DrawLine(drawingItem):
         cdef unique_lock[recursive_mutex] m
         """
         Coordinates of one of the extremities of the line segment
+        
+        Returns:
+            tuple: (x, y) coordinates
         """
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p1)
@@ -1466,6 +1596,9 @@ cdef class DrawLine(drawingItem):
     def p2(self):
         """
         Coordinates of one of the extremities of the line segment
+        
+        Returns:
+            tuple: (x, y) coordinates
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -1493,6 +1626,9 @@ cdef class DrawLine(drawingItem):
         cdef unique_lock[recursive_mutex] m
         """
         Coordinates of the center of the line segment
+        
+        Returns:
+            tuple: (x, y) coordinates
         """
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._center)
@@ -1506,6 +1642,9 @@ cdef class DrawLine(drawingItem):
     def length(self):
         """
         Length of the line segment. Negatives mean screen space.
+        
+        Returns:
+            float: Length value
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -1520,6 +1659,9 @@ cdef class DrawLine(drawingItem):
     def direction(self):
         """
         Angle (rad) of the line segment relative to the horizontal axis.
+        
+        Returns:
+            float: Angle in radians
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -1548,6 +1690,12 @@ cdef class DrawLine(drawingItem):
     @property
     def color(self):
         cdef unique_lock[recursive_mutex] m
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
         unparse_color(color, self._color)
@@ -1560,6 +1708,12 @@ cdef class DrawLine(drawingItem):
     @property
     def thickness(self):
         cdef unique_lock[recursive_mutex] m
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         lock_gil_friendly(m, self.mutex)
         return self._thickness
     @thickness.setter
@@ -1621,6 +1775,12 @@ cdef class DrawPolyline(drawingItem):
 
     @property
     def points(self):
+        """
+        List of vertex positions defining the shape.
+        
+        Returns:
+            list: List of (x,y) coordinate tuples
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         res = []
@@ -1641,6 +1801,12 @@ cdef class DrawPolyline(drawingItem):
             self._points.push_back(p)
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -1653,6 +1819,12 @@ cdef class DrawPolyline(drawingItem):
         self._color = parse_color(value)
     @property
     def closed(self):
+        """
+        Whether the shape is closed by connecting first and last points.
+        
+        Returns:
+            bool: True if shape is closed
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._closed
@@ -1663,6 +1835,12 @@ cdef class DrawPolyline(drawingItem):
         self._closed = value
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -1732,6 +1910,12 @@ cdef class DrawPolygon(drawingItem):
 
     @property
     def points(self):
+        """
+        List of vertex positions defining the shape.
+        
+        Returns:
+            list: List of (x,y) coordinate tuples
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         res = []
@@ -1753,6 +1937,12 @@ cdef class DrawPolygon(drawingItem):
         self.__triangulate()
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -1765,6 +1955,12 @@ cdef class DrawPolygon(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
@@ -1777,6 +1973,12 @@ cdef class DrawPolygon(drawingItem):
         self._fill = parse_color(value)
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -1877,6 +2079,12 @@ cdef class DrawQuad(drawingItem):
 
     @property
     def p1(self):
+        """
+        First vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p1)
@@ -1887,6 +2095,12 @@ cdef class DrawQuad(drawingItem):
         read_coord(self._p1, value)
     @property
     def p2(self):
+        """
+        Second vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p2)
@@ -1897,6 +2111,12 @@ cdef class DrawQuad(drawingItem):
         read_coord(self._p2, value)
     @property
     def p3(self):
+        """
+        Third vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p3)
@@ -1907,6 +2127,12 @@ cdef class DrawQuad(drawingItem):
         read_coord(self._p3, value)
     @property
     def p4(self):
+        """ 
+        Fourth vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p4)
@@ -1917,6 +2143,12 @@ cdef class DrawQuad(drawingItem):
         read_coord(self._p4, value)
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -1929,6 +2161,12 @@ cdef class DrawQuad(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
@@ -1941,6 +2179,12 @@ cdef class DrawQuad(drawingItem):
         self._fill = parse_color(value)
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -2035,6 +2279,12 @@ cdef class DrawRect(drawingItem):
 
     @property
     def pmin(self):
+        """
+        Top-left corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._pmin)
@@ -2045,6 +2295,12 @@ cdef class DrawRect(drawingItem):
         read_coord(self._pmin, value)
     @property
     def pmax(self):
+        """
+        Bottom-right corner position of the drawing in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._pmax)
@@ -2055,6 +2311,12 @@ cdef class DrawRect(drawingItem):
         read_coord(self._pmax, value)
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2067,6 +2329,12 @@ cdef class DrawRect(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
@@ -2084,6 +2352,12 @@ cdef class DrawRect(drawingItem):
         self._multicolor = False
     @property
     def fill_p1(self):
+        """
+        Fill color at point p1 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color_upper_left
@@ -2097,6 +2371,12 @@ cdef class DrawRect(drawingItem):
         self._multicolor = True
     @property
     def fill_p2(self):
+        """
+        Fill color at point p2 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color_upper_right
@@ -2110,6 +2390,12 @@ cdef class DrawRect(drawingItem):
         self._multicolor = True
     @property
     def fill_p3(self):
+        """
+        Fill color at point p3 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color_bottom_right
@@ -2123,6 +2409,12 @@ cdef class DrawRect(drawingItem):
         self._multicolor = True
     @property
     def fill_p4(self):
+        """
+        Fill color at point p4 for gradient fills.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color_bottom_left
@@ -2136,6 +2428,12 @@ cdef class DrawRect(drawingItem):
         self._multicolor = True
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -2146,6 +2444,12 @@ cdef class DrawRect(drawingItem):
         self._thickness = value
     @property
     def rounding(self):
+        """
+        Rounding of the corners of the shape.
+        
+        Returns:
+            float: Rounding radius
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._rounding
@@ -2247,6 +2551,9 @@ cdef class DrawRegularPolygon(drawingItem):
         cdef unique_lock[recursive_mutex] m
         """
         Coordinates of the center of the shape
+        
+        Returns:
+            tuple: (x, y) coordinates
         """
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._center)
@@ -2259,6 +2566,9 @@ cdef class DrawRegularPolygon(drawingItem):
     def radius(self):
         """
         Radius of the shape. Negative means screen space.
+        
+        Returns:
+            float: Radius value
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2274,6 +2584,9 @@ cdef class DrawRegularPolygon(drawingItem):
         Angle (rad) of the first point of the shape.
 
         The angle is relative to the horizontal axis.
+        
+        Returns:
+            float: Angle in radians
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2289,6 +2602,9 @@ cdef class DrawRegularPolygon(drawingItem):
         """
         Number of points in the shape.
         num_points=1 gives a circle.
+        
+        Returns:
+            int: Number of points
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2301,6 +2617,12 @@ cdef class DrawRegularPolygon(drawingItem):
         self.dirty = True
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2313,6 +2635,12 @@ cdef class DrawRegularPolygon(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2325,6 +2653,12 @@ cdef class DrawRegularPolygon(drawingItem):
         self._fill = parse_color(value)
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -2433,6 +2767,9 @@ cdef class DrawStar(drawingItem):
         cdef unique_lock[recursive_mutex] m
         """
         Coordinates of the center of the shape
+        
+        Returns:
+            tuple: (x, y) coordinates
         """
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._center)
@@ -2445,6 +2782,9 @@ cdef class DrawStar(drawingItem):
     def radius(self):
         """
         Radius of the shape. Negative means screen space.
+        
+        Returns:
+            float: Radius value
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2458,6 +2798,9 @@ cdef class DrawStar(drawingItem):
     def inner_radius(self):
         """
         Radius of the inner shape.
+        
+        Returns:
+            float: Inner radius value
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2473,6 +2816,9 @@ cdef class DrawStar(drawingItem):
         Angle (rad) of the first point of the shape.
 
         The angle is relative to the horizontal axis.
+        
+        Returns:
+            float: Angle in radians
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2488,6 +2834,9 @@ cdef class DrawStar(drawingItem):
         """
         Number of points in the shape.
         Must be >= 3.
+        
+        Returns:
+            int: Number of points
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -2500,6 +2849,12 @@ cdef class DrawStar(drawingItem):
         self.dirty = True
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2512,6 +2867,12 @@ cdef class DrawStar(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2524,6 +2885,12 @@ cdef class DrawStar(drawingItem):
         self._fill = parse_color(value)
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
@@ -2662,6 +3029,12 @@ cdef class DrawText(drawingItem):
 
     @property
     def pos(self):
+        """
+        Position of the drawing element in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._pos)
@@ -2672,6 +3045,12 @@ cdef class DrawText(drawingItem):
         read_coord(self._pos, value)
     @property
     def color(self):
+        """
+        Color of the text.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2709,6 +3088,12 @@ cdef class DrawText(drawingItem):
         self._text = bytes(value, 'utf-8')
     @property
     def size(self):
+        """
+        Text size. Negative means screen space units.
+        
+        Returns:
+            float: Size value
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._size
@@ -2764,6 +3149,12 @@ cdef class DrawTriangle(drawingItem):
 
     @property
     def p1(self):
+        """
+        First vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p1)
@@ -2774,6 +3165,12 @@ cdef class DrawTriangle(drawingItem):
         read_coord(self._p1, value)
     @property
     def p2(self):
+        """
+        Second vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p2)
@@ -2784,6 +3181,12 @@ cdef class DrawTriangle(drawingItem):
         read_coord(self._p2, value)
     @property
     def p3(self):
+        """
+        Third vertex position in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return Coord.build(self._p3)
@@ -2794,6 +3197,12 @@ cdef class DrawTriangle(drawingItem):
         read_coord(self._p3, value)
     @property
     def color(self):
+        """
+        Color of the drawing outline.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] color
@@ -2806,6 +3215,12 @@ cdef class DrawTriangle(drawingItem):
         self._color = parse_color(value)
     @property
     def fill(self):
+        """
+        Fill color of the drawing.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef float[4] fill
@@ -2818,6 +3233,12 @@ cdef class DrawTriangle(drawingItem):
         self._fill = parse_color(value)
     @property
     def thickness(self):
+        """
+        Line thickness of the drawing outline.
+        
+        Returns:
+            float: Thickness value in pixels
+        """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         return self._thickness
