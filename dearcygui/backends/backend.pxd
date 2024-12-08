@@ -3,7 +3,7 @@ from libcpp.string cimport string
 
 cdef extern from "backend.h" nogil:
 
-    ctypedef void (*on_resize_fun)(void*, int, int)
+    ctypedef void (*on_resize_fun)(void*)
     ctypedef void (*on_close_fun)(void*)  
     ctypedef void (*render_fun)(void*)
 
@@ -29,9 +29,6 @@ cdef extern from "backend.h" nogil:
         bint updateStaticTexture(void*, unsigned, unsigned, unsigned, unsigned, void*, unsigned)
 
         # Public members
-        bint isActive
-        bint isVisible
-        bint hasResized
         float dpiScale
         bint isFullScreen
         bint isMinimized
@@ -39,7 +36,6 @@ cdef extern from "backend.h" nogil:
 
         # Rendering properties
         float[4] clearColor
-        bint hasModesChanged
         bint hasVSync
         bint waitForEvents
         bint shouldSkipPresenting
@@ -47,15 +43,13 @@ cdef extern from "backend.h" nogil:
         atomic[bint] needsRefresh
 
         # Window properties
-        string windowTitle
         string iconSmall
         string iconLarge
+        string windowTitle
         bint titleChangeRequested
-        #bint iconChangeRequested
         bint windowResizable
         bint windowAlwaysOnTop
         bint windowDecorated
-        bint windowClosable
         bint windowPropertyChangeRequested
 
         # Window position/size

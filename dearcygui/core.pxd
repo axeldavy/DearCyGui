@@ -272,6 +272,7 @@ cdef class Viewport(baseItem):
     cdef Callback _close_callback
     cdef Font _font
     cdef baseTheme _theme
+    cdef bint _disable_close
     cdef itemState state # Unused. Just for compatibility with handlers
     cdef imgui.ImGuiMouseCursor _cursor
     # For timing stats
@@ -309,7 +310,7 @@ cdef class Viewport(baseItem):
 
     cdef void __check_initialized(self)
     cdef void __check_not_initialized(self)
-    cdef void __on_resize(self, int width, int height)
+    cdef void __on_resize(self)
     cdef void __on_close(self)
     cdef void __render(self) noexcept nogil
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil

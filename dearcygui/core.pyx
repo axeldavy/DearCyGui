@@ -75,10 +75,10 @@ cdef void lock_gil_friendly_block(unique_lock[recursive_mutex] &m) noexcept:
         locked = m.try_lock()
 
 
-cdef void internal_resize_callback(void *object, int a, int b) noexcept nogil:
+cdef void internal_resize_callback(void *object) noexcept nogil:
     with gil:
         try:
-            (<Viewport>object).__on_resize(a, b)
+            (<Viewport>object).__on_resize()
         except Exception as e:
             print("An error occured in the viewport resize callback", traceback.format_exc())
 
@@ -2479,14 +2479,14 @@ cdef class Viewport(baseItem):
     def resizable(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.platform.hasResized
+        return self.platform.windowResizable
 
     @resizable.setter
     def resizable(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.platform.hasResized = value
-        self.platform.hasModesChanged = 1
+        self.platform.windowResizable = value
+        self.platform.windowPropertyChangeRequested = True
 
     @property
     def vsync(self) -> bool:
@@ -2721,14 +2721,13 @@ cdef class Viewport(baseItem):
     def disable_close(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return not(self.platform.windowClosable)
+        return self._disable_close
 
     @disable_close.setter
     def disable_close(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.platform.windowClosable = not(value)
-        self.platform.windowPropertyChangeRequested = True
+        self._disable_close = value
 
     @property
     def fullscreen(self):
@@ -2898,14 +2897,9 @@ cdef class Viewport(baseItem):
         for (key, value) in kwargs.items():
             setattr(self, key, value)
 
-    cdef void __on_resize(self, int width, int height):
+    cdef void __on_resize(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.platform.frameHeight = height
-        self.platform.windowHeight = height
-        self.platform.frameWidth = width
-        self.platform.windowWidth = width
-        self.platform.hasResized = True
         self.context.queue_callback_arg4int(self._resize_callback,
                                             self,
                                             self,
@@ -2917,7 +2911,7 @@ cdef class Viewport(baseItem):
     cdef void __on_close(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if <bint>self.platform.windowClosable:
+        if not(self._disable_close):
             self.context.started = False
         self.context.queue_callback_noarg(self._close_callback, self, self)
 
@@ -3255,15 +3249,6 @@ cdef class Viewport(baseItem):
         self.delta_swapping = 1e-9 * <float>(current_time - self.last_t_after_rendering)
         self.delta_rendering = 1e-9 * <float>(self.last_t_after_rendering - self.last_t_before_rendering)
         self.delta_event_handling = 1e-9 * <float>(self.last_t_before_rendering - self.last_t_before_event_handling)
-        if self.platform.hasResized:
-            self.context.queue_callback_arg4int(self._resize_callback,
-                                                self,
-                                                self,
-                                                self.platform.frameWidth,
-                                                self.platform.frameHeight,
-                                                self.platform.windowWidth,
-                                                self.platform.windowHeight)
-            self.platform.hasResized = False
         self.frame_count += 1
         assert(self.pending_theme_actions.empty())
         assert(self.applied_theme_actions.empty())

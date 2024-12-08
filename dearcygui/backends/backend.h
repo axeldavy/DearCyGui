@@ -5,7 +5,7 @@
 #include <SDL3/SDL.h>
 #include <imgui.h>
 
-typedef void (*on_resize_fun)(void*, int width, int height);
+typedef void (*on_resize_fun)(void*);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);
 
@@ -42,9 +42,6 @@ public:
                                    unsigned src_stride) = 0;
 
 	// Window state
-    bool isActive = true;
-    bool isVisible = false;
-    bool hasResized = false;
     float dpiScale = 1.;
     bool isFullScreen = false;
     bool isMinimized = false;
@@ -60,15 +57,13 @@ public:
     std::atomic<bool> needsRefresh{true};
 
     // Window properties
+    std::string iconSmall; // not allowed to change after init
+    std::string iconLarge; // same
     std::string windowTitle = "DearCyGui Window";
-    std::string iconSmall;
-    std::string iconLarge;
     bool titleChangeRequested = false;
-    bool iconChangeRequested = false;
     bool windowResizable = true;
     bool windowAlwaysOnTop = false;
     bool windowDecorated = true;
-    bool windowClosable = true;
     bool windowPropertyChangeRequested = false;
 
     // Window position/size
@@ -139,6 +134,7 @@ private:
     std::mutex uploadContextLock;
     bool hasOpenGL3Init = false;
     bool hasSDL3Init = false;
+    bool hasResized = false;
 
     void preparePresentFrame();
 };

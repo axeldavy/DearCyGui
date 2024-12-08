@@ -53,22 +53,21 @@ void SDLViewport::preparePresentFrame() {
 
     // Rendering
     ImGui::Render();
-    int displayW, displayH, w, h;
     renderContextLock.lock();
     SDL_GL_MakeCurrent(windowHandle, glContext);
-    SDL_GetWindowSizeInPixels(windowHandle, &displayW, &displayH);
-    SDL_GetWindowSize(windowHandle, &w, &h);
-    frameWidth = displayW;
-    frameHeight = displayH;
-    windowWidth = w;
-    windowHeight = h;
+    if (hasResized) {
+        SDL_GetWindowSizeInPixels(windowHandle, &frameWidth, &frameHeight);
+        SDL_GetWindowSize(windowHandle, &windowWidth, &windowHeight);
+        hasResized = false;
+        resizeCallback(callbackData);
+    }
 
     int current_interval, desired_interval;
     SDL_GL_GetSwapInterval(&current_interval);
     desired_interval = hasVSync ? 1 : 0;
     if (desired_interval != current_interval)
         SDL_GL_SetSwapInterval(desired_interval);
-    glViewport(0, 0, displayW, displayH);
+    glViewport(0, 0, frameWidth, frameHeight);
     glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -526,8 +525,11 @@ void SDLViewport::processEvents() {
                 isFullScreen = false;
                 needsRefresh.store(true);
                 break;
+            case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
             case SDL_EVENT_WINDOW_RESIZED:
-                //on_resize(...) TODO
+                hasResized = true;
+                needsRefresh.store(true);
+                break;
             case SDL_EVENT_MOUSE_WHEEL:
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
             case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -555,7 +557,6 @@ void SDLViewport::processEvents() {
                 break;
             case SDL_EVENT_QUIT:
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: // && event.window.windowID == SDL_GetWindowID(handle)
-                isActive = false;
                 closeCallback(callbackData);
                 activityDetected.store(true);
             /* TODO: drag&drop, etc*/
