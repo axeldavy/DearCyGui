@@ -8,61 +8,16 @@ typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);
 
-struct mvColor
-{
-	static unsigned int ConvertToUnsignedInt(const mvColor& color)
-	{
-		return ImGui::ColorConvertFloat4ToU32(color.toVec4());
-	}
-	float r = -1.0f, g = -1.0f, b = -1.0f, a = -1.0f;
-	mvColor() = default;
-	mvColor(float r, float g, float b, float a)
-		: r(r), g(g), b(b), a(a)
-	{
-	}
-	mvColor(int r, int g, int b, int a)
-		: r(r/255.0f), g(g/255.0f), b(b/255.0f), a(a/255.0f)
-	{
-	}
-	explicit mvColor(ImVec4 color)
-	{
-		r = color.x;
-		g = color.y;
-		b = color.z;
-		a = color.w;
-	}
-	operator ImU32() const
-	{
-		return ImGui::ColorConvertFloat4ToU32(toVec4());
-	}
-	operator float* ()
-	{
-		return &r;
-	}
-	operator ImVec4() const
-	{
-		return { r, g, b, a };
-	}
-	operator ImVec4*()
-	{
-		return (ImVec4*)&r;
-	}
-	const ImVec4 toVec4() const
-	{
-		return { r, g, b, a };
-	}
-};
-
 struct mvViewport
 {
 	bool running = true;
 	bool shown = false;
 	bool resized = false;
 
-	std::string title = "Dear CyGui";
+	std::string title = "DearCyGui Window";
 	std::string small_icon;
 	std::string large_icon;
-	mvColor     clearColor = mvColor(0, 0, 0, 255);
+	float clear_color[4] = { 0., 0., 0., 1. };
 		
 	// window modes
 	bool titleDirty  = false;
@@ -101,16 +56,6 @@ struct mvViewport
 	void* platformSpecifics = nullptr; // platform specifics
 };
 
-struct mvGraphics
-{
-    bool           ok = false;
-    void* backendSpecifics = nullptr;
-};
-
-mvGraphics setup_graphics(mvViewport& viewport);
-void       resize_swapchain(mvGraphics& graphics, int width, int height);
-void       cleanup_graphics(mvGraphics& graphics);
-
 typedef void (*on_resize_fun)(void*, int width, int height);
 typedef void (*on_close_fun)(void*);
 typedef void (*render_fun)(void*);
@@ -120,15 +65,14 @@ mvViewport* mvCreateViewport  (render_fun render,
 							   on_close_fun on_close,
 							   void *callback_data);
 void        mvCleanupViewport (mvViewport& viewport);
-void        mvShowViewport    (mvViewport& viewport,
-							   bool minimized,
-							   bool maximized);
+bool        InitializeViewportWindow    (mvViewport& viewport,
+							   bool start_minimized,
+							   bool start_maximized);
 void        mvMaximizeViewport(mvViewport& viewport);
 void        mvMinimizeViewport(mvViewport& viewport);
 void        mvRestoreViewport (mvViewport& viewport);
 void        mvProcessEvents(mvViewport* viewport);
 bool        mvRenderFrame(mvViewport& viewport,
-						  mvGraphics& graphics,
 						  bool can_skip_presenting);
 void		mvPresent(mvViewport* viewport);
 void        mvToggleFullScreen(mvViewport& viewport);

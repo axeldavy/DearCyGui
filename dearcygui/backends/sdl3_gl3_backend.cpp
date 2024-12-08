@@ -25,36 +25,12 @@ struct mvViewportData
     SDL_GLContext secondary_gl_handle = nullptr;
     std::mutex primary_gl_context;
     std::mutex secondary_gl_context;
+    bool impl_opengl3_initialized = false;
+    bool impl_sdl3_initialized = false;
 };
 
-mvGraphics
-setup_graphics(mvViewport& viewport)
-{
-    mvGraphics graphics{};
-    auto viewportData = (mvViewportData*)viewport.platformSpecifics;
-    const char* glsl_version = "#version 150";
-    viewportData->primary_gl_context.lock();
-    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-    SDL_GL_MakeCurrent(viewportData->handle, NULL);
-    viewportData->primary_gl_context.unlock();
-    return graphics;
-}
-
-void
-resize_swapchain(mvGraphics& graphics, int width, int height)
-{
-
-}
-
-void
-cleanup_graphics(mvGraphics& graphics)
-{
-
-}
-
 static void
-prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor, bool vsync)
+prepare_present(mvViewport* viewport, float clearColor[4], bool vsync)
 {
     auto viewportData = (mvViewportData*)viewport->platformSpecifics;
 
@@ -78,7 +54,7 @@ prepare_present(mvGraphics& graphics, mvViewport* viewport, mvColor& clearColor,
     if (desired_interval != current_interval)
         SDL_GL_SetSwapInterval(desired_interval);
     glViewport(0, 0, display_w, display_h);
-    glClearColor(viewport->clearColor.r, viewport->clearColor.g, viewport->clearColor.b, viewport->clearColor.a);
+    glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_MakeCurrent(viewportData->handle, NULL);
@@ -260,13 +236,18 @@ mvCleanupViewport(mvViewport& viewport)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
-    // Cleanup
-    viewportData->primary_gl_context.lock();
-    SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
-    ImGui_ImplOpenGL3_Shutdown();
-    SDL_GL_MakeCurrent(viewportData->handle, NULL);
-    viewportData->primary_gl_context.unlock();
-    ImGui_ImplSDL3_Shutdown();
+    // Only cleanup if initialization was successful
+    if (viewportData->impl_opengl3_initialized) {
+        viewportData->primary_gl_context.lock();
+        SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
+        ImGui_ImplOpenGL3_Shutdown();
+        SDL_GL_MakeCurrent(viewportData->handle, NULL);
+        viewportData->primary_gl_context.unlock();
+    }
+
+    if (viewportData->impl_sdl3_initialized) {
+        ImGui_ImplSDL3_Shutdown();
+    }
 
     SDL_GL_DestroyContext(viewportData->gl_handle);
     SDL_GL_DestroyContext(viewportData->secondary_gl_handle);
@@ -278,11 +259,12 @@ mvCleanupViewport(mvViewport& viewport)
     viewportData = nullptr;
 }
 
-void
-mvShowViewport(mvViewport& viewport,
-               bool minimized,
-               bool maximized)
+bool
+InitializeViewportWindow(mvViewport& viewport,
+                         bool start_minimized,
+                         bool start_maximized)
 {
+    const char* glsl_version = "#version 150";
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
 
     SDL_WindowFlags creation_flags = 0;
@@ -290,9 +272,9 @@ mvShowViewport(mvViewport& viewport,
         creation_flags |= SDL_WINDOW_RESIZABLE;
     if (viewport.alwaysOnTop)
         creation_flags |= SDL_WINDOW_ALWAYS_ON_TOP;
-    if (maximized)
+    if (start_maximized)
         creation_flags |= SDL_WINDOW_MAXIMIZED;
-    else if (minimized)
+    else if (start_minimized)
         creation_flags |= SDL_WINDOW_MINIMIZED;
     if (!viewport.decorated)
         creation_flags |= SDL_WINDOW_BORDERLESS;
@@ -309,9 +291,23 @@ mvShowViewport(mvViewport& viewport,
     viewportData->secondary_gl_context.lock();
     // Set current to allow sharing
     SDL_GL_MakeCurrent(viewportData->secondary_handle, viewportData->secondary_gl_handle);
+    
     viewportData->handle = SDL_CreateWindow(viewport.title.c_str(), viewport.actualWidth, viewport.actualHeight,
         creation_flags | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
+    if (viewportData->handle == nullptr) {
+        SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
+        viewportData->secondary_gl_context.unlock();
+        return false;
+    }
+
     viewportData->gl_handle = SDL_GL_CreateContext(viewportData->handle);
+    if (viewportData->gl_handle == nullptr) {
+        SDL_DestroyWindow(viewportData->handle);
+        SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
+        viewportData->secondary_gl_context.unlock();
+        return false;
+    }
+
     SDL_GL_MakeCurrent(viewportData->handle, NULL);
     SDL_GL_MakeCurrent(viewportData->secondary_handle, NULL);
     viewportData->secondary_gl_context.unlock();
@@ -368,11 +364,28 @@ mvShowViewport(mvViewport& viewport,
 
     SDL_GL_MakeCurrent(viewportData->handle, viewportData->gl_handle);
 
-    // Setup Platform/Renderer bindings
-    ImGui_ImplSDL3_InitForOpenGL(viewportData->handle, viewportData->gl_handle);
+    // Setup Platform/Renderer bindings 
+    viewportData->impl_sdl3_initialized = ImGui_ImplSDL3_InitForOpenGL(viewportData->handle, viewportData->gl_handle);
+    if (!viewportData->impl_sdl3_initialized) {
+        SDL_GL_DestroyContext(viewportData->gl_handle);
+        SDL_DestroyWindow(viewportData->handle);
+        return false;
+    }
+
+    // Setup rendering
+    viewportData->impl_opengl3_initialized = ImGui_ImplOpenGL3_Init(glsl_version);
+    if (!viewportData->impl_opengl3_initialized) {
+        ImGui_ImplSDL3_Shutdown();
+        viewportData->impl_sdl3_initialized = false;
+        SDL_GL_DestroyContext(viewportData->gl_handle);
+        SDL_DestroyWindow(viewportData->handle);
+        return false;
+    }
 
     SDL_GL_MakeCurrent(viewportData->handle, NULL);
     viewportData->primary_gl_context.unlock();
+
+    return true;
 }
     
 void
@@ -426,7 +439,6 @@ static bool FastActivityCheck()
 
 bool
 mvRenderFrame(mvViewport& viewport,
- 			  mvGraphics& graphics,
               bool can_skip_presenting)
 {
     auto viewportData = (mvViewportData*)viewport.platformSpecifics;
@@ -488,9 +500,8 @@ mvRenderFrame(mvViewport& viewport,
         return false;
     }
 
-    prepare_present(graphics, &viewport, viewport.clearColor, viewport.vsync);
+    prepare_present(&viewport, viewport.clear_color, viewport.vsync);
     return true;
-    
 }
 
 void

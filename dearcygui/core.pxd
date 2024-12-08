@@ -1,5 +1,5 @@
 from dearcygui.wrapper cimport imgui, implot, imnodes
-from dearcygui.backends.backend cimport mvViewport, mvGraphics
+from dearcygui.backends.backend cimport mvViewport
 from libcpp.string cimport string
 from libcpp cimport bool
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
@@ -266,8 +266,7 @@ cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
-    cdef mvViewport *viewport
-    cdef mvGraphics graphics
+    cdef mvViewport *internal_viewport
     cdef bint initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback

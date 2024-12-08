@@ -2297,11 +2297,11 @@ cdef class Viewport(baseItem):
         self.p_state = &self.state
         self._cursor = imgui.ImGuiMouseCursor_Arrow
         self._scale = 1.
-        self.viewport = mvCreateViewport(internal_render_callback,
+        self.internal_viewport = mvCreateViewport(internal_render_callback,
                                          internal_resize_callback,
                                          internal_close_callback,
                                          <void*>self)
-        if self.viewport == NULL:
+        if self.internal_viewport == NULL:
             raise RuntimeError("Failed to create the viewport")
 
     def __dealloc__(self):
@@ -2311,12 +2311,10 @@ cdef class Viewport(baseItem):
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex_backend) # To not release while we render a frame
         ensure_correct_im_context(self.context)
-        if self.initialized:
-            cleanup_graphics(self.graphics)
-        if self.viewport != NULL:
-            mvCleanupViewport(dereference(self.viewport))
+        if self.internal_viewport != NULL:
+            mvCleanupViewport(dereference(self.internal_viewport))
             #self.viewport is freed by mvCleanupViewport
-            self.viewport = NULL
+            self.internal_viewport = NULL
 
     def initialize(self, minimized=False, maximized=False, **kwargs):
         """
@@ -2343,15 +2341,13 @@ cdef class Viewport(baseItem):
         if self.initialized:
             raise RuntimeError("Viewport already initialized")
         ensure_correct_im_context(self.context)
-        mvShowViewport(dereference(self.viewport),
-                       minimized,
-                       maximized)
-        self.graphics = setup_graphics(dereference(self.viewport))
+        if not InitializeViewportWindow(dereference(self.internal_viewport), minimized, maximized):
+            raise RuntimeError("Failed to initialize the viewport")
         imgui.StyleColorsDark()
         imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
-        imgui.GetStyle().ScaleAllSizes(self.viewport.dpi)
+        imgui.GetStyle().ScaleAllSizes(self.internal_viewport.dpi)
         cdef FontTexture default_font_texture
-        cdef float global_scale = self.viewport.dpi * self._scale
+        cdef float global_scale = self.internal_viewport.dpi * self._scale
         if self._font is None:
             default_font_texture = FontTexture(self.context)
             h, c_i, c_p = make_extended_latin_font(round(17*global_scale))
@@ -2384,120 +2380,119 @@ cdef class Viewport(baseItem):
     def clear_color(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.viewport.clearColor.r,
-                self.viewport.clearColor.g,
-                self.viewport.clearColor.b,
-                self.viewport.clearColor.a)
+        return (self.internal_viewport.clear_color[0],
+                self.internal_viewport.clear_color[1],
+                self.internal_viewport.clear_color[2],
+                self.internal_viewport.clear_color[3])
 
     @clear_color.setter
     def clear_color(self, value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef int r, g, b, a
-        (r, g, b, a) = value
-        self.viewport.clearColor = colorFromInts(r, g, b, a)
+        cdef float r, g, b, a
+        unparse_color(self.internal_viewport.clear_color, parse_color(value))
 
     @property
     def small_icon(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return str(self.viewport.small_icon)
+        return str(self.internal_viewport.small_icon)
 
     @small_icon.setter
     def small_icon(self, str value):
         cdef unique_lock[recursive_mutex] m
         self.__check_not_initialized()
-        self.viewport.small_icon = value.encode("utf-8")
+        self.internal_viewport.small_icon = value.encode("utf-8")
 
     @property
     def large_icon(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return str(self.viewport.large_icon)
+        return str(self.internal_viewport.large_icon)
 
     @large_icon.setter
     def large_icon(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.__check_not_initialized()
-        self.viewport.large_icon = value.encode("utf-8")
+        self.internal_viewport.large_icon = value.encode("utf-8")
 
     @property
     def x_pos(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.xpos
+        return self.internal_viewport.xpos
 
     @x_pos.setter
     def x_pos(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.xpos = value
-        self.viewport.posDirty = 1
+        self.internal_viewport.xpos = value
+        self.internal_viewport.posDirty = 1
 
     @property
     def y_pos(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.ypos
+        return self.internal_viewport.ypos
 
     @y_pos.setter
     def y_pos(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.ypos = value
-        self.viewport.posDirty = 1
+        self.internal_viewport.ypos = value
+        self.internal_viewport.posDirty = 1
 
     @property
     def width(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.actualWidth
+        return self.internal_viewport.actualWidth
 
     @width.setter
     def width(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.actualWidth = value
-        self.viewport.sizeDirty = 1
+        self.internal_viewport.actualWidth = value
+        self.internal_viewport.sizeDirty = 1
 
     @property
     def height(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.actualHeight
+        return self.internal_viewport.actualHeight
 
     @height.setter
     def height(self, int value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.actualHeight = value
-        self.viewport.sizeDirty = 1
+        self.internal_viewport.actualHeight = value
+        self.internal_viewport.sizeDirty = 1
 
     @property
     def resizable(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.resizable
+        return self.internal_viewport.resizable
 
     @resizable.setter
     def resizable(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.resizable = value
-        self.viewport.modesDirty = 1
+        self.internal_viewport.resizable = value
+        self.internal_viewport.modesDirty = 1
 
     @property
     def vsync(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.vsync
+        return self.internal_viewport.vsync
 
     @vsync.setter
     def vsync(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.vsync = value
+        self.internal_viewport.vsync = value
 
     @property
     def dpi(self) -> float:
@@ -2515,7 +2510,7 @@ cdef class Viewport(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.dpi
+        return self.internal_viewport.dpi
 
     @property
     def scale(self) -> float:
@@ -2540,79 +2535,79 @@ cdef class Viewport(baseItem):
     def min_width(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.minwidth
+        return self.internal_viewport.minwidth
 
     @min_width.setter
     def min_width(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.minwidth = value
-        self.viewport.sizeDirty = True
+        self.internal_viewport.minwidth = value
+        self.internal_viewport.sizeDirty = True
 
     @property
     def max_width(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.maxwidth
+        return self.internal_viewport.maxwidth
 
     @max_width.setter
     def max_width(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.maxwidth = value
-        self.viewport.sizeDirty = True
+        self.internal_viewport.maxwidth = value
+        self.internal_viewport.sizeDirty = True
 
     @property
     def min_height(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.minheight
+        return self.internal_viewport.minheight
 
     @min_height.setter
     def min_height(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.minheight = value
-        self.viewport.sizeDirty = True
+        self.internal_viewport.minheight = value
+        self.internal_viewport.sizeDirty = True
 
     @property
     def max_height(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.maxheight
+        return self.internal_viewport.maxheight
 
     @max_height.setter
     def max_height(self, unsigned value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.maxheight = value
-        self.viewport.sizeDirty = True
+        self.internal_viewport.maxheight = value
+        self.internal_viewport.sizeDirty = True
 
     @property
     def always_on_top(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.alwaysOnTop
+        return self.internal_viewport.alwaysOnTop
 
     @always_on_top.setter
     def always_on_top(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.alwaysOnTop = value
-        self.viewport.modesDirty = 1
+        self.internal_viewport.alwaysOnTop = value
+        self.internal_viewport.modesDirty = 1
 
     @property
     def decorated(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.decorated
+        return self.internal_viewport.decorated
 
     @decorated.setter
     def decorated(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.decorated = value
-        self.viewport.modesDirty = 1
+        self.internal_viewport.decorated = value
+        self.internal_viewport.modesDirty = 1
 
     @property
     def handlers(self):
@@ -2706,33 +2701,33 @@ cdef class Viewport(baseItem):
     def title(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return str(self.viewport.title)
+        return str(self.internal_viewport.title)
 
     @title.setter
     def title(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.title = value.encode("utf-8")
-        self.viewport.titleDirty = 1
+        self.internal_viewport.title = value.encode("utf-8")
+        self.internal_viewport.titleDirty = 1
 
     @property
     def disable_close(self) -> bool:
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.disableClose
+        return self.internal_viewport.disableClose
 
     @disable_close.setter
     def disable_close(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.disableClose = value
-        self.viewport.modesDirty = 1
+        self.internal_viewport.disableClose = value
+        self.internal_viewport.modesDirty = 1
 
     @property
     def fullscreen(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.viewport.fullScreen
+        return self.internal_viewport.fullScreen
 
     @fullscreen.setter
     def fullscreen(self, bint value):
@@ -2743,11 +2738,11 @@ cdef class Viewport(baseItem):
         lock_gil_friendly(m2, self.mutex)
         lock_gil_friendly(m3, self.mutex_backend)
         ensure_correct_im_context(self.context)
-        if value and not(self.viewport.fullScreen):
-            mvToggleFullScreen(dereference(self.viewport))
-        elif not(value) and (self.viewport.fullScreen):
+        if value and not(self.internal_viewport.fullScreen):
+            mvToggleFullScreen(dereference(self.internal_viewport))
+        elif not(value) and (self.internal_viewport.fullScreen):
             # Same call
-            mvToggleFullScreen(dereference(self.viewport))
+            mvToggleFullScreen(dereference(self.internal_viewport))
     @property
     def minimized(self):
         cdef unique_lock[recursive_mutex] m
@@ -2764,9 +2759,9 @@ cdef class Viewport(baseItem):
         lock_gil_friendly(m3, self.mutex_backend)
         ensure_correct_im_context(self.context)
         if value:
-            mvMinimizeViewport(dereference(self.viewport))
+            mvMinimizeViewport(dereference(self.internal_viewport))
         else:
-            mvRestoreViewport(dereference(self.viewport))
+            mvRestoreViewport(dereference(self.internal_viewport))
 
     @property
     def maximized(self):
@@ -2784,9 +2779,9 @@ cdef class Viewport(baseItem):
         lock_gil_friendly(m3, self.mutex_backend)
         ensure_correct_im_context(self.context)
         if value:
-            mvMaximizeViewport(dereference(self.viewport))
+            mvMaximizeViewport(dereference(self.internal_viewport))
         else:
-            mvRestoreViewport(dereference(self.viewport))
+            mvRestoreViewport(dereference(self.internal_viewport))
 
     @property
     def wait_for_input(self):
@@ -2798,13 +2793,13 @@ cdef class Viewport(baseItem):
         wake() can also be used to restart rendering
         for one frame.
         """
-        return self.viewport.waitForEvents
+        return self.internal_viewport.waitForEvents
 
     @wait_for_input.setter
     def wait_for_input(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.waitForEvents = value
+        self.internal_viewport.waitForEvents = value
 
     @property
     def shown(self) -> bool:
@@ -2899,23 +2894,23 @@ cdef class Viewport(baseItem):
     cdef void __on_resize(self, int width, int height):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.viewport.actualHeight = height
-        self.viewport.clientHeight = height
-        self.viewport.actualWidth = width
-        self.viewport.clientWidth = width
-        self.viewport.resized = True
+        self.internal_viewport.actualHeight = height
+        self.internal_viewport.clientHeight = height
+        self.internal_viewport.actualWidth = width
+        self.internal_viewport.clientWidth = width
+        self.internal_viewport.resized = True
         self.context.queue_callback_arg4int(self._resize_callback,
                                             self,
                                             self,
-                                            self.viewport.actualWidth,
-                                            self.viewport.actualHeight,
-                                            self.viewport.clientWidth,
-                                            self.viewport.clientHeight)
+                                            self.internal_viewport.actualWidth,
+                                            self.internal_viewport.actualHeight,
+                                            self.internal_viewport.clientWidth,
+                                            self.internal_viewport.clientHeight)
 
     cdef void __on_close(self):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if not(<bint>self.viewport.disableClose):
+        if not(<bint>self.internal_viewport.disableClose):
             self.context.started = False
         self.context.queue_callback_noarg(self._close_callback, self, self)
 
@@ -2950,8 +2945,8 @@ cdef class Viewport(baseItem):
         self.run_handlers()
         self.last_t_after_rendering = ctime.monotonic_ns()
         if self.redraw_needed:
-            self.viewport.needs_refresh.store(True)
-            self.viewport.shouldSkipPresenting = True
+            self.internal_viewport.needs_refresh.store(True)
+            self.internal_viewport.shouldSkipPresenting = True
             # Skip presenting frames if we can afford
             # it and redraw fast hoping for convergence
             if not(self.skipped_last_frame):
@@ -2960,11 +2955,11 @@ cdef class Viewport(baseItem):
             elif (self.last_t_after_rendering - self.t_first_skip) > 1e7:
                 # 10 ms elapsed, redraw even if might not be perfect
                 self.skipped_last_frame = False
-                self.viewport.shouldSkipPresenting = False
+                self.internal_viewport.shouldSkipPresenting = False
         else:
             if self.skipped_last_frame:
                 # probably not needed
-                self.viewport.needs_refresh.store(True)
+                self.internal_viewport.needs_refresh.store(True)
             self.skipped_last_frame = False
         return
 
@@ -3163,7 +3158,7 @@ cdef class Viewport(baseItem):
         self.last_t_before_event_handling = ctime.monotonic_ns()
         cdef bint should_present
         cdef float gs = self.global_scale
-        self.global_scale = self.viewport.dpi * self._scale
+        self.global_scale = self.internal_viewport.dpi * self._scale
         cdef imgui.ImGuiStyle *style = &imgui.GetStyle()
         cdef implot.ImPlotStyle *style_p = &implot.GetStyle()
         # Handle scaling
@@ -3222,7 +3217,7 @@ cdef class Viewport(baseItem):
             # Process input events.
             # Doesn't need imgui mutex.
             # if wait_for_input is set, can take a long time
-            mvProcessEvents(self.viewport)
+            mvProcessEvents(self.internal_viewport)
             backend_m.unlock() # important to respect lock order
             # Core rendering - uses imgui and viewport
             imgui_m.lock()
@@ -3233,8 +3228,7 @@ cdef class Viewport(baseItem):
             #imgui.GetMainViewport().DpiScale = self.viewport.dpi
             #imgui.GetIO().FontGlobalScale = self.viewport.dpi
             should_present = \
-                mvRenderFrame(dereference(self.viewport),
-                              self.graphics,
+                mvRenderFrame(dereference(self.internal_viewport),
                               can_skip_presenting)
             #self.last_t_after_rendering = ctime.monotonic_ns()
             backend_m.unlock()
@@ -3243,9 +3237,9 @@ cdef class Viewport(baseItem):
             # Present doesn't use imgui but can take time (vsync)
             backend_m.lock()
             if should_present:
-                mvPresent(self.viewport)
+                mvPresent(self.internal_viewport)
             backend_m.unlock()
-        if not(should_present) and self.viewport.vsync:
+        if not(should_present) and self.internal_viewport.vsync:
             # cap 'cpu' framerate when not presenting
             python_time.sleep(0.005)
         lock_gil_friendly(self_m, self.mutex)
@@ -3255,15 +3249,15 @@ cdef class Viewport(baseItem):
         self.delta_swapping = 1e-9 * <float>(current_time - self.last_t_after_rendering)
         self.delta_rendering = 1e-9 * <float>(self.last_t_after_rendering - self.last_t_before_rendering)
         self.delta_event_handling = 1e-9 * <float>(self.last_t_before_rendering - self.last_t_before_event_handling)
-        if self.viewport.resized:
+        if self.internal_viewport.resized:
             self.context.queue_callback_arg4int(self._resize_callback,
                                                 self,
                                                 self,
-                                                self.viewport.actualWidth,
-                                                self.viewport.actualHeight,
-                                                self.viewport.clientWidth,
-                                                self.viewport.clientHeight)
-            self.viewport.resized = False
+                                                self.internal_viewport.actualWidth,
+                                                self.internal_viewport.actualHeight,
+                                                self.internal_viewport.clientWidth,
+                                                self.internal_viewport.clientHeight)
+            self.internal_viewport.resized = False
         self.frame_count += 1
         assert(self.pending_theme_actions.empty())
         assert(self.applied_theme_actions.empty())
@@ -3282,12 +3276,12 @@ cdef class Viewport(baseItem):
         cdef unique_lock[recursive_mutex] m2
         lock_gil_friendly(m, self.context.imgui_mutex)
         lock_gil_friendly(m2, self.mutex)
-        mvWakeRendering(dereference(self.viewport))
+        mvWakeRendering(dereference(self.internal_viewport))
 
     cdef void cwake(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.context.imgui_mutex)
         cdef unique_lock[recursive_mutex] m2 = unique_lock[recursive_mutex](self.mutex)
-        mvWakeRendering(dereference(self.viewport))
+        mvWakeRendering(dereference(self.internal_viewport))
 
 
 # Callbacks
@@ -5464,8 +5458,8 @@ cdef class Window(uiItem):
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowPadding, imgui.ImVec2(0.0, 0.))
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowBorderSize, 0.)
             imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), imgui.ImGuiCond_Always)
-            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.viewport.actualWidth,
-                                           <float>self.context._viewport.viewport.actualHeight),
+            imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.internal_viewport.actualWidth,
+                                           <float>self.context._viewport.internal_viewport.actualHeight),
                                     imgui.ImGuiCond_Always)
 
         # handle fonts
@@ -5741,9 +5735,9 @@ cdef class Texture(baseItem):
         # Thus we must wait there is no rendering to free a texture.
         if self.allocated_texture != NULL:
             lock_gil_friendly(imgui_m, self.context.imgui_mutex)
-            mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
+            mvMakeUploadContextCurrent(dereference(self.context._viewport.internal_viewport))
             mvFreeTexture(self.allocated_texture)
-            mvReleaseUploadContext(dereference(self.context._viewport.viewport))
+            mvReleaseUploadContext(dereference(self.context._viewport.internal_viewport))
 
     def configure(self, *args, **kwargs):
         if len(args) == 1:
@@ -5882,13 +5876,13 @@ cdef class Texture(baseItem):
                     # rendering can take some time, fortunately we avoid holding the gil
                     self.context.imgui_mutex.lock()
                     m2.lock()
-                mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
+                mvMakeUploadContextCurrent(dereference(self.context._viewport.internal_viewport))
                 mvFreeTexture(self.allocated_texture)
                 self.allocated_texture = NULL
                 self.context.imgui_mutex.unlock()
             else:
                 m2.unlock()
-                mvMakeUploadContextCurrent(dereference(self.context._viewport.viewport))
+                mvMakeUploadContextCurrent(dereference(self.context._viewport.internal_viewport))
                 m2.lock()
 
             # Note we don't need the imgui mutex to create or upload textures.
@@ -5924,7 +5918,7 @@ cdef class Texture(baseItem):
                                                     buffer_type,
                                                     cnp.PyArray_DATA(content),
                                                     stride)
-            mvReleaseUploadContext(dereference(self.context._viewport.viewport))
+            mvReleaseUploadContext(dereference(self.context._viewport.internal_viewport))
             m.unlock()
             m2.unlock() # Release before we get gil again
         if not(success):
