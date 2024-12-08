@@ -262,6 +262,7 @@ bool SDLViewport::updateStaticTexture(void* texture, unsigned width, unsigned he
 SDLViewport* SDLViewport::create(render_fun render,
                              on_resize_fun on_resize,
                              on_close_fun on_close,
+                             on_drop_fun on_drop,
                              void* callback_data) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
         printf("Error: SDL_Init(): %s\n", SDL_GetError());
@@ -272,6 +273,7 @@ SDLViewport* SDLViewport::create(render_fun render,
     viewport->renderCallback = render;
     viewport->resizeCallback = on_resize;
     viewport->closeCallback = on_close;
+    viewport->dropCallback = on_drop;
     viewport->callbackData = callback_data;
     
     // Create secondary window/context
@@ -559,7 +561,18 @@ void SDLViewport::processEvents() {
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: // && event.window.windowID == SDL_GetWindowID(handle)
                 closeCallback(callbackData);
                 activityDetected.store(true);
-            /* TODO: drag&drop, etc*/
+            case SDL_EVENT_DROP_BEGIN:
+                dropCallback(callbackData, 0, nullptr);
+                break;
+            case SDL_EVENT_DROP_FILE:
+                dropCallback(callbackData, 1, event.drop.data);
+                break;
+            case SDL_EVENT_DROP_TEXT:
+                dropCallback(callbackData, 2, event.drop.data);
+                break;
+            case SDL_EVENT_DROP_COMPLETE:
+                dropCallback(callbackData, 3, nullptr);
+                break;
             default:
                 break;
         }

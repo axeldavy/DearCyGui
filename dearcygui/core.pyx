@@ -89,6 +89,13 @@ cdef void internal_close_callback(void *object) noexcept nogil:
         except Exception as e:
             print("An error occured in the viewport close callback", traceback.format_exc())
 
+cdef void internal_drop_callback(void *object, int type, const char *data) noexcept nogil:
+    with gil:
+        try:
+            (<Viewport>object).__on_drop(type, data)
+        except Exception as e:
+            print("An error occured in the viewport drop callback", traceback.format_exc())
+
 cdef void internal_render_callback(void *object) noexcept nogil:
     (<Viewport>object).__render()
 
@@ -609,6 +616,34 @@ cdef class Context:
             try:
                 self.queue.submit(callback, parent_item, target_item,
                                   ((arg1_1, arg1_2, arg1_3), (arg2_1, arg2_2, arg2_3)))
+            except Exception as e:
+                print(traceback.format_exc())
+
+    cdef void queue_callback_arg1int1stringvector(self, Callback callback, baseItem parent_item, baseItem target_item,
+                                                  int arg1, vector[string] arg2) noexcept nogil:
+        """
+        Queue a callback with one integer and one vector of strings arguments.
+
+        Parameters:
+        callback : Callback
+            The callback to be queued.
+        parent_item : baseItem
+            The parent item.
+        target_item : baseItem
+            The target item.
+        arg1 : int
+            The first argument.
+        arg2 : vector[string]
+            The second argument.
+        """
+        if callback is None:
+            return
+        with gil:
+            try:
+                element_list = []
+                for element in arg2:
+                    element_list.append(str(element, 'utf-8'))
+                self.queue.submit(callback, parent_item, target_item, (arg1, element_list))
             except Exception as e:
                 print(traceback.format_exc())
 
@@ -2301,6 +2336,7 @@ cdef class Viewport(baseItem):
             SDLViewport.create(internal_render_callback,
                                internal_resize_callback,
                                internal_close_callback,
+                               internal_drop_callback,
                                <void*>self)
         if self.platform == NULL:
             raise RuntimeError("Failed to create the viewport")
@@ -2914,6 +2950,38 @@ cdef class Viewport(baseItem):
         if not(self._disable_close):
             self.context.started = False
         self.context.queue_callback_noarg(self._close_callback, self, self)
+
+    cdef void __on_drop(self, int type, const char* data):
+        """
+        Drop operations are received in several pieces,
+        we concatenate them before calling the user callback.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef string data_str
+        if type == 0:
+            # Start of a new drop operation
+            self._drop_data.clear()
+        elif type == 1:
+            # Drop file
+            data_str = data
+            self.drop_is_file_type = True
+            self._drop_data.push_back(data_str)
+        elif type == 2:
+            # Drop text
+            data_str = data
+            self.drop_is_file_type = False
+            self._drop_data.push_back(data_str)
+        elif type == 3:
+            # End of drop operation
+            self.context.queue_callback_arg1int1stringvector(
+                self._drop_callback,
+                self,
+                self,
+                1 if self.drop_is_file_type else 0,
+                self._drop_data)
+            self._drop_data.clear()
+
 
     cdef void __render(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -5280,6 +5348,28 @@ cdef class Window(uiItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self.on_close_callback = value if isinstance(value, Callback) or value is None else Callback(value)
+
+    @property
+    def on_drop(self):
+        """
+        Callback to call when the window receives a system
+        drag&drop operation.
+        The callback takes as input (sender, target, data),
+        where sender and target are always the viewport in
+        this context. data is a tuple of two elements.
+        The first one is 0 (for text) or 1 (for file) depending on the
+        type of dropped data, and the second is a list of
+        strings corresponding to the dropped content.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.on_drop_callback
+
+    @on_drop.setter
+    def on_drop(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.on_drop_callback = value if isinstance(value, Callback) or value is None else Callback(value)
 
     @property
     def primary(self):

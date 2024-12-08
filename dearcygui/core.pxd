@@ -108,6 +108,7 @@ cdef class Context:
     cdef void queue_callback_arg4int(self, Callback, baseItem, baseItem, int, int, int, int) noexcept nogil
     cdef void queue_callback_arg3long1int(self, Callback, baseItem, baseItem, long long, long long, long long, int) noexcept nogil
     cdef void queue_callback_argdoubletriplet(self, Callback, baseItem, baseItem, double, double, double, double, double, double) noexcept nogil
+    cdef void queue_callback_arg1int1stringvector(self, Callback, baseItem, baseItem, int, vector[string]) noexcept nogil
     cpdef void push_next_parent(self, baseItem next_parent)
     cpdef void pop_next_parent(self)
     cpdef object fetch_parent_queue_back(self)
@@ -273,6 +274,8 @@ cdef class Viewport(baseItem):
     cdef Font _font
     cdef baseTheme _theme
     cdef bint _disable_close
+    cdef bint drop_is_file_type
+    cdef vector[string] _drop_data
     cdef itemState state # Unused. Just for compatibility with handlers
     cdef imgui.ImGuiMouseCursor _cursor
     # For timing stats
@@ -312,6 +315,7 @@ cdef class Viewport(baseItem):
     cdef void __check_not_initialized(self)
     cdef void __on_resize(self)
     cdef void __on_close(self)
+    cdef void __on_drop(self, int, const char*)
     cdef void __render(self) noexcept nogil
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil
     cdef void push_pending_theme_actions(self, ThemeEnablers, ThemeCategories) noexcept nogil
@@ -496,6 +500,7 @@ cdef class Window(uiItem):
     cdef bint no_background
     cdef bint no_open_over_existing_popup
     cdef Callback on_close_callback
+    cdef Callback on_drop_callback
     cdef imgui.ImVec2 min_size
     cdef imgui.ImVec2 max_size
     cdef float scroll_x
