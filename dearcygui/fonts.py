@@ -32,250 +32,455 @@ import freetype.raw
 import os
 import numpy as np
 
-def load_font(path,
-              target_pixel_height=None,
-              target_size=0,
-              hinter="light",
-              restrict_to=None,
-              allow_color=True):
-    """
-    Inputs:
-    -------
-    path: the font file to open
-    target_pixel_height: if set, scale the characters to match
-        this height in pixels. The height here, refers to the
-        distance between the maximum top of a character,
-        and the minimum bottom of the character, when properly
-        aligned.
-    target_size: if set, scale the characters to match the
-        font 'size' by scaling the pixel size at the 'nominal'
-        value (default size of the font).
-    hinter: "font", "none", "light", "strong" or "monochrome".
-        The hinter is the rendering algorithm that
-        impacts a lot the aspect of the characters,
-        especially at low scales, to make them
-        more readable. "none" will simply render
-        at the target scale without any specific technique.
-        "font" will use the font guidelines, but the result
-        will depend on the quality of these guidelines.
-        "light" will try to render sharp characters, while
-        attempting to preserve the original shapes.
-        "strong" attemps to render very sharp characters,
-        even if the shape may be altered.
-        "monochrome" will render extremely sharp characters,
-        using only black and white pixels.
-    restrict_to: set of ints that contains the unicode characters
-        that should be loaded. If None, load all the characters
-        available.
-    allow_color: If the font contains colored glyphs, this enables
-        to render them in color.
+class GlyphSet:
+    """Container for font glyph data with convenient access methods"""
+    def __init__(self, height: int, images: dict, positioning: dict, origin_y: int):
+        self.height = height
+        self.images = images 
+        self.positioning = positioning
+        self.origin_y = origin_y
 
-    Outputs:
-    --------
-    height: The minimal vertical space to allocate for text
-        such that all font characters can be rendered properly.
-        Might be slightly different to target_pixel_height, as
-        the scaling determined by target_pixel_height uses
-        global font statistics. You may call fit_font_to_new_height,
-        if you need to force a specific vertical spacing.
-    character_images:
-        a dict mapping integers (UTF-8 code) to their rendered
-        character (numpy uint8 array: h, w, c)
-    character_positioning:
-        a dict mapping integers (UTF-8 code) to the positioning
-        information for the rendered character. Each value
-        consists in a pair of three elements: (dy, dx, advance)
-        - dy is the coordinate of the topmost pixel of the
-          character image relative to the drawing cursor,
-          in a coordinate system where y increases when
-          we go down, and the drawing cursor is at the top
-          of the intended character position.
-        - dx is the coordinate of the leftmost pixel of the
-          character image relative to the drawing cursor.
-        - advance corresponds to the number of pixels horizontally
-          the drawing cursor should be moved to draw the next 
-          character.
-    target_origin_y:
-        This is the coordinate from the position of the drawing
-        cursor (top of the text region) of the base of the characters
-        (bottom of an 'A'), in a coordinate system where y increases
-        when going down. Useful if you need to merge fonts, or want
-        to add special effects manually (underline, etc)
+    def get_raw_data(self) -> tuple[int, dict, dict, int]:
+        """Get original data format as (height, character_images, character_positioning, target_origin_y)
 
-    """
-    if not(os.path.exists(path)):
-        raise ValueError("fFile {path} not found")
-    # Open the font
-    face = freetype.Face(path)
-    if face is None:
-        raise ValueError("Failed to open the font")
+        Outputs:
+        --------
+        height: The minimal vertical space to allocate for text
+            such that all font characters can be rendered properly.
+            Might be slightly different to target_pixel_height, as
+            the scaling determined by target_pixel_height uses
+            global font statistics. You may call fit_font_to_new_height,
+            if you need to force a specific vertical spacing.
+        character_images:
+            a dict mapping integers (UTF-8 code) to their rendered
+            character (numpy uint8 array: h, w, c)
+        character_positioning:
+            a dict mapping integers (UTF-8 code) to the positioning
+            information for the rendered character. Each value
+            consists in a pair of three elements: (dy, dx, advance)
+            - dy is the coordinate of the topmost pixel of the
+            character image relative to the drawing cursor,
+            in a coordinate system where y increases when
+            we go down, and the drawing cursor is at the top
+            of the intended character position.
+            - dx is the coordinate of the leftmost pixel of the
+            character image relative to the drawing cursor.
+            - advance corresponds to the number of pixels horizontally
+            the drawing cursor should be moved to draw the next 
+            character.
+        target_origin_y:
+            This is the coordinate from the position of the drawing
+            cursor (top of the text region) of the base of the characters
+            (bottom of an 'A'), in a coordinate system where y increases
+            when going down. Useful if you need to merge fonts, or want
+            to add special effects manually (underline, etc)
+        
+        """
+        return self.height, self.images, self.positioning, self.origin_y
 
-    # Indicate the target scale
-    if target_pixel_height is not None:
-        assert(False)# TODO
-        #req = freetype.raw.FT_Size_Re
-        #freetype.raw.FT_Request_Size(face, req)
-    else:
-        face.set_pixel_sizes(0, int(round(target_size)))
+    def get_glyph(self, char: str) -> tuple[np.ndarray, tuple[int, int, int]] | None:
+        """Get image and positioning data for a single character"""
+        if not char or len(char) != 1:
+            return None
+        key = ord(char)
+        if key not in self.images:
+            return None
+        return self.images[key], self.positioning[key]
 
-    """
-    Prepare rendering flags
-    Available flags are:
-    freetype.FT_LOAD_FLAGS["FT_LOAD_NO_BITMAP"]:
-        When a font contains pre-rendered bitmaps,
-        ignores them instead of using them when the
-        requested size is a perfect match.
-    freetype.FT_LOAD_FLAGS["FT_LOAD_NO_HINTING"]:
-        Disables "hinting", which is an algorithm
-        to improve the sharpness of fonts.
-        Small sizes may render blurry with this flag.
-    freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]:
-        Ignores the font encapsulated hinting, and
-        replace it with a general one. Useful for fonts
-        with non-optimized hinting.
-    freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]:
-        Default font rendering with gray levels
-    freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_LIGHT"]:
-        Used with FT_LOAD_FORCE_AUTOHINT to use
-        a variant of the general hinter that is less
-        sharp, but respects more the original shape
-        of the font.
-    freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_MONO"]:
-        The hinting is optimized to render monochrome
-        targets (no blur/antialiasing).
-        Should be set with
-        freetype.FT_LOAD_TARGETS["FT_LOAD_MONOCHROME"].
-    Other values exist but you'll likely not need them.
-    """
-    
-    load_flags = 0
-    if hinter == "none":
-        load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
-        load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_HINTING"]
-        load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_AUTOHINT"]
-    elif hinter == "font":
-        load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
-    elif hinter == "light":
-        load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_LIGHT"]
-        load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
-    elif hinter == "strong":
-        load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
-        load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
-    elif hinter == "monochrome":
-        load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_MONO"]
-        load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_MONOCHROME"]
-    else:
-        raise ValueError("Invalid hinter. Must be none, font, light, strong or monochrome")
+    def get_glyph_image(self, char: str) -> np.ndarray | None:
+        """Get just the image data for a single character"""
+        result = self.get_glyph(char)
+        return result[0] if result else None
 
-    if allow_color:
-        load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_COLOR"]
+    def get_glyph_metrics(self, char: str) -> tuple[int, int, int] | None:
+        """Get just the positioning data for a single character"""
+        result = self.get_glyph(char)
+        return result[1] if result else None
 
-    # Additional checks. Shouldn't hurt ?
-    # load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_PEDANTIC"]
+    def get_glyph_vertical_offset(self, char: str) -> int | None:
+        """Get vertical offset (dy) from text cursor position to glyph top"""
+        metrics = self.get_glyph_metrics(char)
+        return metrics[0] if metrics else None
+        
+    def get_glyph_horizontal_offset(self, char: str) -> int | None:
+        """Get horizontal offset (dx) from text cursor to glyph left edge"""
+        metrics = self.get_glyph_metrics(char)
+        return metrics[1] if metrics else None
 
-    # global metrics for the target size, approximative
-    # global_metrics : freetype.SizeMetrics = face.metrics
+    def get_glyph_advance(self, char: str) -> int | None:
+        """Get horizontal advance (pixels) to next character position"""
+        metrics = self.get_glyph_metrics(char)
+        return metrics[2] if metrics else None
+        
+    def get_glyph_dimensions(self, char: str) -> tuple[int, int] | None:
+        """Get glyph bitmap dimensions as (height, width)"""
+        image = self.get_glyph_image(char)
+        if image is None:
+            return None
+        return image.shape[:2]
+        
+    def get_glyph_baseline(self, char: str) -> tuple[int, int] | None:
+        """Get glyph baseline position relative to text cursor.
+        
+        Returns (x,y) coordinate of glyph origin (intersection of baseline and
+        leftmost edge) relative to text cursor position, where:
+        - Positive y is downward
+        - Returns None if character not found
+        """
+        if not char or len(char) != 1:
+            return None
+        metrics = self.get_glyph_metrics(char)
+        if metrics is None:
+            return None
+        dy, dx, _ = metrics
+        return dx, self.origin_y - dy
 
-    character_images = {}
-    character_positioning = {}
-    unicode_to_glyph = {}
+    def get_font_metrics(self) -> tuple[int, int]:
+        """Get global font metrics.
+        
+        Returns:
+        --------
+        height: Total height needed to render any character
+        baseline: Y coordinate of baseline measured from top 
+        """
+        return self.height, self.origin_y
 
-    # Retrieve the rendered characters
-    for unicode_key, glyph_index in face.get_chars():
-        if (restrict_to is not None) and (unicode_key not in restrict_to):
-            continue
-        # TODO: double check the unicode key is UTF-8
-        unicode_to_glyph[unicode_key] = glyph_index
-        # Render internally at the target scale
-        face.load_glyph(glyph_index, flags=load_flags)
-        glyph : freetype.GlyphSlot = face.glyph
-        if hinter == "monochrome":
-            glyph.render(freetype.FT_RENDER_MODES["FT_RENDER_MODE_MONO"])
+class FontLoader:
+    """A class that manages font loading and text rendering"""
+    def __init__(self, path):
+        if not os.path.exists(path):
+            raise ValueError(f"Font file {path} not found")
+        self.face = freetype.Face(path)
+        if self.face is None:
+            raise ValueError("Failed to open the font")
+            
+
+    def _prepare_load_flags(self, hinter, allow_color) -> int:
+        """Prepare FreeType loading flags"""
+
+        """
+        Prepare rendering flags
+        Available flags are:
+        freetype.FT_LOAD_FLAGS["FT_LOAD_NO_BITMAP"]:
+            When a font contains pre-rendered bitmaps,
+            ignores them instead of using them when the
+            requested size is a perfect match.
+        freetype.FT_LOAD_FLAGS["FT_LOAD_NO_HINTING"]:
+            Disables "hinting", which is an algorithm
+            to improve the sharpness of fonts.
+            Small sizes may render blurry with this flag.
+        freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]:
+            Ignores the font encapsulated hinting, and
+            replace it with a general one. Useful for fonts
+            with non-optimized hinting.
+        freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]:
+            Default font rendering with gray levels
+        freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_LIGHT"]:
+            Used with FT_LOAD_FORCE_AUTOHINT to use
+            a variant of the general hinter that is less
+            sharp, but respects more the original shape
+            of the font.
+        freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_MONO"]:
+            The hinting is optimized to render monochrome
+            targets (no blur/antialiasing).
+            Should be set with
+            freetype.FT_LOAD_TARGETS["FT_LOAD_MONOCHROME"].
+        Other values exist but you'll likely not need them.
+        """
+        
+        load_flags = 0
+        if hinter == "none":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_HINTING"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_AUTOHINT"]
+        elif hinter == "font":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
         elif hinter == "light":
-            glyph.render(freetype.FT_RENDER_MODES["FT_RENDER_MODE_LIGHT"])
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_LIGHT"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
+        elif hinter == "strong":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
+        elif hinter == "monochrome":
+            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_MONO"]
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_MONOCHROME"]
         else:
-            glyph.render(freetype.FT_RENDER_MODES["FT_RENDER_MODE_NORMAL"])
-        # Retrieve the bitmap from it
-        bitmap : freetype.Bitmap = glyph.bitmap
-        # Positioning metrics
-        metric : freetype.FT_Glyph_Metrics = glyph.metrics
-        # positioning relative to the next pixel
+            raise ValueError("Invalid hinter. Must be none, font, light, strong or monochrome")
 
-        # lsb is the subpixel offset of our origin compared to the previous advance
-        # rsb is the subpixel offset of the next origin compared to our origin
-        # horiadvance is the horizontal displacement between
-        # our origin and the next one
+        if allow_color:
+            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_COLOR"]
+            
+        return load_flags
 
-        assert(glyph.advance.x == metric.horiAdvance)
-        advance =  (glyph._FT_GlyphSlot.contents.lsb_delta - glyph._FT_GlyphSlot.contents.rsb_delta + metric.horiAdvance) / 64.
-        # Currently the backend does not support rounding the advance when rendering
-        # the font (which would enable best support for lsb and rsb), thus we pre-round.
-        advance = round(advance)
-        # distance from our origin of the top
-        bitmap_top = glyph.bitmap_top
-        # distance from our origin of the left
-        bitmap_left = glyph.bitmap_left
-        # Other modes not supported below, but could be added.
-        assert(bitmap.pixel_mode in [freetype.FT_PIXEL_MODE_GRAY,
-                                     freetype.FT_PIXEL_MODE_MONO,
-                                     freetype.FT_PIXEL_MODE_BGRA])
+    def render_text_to_array(self, text: str,
+                             target_size : int,
+                             align_to_pixels=True,
+                             enable_kerning=True,
+                             hinter="light",
+                             allow_color=True) -> tuple[np.ndarray, int]:
+        """Render text string to a numpy array and return the array and bitmap_top"""
+        self.face.set_pixel_sizes(0, int(round(target_size)))
 
-        if bitmap.rows == 0 or bitmap.width == 0:
-            # empty characters, such as space
-            image = np.zeros([1, 1, 1], dtype=np.uint8)
-            bitmap_top=0
-            bitmap_left=0
-        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_MONO:
-            # monochrome 1-bit data
-            image = 255*np.unpackbits(np.array(bitmap.buffer, dtype=np.uint8), count=bitmap.rows * 8*bitmap.pitch).reshape([bitmap.rows, 8*bitmap.pitch])
-            image = image[:, :bitmap.width, np.newaxis]
-        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
-            image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch])
-            image = image[:, :bitmap.width, np.newaxis]
-        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
-            image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch//4, 4])
-            image = image[:, :bitmap.width, :]
-            # swap B and R
-            image[:, :, [0, 2]] = image[:, :, [2, 0]]
+        load_flags = self._prepare_load_flags(hinter, allow_color)
 
-        character_images[unicode_key] = image
-        character_positioning[unicode_key] = (bitmap_top, bitmap_left, advance)
+        # Calculate rough dimensions for initial buffer
+        rough_width, rough_height, _, _ = self._calculate_text_dimensions(
+            text, load_flags, align_to_pixels, enable_kerning
+        )
+        
+        # Add margins to prevent overflow
+        margin = target_size
+        height = int(np.ceil(rough_height)) + 2 * margin
+        width = int(np.ceil(rough_width)) + 2 * margin
+        
+        # Create output image array with margins
+        image = np.zeros((height, width, 4), dtype=np.uint8)
+        
+        # Track actual bounds with local variables
+        min_x = float('inf')
+        max_x = float('-inf')
+        min_y = float('inf')
+        max_y = float('-inf')
+        max_top = float('-inf')
+        
+        # Render each character
+        x_offset = margin
+        y_offset = margin
+        previous_char = None
+        kerning_mode = freetype.FT_KERNING_DEFAULT if align_to_pixels else freetype.FT_KERNING_UNFITTED
+        
+        for char in text:
+            self.face.load_char(char, flags=load_flags)
+            glyph = self.face.glyph
+            bitmap = glyph.bitmap
+            
+            if enable_kerning and previous_char is not None:
+                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
+                x_offset += kerning.x / 64.0
 
-    # Compute font height
-    max_bitmap_top = 0
-    max_bitmap_bot = 0
-    for (image, (bitmap_top, _, _)) in zip(character_images.values(), character_positioning.values()):
-        h = image.shape[0]
-        max_bitmap_top = max(max_bitmap_top, bitmap_top)
-        max_bitmap_bot = max(max_bitmap_bot, h - bitmap_top)
+            # Update bounds
+            min_x = min(min_x, x_offset)
+            max_x = max(max_x, x_offset + bitmap.width)
+            min_y = min(min_y, y_offset + bitmap.rows - glyph.bitmap_top)
+            max_y = max(max_y, y_offset + bitmap.rows)
+            max_top = max(max_top, glyph.bitmap_top)
 
-    height = max_bitmap_top + max_bitmap_bot + 1
+            self._render_glyph_to_image(glyph, image, x_offset, y_offset, align_to_pixels)
 
-    # Convert positioning data to the correct coordinate system
-    target_origin_y = max_bitmap_top
+            if align_to_pixels:
+                x_offset += round(glyph.advance.x/64)
+            else:
+                x_offset += glyph.linearHoriAdvance/65536
+            previous_char = char
 
-    character_positioning_prev = character_positioning
-    character_positioning = {}
-    for (key, (bitmap_top, bitmap_left, advance)) in character_positioning_prev.items():
-        character_positioning[key] = (target_origin_y-bitmap_top, bitmap_left, advance)
+        # Handle empty text
+        if min_x == float('inf'):
+            return np.zeros((1, 1, 4), dtype=np.uint8), 0
 
-    """
-    Kerning:
-    Currently the backend doesn't support kerning.
-    character_kerning = {}
-    keys = character_positioning.keys()
-    if (face.face_flags & freetype.FT_FACE_FLAG_KERNING) != 0:
-        for left in keys:
-            for right in keys:
-                left_right_kerning = face.get_kerning(left, right)
-                if left_right_kerning.x == 0:
-                    continue
-                kw = left_right_kerning.x / 64.
-                kh = left_right_kerning.y / 64.
-                character_kerning[(left, right)] = (kh, kw)
-    """
+        # Crop to actual content plus small margin
+        crop_margin = 2
+        min_x = max(int(min_x) - crop_margin, 0)
+        min_y = max(int(min_y) - crop_margin, 0)
+        max_x = min(int(np.ceil(max_x)) + crop_margin, width)
+        max_y = min(int(np.ceil(max_y)) + crop_margin, height)
 
-    return height, character_images, character_positioning, target_origin_y
+        return image[min_y:max_y, min_x:max_x], max_top
+
+    def _calculate_text_dimensions(self, text: str, load_flags : int, align_to_pixels: bool, enable_kerning: bool):
+        """Calculate the dimensions needed for the text"""
+        width, max_top, max_bottom = 0, 0, 0
+        previous_char = None
+        kerning_mode = freetype.FT_KERNING_DEFAULT if align_to_pixels else freetype.FT_KERNING_UNFITTED
+        
+        for char in text:
+            self.face.load_char(char, flags=load_flags)
+            glyph = self.face.glyph
+            bitmap = glyph.bitmap
+            top = glyph.bitmap_top
+            bottom = bitmap.rows - top
+            max_top = max(max_top, top)
+            max_bottom = max(max_bottom, bottom)
+            
+            if align_to_pixels:
+                width += glyph.advance.x/64
+            else:
+                width += glyph.linearHoriAdvance/65536
+                
+            if enable_kerning and previous_char is not None:
+                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
+                width += kerning.x / 64.0
+            previous_char = char
+            
+        return width, max_top + max_bottom, max_top, max_bottom
+
+    def _render_glyph_to_image(self, glyph, image, x_offset, y_offset, align_to_pixels):
+        """Render a single glyph to the image array"""
+        if glyph.format == freetype.FT_GLYPH_FORMAT_BITMAP:
+            bitmap = glyph.bitmap
+            self._copy_bitmap_to_image(bitmap, image, x_offset, y_offset)
+        else:
+            # Handle non-bitmap glyphs
+            if not align_to_pixels:
+                subpixel_offset = freetype.FT_Vector(
+                    int((x_offset - float(int(x_offset))) * 64), 0
+                )
+                gglyph = glyph.get_glyph()
+                bglyph = gglyph.to_bitmap(freetype.FT_RENDER_MODE_NORMAL, subpixel_offset, True)
+                self._copy_bitmap_to_image(bglyph.bitmap, image, x_offset, y_offset)
+
+    def _copy_bitmap_to_image(self, bitmap, image, x_offset, y_offset):
+        """Copy bitmap data to the image array"""
+        for y in range(bitmap.rows):
+            for x in range(bitmap.width):
+                if bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
+                    image[y + y_offset, int(x + x_offset), 3] = bitmap.buffer[y * bitmap.pitch + x]
+                elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
+                    image[y + y_offset, int(x + x_offset), :] = bitmap.buffer[
+                        y * bitmap.pitch + x * 4:(y + 1) * bitmap.pitch + x * 4
+                    ]
+
+    def get_glyphs_bitmaps(self,
+                           target_pixel_height=None,
+                           target_size=0,
+                           hinter="light",
+                           restrict_to=None,
+                           allow_color=True) -> GlyphSet:
+        """
+        Render the glyphs of the font at the target scale.
+
+        Inputs:
+        -------
+        target_pixel_height: if set, scale the characters to match
+            this height in pixels. The height here, refers to the
+            distance between the maximum top of a character,
+            and the minimum bottom of the character, when properly
+            aligned.
+        target_size: if set, scale the characters to match the
+            font 'size' by scaling the pixel size at the 'nominal'
+            value (default size of the font).
+        hinter: "font", "none", "light", "strong" or "monochrome".
+            The hinter is the rendering algorithm that
+            impacts a lot the aspect of the characters,
+            especially at low scales, to make them
+            more readable. "none" will simply render
+            at the target scale without any specific technique.
+            "font" will use the font guidelines, but the result
+            will depend on the quality of these guidelines.
+            "light" will try to render sharp characters, while
+            attempting to preserve the original shapes.
+            "strong" attemps to render very sharp characters,
+            even if the shape may be altered.
+            "monochrome" will render extremely sharp characters,
+            using only black and white pixels.
+        restrict_to: set of ints that contains the unicode characters
+            that should be loaded. If None, load all the characters
+            available.
+        allow_color: If the font contains colored glyphs, this enables
+            to render them in color.
+
+        Outputs:
+        --------
+        GlyphSet object containing the rendered characters.
+
+        """
+
+        # Indicate the target scale
+        if target_pixel_height is not None:
+            assert(False)# TODO
+            #req = freetype.raw.FT_Size_Re
+            #freetype.raw.FT_Request_Size(face, req)
+        else:
+            self.face.set_pixel_sizes(0, int(round(target_size)))
+
+        load_flags = self._prepare_load_flags(hinter, allow_color)
+
+        # global metrics for the target size, approximative
+        # global_metrics : freetype.SizeMetrics = face.metrics
+
+        character_images = {}
+        character_positioning = {}
+        unicode_to_glyph = {}
+
+        # Retrieve the rendered characters
+        for unicode_key, glyph_index in self.face.get_chars():
+            if (restrict_to is not None) and (unicode_key not in restrict_to):
+                continue
+            # TODO: double check the unicode key is UTF-8
+            unicode_to_glyph[unicode_key] = glyph_index
+            # Render internally at the target scale
+            self.face.load_glyph(glyph_index, flags=load_flags)
+            glyph : freetype.GlyphSlot = self.face.glyph
+            if hinter == "monochrome":
+                glyph.render(freetype.FT_RENDER_MODES["FT_RENDER_MODE_MONO"])
+            elif hinter == "light":
+                glyph.render(freetype.FT_RENDER_MODES["FT_RENDER_MODE_LIGHT"])
+            else:
+                glyph.render(freetype.FT_RENDER_MODES["FT_RENDER_MODE_NORMAL"])
+            # Retrieve the bitmap from it
+            bitmap : freetype.Bitmap = glyph.bitmap
+            # Positioning metrics
+            metric : freetype.FT_Glyph_Metrics = glyph.metrics
+            # positioning relative to the next pixel
+
+            # lsb is the subpixel offset of our origin compared to the previous advance
+            # rsb is the subpixel offset of the next origin compared to our origin
+            # horiadvance is the horizontal displacement between
+            # our origin and the next one
+
+            assert(glyph.advance.x == metric.horiAdvance)
+            advance =  (glyph._FT_GlyphSlot.contents.lsb_delta - glyph._FT_GlyphSlot.contents.rsb_delta + metric.horiAdvance) / 64.
+            # Currently the backend does not support rounding the advance when rendering
+            # the font (which would enable best support for lsb and rsb), thus we pre-round.
+            advance = round(advance)
+            # distance from our origin of the top
+            bitmap_top = glyph.bitmap_top
+            # distance from our origin of the left
+            bitmap_left = glyph.bitmap_left
+            # Other modes not supported below, but could be added.
+            assert(bitmap.pixel_mode in [freetype.FT_PIXEL_MODE_GRAY,
+                                        freetype.FT_PIXEL_MODE_MONO,
+                                        freetype.FT_PIXEL_MODE_BGRA])
+
+            if bitmap.rows == 0 or bitmap.width == 0:
+                # empty characters, such as space
+                image = np.zeros([1, 1, 1], dtype=np.uint8)
+                bitmap_top=0
+                bitmap_left=0
+            elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_MONO:
+                # monochrome 1-bit data
+                image = 255*np.unpackbits(np.array(bitmap.buffer, dtype=np.uint8), count=bitmap.rows * 8*bitmap.pitch).reshape([bitmap.rows, 8*bitmap.pitch])
+                image = image[:, :bitmap.width, np.newaxis]
+            elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
+                image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch])
+                image = image[:, :bitmap.width, np.newaxis]
+            elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
+                image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch//4, 4])
+                image = image[:, :bitmap.width, :]
+                # swap B and R
+                image[:, :, [0, 2]] = image[:, :, [2, 0]]
+
+            character_images[unicode_key] = image
+            character_positioning[unicode_key] = (bitmap_top, bitmap_left, advance)
+
+        # Compute font height
+        max_bitmap_top = 0
+        max_bitmap_bot = 0
+        for (image, (bitmap_top, _, _)) in zip(character_images.values(), character_positioning.values()):
+            h = image.shape[0]
+            max_bitmap_top = max(max_bitmap_top, bitmap_top)
+            max_bitmap_bot = max(max_bitmap_bot, h - bitmap_top)
+
+        height = max_bitmap_top + max_bitmap_bot + 1
+
+        # Convert positioning data to the correct coordinate system
+        target_origin_y = max_bitmap_top
+
+        character_positioning_prev = character_positioning
+        character_positioning = {}
+        for (key, (bitmap_top, bitmap_left, advance)) in character_positioning_prev.items():
+            character_positioning[key] = (target_origin_y-bitmap_top, bitmap_left, advance)
+
+        return GlyphSet(height, character_images, character_positioning, target_origin_y)
 
 def fit_font_to_new_height(target_height, height, character_positioning, target_origin=None):
     """
@@ -446,224 +651,132 @@ def make_bold_italic(text):
     """
     return "".join([make_chr_bold_italic(c) for c in text])
 
-def make_extended_latin_font(size : int,
-                             main_font_path : str = None,
-                             italic_font_path : str = None,
-                             bold_font_path : str = None,
-                             bold_italic_path : str = None,
-                             **kwargs):
+class FontsManager:
+    """A class that manages multiple fonts and provides font merging capabilities
+    
+    This class manages multiple FontLoader instances to provide:
+    - Loading multiple fonts and reusing loaded fonts
+    - Font merging with code page remapping 
+    - Extended latin font generation with bold/italic variants
     """
-    Helper to load the latin character set extended
-    with italics, bolds and bold-italics.
+    def __init__(self):
+        self.loaders = {}  # Path -> FontLoader cache
 
-    For the paths not filled, a default font file is used.
+    def get_loader(self, path):
+        """Get or create a FontLoader for the given font path"""
+        if path not in self.loaders:
+            self.loaders[path] = FontLoader(path)
+        return self.loaders[path]
 
-    The additional arguments passed are given to load_font
-    """
-    if main_font_path is None:
-        root_dir = os.path.dirname(__file__)
-        main_font_path = os.path.join(root_dir, 'lmsans17-regular.otf')
-    if italic_font_path is None:
-        root_dir = os.path.dirname(__file__)
-        italic_font_path = os.path.join(root_dir, 'lmromanslant17-regular.otf')
-    if bold_font_path is None:
-        root_dir = os.path.dirname(__file__)
-        bold_font_path = os.path.join(root_dir, 'lmsans10-bold.otf')
-    if bold_italic_path is None:
-        root_dir = os.path.dirname(__file__)
-        bold_italic_path = os.path.join(root_dir, 'lmromandemi10-oblique.otf')
+    def merge_fonts(self, fonts_info, **kwargs):
+        """
+        Merge multiple fonts with code page remapping.
+        
+        fonts_info: List of tuples (font_path, restrict_to, code_map) where:
+            - font_path: Path to font file
+            - restrict_to: Set of unicode chars to load (optional)
+            - code_map: function mapping source codes to target codes (optional)
+        
+        Returns tuple:
+            (height, merged_images, merged_positioning)
+        """
+        heights = []
+        character_images = []
+        character_positioning = []
+        origins = []
 
-    heights = []
-    character_images = []
-    character_positioning = []
-    origins = []
+        for font_path, restrict_to, code_map in fonts_info:
+            loader = self.get_loader(font_path)
+            glyphset = loader.get_glyphs_bitmaps(
+                restrict_to=restrict_to,
+                **kwargs 
+            )
+            h, c_i, c_p, o = glyphset.get_raw_data()
 
-    # load main font
-    # load the default latin set unless specified by the user
-    restricted_set = kwargs.pop("restrict_to", set(range(0, 256)))
-    h, c_i, c_p, o = load_font(main_font_path, target_size=size, restrict_to=restricted_set, **kwargs)
-    heights.append(h)
-    character_images.append(c_i)
-    character_positioning.append(c_p)
-    origins.append(o)
+            if code_map:
+                if restrict_to is None:
+                    raise ValueError("code_map requires restrict_to")
+                # Remap character codes
+                c_i_new = {}
+                c_p_new = {} 
+                for key in c_i.keys():
+                    if key in restrict_to:
+                        c_i_new[code_map(key)] = c_i[key]
+                        c_p_new[code_map(key)] = c_p[key]
+                c_i = c_i_new
+                c_p = c_p_new
 
-    restricted_set = [ord(c) for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"]
+            heights.append(h)
+            character_images.append(c_i)
+            character_positioning.append(c_p)
+            origins.append(o)
 
-    # load bold font
-    h, c_i, c_p, o = load_font(bold_font_path, target_size=size, restrict_to=restricted_set, **kwargs)
-    # convert code keys
-    c_i_new = {}
-    c_p_new = {}
-    for key in c_i.keys():
-        if key < a_int:
-            # 'A...Z'
-            shifted_key = key - A_int + A_bold
-        else:
-            # 'a...z'
-            shifted_key = key - a_int + a_bold
-        c_i_new[shifted_key] = c_i[key]
-        c_p_new[shifted_key] = c_p[key]
-    heights.append(h)
-    character_images.append(c_i_new)
-    character_positioning.append(c_p_new)
-    origins.append(o)
+        # Align and merge fonts
+        height, pos_aligned, origin = align_fonts(heights, character_positioning, origins)
+        
+        images_merged = {}
+        pos_merged = {}
+        for images, pos in zip(character_images, pos_aligned):
+            images_merged.update(images)
+            pos_merged.update(pos)
 
-    # load bold italic font
-    h, c_i, c_p, o = load_font(bold_italic_path, target_size=size, restrict_to=restricted_set, **kwargs)
+        # Center the merged font
+        height, pos_merged, _ = center_font(height, pos_merged, origin)
 
-    # convert code keys
-    c_i_new = {}
-    c_p_new = {}
-    for key in c_i.keys():
-        if key < a_int:
-            # 'A...Z'
-            shifted_key = key - A_int + A_bitalic
-        else:
-            # 'a...z'
-            shifted_key = key - a_int + a_bitalic
-        c_i_new[shifted_key] = c_i[key]
-        c_p_new[shifted_key] = c_p[key]
-    heights.append(h)
-    character_images.append(c_i_new)
-    character_positioning.append(c_p_new)
-    origins.append(o)
+        return height, images_merged, pos_merged
 
-    # load italic font
-    h, c_i, c_p, o = load_font(italic_font_path, target_size=size, restrict_to=restricted_set, **kwargs)
-    # convert code keys
-    c_i_new = {}
-    c_p_new = {}
-    for key in c_i.keys():
-        if key < a_int:
-            # 'A...Z'
-            shifted_key = key - A_int + A_italic
-        else:
-            # 'a...z'
-            shifted_key = key - a_int + a_italic
-        c_i_new[shifted_key] = c_i[key]
-        c_p_new[shifted_key] = c_p[key]
-    heights.append(h)
-    character_images.append(c_i_new)
-    character_positioning.append(c_p_new)
-    origins.append(o)
+    def make_extended_latin_font(self, size: int,
+                               main_font_path: str = None,
+                               italic_font_path: str = None, 
+                               bold_font_path: str = None,
+                               bold_italic_path: str = None,
+                               **kwargs):
+        """Helper to load latin character set with bold/italic variants"""
+        
+        # Use default font paths if not specified
+        if main_font_path is None:
+            root_dir = os.path.dirname(__file__)
+            main_font_path = os.path.join(root_dir, 'lmsans17-regular.otf')
+        if italic_font_path is None:
+            root_dir = os.path.dirname(__file__)
+            italic_font_path = os.path.join(root_dir, 'lmromanslant17-regular.otf')
+        if bold_font_path is None:
+            root_dir = os.path.dirname(__file__)
+            bold_font_path = os.path.join(root_dir, 'lmsans10-bold.otf')
+        if bold_italic_path is None:
+            root_dir = os.path.dirname(__file__)
+            bold_italic_path = os.path.join(root_dir, 'lmromandemi10-oblique.otf')
 
-    # Align fonts
-    height, character_positioning, origin = align_fonts(heights, character_positioning, origins)
+        # Prepare font configurations
+        restricted_latin = [ord(c) for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"]
+        main_restrict = kwargs.pop("restrict_to", set(range(0, 256)))
 
-    # Merge fonts
-    character_images_merged = {}
-    character_positioning_merged = {}
-    for c_i in character_images:
-        character_images_merged.update(c_i)
-    for c_p in character_positioning:
-        character_positioning_merged.update(c_p)
+        def make_bold_map(key):
+            if key < a_int:
+                return key - A_int + A_bold
+            return key - a_int + a_bold
 
-    # Center font
-    height, character_positioning_merged, _ = center_font(height, character_positioning_merged, origin)
+        def make_italic_map(key):
+            if key < a_int:
+                return key - A_int + A_italic  
+            return key - a_int + a_italic
 
-    return height, character_images_merged, character_positioning_merged
+        def make_bold_italic_map(key):
+            if key < a_int:
+                return key - A_int + A_bitalic
+            return key - a_int + a_bitalic
 
-class TextRenderer:
-    def __init__(self, font_path, size, hinter="light", allow_color=True):
-        self.font_path = font_path
-        self.size = size
-        self.hinter = hinter
-        self.allow_color = allow_color
-        self.face = freetype.Face(font_path)
-        self.face.set_pixel_sizes(0, size)
-        self.load_flags = self._prepare_load_flags(hinter, allow_color)
+        fonts_info = [
+            (main_font_path, main_restrict, None),
+            (bold_font_path, restricted_latin, make_bold_map),
+            (bold_italic_path, restricted_latin, make_bold_italic_map),
+            (italic_font_path, restricted_latin, make_italic_map)
+        ]
 
-    def _prepare_load_flags(self, hinter, allow_color):
-        load_flags = 0
-        if hinter == "none":
-            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
-            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_HINTING"]
-            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_NO_AUTOHINT"]
-        elif hinter == "font":
-            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
-        elif hinter == "light":
-            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_LIGHT"]
-            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
-        elif hinter == "strong":
-            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_NORMAL"]
-            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_FORCE_AUTOHINT"]
-        elif hinter == "monochrome":
-            load_flags |= freetype.FT_LOAD_TARGETS["FT_LOAD_TARGET_MONO"]
-            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_MONOCHROME"]
-        else:
-            raise ValueError("Invalid hinter. Must be none, font, light, strong or monochrome")
+        return self.merge_fonts(fonts_info, target_size=size, **kwargs)
 
-        if allow_color:
-            load_flags |= freetype.FT_LOAD_FLAGS["FT_LOAD_COLOR"]
-
-        return load_flags
-
-    def render_text_to_array(self, text, align_to_pixels=True, enable_kerning=True):
-        width, height, max_top, max_bottom = 0, 0, 0, 0
-        previous_char = None
-        kerning_mode = freetype.FT_KERNING_DEFAULT if align_to_pixels else freetype.FT_KERNING_UNFITTED
-        for char in text:
-            self.face.load_char(char, flags=self.load_flags)
-            glyph = self.face.glyph
-            bitmap = glyph.bitmap
-            top = glyph.bitmap_top
-            bottom = bitmap.rows - top
-            max_top = max(max_top, top)
-            max_bottom = max(max_bottom, bottom)
-            if align_to_pixels:
-                width += glyph.advance.x/64
-            else:
-                width += glyph.linearHoriAdvance/65536
-            if enable_kerning and previous_char is not None:
-                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
-                width += kerning.x / 64.0
-            previous_char = char
-
-        height = max_top + max_bottom
-        image = np.zeros((height + 10, int(np.ceil(width)) + 10, 4), dtype=np.uint8)
-
-        x_offset = 0.0
-        previous_char = None
-        for char in text:
-            self.face.load_char(char, flags=self.load_flags)
-            glyph = self.face.glyph
-            bitmap = glyph.bitmap
-            top = glyph.bitmap_top
-            left = glyph.bitmap_left
-
-            if enable_kerning and previous_char is not None:
-                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
-                x_offset += kerning.x / 64.0
-
-            y_offset = max_top - top
-            if glyph.format == freetype.FT_GLYPH_FORMAT_BITMAP:
-                for y in range(bitmap.rows):
-                    for x in range(bitmap.width):
-                        if bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
-                            image[y + y_offset, int(x + x_offset), 3] = bitmap.buffer[y * bitmap.pitch + x]
-                        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
-                            image[y + y_offset, int(x + x_offset), :] = bitmap.buffer[y * bitmap.pitch + x * 4:(y + 1) * bitmap.pitch + x * 4]
-            else:
-                # Handle non-bitmap glyphs
-                if align_to_pixels and False:
-                    subpixel_offset = freetype.FT_Vector(0, 0)
-                else:
-                    subpixel_offset = freetype.FT_Vector(int((x_offset - float(int(x_offset))) * 64), 0)
-                gglyph = glyph.get_glyph()
-                bglyph = gglyph.to_bitmap(freetype.FT_RENDER_MODE_NORMAL, subpixel_offset, True)
-                bitmap = bglyph.bitmap
-                
-                for y in range(bitmap.rows):
-                    for x in range(bitmap.width):
-                        if bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
-                            image[y + y_offset, int(x + x_offset), 3] = bitmap.buffer[y * bitmap.pitch + x]
-                        elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
-                            image[y + y_offset, int(x + x_offset), :] = bitmap.buffer[y * bitmap.pitch + x * 4:(y + 1) * bitmap.pitch + x * 4]
-
-            if align_to_pixels:
-                x_offset += round(glyph.advance.x/64)
-            else:
-                x_offset += glyph.linearHoriAdvance/65536
-            previous_char = char
-
-        return image
+# Replace make_extended_latin_font implementation with:
+def make_extended_latin_font(size: int, **kwargs):
+    """Create an extended latin font using FontsManager"""
+    manager = FontsManager()
+    return manager.make_extended_latin_font(size, **kwargs)
