@@ -3071,7 +3071,7 @@ cdef class DrawText(drawingItem):
         return self._font
 
     @font.setter
-    def font(self, Font value):
+    def font(self, baseFont value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._font = value
@@ -3119,10 +3119,14 @@ cdef class DrawText(drawingItem):
         else:
             size *= self.context._viewport.global_scale
         size = abs(size)
+        if self._font is not None:
+            self._font.push()
         if size == 0:
             drawlist.AddText(ip, self._color, self._text.c_str())
         else:
-            drawlist.AddText(self._font.font if self._font is not None else NULL, size, ip, self._color, self._text.c_str())
+            drawlist.AddText(NULL, size, ip, self._color, self._text.c_str())
+        if self._font is not None:
+            self._font.pop()
 
 
 

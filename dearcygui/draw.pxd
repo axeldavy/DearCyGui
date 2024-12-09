@@ -1,5 +1,5 @@
 from dearcygui.wrapper cimport imgui, double2, float2
-from .core cimport baseItem, drawingItem, Texture, Font
+from .core cimport baseItem, drawingItem, Texture, baseFont
 
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -183,7 +183,7 @@ cdef class DrawText(drawingItem):
     cdef string _text
     cdef imgui.ImU32 _color
     cdef float _size
-    cdef Font _font
+    cdef baseFont _font
     cdef void draw(self, imgui.ImDrawList*) noexcept nogil
 
 cdef class DrawTriangle(drawingItem):

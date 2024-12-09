@@ -2719,7 +2719,7 @@ cdef class Viewport(baseItem):
         return self._font
 
     @font.setter
-    def font(self, Font value):
+    def font(self, baseFont value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._font = value
@@ -4084,7 +4084,7 @@ cdef class uiItem(baseItem):
         return self._font
 
     @font.setter
-    def font(self, Font value):
+    def font(self, baseFont value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._font = value
@@ -6027,7 +6027,17 @@ def get_system_fonts():
         pass
     return fonts_filename
 
-cdef class Font(baseItem):
+cdef class baseFont(baseItem):
+    def __cinit__(self, context, *args, **kwargs):
+        self.can_have_sibling = False
+
+    cdef void push(self) noexcept nogil:
+        return
+
+    cdef void pop(self) noexcept nogil:
+        return
+
+cdef class Font(baseFont):
     """
     Represents a font that can be used in the UI.
 

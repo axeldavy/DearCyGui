@@ -271,7 +271,7 @@ cdef class Viewport(baseItem):
     cdef bint initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback
-    cdef Font _font
+    cdef baseFont _font
     cdef baseTheme _theme
     cdef bint _disable_close
     cdef bint drop_is_file_type
@@ -447,7 +447,7 @@ cdef class uiItem(baseItem):
     cdef ThemeCategories theme_condition_category
     cdef Callback dragCallback
     cdef Callback dropCallback
-    cdef Font _font
+    cdef baseFont _font
     cdef baseTheme _theme
     cdef vector[PyObject*] _callbacks # type Callback
     cdef SharedValue _value
@@ -544,7 +544,11 @@ cdef class Texture(baseItem):
     cdef bint readonly
     cdef void set_content(self, cnp.ndarray content)
 
-cdef class Font(baseItem):
+cdef class baseFont(baseItem):
+    cdef void push(self) noexcept nogil
+    cdef void pop(self) noexcept nogil
+
+cdef class Font(baseFont):
     cdef imgui.ImFont *font
     cdef FontTexture container
     cdef bint dpi_scaling
