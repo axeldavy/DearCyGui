@@ -24,6 +24,9 @@ from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from .core cimport baseFont, baseItem, Texture, lock_gil_friendly
 from .types cimport *
 
+from libc.stdint cimport uintptr_t
+import ctypes
+
 """
 Loading a font is complicated.
 
@@ -910,6 +913,12 @@ cdef class FontRenderer:
         # Track max dimensions while loading glyphs
         max_bitmap_top = 0
         max_bitmap_bot = 0
+
+        cdef const unsigned char* buffer_view
+        cdef unsigned char[:,::1] image_view
+        cdef unsigned char[:,:,::1] color_image_view
+        cdef int rows, cols, pitch, i, j, idx
+        cdef uintptr_t buffer_ptr
         
         # First pass - collect all glyphs and find dimensions
         glyphs_data = []  # Store temporary glyph data
@@ -931,6 +940,9 @@ cdef class FontRenderer:
 
             bitmap : freetype.Bitmap = glyph.bitmap
             metric : freetype.FT_Glyph_Metrics = glyph.metrics
+            rows = bitmap.rows
+            cols = bitmap.width
+            pitch = bitmap.pitch
 
             # Calculate advance (positioning relative to the next glyph)
 
@@ -949,21 +961,51 @@ cdef class FontRenderer:
             bitmap_left = glyph.bitmap_left
 
             # Create image array based on bitmap mode
-            if bitmap.rows == 0 or bitmap.width == 0:
+            if rows == 0 or cols == 0:
+                # Handle empty bitmap (space character for instance)
                 image = np.zeros([1, 1, 1], dtype=np.uint8)
                 bitmap_top = 0
                 bitmap_left = 0
             elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_MONO:
-                image = 255*np.unpackbits(np.array(bitmap.buffer, dtype=np.uint8), 
-                                        count=bitmap.rows * 8*bitmap.pitch).reshape([bitmap.rows, 8*bitmap.pitch])
-                image = image[:, :bitmap.width, np.newaxis]
+                #image = 255*np.unpackbits(np.array(bitmap.buffer, dtype=np.uint8), 
+                #                        count=bitmap.rows * 8*bitmap.pitch).reshape([bitmap.rows, 8*bitmap.pitch])
+                #image = image[:, :bitmap.width, np.newaxis]
+                buffer_ptr = <uintptr_t>ctypes.addressof(bitmap._FT_Bitmap.buffer.contents)
+                buffer_view = <unsigned char*>buffer_ptr
+                image = np.empty((rows, cols, 1), dtype=np.uint8)
+                image_view = image[:,:,0]
+        
+                # Unpack bits
+                for i in range(rows):
+                    for j in range(cols):
+                        image_view[i,j] = 255 if (buffer_view[i * pitch + (j >> 3)] & (1 << (7 - (j & 7)))) else 0
             elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_GRAY:
-                image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch])
-                image = image[:, :bitmap.width, np.newaxis]
+                #image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch])
+                #image = image[:, :bitmap.width, np.newaxis]
+                buffer_ptr = <uintptr_t>ctypes.addressof(bitmap._FT_Bitmap.buffer.contents)
+                buffer_view = <unsigned char*>buffer_ptr
+                image = np.empty((rows, cols, 1), dtype=np.uint8)
+                image_view = image[:,:,0]
+        
+                for i in range(rows):
+                    for j in range(cols):
+                        image_view[i,j] = buffer_view[i * pitch + j]
             elif bitmap.pixel_mode == freetype.FT_PIXEL_MODE_BGRA:
-                image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch//4, 4])
-                image = image[:, :bitmap.width, :]
-                image[:, :, [0, 2]] = image[:, :, [2, 0]]  # swap B and R
+                #image = np.array(bitmap.buffer, dtype=np.uint8).reshape([bitmap.rows, bitmap.pitch//4, 4])
+                #image = image[:, :bitmap.width, :]
+                #image[:, :, [0, 2]] = image[:, :, [2, 0]]  # swap B and R
+                buffer_ptr = <uintptr_t>ctypes.addressof(bitmap._FT_Bitmap.buffer.contents)
+                buffer_view = <unsigned char*>buffer_ptr
+                image = np.empty((rows, cols, 4), dtype=np.uint8)
+                color_image_view = image
+                # Copy and swap R/B channels directly
+                for i in range(rows):
+                    for j in range(cols):
+                        idx = i * pitch + j * 4
+                        color_image_view[i,j,0] = buffer_view[idx + 2]  # R
+                        color_image_view[i,j,1] = buffer_view[idx + 1]  # G
+                        color_image_view[i,j,2] = buffer_view[idx]      # B
+                        color_image_view[i,j,3] = buffer_view[idx + 3]  # A
             else:
                 continue  # Skip unsupported bitmap modes
 
