@@ -548,25 +548,6 @@ cdef class baseFont(baseItem):
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
 
-cdef class Font(baseFont):
-    cdef imgui.ImFont *font
-    cdef FontTexture container
-    cdef bint dpi_scaling
-    cdef float _scale
-    cdef void push(self) noexcept nogil
-    cdef void pop(self) noexcept nogil
-
-cdef class FontTexture(baseItem):
-    """
-    Packs one or several fonts into
-    a texture for internal use by ImGui.
-    """
-    cdef imgui.ImFontAtlas atlas
-    cdef Texture _texture
-    cdef bint _built
-    cdef list fonts_files # content of the font files
-    cdef list fonts
-
 """
 Theme base class:
 push: push the item components of the theme

@@ -137,6 +137,7 @@ def setup_package():
         "dearcygui/core.pyx",
         "dearcygui/constants.pyx",
         "dearcygui/draw.pyx",
+        "dearcygui/font.pyx",
         "dearcygui/handler.pyx",
         "dearcygui/layout.pyx",
         "dearcygui/os.pyx",

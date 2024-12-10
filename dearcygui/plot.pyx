@@ -24,7 +24,7 @@ from libc.math cimport INFINITY
 from .core cimport baseHandler, baseItem, uiItem, \
     lock_gil_friendly, clear_obj_vector, append_obj_vector, \
     IntPairFromVec2, draw_drawing_children, \
-    draw_ui_children, Font, plotElement, \
+    draw_ui_children, baseFont, plotElement, \
     update_current_mouse_states, \
     draw_plot_element_children, itemState
 from .types cimport *
@@ -1750,7 +1750,7 @@ cdef class plotElementWithLegend(plotElement):
         return self._font
 
     @font.setter
-    def font(self, Font value):
+    def font(self, baseFont value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._font = value

@@ -1,5 +1,5 @@
 from dearcygui.wrapper cimport imgui, implot
-from .core cimport baseItem, Font, itemState, \
+from .core cimport baseItem, baseFont, itemState, \
     plotElement, uiItem, Callback, baseHandler
 from .types cimport *
 
@@ -76,7 +76,7 @@ cdef class plotElementWithLegend(plotElement):
     cdef itemState state
     cdef bint _legend
     cdef int _legend_button
-    cdef Font _font
+    cdef baseFont _font
     cdef bint _enabled
     cdef bint enabled_dirty
     cdef void draw(self) noexcept nogil
