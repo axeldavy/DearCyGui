@@ -49,31 +49,15 @@ to issue several Text() calls. In addition combining fonts needs special centeri
 
 ## The default font at different sizes
 
-New instances of the default font can be created using the *fonts* module
+New instances of the default font can be created using `AutoFont`.
 ```python
-import dearcygui as dcg
-
-font_texture = dcg.FontTexture(C)
-global_scale = C.viewport.dpi * C.viewport.scale
-my_new_font_data = dcg.fonts.make_extended_latin_font(round(global_scale * my_new_size))
-font_texture.add_custom_font(*my_new_font_data)
-font_texture.build()
-my_new_font = font_texture[0]
-my_new_font.scale = 1./global_scale
-
-my_item.font = my_new_font
+my_new_font = dcg.AutoFont(C, base_size=new_size)
 ```
-
-The above example also shows you one way of handling dpi scaling properly, and get
-sharp fonts on various displays.
-
-The `dearcygui.fonts` module also provides some helpers to load new fonts and combining new ones.
-In order to make bold/italics/bold-italics texts, it provides the unicode helpers `make_bold`,
-`make_italic` and `make_bold_italic`.
+The default base size is 17.
 
 ## Simplest and fastest way of loading a font
 
-To load a font, the simplest is to use `AutoFont`
+To load a non-default font, the simplest is to use `AutoFont`
 ```python
 my_new_font = dcg.AutoFont(C,
                            base_size=my_target_size,
@@ -144,4 +128,4 @@ glyph_set = font_renderer.render_glyph_set(target_size=round(size*global_scale))
 my_new_font.scale = 1./global_scale
 ```
 
-As long as global_scale is not changed after the font is created, this method will give good results.
+As long as `global_scale` is not changed after the font is created, this method will give good results.
