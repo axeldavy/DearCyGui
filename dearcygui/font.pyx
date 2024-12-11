@@ -14,18 +14,22 @@
 #cython: auto_pickle=False
 #distutils: language=c++
 
+from libc.math cimport logf
 from libcpp cimport bool
+from libcpp.deque cimport deque
 
 cimport cython
 cimport cython.view
 from dearcygui.wrapper cimport imgui
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 
-from .core cimport baseFont, baseItem, Texture, lock_gil_friendly
+from .core cimport baseFont, baseItem, Texture, Callback, \
+    lock_gil_friendly, clear_obj_vector, append_obj_vector
 from .types cimport *
 
 from libc.stdint cimport uintptr_t
 import ctypes
+from concurrent.futures import ThreadPoolExecutor
 
 """
 Loading a font is complicated.
@@ -149,6 +153,273 @@ cdef class Font(baseFont):
             return
         imgui.PopFont()
         self.mutex.unlock()
+
+cdef class FontMultiScales(baseFont):
+    """
+    A font container that can hold multiple Font objects at different scales.
+    When used, it automatically selects and pushes the font with the 
+    invert scale closest to the current global scale.
+    The purpose is to automatically select the Font that when
+    scaled by global_scale will be stretched the least.
+
+    This is useful for having sharp fonts at different DPI scales without
+    having to manually manage font switching.
+    """
+
+    def __cinit__(self, context, *args, **kwargs):
+        self.can_have_sibling = False
+
+    def __dealloc__(self):
+        clear_obj_vector(self._fonts)
+        clear_obj_vector(self._callbacks) 
+
+    @property
+    def fonts(self):
+        """
+        List of attached fonts. Each font should have a different scale.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        result = []
+        cdef int i
+        for i in range(<int>self._fonts.size()):
+            result.append(<Font>self._fonts[i])
+        return result
+
+    @fonts.setter 
+    def fonts(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value is None:
+            clear_obj_vector(self._fonts)
+            return
+
+        # Convert to list if single font
+        if not hasattr(value, "__len__"):
+            value = [value]
+
+        # Validate all inputs are Font objects
+        for font in value:
+            if not isinstance(font, Font):
+                raise TypeError(f"{font} is not a Font instance")
+
+        # Success - store fonts
+        clear_obj_vector(self._fonts)
+        append_obj_vector(self._fonts, value)
+
+    @property 
+    def recent_scales(self):
+        """
+        List of up to 10 most recent global scales encountered during rendering.
+        The scales are not in a particular order
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [s for s in self._stored_scales]
+
+    @property
+    def callbacks(self):
+        """
+        Callbacks that get triggered when a new scale is stored.
+        Each callback receives the new scale value that was added.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        result = []
+        cdef int i
+        for i in range(<int>self._callbacks.size()):
+            result.append(<Callback>self._callbacks[i])
+        return result
+
+    @callbacks.setter 
+    def callbacks(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value is None:
+            clear_obj_vector(self._callbacks)
+            return
+        cdef list items = []
+        if not hasattr(value, "__len__"):
+            value = [value]
+        for v in value:
+            items.append(v if isinstance(v, Callback) else Callback(v))
+        clear_obj_vector(self._callbacks)
+        append_obj_vector(self._callbacks, items)
+
+    cdef void push(self) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        self.mutex.lock()
+        if self._fonts.empty():
+            return
+
+        # Find font with closest invert scale to current global scale
+        # (we want that scale * global_scale == 1, to have sharp fonts)
+        cdef float global_scale = self.context._viewport.global_scale
+        cdef float target_scale = logf(global_scale)
+        cdef float best_diff = 1e10
+        cdef float diff
+        cdef PyObject *best_font = NULL
+        cdef int i
+        
+        for i in range(<int>self._fonts.size()):
+            diff = abs(logf((<Font>self._fonts[i])._scale) + target_scale)
+            if diff < best_diff:
+                best_diff = diff
+                best_font = self._fonts[i]
+
+        if best_font == NULL:
+            best_font = self._fonts[0]
+        (<Font>best_font).push()
+
+        # Keep seen scales
+
+        cdef float past_scale
+        for past_scale in self._stored_scales:
+            # scale already in list
+            if abs(past_scale - global_scale) < 1e-6:
+                return
+
+        # add to list
+        self._stored_scales.push_front(global_scale)
+        while self._stored_scales.size() > 10:
+            self._stored_scales.pop_back()
+
+        # Notify callbacks of new scale
+        if not(self._callbacks.empty()):
+            for i in range(<int>self._callbacks.size()):
+                self.context.queue_callback_arg1float(<Callback>self._callbacks[i],
+                                                    self, 
+                                                    self,
+                                                    global_scale)
+
+    cdef void pop(self) noexcept nogil:
+        if not self._fonts.empty():
+            # We only pushed one font, so only need one pop
+            imgui.PopFont()
+        self.mutex.unlock()
+
+
+cdef class AutoFont(FontMultiScales):
+    """
+    A self-managing font container that automatically creates and caches fonts at different scales.
+    
+    Automatically creates new font sizes when needed to match global_scale changes.
+    
+    Parameters
+    ----------
+    context : Context
+        The context this font belongs to
+    base_size : float = 17.0
+        Base font size before scaling
+    font_creator : callable = None
+        Function to create fonts. Takes size as first argument and optional kwargs.
+        The output should be a GlyphSet.
+        If None, uses make_extended_latin_font.
+    **kwargs : 
+        Additional arguments passed to font_creator
+    """
+    def __init__(self, context, 
+                 float base_size=17.0,
+                 font_creator=None,
+                 **kwargs):
+        super().__init__(context)
+                 
+        self._base_size = base_size
+        self._kwargs = kwargs
+        self._font_creator = font_creator if font_creator is not None else make_extended_latin_font
+        self._font_creation_executor = ThreadPoolExecutor(max_workers=1)
+        self._pending_fonts = set()
+        
+        # Set up callback for new scales
+        self.callbacks = self._on_new_scale
+        
+        # Create initial font at current global scale
+        # Pass exceptions for the first time we create the font
+        self._pending_fonts.add(self.context._viewport.global_scale)
+        self._create_font_at_scale(self.context._viewport.global_scale, False)
+
+    def __del__(self):
+        self._font_creation_executor.shutdown(wait=True)
+        super().__del__()
+
+    def _on_new_scale(self, sender, target, float scale) -> None:
+        """Called when a new global scale is encountered"""
+        # Only queue font creation if we don't have it pending already
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if scale in self._pending_fonts:
+            return
+        self._pending_fonts.add(scale)
+        m.unlock()
+        self._font_creation_executor.submit(self._create_font_at_scale, scale, True)
+        
+    cpdef void _create_font_at_scale(self, float scale, bint no_fail):
+        """Create a new font at the given scale"""
+        cdef unique_lock[recursive_mutex] m
+        # Create texture and font
+        cdef FontTexture texture = FontTexture(self.context)
+        cdef Font font = None
+        
+        # Calculate scaled size
+        cdef int scaled_size = int(round(self._base_size * scale))
+
+        try:
+            # Create glyph set using the font creator
+            glyph_set = self._font_creator(scaled_size, **self._kwargs)
+
+            # Add to texture and build
+            texture.add_custom_font(glyph_set)
+            texture.build()
+
+            # Get font and configure scale
+            font = texture.fonts[0] 
+            font.scale = 1.0/scale
+
+            self._add_new_font_to_list(font)
+        except Exception as e:
+            if not(no_fail):
+                raise e
+            pass # ignore failures (maybe we have a huge scale and
+                 # the font is too big to fit in the texture)
+        finally:
+            # We do not lock the mutex before to not block rendering
+            # during texture creation.
+            lock_gil_friendly(m, self.mutex)
+            self._pending_fonts.remove(scale)
+
+    cdef void _add_new_font_to_list(self, Font new_font):
+        """Add new font and prune fonts list to keep best matches"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        # Get recent scales we want to optimize for
+        cdef vector[float] target_scales = vector[float]()
+        for scale in self._stored_scales:
+            target_scales.push_back(scale)
+
+        # Calculate scores for all fonts including new one
+        cdef dict best_fonts = {}
+        cdef float score, current_score
+        cdef Font font
+        
+        for font in list(self.fonts) + [new_font]:
+            for target_scale in target_scales:
+                score = abs(logf(font._scale) + logf(target_scale))
+                current_score = best_fonts.get(target_scale, (1e10, None))[0]
+                if score < current_score:
+                    best_fonts[target_scale] = (score, font)
+
+        # Retain only the best fonts for each target scale
+        retained_fonts = set()
+        for target_scale in best_fonts:
+            retained_fonts.add(best_fonts[target_scale][1])
+
+        if len(retained_fonts) == 0:
+            # No font was retained, maybe we haven't been
+            # applied yet and the list of scales is empty.
+            # keep the new font
+            retained_fonts.add(new_font)
+        # Update the fonts list
+        self.fonts = list(retained_fonts)
 
 cdef class FontTexture(baseItem):
     """
@@ -1151,4 +1422,6 @@ def make_extended_latin_font(size: int,
     merged = GlyphSet.merge_glyph_sets([main, bold, bold_italic, italic])
     merged.center_on_glyph("B")
     return merged
+
+
 

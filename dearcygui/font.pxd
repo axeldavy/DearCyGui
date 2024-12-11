@@ -1,4 +1,7 @@
 from dearcygui.wrapper cimport imgui
+from libcpp.deque cimport deque
+from libcpp.vector cimport vector
+from cpython.ref cimport PyObject
 from .types cimport *
 from .core cimport baseItem, baseFont, Texture
 
@@ -9,6 +12,26 @@ cdef class Font(baseFont):
     cdef float _scale
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
+
+cdef class FontMultiScales(baseFont):
+    cdef vector[PyObject*] _fonts # type Font
+    cdef deque[float] _stored_scales # Store last 10 scales
+    cdef vector[PyObject*] _callbacks # type Callback
+    cdef void push(self) noexcept nogil
+    cdef void pop(self) noexcept nogil
+
+cdef class AutoFont(FontMultiScales):
+    cdef str _main_font_path
+    cdef str _italic_font_path
+    cdef str _bold_font_path 
+    cdef str _bold_italic_path
+    cdef dict _kwargs
+    cdef float _base_size
+    cdef object _font_creation_executor  # ThreadPoolExecutor
+    cdef set _pending_fonts  # set of scales being created
+    cdef object _font_creator  # Callable that creates fonts
+    cpdef void _create_font_at_scale(self, float scale, bint no_fail)
+    cdef void _add_new_font_to_list(self, Font font)
 
 cdef class FontTexture(baseItem):
     """

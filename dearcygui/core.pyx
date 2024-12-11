@@ -32,7 +32,7 @@ from dearcygui.backends.backend cimport SDLViewport, platformViewport
 # which causes trouble to cython
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 from dearcygui.font cimport FontTexture
-from dearcygui.font import make_extended_latin_font
+from dearcygui.font import AutoFont
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from libcpp.algorithm cimport swap
@@ -2383,16 +2383,9 @@ cdef class Viewport(baseItem):
         imgui.StyleColorsDark()
         imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = True
         imgui.GetStyle().ScaleAllSizes(self.platform.dpiScale)
-        cdef FontTexture default_font_texture
-        cdef float global_scale = self.platform.dpiScale * self._scale
+        self.global_scale = self.platform.dpiScale * self._scale
         if self._font is None:
-            default_font_texture = FontTexture(self.context)
-            default_font_texture.add_custom_font(
-                make_extended_latin_font(round(17*global_scale))
-            )
-            default_font_texture.build()
-            self._font = default_font_texture[0]
-            self._font.scale = 1./global_scale
+            self._font = AutoFont(self.context)
         self.initialized = True
         imgui.GetIO().IniFilename = NULL
         """
