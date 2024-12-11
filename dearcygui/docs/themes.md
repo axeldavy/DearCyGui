@@ -130,7 +130,7 @@ font_texture.build()
 my_new_font = font_texture[0]
 ```
 
-Note however that both alternative methods will give blurry rendering whenever the display's dpi scale is not 1. `AutoScale` handles building at the correct scale for you. Alternatively a simple way to handle scaling is to do:
+Note however that both alternative methods will give blurry rendering whenever the display's dpi scale is not 1. `AutoFont` handles building at the correct scale for you. Alternatively a simple way to handle scaling is to do:
 
 ```python
 # Scale the size during glyph rendering

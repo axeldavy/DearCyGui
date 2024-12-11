@@ -1,7 +1,7 @@
 # What is a callback ?
 
 A *Callback* is a function that is called in response to an event.
-Various objects in **DearCygui** take a callback attribute in order to
+Various objects in **DearCyGui** take a callback attribute in order to
 react to various events.
 
 # Callback input arguments
