@@ -31,7 +31,6 @@ from dearcygui.backends.backend cimport SDLViewport, platformViewport
 # the latter doesn't support nullary constructor
 # which causes trouble to cython
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
-from dearcygui.font cimport FontTexture
 from dearcygui.font import AutoFont
 
 from concurrent.futures import Executor, ThreadPoolExecutor
@@ -2363,9 +2362,11 @@ cdef class Viewport(baseItem):
         Initializes the default font and attaches it to the
         viewport, if None is set already. This font size is scaled
         to be sharp at the target value of viewport.dpi * viewport.scale.
-        See FontTexture for how to update the default font
-        to a different size or to account for viewport.dpi or
-        viewport.scale changes.
+        It will scale automatically with scale changes (AutoFont).
+
+        To change the font and have scale managements, look
+        at the documentation of the FontTexture class, as well
+        as AutoFont.
         """
         cdef unique_lock[recursive_mutex] m
         cdef unique_lock[recursive_mutex] m2
