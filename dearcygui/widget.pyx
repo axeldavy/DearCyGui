@@ -3337,6 +3337,9 @@ cdef class MenuBar(uiItem):
                 self.show_update_requested = False
             return
 
+        cdef float original_scale = self.context._viewport.global_scale
+        self.context._viewport.global_scale = original_scale * self._scaling_factor
+
         self.set_previous_states()
         # handle fonts
         if self._font is not None:
@@ -3395,6 +3398,9 @@ cdef class MenuBar(uiItem):
 
         if self._font is not None:
             self._font.pop()
+
+        # Restore original scale
+        self.context._viewport.global_scale = original_scale 
 
         self.run_handlers()
 

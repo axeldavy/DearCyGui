@@ -144,6 +144,7 @@ cdef class Font(baseFont):
         if self.font == NULL:
             return
         self.mutex.lock()
+        self.scales_backup.push_back(self.font.Scale)
         self.font.Scale = \
             (self.context._viewport.global_scale if self.dpi_scaling else 1.) * self._scale
         imgui.PushFont(self.font)
@@ -151,6 +152,12 @@ cdef class Font(baseFont):
     cdef void pop(self) noexcept nogil:
         if self.font == NULL:
             return
+        # If we applied PushFont and the previous Font
+        # was already this font, then PopFont will apply
+        # the Font again, but the Scale is incorrect if
+        # we don't restore it first.
+        self.font.Scale = self.scales_backup.back()
+        self.scales_backup.pop_back()
         imgui.PopFont()
         self.mutex.unlock()
 
@@ -270,6 +277,7 @@ cdef class FontMultiScales(baseFont):
         if best_font == NULL:
             best_font = self._fonts[0]
         (<Font>best_font).push()
+        self._applied_fonts.push_back(best_font)
 
         # Keep seen scales
 
@@ -295,7 +303,8 @@ cdef class FontMultiScales(baseFont):
     cdef void pop(self) noexcept nogil:
         if not self._fonts.empty():
             # We only pushed one font, so only need one pop
-            imgui.PopFont()
+            (<Font>self._applied_fonts.back()).pop()
+            self._applied_fonts.pop_back()
         self.mutex.unlock()
 
 

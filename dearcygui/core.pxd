@@ -451,6 +451,7 @@ cdef class uiItem(baseItem):
     cdef baseTheme _theme
     cdef vector[PyObject*] _callbacks # type Callback
     cdef SharedValue _value
+    cdef float _scaling_factor
 
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_subset(self) noexcept nogil

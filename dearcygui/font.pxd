@@ -10,6 +10,7 @@ cdef class Font(baseFont):
     cdef FontTexture container
     cdef bint dpi_scaling
     cdef float _scale
+    cdef vector[float] scales_backup
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
 
@@ -17,6 +18,7 @@ cdef class FontMultiScales(baseFont):
     cdef vector[PyObject*] _fonts # type Font
     cdef deque[float] _stored_scales # Store last 10 scales
     cdef vector[PyObject*] _callbacks # type Callback
+    cdef vector[PyObject*] _applied_fonts # type Font
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
 

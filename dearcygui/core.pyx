@@ -3761,6 +3761,7 @@ cdef class uiItem(baseItem):
         self.state.cap.has_rect_size = True # ALL items have a rectangle size
         self.p_state = &self.state
         self._pos_policy = [Positioning.DEFAULT, Positioning.DEFAULT]
+        self._scaling_factor = 1.0
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.tracked = False
         self.dragCallback = None
@@ -4254,6 +4255,27 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         self.dpi_scaling = not(value)
 
+    @property 
+    def scaling_factor(self):
+        """
+        Writable attribute: scaling factor
+        that multiplies the global viewport scaling and
+        applies to this item and its children.
+        The global scaling (thus this parameter as well)
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
+        Defaults to 1.0.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._scaling_factor
+
+    @scaling_factor.setter
+    def scaling_factor(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._scaling_factor = value
+
     ### Positioning - layouts
 
     ### Current position states
@@ -4654,6 +4676,9 @@ cdef class uiItem(baseItem):
                 self.show_update_requested = False
             return
 
+        cdef float original_scale = self.context._viewport.global_scale
+        self.context._viewport.global_scale = original_scale * self._scaling_factor
+
         self.set_previous_states()
 
         if self.focus_update_requested:
@@ -4741,6 +4766,9 @@ cdef class uiItem(baseItem):
 
         if self._font is not None:
             self._font.pop()
+
+        # Restore original scale
+        self.context._viewport.global_scale = original_scale 
 
         # Advance the cursor only for DEFAULT and REL_DEFAULT
         pos = cursor_pos_backup
@@ -5479,6 +5507,9 @@ cdef class Window(uiItem):
                 self.show_update_requested = False
             return
 
+        cdef float original_scale = self.context._viewport.global_scale
+        self.context._viewport.global_scale = original_scale * self._scaling_factor
+
         self.set_previous_states()
 
         if self.focus_update_requested:
@@ -5650,6 +5681,9 @@ cdef class Window(uiItem):
 
         if self._font is not None:
             self._font.pop()
+
+        # Restore original scale
+        self.context._viewport.global_scale = original_scale 
 
         cdef bint closed = not(self._show) or (not(visible) and (self.modal or self.popup))
         if closed:
