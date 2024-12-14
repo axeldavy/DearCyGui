@@ -59,6 +59,14 @@ cdef class Coord:
         """Coordinate on the vertical axis"""
         return self._y
 
+    @x.setter
+    def x(self, value):
+        self._x = value
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+
     def __len__(self):
         return 2
 
@@ -99,9 +107,9 @@ cdef class Coord:
     def __add__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         other_coord[0] += self._x
         other_coord[1] += self._y
         return Coord.build(other_coord)
@@ -109,9 +117,9 @@ cdef class Coord:
     def __radd__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         other_coord[0] += self._x
         other_coord[1] += self._y
         return Coord.build(other_coord)
@@ -119,9 +127,9 @@ cdef class Coord:
     def __iadd__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         self._x += other_coord[0]
         self._y += other_coord[1]
         return self
@@ -129,9 +137,9 @@ cdef class Coord:
     def __sub__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         other_coord[0] -= self._x
         other_coord[1] -= self._y
         return Coord.build(other_coord)
@@ -139,9 +147,9 @@ cdef class Coord:
     def __rsub__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         other_coord[0] -= self._x
         other_coord[1] -= self._y
         return Coord.build(other_coord)
@@ -149,9 +157,9 @@ cdef class Coord:
     def __isub__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         self._x -= other_coord[0]
         self._y -= other_coord[1]
         return self
@@ -270,9 +278,9 @@ cdef class Coord:
     def __lt__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         if self._x < other_coord[0]:
             return True
         if self._x == other_coord[0] and self._y < other_coord[1]:
@@ -282,9 +290,9 @@ cdef class Coord:
     def __le__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         if self._x < other_coord[0]:
             return True
         if self._x == other_coord[0] and self._y <= other_coord[1]:
@@ -294,25 +302,25 @@ cdef class Coord:
     def __eq__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         return self._x == other_coord[0] and self._y == other_coord[1]
 
     def __ne__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         return self._x != other_coord[0] or self._y != other_coord[1]
 
     def __gt__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         if self._x > other_coord[0]:
             return True
         if self._x == other_coord[0] and self._y > other_coord[1]:
@@ -322,9 +330,9 @@ cdef class Coord:
     def __ge__(self, other):
         cdef double[2] other_coord
         try:
-             read_coord(other_coord, other)
+            read_coord(other_coord, other)
         except TypeError:
-             return NotImplemented
+            return NotImplemented
         if self._x > other_coord[0]:
             return True
         if self._x == other_coord[0] and self._y >= other_coord[1]:
@@ -349,6 +357,409 @@ cdef class Coord:
         cdef Coord item = Coord.__new__(Coord)
         item._x = coord[0]
         item._y = coord[1]
+        return item
+
+@cython.freelist(8)
+cdef class Rect:
+    """
+    Fast writable rectangle class with diagonal points (x1,y1) and (x2,y2) which supports a lot of operations.
+    Provides various arithmetic operations and properties for easy manipulation.
+    """
+
+    def __init__(self, double x1 = 0., double y1 = 0., double x2 = 0., double y2 = 0.):
+        self._x1 = x1
+        self._y1 = y1
+        self._x2 = x2
+        self._y2 = y2
+
+    @property
+    def xmin(self):
+        """Left coordinate"""
+        return min(self._x1, self._x2)
+
+    @property
+    def ymin(self):
+        """Top coordinate"""
+        return min(self._y1, self._y2)
+
+    @property
+    def xmax(self):
+        """Right coordinate"""
+        return max(self._x1, self._x2)
+
+    @property
+    def ymax(self):
+        """Bottom coordinate"""
+        return max(self._y1, self._y2)
+
+    @property
+    def x1(self):
+        """Coordinate of the first corner point"""
+        return self._x1
+
+    @property
+    def y1(self):
+        """Coordinate of the first corner point"""
+        return self._y1
+
+    @property
+    def x2(self):
+        """Coordinate of the second corner point"""
+        return self._x2
+
+    @property
+    def y2(self):
+        """Coordinate of the second corner point"""
+        return self._y2
+
+    @property
+    def w(self):
+        """Width of rectangle"""
+        return abs(self._x2 - self._x1)
+
+    @property
+    def h(self):
+        """Height of rectangle"""
+        return abs(self._y2 - self._y1)
+
+    @property
+    def p1(self):
+        """Coord(x1,y1)"""
+        cdef double[2] coord
+        coord[0] = self._x1
+        coord[1] = self._y1
+        return Coord.build(coord)
+
+    @property
+    def p2(self):
+        """Coord(x2,y2)"""
+        cdef double[2] coord
+        coord[0] = self._x2
+        coord[1] = self._y2
+        return Coord.build(coord)
+
+    @property
+    def pmin(self):
+        """Coord(xmin,ymin)"""
+        cdef double[2] coord
+        coord[0] = min(self._x1, self._x2)
+        coord[1] = min(self._y1, self._y2)
+        return Coord.build(coord)
+
+    @property
+    def pmax(self):
+        """Coord(xmax,ymax)"""
+        cdef double[2] coord
+        coord[0] = max(self._x1, self._x2)
+        coord[1] = max(self._y1, self._y2)
+        return Coord.build(coord)
+
+    @property
+    def center(self):
+        """Center as Coord(x,y)"""
+        cdef double[2] coord
+        coord[0] = (self._x1 + self._x2) / 2
+        coord[1] = (self._y1 + self._y2) / 2
+        return Coord.build(coord)
+
+    @property
+    def size(self):
+        """Size as Coord(w,h)"""
+        cdef double[2] coord
+        coord[0] = abs(self._x2 - self._x1)
+        coord[1] = abs(self._y2 - self._y1)
+        return Coord.build(coord)
+
+    @x1.setter
+    def x1(self, value):
+        self._x1 = value
+
+    @x2.setter
+    def x2(self, value):
+        self._x2 = value
+
+    @y1.setter
+    def y1(self, value):
+        self._y1 = value
+
+    @y2.setter
+    def y2(self, value):
+        self._y2 = value
+
+    @center.setter
+    def center(self, value):
+        cdef double[2] coord
+        read_coord(coord, value)
+        cdef double w, h
+        w = self._x2 - self._x1
+        h = self._y2 - self._y1
+        self._x1 = coord[0] - w / 2
+        self._y1 = coord[1] - h / 2
+        self._x2 = coord[0] + w / 2
+        self._y2 = coord[1] + h / 2
+
+    def __len__(self):
+        return 4
+
+    def __getitem__(self, key):
+        cdef int index
+        if isinstance(key, int):
+            index = <int>key
+            if index == 0:
+                return self._x1
+            if index == 1:
+                return self._y1
+            if index == 2:
+                return self._x2
+            if index == 3:
+                return self._y2
+        elif isinstance(key, str):
+            if key == "x1":
+                return self._x1
+            if key == "y1":
+                return self._y1
+            if key == "x2":
+                return self._x2
+            if key == "y2":
+                return self._y2
+        raise IndexError(f"Invalid key: {key}")
+
+    def __setitem__(self, key, value):
+        cdef int index
+        if isinstance(key, int):
+            index = <int>key
+            if index == 0:
+                self._x1 = <double>value
+                return
+            if index == 1:
+                self._y1 = <double>value
+                return
+            if index == 2:
+                self._x2 = <double>value
+                return
+            if index == 3:
+                self._y2 = <double>value
+                return
+        elif isinstance(key, str):
+            if key == "x1":
+                self._x1 = <double>value
+                return
+            if key == "y1":
+                self._y1 = <double>value
+                return
+            if key == "x2":
+                self._x2 = <double>value
+                return
+            if key == "y2":
+                self._y2 = <double>value
+                return
+        raise IndexError(f"Invalid key: {key}")
+
+    def __eq__(self, other):
+        cdef double[4] other_rect
+        try:
+            read_rect(other_rect, other)
+        except TypeError:
+            return NotImplemented
+        return (self._x1 == other_rect[0] and 
+                self._y1 == other_rect[1] and
+                self._x2 == other_rect[2] and
+                self._y2 == other_rect[3])
+
+    def __ne__(self, other):
+        cdef double[4] other_rect
+        try:
+            read_rect(other_rect, other)
+        except TypeError:
+            return NotImplemented
+        return (self._x1 != other_rect[0] or
+                self._y1 != other_rect[1] or
+                self._x2 != other_rect[2] or
+                self._y2 != other_rect[3])
+
+    def __hash__(self):
+        return hash((self._x1, self._y1, self._x2, self._y2))
+
+    def __bool__(self):
+        return abs(self._x1 - self._x2) > 0 and abs(self._y1 - self._y2) > 0
+
+    def __str__(self):
+        return str((self._x1, self._y1, self._x2, self._y2))
+
+    def __repr__(self):
+        return f"Rect({self._x1}, {self._y1}, {self._x2}, {self._y2})"
+
+    def __add__(self, other):
+        cdef double[2] coord
+        try:
+            read_coord(coord, other)
+        except TypeError:
+            return NotImplemented
+        cdef double[4] result
+        result[0] = self._x1 + coord[0]
+        result[1] = self._y1 + coord[1]
+        result[2] = self._x2 + coord[0]
+        result[3] = self._y2 + coord[1]
+        return Rect.build(result)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __iadd__(self, other):
+        cdef double[2] coord
+        try:
+            read_coord(coord, other)
+        except TypeError:
+            return NotImplemented
+        self._x1 += coord[0]
+        self._y1 += coord[1]
+        self._x2 += coord[0]
+        self._y2 += coord[1]
+        return self
+
+    def __sub__(self, other):
+        cdef double[2] coord
+        try:
+            read_coord(coord, other)
+        except TypeError:
+            return NotImplemented
+        cdef double[4] result
+        result[0] = self._x1 - coord[0]
+        result[1] = self._y1 - coord[1]
+        result[2] = self._x2 - coord[0]
+        result[3] = self._y2 - coord[1]
+        return Rect.build(result)
+
+    def __isub__(self, other):
+        cdef double[2] coord
+        try:
+            read_coord(coord, other)
+        except TypeError:
+            return NotImplemented
+        self._x1 -= coord[0]
+        self._y1 -= coord[1]
+        self._x2 -= coord[0]
+        self._y2 -= coord[1]
+        return self
+
+    def __mul__(self, other):
+        cdef double[2] coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            coord[0] = other
+            coord[1] = other
+        cdef double[4] result
+        result[0] = self._x1 * coord[0]
+        result[1] = self._y1 * coord[1]
+        result[2] = self._x2 * coord[0]
+        result[3] = self._y2 * coord[1]
+        return Rect.build(result)
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __imul__(self, other):
+        cdef double[2] coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            coord[0] = other
+            coord[1] = other
+        self._x1 *= coord[0]
+        self._y1 *= coord[1]
+        self._x2 *= coord[0]
+        self._y2 *= coord[1]
+        return self
+
+    def __truediv__(self, other):
+        cdef double[2] coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            coord[0] = other
+            coord[1] = other
+        cdef double[4] result
+        result[0] = self._x1 / coord[0]
+        result[1] = self._y1 / coord[1]
+        result[2] = self._x2 / coord[0]
+        result[3] = self._y2 / coord[1]
+        return Rect.build(result)
+
+    def __itruediv__(self, other):
+        cdef double[2] coord
+        if hasattr(other, '__len__'):
+            try:
+                read_coord(coord, other)
+            except TypeError:
+                return NotImplemented
+        else:
+            # scalar
+            coord[0] = other
+            coord[1] = other
+        self._x1 /= coord[0]
+        self._y1 /= coord[1]
+        self._x2 /= coord[0]
+        self._y2 /= coord[1]
+        return self
+
+    def __neg__(self):
+        cdef double[4] result
+        result[0] = -self._x1
+        result[1] = -self._y1
+        result[2] = -self._x2
+        result[3] = -self._y2
+        return Rect.build(result)
+
+    def __pos__(self):
+        cdef double[4] result
+        result[0] = self._x1
+        result[1] = self._y1
+        result[2] = self._x2
+        result[3] = self._y2
+        return Rect.build(result)
+
+    def __abs__(self):
+        cdef double[4] result
+        result[0] = abs(self._x1)
+        result[1] = abs(self._y1)
+        result[2] = abs(self._x2)
+        result[3] = abs(self._y2)
+        return Rect.build(result)
+
+    def __contains__(self, point):
+        cdef double[2] other_coord
+        try:
+            read_coord(other_coord, point)
+        except TypeError:
+            return NotImplemented
+        cdef double xmin, ymin, xmax, ymax
+        xmin = min(self._x1, self._x2)
+        ymin = min(self._y1, self._y2)
+        xmax = max(self._x1, self._x2)
+        ymax = max(self._y1, self._y2)
+        return xmin <= other_coord[0] <= xmax and ymin <= other_coord[1] <= ymax
+
+    # Fast instanciation from Cython
+    @staticmethod
+    cdef Rect build(double[4] &rect):
+        cdef Rect item = Rect.__new__(Rect)
+        item._x1 = rect[0]
+        item._y1 = rect[1]
+        item._x2 = rect[2]
+        item._y2 = rect[3]
         return item
 
 class ChildType(IntFlag):

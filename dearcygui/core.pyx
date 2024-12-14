@@ -886,7 +886,7 @@ cdef class Context:
 
         Returns:
         tuple
-            Tuple containing the mouse position (x, y).
+            Coord containing the mouse position (x, y).
 
         Raises:
         KeyError
@@ -898,7 +898,8 @@ cdef class Context:
         cdef imgui.ImVec2 pos = imgui.GetMousePos()
         if not(imgui.IsMousePosValid(&pos)):
             raise KeyError("Cannot get mouse position: no mouse found")
-        return (pos.x, pos.y)
+        cdef double[2] coord = [pos.x, pos.y]
+        return Coord.build(coord)
 
     def is_mouse_dragging(self, MouseButton button, float lock_threshold=-1.):
         """
@@ -941,7 +942,8 @@ cdef class Context:
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
         cdef imgui.ImVec2 delta =  imgui.GetMouseDragDelta(<int>button, lock_threshold)
-        return (delta.x, delta.y)
+        cdef double[2] coord = [delta.x, delta.y]
+        return Coord.build(coord)
 
     def reset_mouse_drag_delta(self, MouseButton button):
         """

@@ -6,17 +6,29 @@ import cython
 from enum import IntEnum, IntFlag
 
 def color_as_int(val) -> int:
+    """
+    Convert any color representation to an integer (packed rgba).
+    """
     ...
 
 def color_as_ints(val) -> tuple[int, int, int, int]:
+    """
+    Convert any color representation to a tuple of integers (r, g, b, a).
+    """
     ...
 
 def color_as_floats(val) -> tuple[float, float, float, float]:
+    """
+    Convert any color representation to a tuple of floats (r, g, b, a).
+    """
     ...
 
 @cython.freelist(8)
 class Coord:
-    """Fast writable 2D coordinate tuple (x, y) which supports a lot of operations"""
+    """
+    Fast writable 2D coordinate tuple (x, y) which supports a lot of operations.
+    Provides various arithmetic operations and properties for easy manipulation.
+    """
     def __init__(self, x: float = ..., y: float = ...) -> None:
         ...
     
@@ -117,6 +129,9 @@ class Coord:
 
 
 class ChildType(IntFlag):
+    """
+    Enum representing different types of child elements that can be attached to items.
+    """
     NOCHILD = ...
     DRAWING = ...
     HANDLER = ...
@@ -130,6 +145,9 @@ class ChildType(IntFlag):
 
 
 class Key(IntEnum):
+    """
+    Enum representing various keyboard keys.
+    """
     TAB = ...
     LEFTARROW = ...
     RIGHTARROW = ...
@@ -287,6 +305,9 @@ class Key(IntEnum):
 
 
 class KeyMod(IntFlag):
+    """
+    Enum representing key modifiers (Ctrl, Shift, Alt, Super).
+    """
     NOMOD = ...
     CTRL = ...
     SHIFT = ...
@@ -295,6 +316,9 @@ class KeyMod(IntFlag):
 
 
 class KeyOrMod(IntFlag):
+    """
+    Enum representing both keys and key modifiers.
+    """
     NOMOD = ...
     TAB = ...
     LEFTARROW = ...
@@ -510,6 +534,14 @@ class Alignment(IntEnum):
     CENTER = ...
     JUSTIFIED = ...
     MANUAL = ...
+
+
+class ButtonDirection(IntEnum):
+    NONE = ...
+    LEFT = ...
+    RIGHT = ...
+    UP = ...
+    DOWN = ...
 
 
 class ThemeEnablers(IntEnum):

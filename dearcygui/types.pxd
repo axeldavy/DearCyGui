@@ -186,6 +186,14 @@ cdef class Coord:
     @staticmethod
     cdef Coord build(double[2] &coord)
 
+cdef class Rect:
+    cdef double _x1
+    cdef double _y1
+    cdef double _x2
+    cdef double _y2
+    @staticmethod
+    cdef Rect build(double[4] &rect)
+
 cdef inline void read_point(point_type* dst, src):
     if not(hasattr(src, '__len__')):
         raise TypeError("Point data must be an array of up to 2 coordinates")
@@ -205,6 +213,23 @@ cdef inline void read_coord(double* dst, src):
         dst[1] = (<Coord>src)._y
     else:
         read_point[double](dst, src)
+
+cdef inline void read_rect(double* dst, src):
+    if isinstance(src, Rect):
+        dst[0] = (<Rect>src)._x1
+        dst[1] = (<Rect>src)._y1
+        dst[2] = (<Rect>src)._x2
+        dst[3] = (<Rect>src)._y2
+        return
+    try:
+        if isinstance(src, tuple) and len(src) == 2 and \
+            hasattr(src[0], "__len__") and hasattr(src[1], "__len__"):
+            read_coord(dst, src[0])
+            read_coord(dst + 2, src[1])
+        else:
+            read_vec4[double](dst, src)
+    except TypeError:
+        raise TypeError("Rect data must be a tuple of two points or an array of up to 4 coordinates")
 
 cdef inline void read_vec4(point_type* dst, src):
     if not(hasattr(src, '__len__')):
