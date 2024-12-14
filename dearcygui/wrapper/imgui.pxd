@@ -1,17 +1,15 @@
-
 #generated with pxdgen thirdparty/imgui/imgui.h -x c++ -f defines -f includerefs -f importall -w ImGui 
-
 
 
 cdef extern from "imgui.h" nogil:
     struct ImFontBuilderIO:
         pass
-    struct ImDrawListSharedData:
-        pass
     struct ImGuiContext:
         pass
+    struct ImDrawListSharedData:
+        pass
     int IMGUI_VERSION
-    long IMGUI_VERSION_NUM = 19140
+    long IMGUI_VERSION_NUM = 19160
     int IMGUI_HAS_TABLE
     int IMGUI_API
     int IMGUI_IMPL_API
@@ -182,12 +180,13 @@ cdef extern from "imgui.h" nogil:
         ImGuiInputTextFlags_DisplayEmptyRefVal = 16384
         ImGuiInputTextFlags_NoHorizontalScroll = 32768
         ImGuiInputTextFlags_NoUndoRedo = 65536
-        ImGuiInputTextFlags_CallbackCompletion = 131072
-        ImGuiInputTextFlags_CallbackHistory = 262144
-        ImGuiInputTextFlags_CallbackAlways = 524288
-        ImGuiInputTextFlags_CallbackCharFilter = 1048576
-        ImGuiInputTextFlags_CallbackResize = 2097152
-        ImGuiInputTextFlags_CallbackEdit = 4194304
+        ImGuiInputTextFlags_ElideLeft = 131072
+        ImGuiInputTextFlags_CallbackCompletion = 262144
+        ImGuiInputTextFlags_CallbackHistory = 524288
+        ImGuiInputTextFlags_CallbackAlways = 1048576
+        ImGuiInputTextFlags_CallbackCharFilter = 2097152
+        ImGuiInputTextFlags_CallbackResize = 4194304
+        ImGuiInputTextFlags_CallbackEdit = 8388608
     enum ImGuiTreeNodeFlags_:
         ImGuiTreeNodeFlags_None = 0
         ImGuiTreeNodeFlags_Selected = 1
@@ -335,6 +334,7 @@ cdef extern from "imgui.h" nogil:
         ImGuiSortDirection_Descending = 2
     enum ImGuiKey:
         ImGuiKey_None = 0
+        ImGuiKey_NamedKey_BEGIN = 512
         ImGuiKey_Tab = 512
         ImGuiKey_LeftArrow = 513
         ImGuiKey_RightArrow = 514
@@ -489,18 +489,15 @@ cdef extern from "imgui.h" nogil:
         ImGuiKey_ReservedForModShift = 663
         ImGuiKey_ReservedForModAlt = 664
         ImGuiKey_ReservedForModSuper = 665
-        ImGuiKey_COUNT = 666
+        ImGuiKey_NamedKey_END = 666
         ImGuiMod_None = 0
         ImGuiMod_Ctrl = 4096
         ImGuiMod_Shift = 8192
         ImGuiMod_Alt = 16384
         ImGuiMod_Super = 32768
         ImGuiMod_Mask_ = 61440
-        ImGuiKey_NamedKey_BEGIN = 512
-        ImGuiKey_NamedKey_END = 666
         ImGuiKey_NamedKey_COUNT = 154
-        ImGuiKey_KeysData_SIZE = 666
-        ImGuiKey_KeysData_OFFSET = 0
+        ImGuiKey_COUNT = 666
         ImGuiMod_Shortcut = 4096
         ImGuiKey_ModCtrl = 4096
         ImGuiKey_ModShift = 8192
@@ -518,24 +515,6 @@ cdef extern from "imgui.h" nogil:
         ImGuiInputFlags_RouteUnlessBgFocused = 65536
         ImGuiInputFlags_RouteFromRootWindow = 131072
         ImGuiInputFlags_Tooltip = 262144
-    enum ImGuiNavInput:
-        ImGuiNavInput_Activate = 0
-        ImGuiNavInput_Cancel = 1
-        ImGuiNavInput_Input = 2
-        ImGuiNavInput_Menu = 3
-        ImGuiNavInput_DpadLeft = 4
-        ImGuiNavInput_DpadRight = 5
-        ImGuiNavInput_DpadUp = 6
-        ImGuiNavInput_DpadDown = 7
-        ImGuiNavInput_LStickLeft = 8
-        ImGuiNavInput_LStickRight = 9
-        ImGuiNavInput_LStickUp = 10
-        ImGuiNavInput_LStickDown = 11
-        ImGuiNavInput_FocusPrev = 12
-        ImGuiNavInput_FocusNext = 13
-        ImGuiNavInput_TweakSlow = 14
-        ImGuiNavInput_TweakFast = 15
-        ImGuiNavInput_COUNT = 16
     enum ImGuiConfigFlags_:
         ImGuiConfigFlags_None = 0
         ImGuiConfigFlags_NavEnableKeyboard = 1
@@ -957,6 +936,7 @@ cdef extern from "imgui.h" nogil:
         bint ConfigDragClickToInputText
         bint ConfigWindowsResizeFromEdges
         bint ConfigWindowsMoveFromTitleBarOnly
+        bint ConfigWindowsCopyContentsWithCtrlC
         bint ConfigScrollbarScrollByPage
         float ConfigMemoryCompactTimer
         float MouseDoubleClickTime
@@ -1019,7 +999,7 @@ cdef extern from "imgui.h" nogil:
         bint KeyAlt
         bint KeySuper
         ImGuiKeyChord KeyMods
-        ImGuiKeyData KeysData[666]
+        ImGuiKeyData KeysData[154]
         bint WantCaptureMouseUnlessPopupClose
         ImVec2 MousePosPrev
         ImVec2 MouseClickedPos[5]
@@ -1039,13 +1019,8 @@ cdef extern from "imgui.h" nogil:
         float PenPressure
         bint AppFocusLost
         bint AppAcceptingEvents
-        ImS8 BackendUsingLegacyKeyArrays
-        bint BackendUsingLegacyNavInputArray
         ImWchar16 InputQueueSurrogate
         ImVector[ImWchar] InputQueueCharacters
-        int KeyMap[666]
-        bint KeysDown[666]
-        float NavInputs[16]
         const char* (*GetClipboardTextFn)(void*)
         void (*SetClipboardTextFn)(void*, const char*)
         void* ClipboardUserData
@@ -1460,11 +1435,12 @@ cdef extern from "imgui.h" nogil:
         void AddRanges(ImWchar*)
         void BuildRanges(ImVector[ImWchar]*)
     cppclass ImFontAtlasCustomRect:
-        unsigned short Width
-        unsigned short Height
         unsigned short X
         unsigned short Y
+        unsigned short Width
+        unsigned short Height
         unsigned int GlyphID
+        unsigned int GlyphColored
         float GlyphAdvanceX
         ImVec2 GlyphOffset
         ImFont* Font
@@ -1552,9 +1528,9 @@ cdef extern from "imgui.h" nogil:
         ImFontAtlas* ContainerAtlas
         ImFontConfig* ConfigData
         short ConfigDataCount
-        ImWchar FallbackChar
-        ImWchar EllipsisChar
         short EllipsisCharCount
+        ImWchar EllipsisChar
+        ImWchar FallbackChar
         float EllipsisWidth
         float EllipsisCharStep
         bint DirtyLookupTables
@@ -1617,11 +1593,10 @@ cdef extern from "imgui.h" nogil:
         ImGuiPlatformImeData()
 
 
-
 cdef extern from "imgui.h" namespace "ImGui" nogil:
-    struct ImDrawListSharedData:
-        pass
     struct ImGuiContext:
+        pass
+    struct ImDrawListSharedData:
         pass
     ImGuiContext* CreateContext()
     ImGuiContext* CreateContext(ImFontAtlas*)
@@ -2204,10 +2179,6 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     void SetItemAllowOverlap()
     void PushAllowKeyboardFocus(bint)
     void PopAllowKeyboardFocus()
-    ImGuiKey GetKeyIndex(ImGuiKey)
-
-
-
 
 cdef extern from "imgui_internal.h" namespace "ImGui" nogil:
     ImGuiKeyData* GetKeyData(ImGuiKey)
