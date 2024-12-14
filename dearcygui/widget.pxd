@@ -80,6 +80,8 @@ cdef class InputText(uiItem):
     cdef string _hint
     cdef bint _multiline
     cdef int _max_characters
+    cdef char* _buffer
+    cdef int _last_frame_update
     cdef imgui.ImGuiInputTextFlags flags
     cdef bint draw_item(self) noexcept nogil
 

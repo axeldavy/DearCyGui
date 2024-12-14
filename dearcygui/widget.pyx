@@ -15,6 +15,8 @@
 #distutils: language=c++
 
 from libcpp cimport bool
+from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy, memset
 
 from dearcygui.wrapper cimport imgui, implot
 from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
@@ -1826,6 +1828,19 @@ cdef class InputText(uiItem):
         self._multiline = False
         self._max_characters = 1024
         self.flags = imgui.ImGuiInputTextFlags_None
+        self._buffer = <char*>malloc(self._max_characters + 1)
+        if self._buffer == NULL:
+            raise MemoryError("Failed to allocate input buffer")
+        memset(<void*>self._buffer, 0, self._max_characters + 1)
+
+    def __dealloc__(self):
+        if self._buffer != NULL:
+            free(<void*>self._buffer)
+
+    def configure(self, **kwargs):
+        if 'max_characters' in kwargs:
+            self.max_characters = kwargs.pop('max_characters')
+        return super().configure(**kwargs)
 
     @property
     def hint(self):
@@ -1878,6 +1893,18 @@ cdef class InputText(uiItem):
         lock_gil_friendly(m, self.mutex)
         if value < 1:
             raise ValueError("There must be at least space for one character")
+        if value == self._max_characters:
+            return
+        # Reallocate buffer
+        cdef char* new_buffer = <char*>malloc(value + 1)
+        if new_buffer == NULL:
+            raise MemoryError("Failed to allocate input buffer")
+        if self._buffer != NULL:
+            # Copy old content 
+            memcpy(<void*>new_buffer, <void*>self._buffer, min(value, self._max_characters))
+            new_buffer[value] = 0
+            free(<void*>self._buffer)
+        self._buffer = new_buffer
         self._max_characters = value
 
     @property
@@ -2142,45 +2169,56 @@ cdef class InputText(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef string current_value
+        cdef int size
         cdef imgui.ImGuiInputTextFlags flags = self.flags
+        
+        # Get current value from source if needed
         SharedStr.get(<SharedStr>self._value, current_value)
+        cdef bint need_update = (<SharedStr>self._value)._last_frame_change >= self._last_frame_update 
+
+        if need_update:
+            size = min(current_value.size(), self._max_characters)
+            # Copy value to buffer
+            memcpy(self._buffer, current_value.data(), size)
+            self._buffer[size] = 0
+            self._last_frame_update = (<SharedStr>self._value)._last_frame_update
 
         cdef bint changed = False
         if not(self._enabled):
             flags |= imgui.ImGuiInputTextFlags_ReadOnly
-        if <int>current_value.size() != (self._max_characters+1):
-            # TODO: avoid the copies that occur
-            # In theory the +1 is not needed here
-            current_value.resize(self._max_characters+1)
-        cdef char* data = <char*><void*>current_value.data()
+
         if self._multiline:
-            changed = imgui.InputTextMultiline(self.imgui_label.c_str(),
-                                               data,
-                                               self._max_characters+1,
-                                               self.scaled_requested_size(),
-                                               self.flags,
-                                               NULL, NULL)
+            changed = imgui.InputTextMultiline(
+                self.imgui_label.c_str(),
+                self._buffer,
+                self._max_characters+1,
+                self.scaled_requested_size(),
+                flags)
         elif self._hint.empty():
-            changed = imgui.InputText(self.imgui_label.c_str(),
-                                      data,
-                                      self._max_characters+1,
-                                      self.flags,
-                                      NULL, NULL)
+            changed = imgui.InputText(
+                self.imgui_label.c_str(),
+                self._buffer,
+                self._max_characters+1,
+                flags)
         else:
-            changed = imgui.InputTextWithHint(self.imgui_label.c_str(),
-                                              self._hint.c_str(),
-                                              data,
-                                              self._max_characters+1,
-                                              self.flags,
-                                              NULL, NULL)
+            changed = imgui.InputTextWithHint(
+                self.imgui_label.c_str(),
+                self._hint.c_str(),
+                self._buffer,
+                self._max_characters+1,
+                flags)
+
         self.update_current_state()
         if changed:
+            current_value.assign(<char*>self._buffer)
             SharedStr.set(<SharedStr>self._value, current_value)
+
         if not(self._enabled):
             changed = False
             self.state.cur.edited = False
             self.state.cur.deactivated_after_edited = False
             self.state.cur.active = False
+
         return changed
 
 ctypedef fused clamp_types:
