@@ -193,6 +193,11 @@ cdef class MouseMoveHandler(baseHandler):
     cdef bint check_state(self, baseItem item) noexcept nogil
     cdef void run_handler(self, baseItem) noexcept nogil
 
+cdef class MouseInRect(baseHandler):
+    cdef double _x1, _y1, _x2, _y2
+    cdef bint check_state(self, baseItem item) noexcept nogil
+    cdef void run_handler(self, baseItem) noexcept nogil
+
 cdef class MouseReleaseHandler(baseHandler):
     cdef MouseButton _button
     cdef bint check_state(self, baseItem item) noexcept nogil

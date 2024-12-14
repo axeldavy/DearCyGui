@@ -1551,3 +1551,63 @@ cdef class MouseWheelHandler(baseHandler):
             if abs(io.MouseWheel) > 0.:
                 self.context.queue_callback_arg1float(self._callback, self, item, io.MouseWheel)
 
+cdef class MouseInRect(baseHandler):
+    """
+    Handler that triggers when the mouse is inside a predefined rectangle.
+
+    The rectangle is defined in viewport coordinates.
+    
+    Properties:
+        rect: A tuple (x1, y1, x2, y2) or Rect object defining the area to monitor
+        
+    Callback receives:
+        - x: Current mouse x position 
+        - y: Current mouse y position
+    """
+    def __cinit__(self):
+        self._x1 = 0
+        self._y1 = 0
+        self._x2 = 0
+        self._y2 = 0
+
+    @property
+    def rect(self):
+        """Rectangle to test in viewport coordinates"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef double[4] rect_data = [self._x1, self._y1, self._x2, self._y2]
+        return Rect.build(rect_data)
+
+    @rect.setter 
+    def rect(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef double[4] rect_data
+        read_rect(rect_data, value)
+        self._x1 = min(rect_data[0], rect_data[2])
+        self._y1 = min(rect_data[1], rect_data[3])
+        self._x2 = max(rect_data[0], rect_data[2])
+        self._y2 = max(rect_data[1], rect_data[3])
+
+    cdef bint check_state(self, baseItem item) noexcept nogil:
+        if not(imgui.IsMousePosValid()):
+            return False
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        return self._x1 <= io.MousePos.x and \
+               self._y1 <= io.MousePos.y and \
+               self._x2 > io.MousePos.x and \
+               self._y2 > io.MousePos.y
+
+    cdef void run_handler(self, baseItem item) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(self._enabled):
+            return
+        if not(imgui.IsMousePosValid()):
+            return
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        if self._x1 <= io.MousePos.x and \
+           self._y1 <= io.MousePos.y and \
+           self._x2 > io.MousePos.x and \
+           self._y2 > io.MousePos.y:
+            self.context.queue_callback_arg2float(self._callback, self, item, io.MousePos.x, io.MousePos.y)
+
