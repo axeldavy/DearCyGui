@@ -1697,7 +1697,7 @@ class AxesResizeHandler(baseHandler):
 
 
 class Button(uiItem):
-    def __init__(self, context : Context, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, repeat : bool = False, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         arrow: Whether to display an arrow.
@@ -1778,7 +1778,8 @@ class Button(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -1840,7 +1841,7 @@ class Button(uiItem):
         ...
 
 
-    def configure(self, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, repeat : bool = False, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, repeat : bool = False, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         arrow: Whether to display an arrow.
             Not compatible with small
@@ -1920,7 +1921,8 @@ class Button(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -2259,7 +2261,7 @@ class Button(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -2291,7 +2293,7 @@ class Button(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -2551,7 +2553,7 @@ class Button(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -2572,12 +2574,12 @@ class Button(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -2602,12 +2604,12 @@ class Button(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -2633,12 +2635,12 @@ class Button(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -2663,7 +2665,7 @@ class Button(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -2694,7 +2696,7 @@ class Button(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -2743,7 +2745,8 @@ class Button(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -2881,7 +2884,7 @@ class Button(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -2913,7 +2916,7 @@ class Button(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -2936,7 +2939,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 
 class Checkbox(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -3012,7 +3015,8 @@ class Checkbox(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -3073,7 +3077,7 @@ class Checkbox(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -3148,7 +3152,8 @@ class Checkbox(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -3424,7 +3429,7 @@ class Checkbox(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -3456,7 +3461,7 @@ class Checkbox(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -3716,7 +3721,7 @@ class Checkbox(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -3737,12 +3742,12 @@ class Checkbox(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -3767,12 +3772,12 @@ class Checkbox(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -3798,12 +3803,12 @@ class Checkbox(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -3828,7 +3833,7 @@ class Checkbox(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -3859,7 +3864,7 @@ class Checkbox(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -3893,7 +3898,8 @@ class Checkbox(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -4017,7 +4023,7 @@ class Checkbox(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -4049,7 +4055,7 @@ class Checkbox(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -4106,7 +4112,7 @@ A child window container that enables hierarchical UI layout.
     - Menu bar support allows structured layouts
     
     """
-    def __init__(self, context : Context, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, attach : Any = ..., auto_resize_x : bool = False, auto_resize_y : bool = False, before : Any = ..., border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, attach : Any = ..., auto_resize_x : bool = False, auto_resize_y : bool = False, before : Any = ..., border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : float = 0.0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         always_auto_resize: combined with AutoResizeX/AutoResizeY.
@@ -4214,7 +4220,8 @@ A child window container that enables hierarchical UI layout.
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -4275,7 +4282,7 @@ A child window container that enables hierarchical UI layout.
         ...
 
 
-    def configure(self, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, attach : Any = ..., auto_resize_x : bool = False, auto_resize_y : bool = False, before : Any = ..., border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, always_auto_resize : bool = False, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, always_use_window_padding : bool = False, attach : Any = ..., auto_resize_x : bool = False, auto_resize_y : bool = False, before : Any = ..., border : bool = True, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, flattened_navigation : bool = True, focused : bool = False, font : Font = None, frame_style : bool = False, handlers : list = [], height : float = 0.0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", menubar : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, resizable_x : bool = False, resizable_y : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         always_auto_resize: combined with AutoResizeX/AutoResizeY.
             Always measure size even when child is hidden,
@@ -4382,7 +4389,8 @@ A child window container that enables hierarchical UI layout.
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -4677,7 +4685,21 @@ A child window container that enables hierarchical UI layout.
 
 
     @property
-    def content_region_avail(self) -> tuple:
+    def content_pos(self) -> Coord:
+        """
+        Readable attribute indicating the top left starting
+        position of the item's content in viewport coordinates.
+
+        Only available for items with a content area.
+        The size of the content area is available with
+        content_region_avail.
+        
+        """
+        ...
+
+
+    @property
+    def content_region_avail(self) -> Coord:
         """
         Readonly attribute: For windows, child windows,
         table cells, etc: Available region.
@@ -4815,7 +4837,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -4847,7 +4869,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -5167,7 +5189,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -5188,12 +5210,12 @@ A child window container that enables hierarchical UI layout.
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -5218,12 +5240,12 @@ A child window container that enables hierarchical UI layout.
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -5249,12 +5271,12 @@ A child window container that enables hierarchical UI layout.
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -5279,7 +5301,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -5310,7 +5332,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -5372,7 +5394,8 @@ A child window container that enables hierarchical UI layout.
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -5496,7 +5519,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -5528,7 +5551,7 @@ A child window container that enables hierarchical UI layout.
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -6334,7 +6357,7 @@ class CloseHandler(baseHandler):
 
 
 class CollapsingHeader(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -6419,7 +6442,8 @@ class CollapsingHeader(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -6480,7 +6504,7 @@ class CollapsingHeader(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -6564,7 +6588,8 @@ class CollapsingHeader(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -6903,7 +6928,7 @@ class CollapsingHeader(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -6935,7 +6960,7 @@ class CollapsingHeader(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -7239,7 +7264,7 @@ class CollapsingHeader(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -7260,12 +7285,12 @@ class CollapsingHeader(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -7290,12 +7315,12 @@ class CollapsingHeader(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -7321,12 +7346,12 @@ class CollapsingHeader(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -7351,7 +7376,7 @@ class CollapsingHeader(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -7382,7 +7407,7 @@ class CollapsingHeader(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -7416,7 +7441,8 @@ class CollapsingHeader(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -7551,7 +7577,7 @@ class CollapsingHeader(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -7583,12 +7609,12 @@ class CollapsingHeader(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class ColorButton(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -7668,7 +7694,8 @@ class ColorButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -7729,7 +7756,7 @@ class ColorButton(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_border : bool = False, no_drag_drop : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -7808,7 +7835,8 @@ class ColorButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -8117,7 +8145,7 @@ class ColorButton(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -8149,7 +8177,7 @@ class ColorButton(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -8465,7 +8493,7 @@ class ColorButton(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -8486,12 +8514,12 @@ class ColorButton(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -8516,12 +8544,12 @@ class ColorButton(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -8547,12 +8575,12 @@ class ColorButton(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -8577,7 +8605,7 @@ class ColorButton(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -8608,7 +8636,7 @@ class ColorButton(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -8642,7 +8670,8 @@ class ColorButton(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -8766,7 +8795,7 @@ class ColorButton(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -8798,12 +8827,12 @@ class ColorButton(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class ColorEdit(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -8887,7 +8916,8 @@ class ColorEdit(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -8948,7 +8978,7 @@ class ColorEdit(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_drag_drop : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_options : bool = False, no_picker : bool = False, no_scaling : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -9031,7 +9061,8 @@ class ColorEdit(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -9340,7 +9371,7 @@ class ColorEdit(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -9372,7 +9403,7 @@ class ColorEdit(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -9744,7 +9775,7 @@ class ColorEdit(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -9765,12 +9796,12 @@ class ColorEdit(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -9795,12 +9826,12 @@ class ColorEdit(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -9826,12 +9857,12 @@ class ColorEdit(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -9856,7 +9887,7 @@ class ColorEdit(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -9887,7 +9918,7 @@ class ColorEdit(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -9921,7 +9952,8 @@ class ColorEdit(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -10045,7 +10077,7 @@ class ColorEdit(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -10077,12 +10109,12 @@ class ColorEdit(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class ColorPicker(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -10164,7 +10196,8 @@ class ColorPicker(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -10225,7 +10258,7 @@ class ColorPicker(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_alpha : bool = False, no_inputs : bool = False, no_label : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_side_preview : bool = False, no_small_preview : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedColor = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : int = 0, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -10306,7 +10339,8 @@ class ColorPicker(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -10615,7 +10649,7 @@ class ColorPicker(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -10647,7 +10681,7 @@ class ColorPicker(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -10991,7 +11025,7 @@ class ColorPicker(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -11012,12 +11046,12 @@ class ColorPicker(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -11042,12 +11076,12 @@ class ColorPicker(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -11073,12 +11107,12 @@ class ColorPicker(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -11103,7 +11137,7 @@ class ColorPicker(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -11134,7 +11168,7 @@ class ColorPicker(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -11168,7 +11202,8 @@ class ColorPicker(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -11292,7 +11327,7 @@ class ColorPicker(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -11324,12 +11359,12 @@ class ColorPicker(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class Combo(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -11416,7 +11451,8 @@ class Combo(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -11477,7 +11513,7 @@ class Combo(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, fit_width : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, height_mode : str = "regular", indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_arrow_button : bool = False, no_newline : float = 0.0, no_preview : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, popup_align_left : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -11563,7 +11599,8 @@ class Combo(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -11909,7 +11946,7 @@ class Combo(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -11941,7 +11978,7 @@ class Combo(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -12276,7 +12313,7 @@ class Combo(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -12297,12 +12334,12 @@ class Combo(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -12327,12 +12364,12 @@ class Combo(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -12358,12 +12395,12 @@ class Combo(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -12388,7 +12425,7 @@ class Combo(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -12419,7 +12456,7 @@ class Combo(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -12453,7 +12490,8 @@ class Combo(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -12588,7 +12626,7 @@ class Combo(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -12620,7 +12658,7 @@ class Combo(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -13518,7 +13556,7 @@ Main class managing the DearCyGui items and imgui context.
 
         Returns:
         tuple
-            Tuple containing the mouse position (x, y).
+            Coord containing the mouse position (x, y).
 
         Raises:
         KeyError
@@ -19981,7 +20019,7 @@ class DrawInWindow(uiItem):
     visible/etc tests maintained and thus do not have a callback.
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -20054,7 +20092,8 @@ class DrawInWindow(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -20115,7 +20154,7 @@ class DrawInWindow(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[drawingItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -20187,7 +20226,8 @@ class DrawInWindow(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -20480,7 +20520,7 @@ class DrawInWindow(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -20512,7 +20552,7 @@ class DrawInWindow(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -20772,7 +20812,7 @@ class DrawInWindow(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -20793,12 +20833,12 @@ class DrawInWindow(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -20823,12 +20863,12 @@ class DrawInWindow(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -20854,12 +20894,12 @@ class DrawInWindow(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -20884,7 +20924,7 @@ class DrawInWindow(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -20915,7 +20955,7 @@ class DrawInWindow(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -20949,7 +20989,8 @@ class DrawInWindow(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -21073,7 +21114,7 @@ class DrawInWindow(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -21105,7 +21146,7 @@ class DrawInWindow(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -21724,7 +21765,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Readonly attribute:
         Relative position to latest non-drawing parent
@@ -21734,7 +21775,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Readonly attribute:
         Current screen-space position of the top left
@@ -21746,7 +21787,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Readonly attribute:
         Relative position to the window's starting inner
@@ -21783,7 +21824,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) in pixels of the item on screen
         
@@ -32461,7 +32502,7 @@ class HorizontalLayout(Layout):
     horizontally.
     
     """
-    def __init__(self, context : Context, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_wrap : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0, wrap_x : float = 0.0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_wrap : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0, wrap_x : float = 0.0):
         """
 
         alignment_mode: Horizontal alignment mode of the items.
@@ -32551,7 +32592,8 @@ class HorizontalLayout(Layout):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -32620,7 +32662,7 @@ class HorizontalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_wrap : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0, wrap_x : float = 0.0):
+    def configure(self, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, no_wrap : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0, wrap_x : float = 0.0):
         """
         alignment_mode: Horizontal alignment mode of the items.
             LEFT: items are appended from the left
@@ -32709,7 +32751,8 @@ class HorizontalLayout(Layout):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -33084,7 +33127,7 @@ class HorizontalLayout(Layout):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -33116,7 +33159,7 @@ class HorizontalLayout(Layout):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -33391,7 +33434,7 @@ class HorizontalLayout(Layout):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -33412,12 +33455,12 @@ class HorizontalLayout(Layout):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -33442,12 +33485,12 @@ class HorizontalLayout(Layout):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -33473,12 +33516,12 @@ class HorizontalLayout(Layout):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -33503,7 +33546,7 @@ class HorizontalLayout(Layout):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -33561,7 +33604,7 @@ class HorizontalLayout(Layout):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -33595,7 +33638,8 @@ class HorizontalLayout(Layout):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -33730,7 +33774,7 @@ class HorizontalLayout(Layout):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -33762,7 +33806,7 @@ class HorizontalLayout(Layout):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -34170,7 +34214,7 @@ class HoverHandler(baseHandler):
 
 
 class Image(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -34246,7 +34290,8 @@ class Image(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -34307,7 +34352,7 @@ class Image(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., border_color : list = [0.0, 0.0, 0.0, 0.0], callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 1.0, 1.0], value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -34382,7 +34427,8 @@ class Image(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -34678,7 +34724,7 @@ class Image(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -34710,7 +34756,7 @@ class Image(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -34970,7 +35016,7 @@ class Image(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -34991,12 +35037,12 @@ class Image(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -35021,12 +35067,12 @@ class Image(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -35052,12 +35098,12 @@ class Image(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -35082,7 +35128,7 @@ class Image(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -35113,7 +35159,7 @@ class Image(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -35147,7 +35193,8 @@ class Image(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -35291,7 +35338,7 @@ class Image(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -35323,12 +35370,12 @@ class Image(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class ImageButton(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -35404,7 +35451,8 @@ class ImageButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -35465,7 +35513,7 @@ class ImageButton(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., background_color : list = [0.0, 0.0, 0.0, 0.0], before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color_multiplier : list = [1.0, 1.0, 1.0, 1.0], enabled : bool = True, focused : bool = False, font : Font = None, frame_padding : int = -1, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, texture : Texture | None = None, theme : Any = ..., user_data : Any = ..., uv : list = [0.0, 0.0, 0.0, 0.0], value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -35540,7 +35588,8 @@ class ImageButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -35846,7 +35895,7 @@ class ImageButton(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -35878,7 +35927,7 @@ class ImageButton(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -36138,7 +36187,7 @@ class ImageButton(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -36159,12 +36208,12 @@ class ImageButton(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -36189,12 +36238,12 @@ class ImageButton(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -36220,12 +36269,12 @@ class ImageButton(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -36250,7 +36299,7 @@ class ImageButton(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -36281,7 +36330,7 @@ class ImageButton(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -36315,7 +36364,8 @@ class ImageButton(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -36459,7 +36509,7 @@ class ImageButton(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -36491,12 +36541,12 @@ class ImageButton(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class InputText(uiItem):
-    def __init__(self, context : Context, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : float = 0.0):
         """
 
         always_overwrite: Overwrite mode
@@ -36594,7 +36644,8 @@ class InputText(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         scientific: Allow 0123456789.+-*/eE
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -36658,7 +36709,7 @@ class InputText(uiItem):
         ...
 
 
-    def configure(self, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], ctrl_enter_for_new_line : bool = False, decimal : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, hexadecimal : bool = False, hint : str = "", indent : float = 0.0, label : str = "", max_characters : int = 1024, multiline : bool = False, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_spaces : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedStr = ..., show : bool = True, tab_input : bool = False, theme : Any = ..., uppercase : bool = False, user_data : Any = ..., value : str = "", width : float = 0.0):
         """
         always_overwrite: Overwrite mode
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -36755,7 +36806,8 @@ class InputText(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         scientific: Allow 0123456789.+-*/eE
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -37164,7 +37216,7 @@ class InputText(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -37196,7 +37248,7 @@ class InputText(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -37585,7 +37637,7 @@ class InputText(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -37606,12 +37658,12 @@ class InputText(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -37636,12 +37688,12 @@ class InputText(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -37667,12 +37719,12 @@ class InputText(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -37697,7 +37749,7 @@ class InputText(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -37742,7 +37794,7 @@ class InputText(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -37776,7 +37828,8 @@ class InputText(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -37942,7 +37995,7 @@ class InputText(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -37974,12 +38027,12 @@ class InputText(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class InputValue(uiItem):
-    def __init__(self, context : Context, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def __init__(self, context : Context, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : float = 0.0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : float = 0.0):
         """
 
         always_overwrite: Overwrite mode
@@ -38083,7 +38136,8 @@ class InputValue(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         scientific: Allow 0123456789.+-*/eE
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -38153,7 +38207,7 @@ class InputValue(uiItem):
         ...
 
 
-    def configure(self, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def configure(self, always_overwrite : bool = False, attach : Any = ..., auto_select_all : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], decimal : bool = False, empty_as_zero : bool = False, empty_if_zero : bool = False, enabled : bool = True, escape_clears_all : bool = False, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : float = 0.0, hexadecimal : bool = False, indent : float = 0.0, label : str = "", max_value : float = inf, min_value : float = -inf, next_sibling : baseItem | None = None, no_horizontal_scroll : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_undo_redo : bool = False, on_enter : bool = False, parent : uiItem | plotElement | None = None, password : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", readonly : bool = False, scaling_factor : float = 1.0, scientific : bool = False, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, step : float = 0.1, step_fast : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : float = 0.0):
         """
         always_overwrite: Overwrite mode
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -38256,7 +38310,8 @@ class InputValue(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         scientific: Allow 0123456789.+-*/eE
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -38688,7 +38743,7 @@ class InputValue(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -38720,7 +38775,7 @@ class InputValue(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -39081,7 +39136,7 @@ class InputValue(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -39102,12 +39157,12 @@ class InputValue(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -39132,12 +39187,12 @@ class InputValue(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -39163,12 +39218,12 @@ class InputValue(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -39193,7 +39248,7 @@ class InputValue(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -39256,7 +39311,7 @@ class InputValue(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -39290,7 +39345,8 @@ class InputValue(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -39475,7 +39531,7 @@ class InputValue(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -39507,7 +39563,7 @@ class InputValue(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -40747,7 +40803,7 @@ class Layout(uiItem):
     preserved.
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -40823,7 +40879,8 @@ class Layout(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -40884,7 +40941,7 @@ class Layout(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -40959,7 +41016,8 @@ class Layout(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -41295,7 +41353,7 @@ class Layout(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -41327,7 +41385,7 @@ class Layout(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -41587,7 +41645,7 @@ class Layout(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -41608,12 +41666,12 @@ class Layout(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -41638,12 +41696,12 @@ class Layout(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -41669,12 +41727,12 @@ class Layout(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -41699,7 +41757,7 @@ class Layout(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -41730,7 +41788,7 @@ class Layout(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -41764,7 +41822,8 @@ class Layout(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -41899,7 +41958,7 @@ class Layout(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -41931,12 +41990,12 @@ class Layout(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class ListBox(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -42015,7 +42074,8 @@ class ListBox(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -42076,7 +42136,7 @@ class ListBox(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, num_items_shown_when_open : int = -1, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -42154,7 +42214,8 @@ class ListBox(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -42486,7 +42547,7 @@ class ListBox(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -42518,7 +42579,7 @@ class ListBox(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -42807,7 +42868,7 @@ class ListBox(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -42828,12 +42889,12 @@ class ListBox(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -42858,12 +42919,12 @@ class ListBox(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -42889,12 +42950,12 @@ class ListBox(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -42919,7 +42980,7 @@ class ListBox(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -42950,7 +43011,7 @@ class ListBox(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -42984,7 +43045,8 @@ class ListBox(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -43108,7 +43170,7 @@ class ListBox(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -43140,7 +43202,7 @@ class ListBox(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -44677,7 +44739,7 @@ class LostRenderHandler(baseHandler):
 
 
 class Menu(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -44753,7 +44815,8 @@ class Menu(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -44814,7 +44877,7 @@ class Menu(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -44889,7 +44952,8 @@ class Menu(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -45198,7 +45262,7 @@ class Menu(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -45230,7 +45294,7 @@ class Menu(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -45490,7 +45554,7 @@ class Menu(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -45511,12 +45575,12 @@ class Menu(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -45541,12 +45605,12 @@ class Menu(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -45572,12 +45636,12 @@ class Menu(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -45602,7 +45666,7 @@ class Menu(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -45633,7 +45697,7 @@ class Menu(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -45667,7 +45731,8 @@ class Menu(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -45791,7 +45856,7 @@ class Menu(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -45823,12 +45888,12 @@ class Menu(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class MenuBar(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : Viewport | Window | ChildWindow = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : Viewport | Window | ChildWindow = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -45904,7 +45969,8 @@ class MenuBar(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -45965,7 +46031,7 @@ class MenuBar(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : Viewport | Window | ChildWindow = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : Viewport | Window | ChildWindow = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -46040,7 +46106,8 @@ class MenuBar(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -46227,7 +46294,21 @@ class MenuBar(uiItem):
 
 
     @property
-    def content_region_avail(self) -> tuple:
+    def content_pos(self) -> Coord:
+        """
+        Readable attribute indicating the top left starting
+        position of the item's content in viewport coordinates.
+
+        Only available for items with a content area.
+        The size of the content area is available with
+        content_region_avail.
+        
+        """
+        ...
+
+
+    @property
+    def content_region_avail(self) -> Coord:
         """
         Readonly attribute: For windows, child windows,
         table cells, etc: Available region.
@@ -46332,7 +46413,7 @@ class MenuBar(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -46364,7 +46445,7 @@ class MenuBar(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -46624,7 +46705,7 @@ class MenuBar(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -46645,12 +46726,12 @@ class MenuBar(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -46675,12 +46756,12 @@ class MenuBar(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -46706,12 +46787,12 @@ class MenuBar(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -46736,7 +46817,7 @@ class MenuBar(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -46767,7 +46848,7 @@ class MenuBar(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -46801,7 +46882,8 @@ class MenuBar(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -46925,7 +47007,7 @@ class MenuBar(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -46957,12 +47039,12 @@ class MenuBar(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class MenuItem(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -47039,7 +47121,8 @@ class MenuItem(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -47101,7 +47184,7 @@ class MenuItem(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], check : bool = False, children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., shortcut : str = "", show : bool = True, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -47177,7 +47260,8 @@ class MenuItem(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -47524,7 +47608,7 @@ class MenuItem(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -47556,7 +47640,7 @@ class MenuItem(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -47816,7 +47900,7 @@ class MenuItem(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -47837,12 +47921,12 @@ class MenuItem(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -47867,12 +47951,12 @@ class MenuItem(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -47898,12 +47982,12 @@ class MenuItem(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -47928,7 +48012,7 @@ class MenuItem(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -47959,7 +48043,7 @@ class MenuItem(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -47993,7 +48077,8 @@ class MenuItem(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -48131,7 +48216,7 @@ class MenuItem(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -48163,7 +48248,7 @@ class MenuItem(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -50567,6 +50652,410 @@ class MouseDragHandler(baseHandler):
 
     @threshold.setter
     def threshold(self, value : float):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+class MouseInRect(baseHandler):
+    """
+    Handler that triggers when the mouse is inside a predefined rectangle.
+
+    The rectangle is defined in viewport coordinates.
+    
+    Properties:
+        rect: A tuple (x1, y1, x2, y2) or Rect object defining the area to monitor
+        
+    Callback receives:
+        - x: Current mouse x position 
+        - y: Current mouse y position
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, rect : Rect = (0.0, 0.0, 0.0, 0.0), show : bool = True, user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        rect: Rectangle to test in viewport coordinates
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, children : None  = [], enabled : bool = True, next_sibling : baseItem | None = None, parent : baseTheme | None = None, previous_sibling : baseItem | None = None, rect : Rect = (0.0, 0.0, 0.0, 0.0), show : bool = True, user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        rect: Rectangle to test in viewport coordinates
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> MouseInRect:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callback(self) -> DCGCallable | None:
+        ...
+
+
+    @callback.setter
+    def callback(self, value : DCGCallable | None):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseTheme | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseTheme | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def rect(self) -> Rect:
+        """Rectangle to test in viewport coordinates
+        """
+        ...
+
+
+    @rect.setter
+    def rect(self, value : Rect):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
         ...
 
 
@@ -53383,7 +53872,7 @@ class Plot(uiItem):
     to the plot (+ some logic in your callbacks). 
     
     """
-    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
+    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -53483,7 +53972,8 @@ class Plot(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -53561,7 +54051,7 @@ class Plot(uiItem):
         ...
 
 
-    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
+    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -53660,7 +54150,8 @@ class Plot(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -53934,20 +54425,21 @@ class Plot(uiItem):
 
 
     @property
-    def content_pos(self) -> tuple:
+    def content_pos(self) -> Coord:
         """
         Readable attribute indicating the top left starting
-        position of the plot content in viewport coordinates.
+        position of the item's content in viewport coordinates.
 
-        The size of the plot content area is available with
-        content_size_avail.
+        Only available for items with a content area.
+        The size of the content area is available with
+        content_region_avail.
         
         """
         ...
 
 
     @property
-    def content_region_avail(self) -> tuple:
+    def content_region_avail(self) -> Coord:
         """
         Readonly attribute: For windows, child windows,
         table cells, etc: Available region.
@@ -54082,7 +54574,7 @@ class Plot(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -54114,7 +54606,7 @@ class Plot(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -54521,7 +55013,7 @@ class Plot(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -54542,12 +55034,12 @@ class Plot(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -54572,12 +55064,12 @@ class Plot(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -54603,12 +55095,12 @@ class Plot(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -54633,7 +55125,7 @@ class Plot(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -54664,7 +55156,7 @@ class Plot(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -54698,7 +55190,8 @@ class Plot(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -54870,7 +55363,7 @@ class Plot(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -54902,7 +55395,7 @@ class Plot(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -60797,7 +61290,7 @@ class PlotStems(plotElementXY):
 
 
 class ProgressBar(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -60874,7 +61367,8 @@ class ProgressBar(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -60935,7 +61429,7 @@ class ProgressBar(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : str = "", parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : float = 0.0, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -61011,7 +61505,8 @@ class ProgressBar(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -61287,7 +61782,7 @@ class ProgressBar(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -61319,7 +61814,7 @@ class ProgressBar(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -61593,7 +62088,7 @@ class ProgressBar(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -61614,12 +62109,12 @@ class ProgressBar(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -61644,12 +62139,12 @@ class ProgressBar(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -61675,12 +62170,12 @@ class ProgressBar(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -61705,7 +62200,7 @@ class ProgressBar(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -61736,7 +62231,7 @@ class ProgressBar(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -61770,7 +62265,8 @@ class ProgressBar(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -61894,7 +62390,7 @@ class ProgressBar(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -61926,12 +62422,12 @@ class ProgressBar(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class RadioButton(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -62009,7 +62505,8 @@ class RadioButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -62070,7 +62567,7 @@ class RadioButton(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, horizontal : bool = False, indent : float = 0.0, items : list = [], label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -62147,7 +62644,8 @@ class RadioButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -62479,7 +62977,7 @@ class RadioButton(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -62511,7 +63009,7 @@ class RadioButton(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -62799,7 +63297,7 @@ class RadioButton(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -62820,12 +63318,12 @@ class RadioButton(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -62850,12 +63348,12 @@ class RadioButton(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -62881,12 +63379,12 @@ class RadioButton(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -62911,7 +63409,7 @@ class RadioButton(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -62942,7 +63440,7 @@ class RadioButton(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -62976,7 +63474,8 @@ class RadioButton(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -63100,7 +63599,7 @@ class RadioButton(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -63132,7 +63631,7 @@ class RadioButton(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -63908,7 +64407,7 @@ class ResizeHandler(baseHandler):
 
 
 class Selectable(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -63987,7 +64486,8 @@ class Selectable(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -64049,7 +64549,7 @@ class Selectable(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], disable_popup_close : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, highlighted : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, span_columns : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -64127,7 +64627,8 @@ class Selectable(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -64474,7 +64975,7 @@ class Selectable(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -64506,7 +65007,7 @@ class Selectable(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -64794,7 +65295,7 @@ class Selectable(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -64815,12 +65316,12 @@ class Selectable(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -64845,12 +65346,12 @@ class Selectable(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -64876,12 +65377,12 @@ class Selectable(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -64906,7 +65407,7 @@ class Selectable(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -64937,7 +65438,7 @@ class Selectable(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -64971,7 +65472,8 @@ class Selectable(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -65109,7 +65611,7 @@ class Selectable(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -65141,12 +65643,12 @@ class Selectable(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class Separator(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -65217,7 +65719,8 @@ class Separator(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -65278,7 +65781,7 @@ class Separator(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -65348,7 +65851,8 @@ class Separator(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -65582,7 +66086,7 @@ class Separator(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -65614,7 +66118,7 @@ class Separator(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -65858,7 +66362,7 @@ class Separator(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -65879,12 +66383,12 @@ class Separator(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -65909,12 +66413,12 @@ class Separator(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -65940,12 +66444,12 @@ class Separator(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -65970,7 +66474,7 @@ class Separator(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -66001,7 +66505,7 @@ class Separator(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -66035,7 +66539,8 @@ class Separator(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -66159,7 +66664,7 @@ class Separator(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -66191,7 +66696,7 @@ class Separator(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -66801,7 +67306,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 
 class SimplePlot(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., autoscale : bool = True, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, scaling_factor : float = 1.0, shareable_value : SharedFloatVect = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., autoscale : bool = True, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, scaling_factor : float = 1.0, shareable_value : SharedFloatVect = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -66883,7 +67388,8 @@ class SimplePlot(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -66944,7 +67450,7 @@ class SimplePlot(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., autoscale : bool = True, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, scaling_factor : float = 1.0, shareable_value : SharedFloatVect = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., autoscale : bool = True, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, histogram : bool = False, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, overlay : bytes = b'', parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scale_max : float = 0.0, scale_min : float = 0.0, scaling_factor : float = 1.0, shareable_value : SharedFloatVect = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         autoscale: Whether scale_min and scale_max should be deduced
@@ -67025,7 +67531,8 @@ class SimplePlot(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -67349,7 +67856,7 @@ class SimplePlot(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -67381,7 +67888,7 @@ class SimplePlot(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -67669,7 +68176,7 @@ class SimplePlot(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -67690,12 +68197,12 @@ class SimplePlot(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -67720,12 +68227,12 @@ class SimplePlot(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -67751,12 +68258,12 @@ class SimplePlot(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -67781,7 +68288,7 @@ class SimplePlot(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -67812,7 +68319,7 @@ class SimplePlot(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -67874,7 +68381,8 @@ class SimplePlot(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -67998,7 +68506,7 @@ class SimplePlot(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -68030,12 +68538,12 @@ class SimplePlot(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class Slider(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -68135,7 +68643,8 @@ class Slider(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -68207,7 +68716,7 @@ class Slider(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], clamped : bool = False, drag : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, format : str = "float", handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", logarithmic : bool = False, max_value : float = 100.0, min_value : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, print_format : str = "%.3f", round_to_format : bool = True, scaling_factor : float = 1.0, shareable_value : SharedFloat = ..., show : bool = True, size : int = 1, speed : float = 1.0, theme : Any = ..., user_data : Any = ..., value : float = 0.0, vertical : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -68306,7 +68815,8 @@ class Slider(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -68684,7 +69194,7 @@ class Slider(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -68716,7 +69226,7 @@ class Slider(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -69036,7 +69546,7 @@ class Slider(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -69057,12 +69567,12 @@ class Slider(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -69087,12 +69597,12 @@ class Slider(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -69118,12 +69628,12 @@ class Slider(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -69148,7 +69658,7 @@ class Slider(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -69197,7 +69707,7 @@ class Slider(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -69247,7 +69757,8 @@ class Slider(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -69421,7 +69932,7 @@ class Slider(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -69453,12 +69964,12 @@ class Slider(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class Spacer(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -69531,7 +70042,8 @@ class Spacer(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -69592,7 +70104,7 @@ class Spacer(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -69664,7 +70176,8 @@ class Spacer(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -69898,7 +70411,7 @@ class Spacer(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -69930,7 +70443,7 @@ class Spacer(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -70179,7 +70692,7 @@ class Spacer(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -70200,12 +70713,12 @@ class Spacer(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -70230,12 +70743,12 @@ class Spacer(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -70261,12 +70774,12 @@ class Spacer(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -70291,7 +70804,7 @@ class Spacer(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -70322,7 +70835,7 @@ class Spacer(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -70356,7 +70869,8 @@ class Spacer(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -70480,7 +70994,7 @@ class Spacer(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -70512,12 +71026,12 @@ class Spacer(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class Tab(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -70599,7 +71113,8 @@ class Tab(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -70662,7 +71177,7 @@ class Tab(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -70743,7 +71258,8 @@ class Tab(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -71068,7 +71584,7 @@ class Tab(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -71100,7 +71616,7 @@ class Tab(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -71404,7 +71920,7 @@ class Tab(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -71425,12 +71941,12 @@ class Tab(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -71455,12 +71971,12 @@ class Tab(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -71486,12 +72002,12 @@ class Tab(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -71516,7 +72032,7 @@ class Tab(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -71547,7 +72063,7 @@ class Tab(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -71581,7 +72097,8 @@ class Tab(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -71720,7 +72237,7 @@ class Tab(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -71752,12 +72269,12 @@ class Tab(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class TabBar(uiItem):
-    def __init__(self, context : Context, allow_tab_scroll : bool = False, attach : Any = ..., autoselect_new_tabs : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, scaling_factor : float = 1.0, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, allow_tab_scroll : bool = False, attach : Any = ..., autoselect_new_tabs : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, scaling_factor : float = 1.0, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         allow_tab_scroll: Add scroll buttons when tabs don't fit
@@ -71843,7 +72360,8 @@ class TabBar(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         selected_overline: Draw selected overline markers over selected tab
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -71905,7 +72423,7 @@ class TabBar(uiItem):
         ...
 
 
-    def configure(self, allow_tab_scroll : bool = False, attach : Any = ..., autoselect_new_tabs : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, scaling_factor : float = 1.0, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, allow_tab_scroll : bool = False, attach : Any = ..., autoselect_new_tabs : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_close_with_middle_mouse_button : bool = False, no_newline : float = 0.0, no_scaling : bool = False, no_scrolling_button : bool = False, no_tab_list_popup_button : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, reorderable : bool = False, resize_to_fit : bool = False, scaling_factor : float = 1.0, selected_overline : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         allow_tab_scroll: Add scroll buttons when tabs don't fit
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -71990,7 +72508,8 @@ class TabBar(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         selected_overline: Draw selected overline markers over selected tab
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -72329,7 +72848,7 @@ class TabBar(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -72361,7 +72880,7 @@ class TabBar(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -72677,7 +73196,7 @@ class TabBar(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -72698,12 +73217,12 @@ class TabBar(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -72728,12 +73247,12 @@ class TabBar(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -72759,12 +73278,12 @@ class TabBar(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -72789,7 +73308,7 @@ class TabBar(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -72820,7 +73339,7 @@ class TabBar(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -72883,7 +73402,8 @@ class TabBar(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -73021,7 +73541,7 @@ class TabBar(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -73053,12 +73573,12 @@ class TabBar(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class TabButton(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -73139,7 +73659,8 @@ class TabButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -73202,7 +73723,7 @@ class TabButton(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -73282,7 +73803,8 @@ class TabButton(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -73616,7 +74138,7 @@ class TabButton(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -73648,7 +74170,7 @@ class TabButton(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -73952,7 +74474,7 @@ class TabButton(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -73973,12 +74495,12 @@ class TabButton(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -74003,12 +74525,12 @@ class TabButton(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -74034,12 +74556,12 @@ class TabButton(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -74064,7 +74586,7 @@ class TabButton(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -74095,7 +74617,7 @@ class TabButton(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -74129,7 +74651,8 @@ class TabButton(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -74268,7 +74791,7 @@ class TabButton(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -74300,12 +74823,12 @@ class TabButton(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class Text(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : Color = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0, wrap : int = -1):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : Color = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0, wrap : int = -1):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -74385,7 +74908,8 @@ class Text(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -74452,7 +74976,7 @@ class Text(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : Color = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, theme : Any = ..., user_data : Any = ..., value : str = "", width : int = 0, wrap : int = -1):
+    def configure(self, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], color : Color = 0, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedStr = ..., show : bool = True, show_label : bool = False, theme : Any = ..., user_data : Any = ..., value : str = "", width : float = 0.0, wrap : int = -1):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -74531,7 +75055,8 @@ class Text(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -74878,7 +75403,7 @@ class Text(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -74910,7 +75435,7 @@ class Text(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -75165,7 +75690,7 @@ class Text(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -75186,12 +75711,12 @@ class Text(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -75216,12 +75741,12 @@ class Text(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -75247,12 +75772,12 @@ class Text(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -75277,7 +75802,7 @@ class Text(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -75308,7 +75833,7 @@ class Text(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -75342,7 +75867,8 @@ class Text(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -75481,7 +76007,7 @@ class Text(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -75513,7 +76039,7 @@ class Text(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -81617,7 +82143,7 @@ class TimeWatcher(uiItem):
     GPU data, etc), not to GPU rendering time.
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -81690,7 +82216,8 @@ class TimeWatcher(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -81751,7 +82278,7 @@ class TimeWatcher(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -81823,7 +82350,8 @@ class TimeWatcher(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -82057,7 +82585,7 @@ class TimeWatcher(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -82089,7 +82617,7 @@ class TimeWatcher(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -82338,7 +82866,7 @@ class TimeWatcher(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -82359,12 +82887,12 @@ class TimeWatcher(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -82389,12 +82917,12 @@ class TimeWatcher(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -82420,12 +82948,12 @@ class TimeWatcher(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -82450,7 +82978,7 @@ class TimeWatcher(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -82487,7 +83015,8 @@ class TimeWatcher(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -82611,7 +83140,7 @@ class TimeWatcher(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -82643,7 +83172,7 @@ class TimeWatcher(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -83426,7 +83955,7 @@ class ToggledOpenHandler(baseHandler):
 
 
 class Tooltip(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -83508,7 +84037,8 @@ class Tooltip(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -83578,7 +84108,7 @@ class Tooltip(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], condition_from_handler : Any = ..., delay : float = 0.0, enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, hide_on_activity : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, target : Any = ..., theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -83659,7 +84189,8 @@ class Tooltip(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -83969,7 +84500,7 @@ class Tooltip(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -84001,7 +84532,7 @@ class Tooltip(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -84264,7 +84795,7 @@ class Tooltip(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -84285,12 +84816,12 @@ class Tooltip(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -84315,12 +84846,12 @@ class Tooltip(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -84346,12 +84877,12 @@ class Tooltip(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -84376,7 +84907,7 @@ class Tooltip(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -84413,7 +84944,8 @@ class Tooltip(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -84559,7 +85091,7 @@ class Tooltip(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -84591,12 +85123,12 @@ class Tooltip(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
 class TreeNode(uiItem):
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -84681,7 +85213,8 @@ class TreeNode(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         selectable: Draw the TreeNode as selected when opened
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -84747,7 +85280,7 @@ class TreeNode(uiItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., bullet : bool = False, callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], default_open : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leaf : bool = False, next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, open_on_arrow : bool = False, open_on_double_click : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, selectable : bool = False, shareable_value : SharedBool = ..., show : bool = True, span_full_width : bool = False, span_text_width : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -84831,7 +85364,8 @@ class TreeNode(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         selectable: Draw the TreeNode as selected when opened
         shareable_value: Same as the value field, but rather than a copy of the internal value
@@ -85175,7 +85709,7 @@ class TreeNode(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -85207,7 +85741,7 @@ class TreeNode(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -85511,7 +86045,7 @@ class TreeNode(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -85532,12 +86066,12 @@ class TreeNode(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -85562,12 +86096,12 @@ class TreeNode(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -85593,12 +86127,12 @@ class TreeNode(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -85623,7 +86157,7 @@ class TreeNode(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -85654,7 +86188,7 @@ class TreeNode(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -85688,7 +86222,8 @@ class TreeNode(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -85867,7 +86402,7 @@ class TreeNode(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -85899,7 +86434,7 @@ class TreeNode(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -85908,7 +86443,7 @@ class VerticalLayout(Layout):
     Same as HorizontalLayout but vertically
     
     """
-    def __init__(self, context : Context, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         alignment_mode: Vertical alignment mode of the items.
@@ -85996,7 +86531,8 @@ class VerticalLayout(Layout):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -86057,7 +86593,7 @@ class VerticalLayout(Layout):
         ...
 
 
-    def configure(self, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, alignment_mode : Alignment = 0, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), positions : list = [], previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         alignment_mode: Vertical alignment mode of the items.
             TOP: items are appended from the top
@@ -86144,7 +86680,8 @@ class VerticalLayout(Layout):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -86511,7 +87048,7 @@ class VerticalLayout(Layout):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -86543,7 +87080,7 @@ class VerticalLayout(Layout):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -86803,7 +87340,7 @@ class VerticalLayout(Layout):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -86824,12 +87361,12 @@ class VerticalLayout(Layout):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -86854,12 +87391,12 @@ class VerticalLayout(Layout):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -86885,12 +87422,12 @@ class VerticalLayout(Layout):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -86915,7 +87452,7 @@ class VerticalLayout(Layout):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -86973,7 +87510,7 @@ class VerticalLayout(Layout):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -87007,7 +87544,8 @@ class VerticalLayout(Layout):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -87142,7 +87680,7 @@ class VerticalLayout(Layout):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -87174,7 +87712,7 @@ class VerticalLayout(Layout):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -88483,7 +89021,7 @@ class Window(uiItem):
     - max_size: Maximum size of the window.
     
     """
-    def __init__(self, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, attach : Any = ..., autosize : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., on_drop : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, attach : Any = ..., autosize : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : float = 0.0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : Sequence[float] | tuple[float, float] | Coord = (30000.0, 30000.0), menubar : bool = False, min_size : Sequence[float] | tuple[float, float] | Coord = (100.0, 100.0), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., on_drop : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, primary : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
@@ -88626,7 +89164,8 @@ class Window(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -88689,7 +89228,7 @@ class Window(uiItem):
         ...
 
 
-    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, attach : Any = ..., autosize : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : int = 0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : tuple = (30000, 30000), menubar : bool = False, min_size : tuple = (100, 100), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., on_drop : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, primary : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, always_show_horizontal_scrollvar : bool = False, always_show_vertical_scrollvar : bool = False, attach : Any = ..., autosize : bool = False, before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem, MenuBar] = [], collapsed : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], has_close_button : bool = True, height : float = 0.0, horizontal_scrollbar : bool = False, indent : float = 0.0, label : str = "", max_size : Sequence[float] | tuple[float, float] | Coord = (30000.0, 30000.0), menubar : bool = False, min_size : Sequence[float] | tuple[float, float] | Coord = (100.0, 100.0), modal : bool = False, next_sibling : baseItem | None = None, no_background : bool = False, no_bring_to_front_on_focus : bool = False, no_collapse : bool = False, no_focus_on_appearing : bool = False, no_keyboard_inputs : bool = False, no_mouse_inputs : bool = False, no_move : bool = False, no_newline : float = 0.0, no_open_over_existing_popup : bool = True, no_resize : bool = False, no_saved_settings : bool = False, no_scaling : bool = False, no_scroll_with_mouse : bool = False, no_scrollbar : bool = False, no_title_bar : bool = False, on_close : Any = ..., on_drop : Any = ..., parent : Viewport | None = None, popup : bool = False, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, primary : bool = False, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., unsaved_document : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         always_show_horizontal_scrollvar: Writable attribute to tell to always show a horizontal scrollbar
             even when the size does not require it (only if horizontal scrollbar
@@ -88831,7 +89370,8 @@ class Window(uiItem):
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -89066,7 +89606,21 @@ class Window(uiItem):
 
 
     @property
-    def content_region_avail(self) -> tuple:
+    def content_pos(self) -> Coord:
+        """
+        Readable attribute indicating the top left starting
+        position of the item's content in viewport coordinates.
+
+        Only available for items with a content area.
+        The size of the content area is available with
+        content_region_avail.
+        
+        """
+        ...
+
+
+    @property
+    def content_region_avail(self) -> Coord:
         """
         Readonly attribute: For windows, child windows,
         table cells, etc: Available region.
@@ -89173,7 +89727,7 @@ class Window(uiItem):
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -89205,7 +89759,7 @@ class Window(uiItem):
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -89275,7 +89829,7 @@ class Window(uiItem):
 
 
     @property
-    def max_size(self) -> tuple:
+    def max_size(self) -> Coord:
         """
         Writable attribute to indicate the maximum window size
         
@@ -89284,7 +89838,7 @@ class Window(uiItem):
 
 
     @max_size.setter
-    def max_size(self, value : tuple):
+    def max_size(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -89306,7 +89860,7 @@ class Window(uiItem):
 
 
     @property
-    def min_size(self) -> tuple:
+    def min_size(self) -> Coord:
         """
         Writable attribute to indicate the minimum window size
         
@@ -89315,7 +89869,7 @@ class Window(uiItem):
 
 
     @min_size.setter
-    def min_size(self, value : tuple):
+    def min_size(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -89779,7 +90333,7 @@ class Window(uiItem):
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -89800,12 +90354,12 @@ class Window(uiItem):
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -89830,12 +90384,12 @@ class Window(uiItem):
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -89861,12 +90415,12 @@ class Window(uiItem):
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -89891,7 +90445,7 @@ class Window(uiItem):
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -89945,7 +90499,7 @@ class Window(uiItem):
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -89979,7 +90533,8 @@ class Window(uiItem):
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -90118,7 +90673,7 @@ class Window(uiItem):
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -90150,7 +90705,7 @@ class Window(uiItem):
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
 
@@ -95689,7 +96244,7 @@ Base class for UI items with various properties and states.
     All attributes are protected by mutexes to enable thread-safe access.
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -95762,7 +96317,8 @@ Base class for UI items with various properties and states.
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -95823,7 +96379,7 @@ Base class for UI items with various properties and states.
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : int = 0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : tuple = (0, 0), pos_to_parent : tuple = (0, 0), pos_to_viewport : tuple = (0, 0), pos_to_window : tuple = (0, 0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : int = 0):
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : float = 0.0, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -95895,7 +96451,8 @@ Base class for UI items with various properties and states.
             that multiplies the global viewport scaling and
             applies to this item and its children.
             The global scaling (thus this parameter as well)
-            impacts themes, sizes and fonts.
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
             Defaults to 1.0.
         shareable_value: Same as the value field, but rather than a copy of the internal value
             of the object, return a python object that holds a value field that
@@ -96129,7 +96686,7 @@ Base class for UI items with various properties and states.
 
 
     @property
-    def height(self) -> int:
+    def height(self) -> float:
         """
         Writable attribute: Requested height of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -96161,7 +96718,7 @@ Base class for UI items with various properties and states.
 
 
     @height.setter
-    def height(self, value : int):
+    def height(self, value : float):
         ...
 
 
@@ -96410,7 +96967,7 @@ Base class for UI items with various properties and states.
 
 
     @property
-    def pos_to_default(self) -> tuple:
+    def pos_to_default(self) -> Coord:
         """
         Writable attribute:
         Relative position to the item's default position.
@@ -96431,12 +96988,12 @@ Base class for UI items with various properties and states.
 
 
     @pos_to_default.setter
-    def pos_to_default(self, value : tuple):
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_parent(self) -> tuple:
+    def pos_to_parent(self) -> Coord:
         """
         Writable attribute:
         Relative position to the parent's position, or to
@@ -96461,12 +97018,12 @@ Base class for UI items with various properties and states.
 
 
     @pos_to_parent.setter
-    def pos_to_parent(self, value : tuple):
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_viewport(self) -> tuple:
+    def pos_to_viewport(self) -> Coord:
         """
         Writable attribute:
         Current screen-space position of the top left
@@ -96492,12 +97049,12 @@ Base class for UI items with various properties and states.
 
 
     @pos_to_viewport.setter
-    def pos_to_viewport(self, value : tuple):
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
     @property
-    def pos_to_window(self) -> tuple:
+    def pos_to_window(self) -> Coord:
         """
         Writable attribute:
         Relative position to the window's starting inner
@@ -96522,7 +97079,7 @@ Base class for UI items with various properties and states.
 
 
     @pos_to_window.setter
-    def pos_to_window(self, value : tuple):
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
         ...
 
 
@@ -96553,7 +97110,7 @@ Base class for UI items with various properties and states.
 
 
     @property
-    def rect_size(self) -> tuple:
+    def rect_size(self) -> Coord:
         """
         Readonly attribute: actual (width, height) of the element,
         including margins.
@@ -96587,7 +97144,8 @@ Base class for UI items with various properties and states.
         that multiplies the global viewport scaling and
         applies to this item and its children.
         The global scaling (thus this parameter as well)
-        impacts themes, sizes and fonts.
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
         Defaults to 1.0.
         
         """
@@ -96711,7 +97269,7 @@ Base class for UI items with various properties and states.
 
 
     @property
-    def width(self) -> int:
+    def width(self) -> float:
         """
         Writable attribute: Requested width of the item.
         When it is written, it is set to a 'requested value' that is not
@@ -96743,6 +97301,6 @@ Base class for UI items with various properties and states.
 
 
     @width.setter
-    def width(self, value : int):
+    def width(self, value : float):
         ...
 
