@@ -53,7 +53,8 @@ cdef extern from * nogil:
     {
         ImGuiContext& g = *GImGui;
         ImGuiWindow* window = ImGui::GetCurrentWindow();
-        const ImRect bb(pos, pos + size);
+        const ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
+        const ImRect bb(pos, end);
 
         const ImGuiID id = window->GetID(uuid);
         ImGui::KeepAliveID(id);

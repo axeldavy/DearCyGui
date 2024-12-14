@@ -111,8 +111,7 @@ def setup_package():
         "thirdparty/gl3w/GL/gl3w.c"
     ]
 
-    compile_args = ["-DIMGUI_DEFINE_MATH_OPERATORS",
-                    "-D_CRT_SECURE_NO_WARNINGS",
+    compile_args = ["-D_CRT_SECURE_NO_WARNINGS",
                     "-D_USE_MATH_DEFINES",
                     "-DIMGUI_IMPL_OPENGL_LOADER_SDL3",
                     "-DIMGUI_USER_CONFIG=\"imgui_config.h\""]
