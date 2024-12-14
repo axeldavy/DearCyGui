@@ -3604,7 +3604,9 @@ cdef class Tooltip(uiItem):
 
         cdef bint was_visible = self.state.cur.rendered
         cdef imgui.ImVec2 pos_w, pos_p
+        cdef imgui.ImVec2 content_min, content_max
         if display_condition and imgui.BeginTooltip():
+            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             if self.last_widgets_child is not None:
                 # We are in a popup window
                 pos_w = imgui.GetCursorScreenPos()
@@ -3615,7 +3617,7 @@ cdef class Tooltip(uiItem):
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
-            self.state.cur.content_region_size = imgui.GetWindowContentRegionMax() - imgui.GetWindowContentRegionMin()
+
             imgui.EndTooltip()
             self.update_current_state()
         else:
