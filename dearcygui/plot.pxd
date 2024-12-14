@@ -58,7 +58,6 @@ cdef class Plot(uiItem):
     cdef PlotAxisConfig _Y2
     cdef PlotAxisConfig _Y3
     cdef PlotLegendConfig _legend
-    cdef imgui.ImVec2 _content_pos
     cdef int _pan_button
     cdef imgui.ImGuiKeyChord _pan_modifier
     cdef int _fit_button

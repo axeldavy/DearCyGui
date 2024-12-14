@@ -1249,19 +1249,6 @@ cdef class Plot(uiItem):
         self._legend = value
 
     @property
-    def content_pos(self):
-        """
-        Readable attribute indicating the top left starting
-        position of the plot content in viewport coordinates.
-
-        The size of the plot content area is available with
-        content_size_avail.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self._content_pos)
-
-    @property
     def pan_button(self):
         """
         Button that when held enables to navigate inside the plot

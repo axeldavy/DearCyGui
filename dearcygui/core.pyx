@@ -4417,6 +4417,22 @@ cdef class uiItem(baseItem):
         lock_gil_friendly(m, self.mutex)
         return Coord.build_v(self.state.cur.content_region_size)
 
+    @property
+    def content_pos(self):
+        """
+        Readable attribute indicating the top left starting
+        position of the item's content in viewport coordinates.
+
+        Only available for items with a content area.
+        The size of the content area is available with
+        content_region_avail.
+        """
+        if not(self.state.cap.has_content_region):
+            raise AttributeError("Field undefined for type {}".format(type(self)))
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return Coord.build_v(self._content_pos)
+
     ### Positioning and size requests
 
     @property
@@ -5622,6 +5638,7 @@ cdef class Window(uiItem):
             self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             # Draw the window content
             self.context._viewport.window_pos = imgui.GetCursorScreenPos()
+            self._content_pos = self.context._viewport.window_pos
             self.context._viewport.parent_pos = self.context._viewport.window_pos # should we restore after ? TODO
 
             #if self.last_0_child is not None:
