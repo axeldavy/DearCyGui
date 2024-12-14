@@ -530,10 +530,10 @@ class KeyMod(IntFlag):
     Enum representing key modifiers (Ctrl, Shift, Alt, Super).
     """
     NOMOD = 0,
-    CTRL = imgui.ImGuiKey_ModCtrl,
-    SHIFT = imgui.ImGuiKey_ModShift,
-    ALT = imgui.ImGuiKey_ModAlt,
-    SUPER = imgui.ImGuiKey_ModSuper
+    CTRL = imgui.ImGuiMod_Ctrl,
+    SHIFT = imgui.ImGuiMod_Shift,
+    ALT = imgui.ImGuiMod_Alt,
+    SUPER = imgui.ImGuiMod_Super
 
 class KeyOrMod(IntFlag):
     """
@@ -694,7 +694,7 @@ class KeyOrMod(IntFlag):
     RESERVEDFORMODSHIFT = imgui.ImGuiKey_ReservedForModShift,
     RESERVEDFORMODALT = imgui.ImGuiKey_ReservedForModAlt,
     RESERVEDFORMODSUPER = imgui.ImGuiKey_ReservedForModSuper,
-    CTRL = imgui.ImGuiKey_ModCtrl,
-    SHIFT = imgui.ImGuiKey_ModShift,
-    ALT = imgui.ImGuiKey_ModAlt,
-    SUPER = imgui.ImGuiKey_ModSuper
+    CTRL = imgui.ImGuiMod_Ctrl,
+    SHIFT = imgui.ImGuiMod_Shift,
+    ALT = imgui.ImGuiMod_Alt,
+    SUPER = imgui.ImGuiMod_Super

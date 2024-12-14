@@ -4494,7 +4494,7 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.window_flags & imgui.ImGuiWindowFlags_NavFlattened) != 0
+        return (self.window_flags & imgui.ImGuiWindowFlags_NoScrollWithMouse) != 0
 
     @no_scroll_with_mouse.setter
     def no_scroll_with_mouse(self, bint value):
