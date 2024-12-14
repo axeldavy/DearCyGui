@@ -64,9 +64,6 @@ cdef inline void append_obj_vector(vector[PyObject *] &items, item_list):
         Py_INCREF(item)
         items.push_back(<PyObject*>item)
 
-cdef inline object IntPairFromVec2(imgui.ImVec2 v):
-    return (<int>v.x, <int>v.y)
-
 cdef class Context:
     cdef recursive_mutex mutex
     cdef atomic[long long] next_uuid

@@ -185,6 +185,8 @@ cdef class Coord:
     cdef double _y
     @staticmethod
     cdef Coord build(double[2] &coord)
+    @staticmethod
+    cdef Coord build_v(imgui.ImVec2 &coord)
 
 cdef class Rect:
     cdef double _x1

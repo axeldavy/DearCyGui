@@ -4307,7 +4307,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_viewport)
+        return Coord.build_v(self.state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -4332,7 +4332,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_window)
+        return Coord.build_v(self.state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -4357,7 +4357,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_parent)
+        return Coord.build_v(self.state.cur.pos_to_parent)
 
     @property
     def pos_to_default(self):
@@ -4378,7 +4378,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_default)
+        return Coord.build_v(self.state.cur.pos_to_default)
 
     @property
     def rect_size(self):
@@ -4397,7 +4397,7 @@ cdef class uiItem(baseItem):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.rect_size)
+        return Coord.build_v(self.state.cur.rect_size)
 
     @property
     def content_region_avail(self):
@@ -4415,7 +4415,7 @@ cdef class uiItem(baseItem):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.content_region_size)
+        return Coord.build_v(self.state.cur.content_region_size)
 
     ### Positioning and size requests
 
@@ -4496,7 +4496,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return <int>self.requested_size.y
+        return self.requested_size.y
 
     @property
     def width(self):
@@ -4528,7 +4528,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return <int>self.requested_size.x
+        return self.requested_size.x
 
     @property
     def indent(self):
@@ -4635,21 +4635,21 @@ cdef class uiItem(baseItem):
             self.pos_update_requested = True
 
     @height.setter
-    def height(self, int value):
+    def height(self, float value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.requested_size.y = <float>value
+        self.requested_size.y = value
         self.size_update_requested = True
 
     @width.setter
-    def width(self, int value):
+    def width(self, float value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.requested_size.x = <float>value
+        self.requested_size.x = value
         self.size_update_requested = True
 
     @indent.setter
-    def indent(self, int value):
+    def indent(self, float value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._indent = value
@@ -5474,7 +5474,7 @@ cdef class Window(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.min_size)
+        return Coord.build_v(self.min_size)
 
     @min_size.setter
     def min_size(self, value):
@@ -5490,7 +5490,7 @@ cdef class Window(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.max_size)
+        return Coord.build_v(self.max_size)
 
     @max_size.setter
     def max_size(self, value):

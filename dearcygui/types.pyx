@@ -359,6 +359,13 @@ cdef class Coord:
         item._y = coord[1]
         return item
 
+    @staticmethod
+    cdef Coord build_v(imgui.ImVec2 &coord):
+        cdef Coord item = Coord.__new__(Coord)
+        item._x = coord.x
+        item._y = coord.y
+        return item
+
 @cython.freelist(8)
 cdef class Rect:
     """

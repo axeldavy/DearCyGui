@@ -27,7 +27,7 @@ from libc.math cimport INFINITY
 
 from .core cimport baseHandler, drawingItem, uiItem, \
     lock_gil_friendly, read_point, clear_obj_vector, append_obj_vector, \
-    IntPairFromVec2, draw_drawing_children, draw_menubar_children, \
+    draw_drawing_children, draw_menubar_children, \
     draw_ui_children, \
     draw_tab_children, Callback, \
     Context, read_vec4, read_point, parse_color, \
@@ -361,7 +361,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_viewport)
+        return Coord.build_v(self.state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -372,7 +372,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_window)
+        return Coord.build_v(self.state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -382,7 +382,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.pos_to_parent)
+        return Coord.build_v(self.state.cur.pos_to_parent)
 
     @property
     def rect_size(self):
@@ -391,7 +391,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return IntPairFromVec2(self.state.cur.rect_size)
+        return Coord.build_v(self.state.cur.rect_size)
 
     @property
     def resized(self):
