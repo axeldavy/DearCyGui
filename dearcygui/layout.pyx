@@ -18,11 +18,11 @@ cimport cython
 from cpython.ref cimport PyObject
 
 from dearcygui.wrapper cimport imgui
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
-from libcpp.algorithm cimport swap
 from libcpp.cmath cimport floor
 
 from .core cimport uiItem, Callback, lock_gil_friendly
+from .imgui_types cimport *
+from .c_types cimport *
 from .types cimport *
 
 cdef class Layout(uiItem):
@@ -80,11 +80,11 @@ cdef class Layout(uiItem):
 
     # final enables inlining
     @cython.final
-    cdef imgui.ImVec2 update_content_area(self) noexcept nogil:
-        cdef imgui.ImVec2 full_content_area = self.context._viewport.parent_size
+    cdef Vec2 update_content_area(self) noexcept nogil:
+        cdef Vec2 full_content_area = self.context._viewport.parent_size
         full_content_area.x -= self.state.cur.pos_to_parent.x
         full_content_area.y -= self.state.cur.pos_to_parent.y
-        cdef imgui.ImVec2 cur_content_area
+        cdef Vec2 cur_content_area
         cdef float global_scale = self.context._viewport.global_scale
         if not(self.dpi_scaling):
             global_scale = 1.
@@ -119,9 +119,9 @@ cdef class Layout(uiItem):
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
-        cdef imgui.ImVec2 prev_content_area = self.state.prev.content_region_size
-        cdef imgui.ImVec2 cur_spacing = imgui.GetStyle().ItemSpacing
+        cdef Vec2 cur_content_area = self.state.cur.content_region_size
+        cdef Vec2 prev_content_area = self.state.prev.content_region_size
+        cdef Vec2 cur_spacing = ImVec2Vec2(imgui.GetStyle().ItemSpacing)
         cdef bint changed = False
         if cur_content_area.x != prev_content_area.x or \
            cur_content_area.y != prev_content_area.y or \
@@ -153,7 +153,7 @@ cdef class Layout(uiItem):
         """
         if self.last_widgets_child is None:
             return
-        cdef imgui.ImVec2 parent_size_backup = self.context._viewport.parent_size
+        cdef Vec2 parent_size_backup = self.context._viewport.parent_size
         self.context._viewport.parent_size = self.state.cur.content_region_size
         cdef PyObject *child = <PyObject*> self.last_widgets_child
         while (<uiItem>child)._prev_sibling is not None:
@@ -173,10 +173,10 @@ cdef class Layout(uiItem):
         cdef bint changed = self.check_change()
         imgui.PushID(self.uuid)
         imgui.BeginGroup()
-        cdef imgui.ImVec2 pos_p
+        cdef Vec2 pos_p
         if self.last_widgets_child is not None:
-            pos_p = imgui.GetCursorScreenPos()
-            swap(pos_p, self.context._viewport.parent_pos)
+            pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+            swap_Vec2(pos_p, self.context._viewport.parent_pos)
             self.draw_children()
             self.context._viewport.parent_pos = pos_p
         #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
@@ -447,10 +447,10 @@ cdef class HorizontalLayout(Layout):
             self.__update_layout()
         imgui.PushID(self.uuid)
         imgui.BeginGroup()
-        cdef imgui.ImVec2 pos_p
+        cdef Vec2 pos_p
         if self.last_widgets_child is not None:
-            pos_p = imgui.GetCursorScreenPos()
-            swap(pos_p, self.context._viewport.parent_pos)
+            pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+            swap_Vec2(pos_p, self.context._viewport.parent_pos)
             self.draw_children()
             self.context._viewport.parent_pos = pos_p
         if changed:
@@ -665,10 +665,10 @@ cdef class VerticalLayout(Layout):
             self.__update_layout()
         imgui.PushID(self.uuid)
         imgui.BeginGroup()
-        cdef imgui.ImVec2 pos_p
+        cdef Vec2 pos_p
         if self.last_widgets_child is not None:
-            pos_p = imgui.GetCursorScreenPos()
-            swap(pos_p, self.context._viewport.parent_pos)
+            pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+            swap_Vec2(pos_p, self.context._viewport.parent_pos)
             self.draw_children()
             self.context._viewport.parent_pos = pos_p
         if changed:
@@ -712,9 +712,9 @@ cdef class WindowLayout(uiItem):
 
     # final enables inlining
     @cython.final
-    cdef imgui.ImVec2 update_content_area(self) noexcept nogil:
-        cdef imgui.ImVec2 full_content_area = self.context._viewport.parent_size
-        cdef imgui.ImVec2 cur_content_area
+    cdef Vec2 update_content_area(self) noexcept nogil:
+        cdef Vec2 full_content_area = self.context._viewport.parent_size
+        cdef Vec2 cur_content_area
         full_content_area.x -= self.state.cur.pos_to_viewport.x
         full_content_area.y -= self.state.cur.pos_to_viewport.y
         cdef float global_scale = self.context._viewport.global_scale
@@ -750,9 +750,9 @@ cdef class WindowLayout(uiItem):
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
-        cdef imgui.ImVec2 prev_content_area = self.state.prev.content_region_size
-        cdef imgui.ImVec2 cur_spacing = imgui.ImVec2(0., 0.)
+        cdef Vec2 cur_content_area = self.state.cur.content_region_size
+        cdef Vec2 prev_content_area = self.state.prev.content_region_size
+        cdef Vec2 cur_spacing = make_Vec2(0., 0.)
         cdef bint changed = False
         if cur_content_area.x != prev_content_area.x or \
            cur_content_area.y != prev_content_area.y or \
@@ -787,13 +787,12 @@ cdef class WindowLayout(uiItem):
         """
         if self.last_window_child is None:
             return
-        cdef imgui.ImVec2 parent_size_backup = self.context._viewport.parent_size
+        cdef Vec2 parent_size_backup = self.context._viewport.parent_size
         self.context._viewport.parent_size = self.state.cur.content_region_size
-        cdef imgui.ImVec2 cursor_pos_backup = self.context._viewport.window_cursor
-        cdef imgui.ImVec2 pos_min, pos_max
-        pos_min = imgui.ImVec2(self.context._viewport.platform.frameWidth,
-                               self.context._viewport.platform.frameHeight)
-        pos_max = imgui.ImVec2(0, 0)
+        cdef Vec2 cursor_pos_backup = self.context._viewport.window_cursor
+        cdef Vec2 pos_min, pos_max
+        pos_min = self.context._viewport.get_size()
+        pos_max = make_Vec2(0, 0)
         cdef PyObject *child = <PyObject*> self.last_window_child
         while (<uiItem>child)._prev_sibling is not None:
             child = <PyObject *>(<uiItem>child)._prev_sibling
@@ -826,8 +825,8 @@ cdef class WindowLayout(uiItem):
             self.__update_layout()
 
         cdef Positioning[2] policy = self._pos_policy
-        cdef imgui.ImVec2 cursor_pos_backup = self.context._viewport.window_cursor
-        cdef imgui.ImVec2 pos_p, pos = cursor_pos_backup
+        cdef Vec2 cursor_pos_backup = self.context._viewport.window_cursor
+        cdef Vec2 pos_p, pos = cursor_pos_backup
         if policy[0] == Positioning.REL_DEFAULT:
             pos.x += self.state.cur.pos_to_default.x
         elif policy[0] == Positioning.REL_PARENT:
@@ -849,7 +848,7 @@ cdef class WindowLayout(uiItem):
 
         if self.last_window_child is not None:
             pos_p = pos
-            swap(pos_p, self.context._viewport.parent_pos)
+            swap_Vec2(pos_p, self.context._viewport.parent_pos)
             self.context._viewport.window_pos = self.context._viewport.parent_pos
             self.draw_children()
             self.context._viewport.parent_pos = pos_p

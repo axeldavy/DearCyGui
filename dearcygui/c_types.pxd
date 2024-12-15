@@ -1,3 +1,54 @@
+cdef extern from * nogil:
+    """
+    struct float2 {
+        float p[2];
+    };
+    typedef struct float2 float2;
+    struct Vec2 {
+        float x;
+        float y;
+    };
+    typedef struct Vec2 Vec2;
+    struct Vec4 {
+        float x;
+        float y;
+        float z;
+        float w;
+    };
+    typedef struct Vec4 Vec4;
+    struct double2 {
+        double p[2];
+    };
+    typedef struct double2 double2;
+    """
+    ctypedef struct float2:
+        float[2] p
+    ctypedef struct Vec2:
+        float x
+        float y
+    ctypedef struct Vec4:
+        float x
+        float y
+        float z
+        float w
+    ctypedef struct double2:
+        double[2] p
+
+cdef inline Vec2 make_Vec2(float x, float y) noexcept nogil:
+    cdef Vec2 v
+    v.x = x
+    v.y = y
+    return v
+
+cdef inline void swap_Vec2(Vec2 &a, Vec2 &b) noexcept nogil:
+    cdef float x, y
+    x = a.x
+    y = a.y
+    a.x = b.x
+    a.y = b.y
+    b.x = x
+    b.y = y
+
 # generated with pxdgen /usr/include/c++/11/mutex -x c++
 
 cdef extern from "<mutex>" namespace "std" nogil:
@@ -64,4 +115,3 @@ cdef extern from "<mutex>" namespace "std" nogil:
         bint owns_lock()
         mutex_type* mutex()
     void swap[_Mutex](unique_lock[_Mutex]&, unique_lock[_Mutex]&)
-    

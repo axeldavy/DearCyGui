@@ -1,4 +1,3 @@
-from dearcygui.wrapper cimport imgui, implot
 from .core cimport baseItem, baseFont, itemState, \
     plotElement, uiItem, Callback, baseHandler
 from .types cimport *
@@ -17,9 +16,9 @@ cdef class AxesResizeHandler(baseHandler):
 
 cdef class PlotAxisConfig(baseItem):
     cdef bint _enabled
-    cdef AxisScale _scale
+    cdef int _scale # AxisScale
     cdef string _tick_format
-    cdef implot.ImPlotAxisFlags flags
+    cdef int flags # implot.ImPlotAxisFlags
     cdef double _min
     cdef double _max
     cdef double prev_min
@@ -38,15 +37,15 @@ cdef class PlotAxisConfig(baseItem):
     cdef vector[string] _labels
     cdef vector[const char*] _labels_cstr
     cdef vector[double] _labels_coord
-    cdef void setup(self, implot.ImAxis) noexcept nogil
-    cdef void after_setup(self, implot.ImAxis) noexcept nogil
-    cdef void after_plot(self, implot.ImAxis) noexcept nogil
+    cdef void setup(self, int) noexcept nogil # implot.ImAxis
+    cdef void after_setup(self, int) noexcept nogil # implot.ImAxis
+    cdef void after_plot(self, int) noexcept nogil # implot.ImAxis
     cdef void set_hidden(self) noexcept nogil
 
 cdef class PlotLegendConfig(baseItem):
     cdef bint _show
-    cdef LegendLocation _location
-    cdef implot.ImPlotLegendFlags flags
+    cdef int _location # LegendLocation
+    cdef int flags # implot.ImPlotLegendFlags
     cdef void setup(self) noexcept nogil
     cdef void after_setup(self) noexcept nogil
 
@@ -59,16 +58,16 @@ cdef class Plot(uiItem):
     cdef PlotAxisConfig _Y3
     cdef PlotLegendConfig _legend
     cdef int _pan_button
-    cdef imgui.ImGuiKeyChord _pan_modifier
+    cdef int _pan_modifier # imgui.ImGuiKeyChord
     cdef int _fit_button
     cdef int _menu_button
-    cdef imgui.ImGuiKeyChord _override_mod
-    cdef imgui.ImGuiKeyChord _zoom_mod
+    cdef int _override_mod # imgui.ImGuiKeyChord
+    cdef int _zoom_mod # imgui.ImGuiKeyChord
     cdef float _zoom_rate
     cdef bint _use_local_time
     cdef bint _use_ISO8601
     cdef bint _use_24hour_clock
-    cdef implot.ImPlotFlags flags
+    cdef int flags # implot.ImPlotFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class plotElementWithLegend(plotElement):

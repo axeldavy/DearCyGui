@@ -19,8 +19,6 @@ from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy, memset
 
 from dearcygui.wrapper cimport imgui, implot
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
-from libcpp.algorithm cimport swap
 from libcpp.cmath cimport trunc
 from libcpp.string cimport string
 from libc.math cimport INFINITY
@@ -30,8 +28,11 @@ from .core cimport baseHandler, drawingItem, uiItem, \
     draw_drawing_children, draw_menubar_children, \
     draw_ui_children, \
     draw_tab_children, Callback, \
-    Context, read_vec4, read_point, parse_color, \
-    unparse_color, SharedValue, update_current_mouse_states
+    Context, read_vec4, read_point, \
+    SharedValue, update_current_mouse_states
+from .c_types cimport *
+from .imgui_types cimport unparse_color, parse_color, Vec2ImVec2, \
+    Vec4ImVec4, ImVec2Vec2, ImVec4Vec4, ButtonDirection
 from .types cimport *
 
 import numpy as np
@@ -452,7 +453,7 @@ cdef class DrawInvisibleButton(drawingItem):
         self._capture_mouse = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -499,8 +500,8 @@ cdef class DrawInvisibleButton(drawingItem):
         top_left.y = center.y - size.y * 0.5
         bottom_right.y = top_left.y + size.y
         # Update rect and position size
-        self.state.cur.rect_size = size
-        self.state.cur.pos_to_viewport = top_left
+        self.state.cur.rect_size = ImVec2Vec2(size)
+        self.state.cur.pos_to_viewport = ImVec2Vec2(top_left)
         self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
         self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
         self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
@@ -544,7 +545,7 @@ cdef class DrawInvisibleButton(drawingItem):
             mouse_down = True
 
 
-        cdef imgui.ImVec2 cur_mouse_pos
+        cdef Vec2 cur_mouse_pos
         cdef implot.ImPlotPoint cur_mouse_pos_plot
 
         cdef bool hovered = False
@@ -573,7 +574,7 @@ cdef class DrawInvisibleButton(drawingItem):
                 cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
                 self.initial_mouse_position = cur_mouse_pos
             else:
-                self.initial_mouse_position = imgui.GetMousePos()
+                self.initial_mouse_position = ImVec2Vec2(imgui.GetMousePos())
         cdef bint dragging = False
         cdef int i
         if self.state.cur.active:
@@ -583,7 +584,7 @@ cdef class DrawInvisibleButton(drawingItem):
                 cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
                 cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
             else:
-                cur_mouse_pos = imgui.GetMousePos()
+                cur_mouse_pos = ImVec2Vec2(imgui.GetMousePos())
             dragging = cur_mouse_pos.x != self.initial_mouse_position.x or \
                        cur_mouse_pos.y != self.initial_mouse_position.y
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
@@ -647,7 +648,7 @@ cdef class DrawInWindow(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         # negative width is used to indicate UI alignment
-        cdef imgui.ImVec2 requested_size = self.scaled_requested_size()
+        cdef Vec2 requested_size = self.scaled_requested_size()
         cdef float clip_width = abs(requested_size.x)
         if clip_width == 0:
             clip_width = imgui.CalcItemWidth()
@@ -662,7 +663,7 @@ cdef class DrawInWindow(uiItem):
 
         # Reset current drawInfo
         self.context._viewport.in_plot = False
-        self.context._viewport.parent_pos = imgui.GetCursorScreenPos()
+        self.context._viewport.parent_pos = ImVec2Vec2(imgui.GetCursorScreenPos())
         self.context._viewport.shifts[0] = <double>startx
         self.context._viewport.shifts[1] = <double>starty
         cdef double scale = <double>self.context._viewport.global_scale if self.dpi_scaling else 1.
@@ -807,7 +808,7 @@ cdef class SimplePlot(uiItem):
                                 self._overlay.c_str(),
                                 self._scale_min,
                                 self._scale_max,
-                                self.scaled_requested_size(),
+                                Vec2ImVec2(self.scaled_requested_size()),
                                 sizeof(float))
         else:
             imgui.PlotLines(self.imgui_label.c_str(),
@@ -817,7 +818,7 @@ cdef class SimplePlot(uiItem):
                             self._overlay.c_str(),
                             self._scale_min,
                             self._scale_max,
-                            self.scaled_requested_size(),
+                            Vec2ImVec2(self.scaled_requested_size()),
                             sizeof(float))
         self.update_current_state()
         return False
@@ -906,10 +907,10 @@ cdef class Button(uiItem):
         if self._small:
             activated = imgui.SmallButton(self.imgui_label.c_str())
         elif self._arrow:
-            activated = imgui.ArrowButton(self.imgui_label.c_str(), self._direction)
+            activated = imgui.ArrowButton(self.imgui_label.c_str(), <imgui.ImGuiDir>self._direction)
         else:
             activated = imgui.Button(self.imgui_label.c_str(),
-                                     self.scaled_requested_size())
+                                     Vec2ImVec2(self.scaled_requested_size()))
         imgui.PopItemFlag()
         self.update_current_state()
         SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
@@ -1100,7 +1101,7 @@ cdef class Combo(uiItem):
                     pressed |= imgui.Selectable(self._items[i].c_str(),
                                                 &selected,
                                                 imgui.ImGuiSelectableFlags_None,
-                                                self.scaled_requested_size())
+                                                Vec2ImVec2(self.scaled_requested_size()))
                     if selected:
                         imgui.SetItemDefaultFocus()
                     if selected and selected != selected_backup:
@@ -1112,7 +1113,7 @@ cdef class Combo(uiItem):
                 imgui.Selectable(current_value.c_str(),
                                  &selected,
                                  imgui.ImGuiSelectableFlags_Disabled,
-                                 self.scaled_requested_size())
+                                 Vec2ImVec2(self.scaled_requested_size()))
             imgui.PopID()
             imgui.EndCombo()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
@@ -1548,7 +1549,7 @@ cdef class Slider(uiItem):
             if self._size == 1:
                 if self._vertical:
                     modified = imgui.VSliderScalar(self.imgui_label.c_str(),
-                                                   GetDefaultItemSize(self.scaled_requested_size()),
+                                                   GetDefaultItemSize(Vec2ImVec2(self.scaled_requested_size())),
                                                    type,
                                                    data,
                                                    data_min,
@@ -1699,7 +1700,7 @@ cdef class ListBox(uiItem):
                     pressed |= imgui.Selectable(self._items[i].c_str(),
                                                 &selected,
                                                 imgui.ImGuiSelectableFlags_None,
-                                                self.scaled_requested_size())
+                                                Vec2ImVec2(self.scaled_requested_size()))
                     if selected:
                         imgui.SetItemDefaultFocus()
                     if selected and selected != selected_backup:
@@ -1712,7 +1713,7 @@ cdef class ListBox(uiItem):
                 imgui.Selectable(current_value.c_str(),
                                  &selected,
                                  imgui.ImGuiSelectableFlags_Disabled,
-                                 self.scaled_requested_size())
+                                 Vec2ImVec2(self.scaled_requested_size()))
             imgui.PopID()
             imgui.EndListBox()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
@@ -2192,7 +2193,7 @@ cdef class InputText(uiItem):
                 self.imgui_label.c_str(),
                 self._buffer,
                 self._max_characters+1,
-                self.scaled_requested_size(),
+                Vec2ImVec2(self.scaled_requested_size()),
                 flags)
         elif self._hint.empty():
             changed = imgui.InputText(
@@ -3028,7 +3029,7 @@ cdef class Selectable(uiItem):
         cdef bint changed = imgui.Selectable(self.imgui_label.c_str(),
                                              &checked,
                                              flags,
-                                             self.scaled_requested_size())
+                                             Vec2ImVec2(self.scaled_requested_size()))
         if self._enabled:
             SharedBool.set(<SharedBool>self._value, checked)
         self.update_current_state()
@@ -3117,7 +3118,7 @@ cdef class ProgressBar(uiItem):
         cdef const char *overlay_text = self._overlay.c_str()
         imgui.PushID(self.uuid)
         imgui.ProgressBar(current_value,
-                          self.scaled_requested_size(),
+                          Vec2ImVec2(self.scaled_requested_size()),
                           <const char *>NULL if self._overlay.size() == 0 else overlay_text)
         imgui.PopID()
         self.update_current_state()
@@ -3188,7 +3189,7 @@ cdef class Image(uiItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self._texture.mutex)
         if self._texture.allocated_texture == NULL:
             return False
-        cdef imgui.ImVec2 size = self.scaled_requested_size()
+        cdef Vec2 size = self.scaled_requested_size()
         if size.x == 0.:
             size.x = self._texture._width * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
         if size.y == 0.:
@@ -3196,7 +3197,7 @@ cdef class Image(uiItem):
 
         imgui.PushID(self.uuid)
         imgui.Image(<imgui.ImTextureID>self._texture.allocated_texture,
-                    size,
+                    Vec2ImVec2(size),
                     imgui.ImVec2(self._uv[0], self._uv[1]),
                     imgui.ImVec2(self._uv[2], self._uv[3]),
                     imgui.ColorConvertU32ToFloat4(self._color_multiplier),
@@ -3217,6 +3218,7 @@ cdef class ImageButton(uiItem):
         self._background_color = 0
         self._color_multiplier = 4294967295
         self._frame_padding = -1
+        self._uv = [0., 0., 1., 1.]
 
     @property
     def texture(self):
@@ -3282,7 +3284,7 @@ cdef class ImageButton(uiItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self._texture.mutex)
         if self._texture.allocated_texture == NULL:
             return False
-        cdef imgui.ImVec2 size = self.scaled_requested_size()
+        cdef Vec2 size = self.scaled_requested_size()
         if size.x == 0.:
             size.x = self._texture._width * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
         if size.y == 0.:
@@ -3296,11 +3298,11 @@ cdef class ImageButton(uiItem):
         cdef bint activated
         activated = imgui.ImageButton(self.imgui_label.c_str(),
                                       <imgui.ImTextureID>self._texture.allocated_texture,
-                                      size,
+                                      Vec2ImVec2(size),
                                       imgui.ImVec2(self._uv[0], self._uv[1]),
                                       imgui.ImVec2(self._uv[2], self._uv[3]),
-                                      imgui.ColorConvertU32ToFloat4(self._color_multiplier),
-                                      imgui.ColorConvertU32ToFloat4(self._background_color))
+                                      imgui.ColorConvertU32ToFloat4(self._background_color),
+                                      imgui.ColorConvertU32ToFloat4(self._color_multiplier))
         if self._frame_padding >= 0:
             imgui.PopStyleVar(1)
         imgui.PopID()
@@ -3338,7 +3340,7 @@ cdef class Separator(uiItem):
             imgui.Separator()
         else:
             imgui.SeparatorText(self.imgui_label.c_str())
-        self.state.cur.rect_size = imgui.GetItemRectSize()
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         return False
 
 cdef class Spacer(uiItem):
@@ -3350,8 +3352,8 @@ cdef class Spacer(uiItem):
             imgui.Spacing()
             # TODO rect_size
         else:
-            imgui.Dummy(self.scaled_requested_size())
-        self.state.cur.rect_size = imgui.GetItemRectSize()
+            imgui.Dummy(Vec2ImVec2(self.scaled_requested_size()))
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         return False
 
 cdef class MenuBar(uiItem):
@@ -3402,16 +3404,16 @@ cdef class MenuBar(uiItem):
             menu_allowed = imgui.BeginMainMenuBar()
         else:
             menu_allowed = imgui.BeginMenuBar()
-        cdef imgui.ImVec2 pos_w, pos_p, parent_size_backup
+        cdef Vec2 pos_w, pos_p, parent_size_backup
         if menu_allowed:
             self.update_current_state()
-            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
+            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             if self.last_widgets_child is not None:
                 # We are at the top of the window, but behave as if popup
-                pos_w = imgui.GetCursorScreenPos()
+                pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                 pos_p = pos_w
-                swap(pos_w, self.context._viewport.window_pos)
-                swap(pos_p, self.context._viewport.parent_pos)
+                swap_Vec2(pos_w, self.context._viewport.window_pos)
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
@@ -3465,7 +3467,7 @@ cdef class Menu(uiItem):
         cdef bint menu_open = imgui.BeginMenu(self.imgui_label.c_str(),
                                               self._enabled)
         self.update_current_state()
-        cdef imgui.ImVec2 pos_w, pos_p, parent_size_backup
+        cdef Vec2 pos_w, pos_p, parent_size_backup
         if menu_open:
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
@@ -3473,10 +3475,10 @@ cdef class Menu(uiItem):
             self.state.cur.rect_size.y = imgui.GetWindowHeight()
             if self.last_widgets_child is not None:
                 # We are in a separate window
-                pos_w = imgui.GetCursorScreenPos()
+                pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                 pos_p = pos_w
-                swap(pos_w, self.context._viewport.window_pos)
-                swap(pos_p, self.context._viewport.parent_pos)
+                swap_Vec2(pos_w, self.context._viewport.window_pos)
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
@@ -3610,17 +3612,17 @@ cdef class Tooltip(uiItem):
             display_condition = False
 
         cdef bint was_visible = self.state.cur.rendered
-        cdef imgui.ImVec2 pos_w, pos_p, parent_size_backup
-        cdef imgui.ImVec2 content_min, content_max
+        cdef Vec2 pos_w, pos_p, parent_size_backup
+        cdef Vec2 content_min, content_max
         if display_condition and imgui.BeginTooltip():
-            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
+            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             if self.last_widgets_child is not None:
                 # We are in a popup window
-                pos_w = imgui.GetCursorScreenPos()
+                pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                 pos_p = pos_w
                 self._content_pos = pos_w
-                swap(pos_w, self.context._viewport.window_pos)
-                swap(pos_p, self.context._viewport.parent_pos)
+                swap_Vec2(pos_w, self.context._viewport.window_pos)
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
@@ -3850,11 +3852,11 @@ cdef class Tab(uiItem):
         if not(self._show):
             self.show_update_requested = True
         self.update_current_state()
-        cdef imgui.ImVec2 pos_p, parent_size_backup
+        cdef Vec2 pos_p, parent_size_backup
         if menu_open:
             if self.last_widgets_child is not None:
-                pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context._viewport.parent_pos)
+                pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size # unsure
                 draw_ui_children(self)
@@ -4040,11 +4042,11 @@ cdef class TabBar(uiItem):
         cdef bint visible = imgui.BeginTabBar(self.imgui_label.c_str(),
                                               self.flags)
         self.update_current_state()
-        cdef imgui.ImVec2 pos_p
+        cdef Vec2 pos_p
         if visible:
             if self.last_tab_child is not None:
-                pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context._viewport.parent_pos)
+                pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 draw_tab_children(self)
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTabBar()
@@ -4237,11 +4239,11 @@ cdef class TreeNode(uiItem):
             SharedBool.set(<SharedBool>self._value, False)
             self.state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
-        cdef imgui.ImVec2 pos_p, parent_size_backup
+        cdef Vec2 pos_p, parent_size_backup
         if open_and_visible:
             if self.last_widgets_child is not None:
-                pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context._viewport.parent_pos)
+                pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
@@ -4379,11 +4381,11 @@ cdef class CollapsingHeader(uiItem):
             SharedBool.set(<SharedBool>self._value, False)
             self.state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
-        cdef imgui.ImVec2 pos_p, parent_size_backup
+        cdef Vec2 pos_p, parent_size_backup
         if open_and_visible:
             if self.last_widgets_child is not None:
-                pos_p = imgui.GetCursorScreenPos()
-                swap(pos_p, self.context._viewport.parent_pos)
+                pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+                swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
@@ -4735,8 +4737,8 @@ cdef class ChildWindow(uiItem):
         cdef imgui.ImGuiWindowFlags flags = self.window_flags
         if self.last_menubar_child is not None:
             flags |= imgui.ImGuiWindowFlags_MenuBar
-        cdef imgui.ImVec2 pos_p, pos_w, parent_size_backup
-        cdef imgui.ImVec2 requested_size = self.scaled_requested_size()
+        cdef Vec2 pos_p, pos_w, parent_size_backup
+        cdef Vec2 requested_size = self.scaled_requested_size()
         cdef imgui.ImGuiChildFlags child_flags = self.child_flags
         # Else they have no effect
         if child_flags & imgui.ImGuiChildFlags_AutoResizeX:
@@ -4751,15 +4753,15 @@ cdef class ChildWindow(uiItem):
             if (child_flags & (imgui.ImGuiChildFlags_AutoResizeX | imgui.ImGuiChildFlags_AutoResizeY)) == 0:
                 child_flags &= ~imgui.ImGuiChildFlags_AlwaysAutoResize
         if imgui.BeginChild(self.imgui_label.c_str(),
-                            requested_size,
+                            Vec2ImVec2(requested_size),
                             child_flags,
                             flags):
-            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
-            pos_p = imgui.GetCursorScreenPos()
+            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
             pos_w = pos_p
             self._content_pos = pos_p
-            swap(pos_p, self.context._viewport.parent_pos)
-            swap(pos_w, self.context._viewport.window_pos)
+            swap_Vec2(pos_p, self.context._viewport.parent_pos)
+            swap_Vec2(pos_w, self.context._viewport.window_pos)
             parent_size_backup = self.context._viewport.parent_size
             self.context._viewport.parent_size = self.state.cur.content_region_size
             draw_ui_children(self)
@@ -4770,7 +4772,7 @@ cdef class ChildWindow(uiItem):
             self.state.cur.rendered = True
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self.state.cur.rect_size = imgui.GetWindowSize()
+            self.state.cur.rect_size = ImVec2Vec2(imgui.GetWindowSize())
             update_current_mouse_states(self.state)
             # TODO scrolling
             # The sizing of windows might not converge right away
@@ -4865,11 +4867,11 @@ cdef class ColorButton(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint activated
-        cdef imgui.ImVec4 col = SharedColor.getF4(<SharedColor>self._value)
+        cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
         activated = imgui.ColorButton(self.imgui_label.c_str(),
-                                      col,
+                                      Vec4ImVec4(col),
                                       self.flags,
-                                      self.scaled_requested_size())
+                                      Vec2ImVec2(self.scaled_requested_size()))
         self.update_current_state()
         SharedColor.setF4(<SharedColor>self._value, col)
         return activated
@@ -5026,13 +5028,13 @@ cdef class ColorEdit(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint activated
-        cdef imgui.ImVec4 col = SharedColor.getF4(<SharedColor>self._value)
+        cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
         cdef float[4] color = [col.x, col.y, col.z, col.w]
         activated = imgui.ColorEdit4(self.imgui_label.c_str(),
                                       color,
                                       self.flags)
         self.update_current_state()
-        col = imgui.ImVec4(color[0], color[1], color[2], color[3])
+        col = ImVec4Vec4(imgui.ImVec4(color[0], color[1], color[2], color[3]))
         SharedColor.setF4(<SharedColor>self._value, col)
         return activated
 
@@ -5154,14 +5156,14 @@ cdef class ColorPicker(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint activated
-        cdef imgui.ImVec4 col = SharedColor.getF4(<SharedColor>self._value)
+        cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
         cdef float[4] color = [col.x, col.y, col.z, col.w]
         activated = imgui.ColorPicker4(self.imgui_label.c_str(),
                                        color,
                                        self.flags,
                                        NULL) # ref_col ??
         self.update_current_state()
-        col = imgui.ImVec4(color[0], color[1], color[2], color[3])
+        col = ImVec4Vec4(imgui.ImVec4(color[0], color[1], color[2], color[3]))
         SharedColor.setF4(<SharedColor>self._value, col)
         return activated
 
@@ -5245,7 +5247,7 @@ cdef class SharedInt(SharedValue):
 cdef class SharedColor(SharedValue):
     def __init__(self, Context context, value):
         self._value = parse_color(value)
-        self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+        self._value_asfloat4 = ImVec4Vec4(imgui.ColorConvertU32ToFloat4(self._value))
         self._num_attached = 0
     @property
     def value(self):
@@ -5260,23 +5262,23 @@ cdef class SharedColor(SharedValue):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._value = parse_color(value)
-        self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+        self._value_asfloat4 = ImVec4Vec4(imgui.ColorConvertU32ToFloat4(self._value))
         self.on_update(True)
-    cdef imgui.ImU32 getU32(self) noexcept nogil:
+    cdef unsigned int getU32(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value
-    cdef imgui.ImVec4 getF4(self) noexcept nogil:
+    cdef Vec4 getF4(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return self._value_asfloat4
-    cdef void setU32(self, imgui.ImU32 value) noexcept nogil:
+    cdef void setU32(self, unsigned int value) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value = value
-        self._value_asfloat4 = imgui.ColorConvertU32ToFloat4(self._value)
+        self._value_asfloat4 = ImVec4Vec4(imgui.ColorConvertU32ToFloat4(self._value))
         self.on_update(True)
-    cdef void setF4(self, imgui.ImVec4 value) noexcept nogil:
+    cdef void setF4(self, Vec4 value) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         self._value_asfloat4 = value
-        self._value = imgui.ColorConvertFloat4ToU32(self._value_asfloat4)
+        self._value = imgui.ColorConvertFloat4ToU32(Vec4ImVec4(self._value_asfloat4))
         self.on_update(True)
 
 cdef class SharedDouble(SharedValue):

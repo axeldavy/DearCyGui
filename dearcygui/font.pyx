@@ -21,10 +21,10 @@ from libcpp.deque cimport deque
 cimport cython
 cimport cython.view
 from dearcygui.wrapper cimport imgui
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 
 from .core cimport baseFont, baseItem, Texture, Callback, \
     lock_gil_friendly, clear_obj_vector, append_obj_vector
+from .c_types cimport *
 from .types cimport *
 
 from libc.stdint cimport uintptr_t
@@ -105,7 +105,7 @@ cdef class Font(baseFont):
         """Readonly attribute: native height of characters"""
         if self.font == NULL:
             raise ValueError("Uninitialized font")
-        return self.font.FontSize
+        return (<imgui.ImFont*>self.font).FontSize
 
     @property
     def scale(self):
@@ -144,10 +144,11 @@ cdef class Font(baseFont):
         if self.font == NULL:
             return
         self.mutex.lock()
-        self.scales_backup.push_back(self.font.Scale)
-        self.font.Scale = \
+        cdef imgui.ImFont *font = <imgui.ImFont*>self.font
+        self.scales_backup.push_back(font.Scale)
+        font.Scale = \
             (self.context._viewport.global_scale if self.dpi_scaling else 1.) * self._scale
-        imgui.PushFont(self.font)
+        imgui.PushFont(font)
 
     cdef void pop(self) noexcept nogil:
         if self.font == NULL:
@@ -156,7 +157,8 @@ cdef class Font(baseFont):
         # was already this font, then PopFont will apply
         # the Font again, but the Scale is incorrect if
         # we don't restore it first.
-        self.font.Scale = self.scales_backup.back()
+        cdef imgui.ImFont *font = <imgui.ImFont*>self.font
+        font.Scale = self.scales_backup.back()
         self.scales_backup.pop_back()
         imgui.PopFont()
         self.mutex.unlock()
@@ -461,13 +463,15 @@ cdef class FontTexture(baseItem):
     def __cinit__(self, context, *args, **kwargs):
         self._built = False
         self.can_have_sibling = False
-        self.atlas = imgui.ImFontAtlas()
+        self.atlas = <void*>(new imgui.ImFontAtlas())
         self._texture = Texture(context)
         self.fonts_files = []
         self.fonts = []
 
     def __delalloc__(self):
-        self.atlas.Clear() # Unsure if needed
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        atlas.Clear() # Unsure if needed
+        del atlas
 
     def add_font_file(self,
                       str path,
@@ -493,6 +497,7 @@ cdef class FontTexture(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
         if self._built:
             raise ValueError("Cannot add Font to built FontTexture")
         if not(os.path.exists(path)):
@@ -515,7 +520,7 @@ cdef class FontTexture(baseItem):
         config.FontNo = index_in_file
         config.FontDataOwnedByAtlas = False
         cdef imgui.ImFont *font = \
-            self.atlas.AddFontFromMemoryTTF(<void*>&font_data_u8[0],
+            atlas.AddFontFromMemoryTTF(<void*>&font_data_u8[0],
                                             font_data_u8.shape[0],
                                             size,
                                             &config,
@@ -537,6 +542,7 @@ cdef class FontTexture(baseItem):
         this might not be true in the future, thus
         you should still call build().
         """
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
         if self._built:
             raise ValueError("Cannot add Font to built FontTexture")
 
@@ -549,7 +555,7 @@ cdef class FontTexture(baseItem):
         # Imgui currently requires a font
         # to be able to add custom glyphs
         cdef imgui.ImFont *font = \
-            self.atlas.AddFontDefault(&config)
+            atlas.AddFontDefault(&config)
 
         keys = sorted(glyph_set.images.keys())
         cdef float x, y, advance
@@ -559,7 +565,7 @@ cdef class FontTexture(baseItem):
             h = image.shape[0] + 1
             w = image.shape[1] + 1
             (y, x, advance) = glyph_set.positioning[key]
-            j = self.atlas.AddCustomRectFontGlyph(font,
+            j = atlas.AddCustomRectFontGlyph(font,
                                              int(key),
                                              w, h,
                                              advance,
@@ -572,7 +578,7 @@ cdef class FontTexture(baseItem):
         self.fonts.append(font_object)
 
         # build
-        if not(self.atlas.Build()):
+        if not(atlas.Build()):
             raise RuntimeError("Failed to build target texture data")
         # Retrieve the target buffer
         cdef unsigned char *data = NULL
@@ -583,10 +589,10 @@ cdef class FontTexture(baseItem):
                 if image.shape[2] != 4:
                     raise ValueError("Color data must be rgba (4 channels)")
                 use_color = True
-        if self.atlas.TexPixelsUseColors or use_color:
-            self.atlas.GetTexDataAsRGBA32(&data, &width, &height, &bpp)
+        if atlas.TexPixelsUseColors or use_color:
+            atlas.GetTexDataAsRGBA32(&data, &width, &height, &bpp)
         else:
-            self.atlas.GetTexDataAsAlpha8(&data, &width, &height, &bpp)
+            atlas.GetTexDataAsAlpha8(&data, &width, &height, &bpp)
 
         # write our font characters at the target location
         cdef cython.view.array data_array = cython.view.array(shape=(height, width, bpp), itemsize=1, format='B', mode='c', allocate_buffer=False)
@@ -599,7 +605,7 @@ cdef class FontTexture(baseItem):
         cdef unsigned char[:,:,:] array_view = array
         cdef unsigned char[:,:,:] src_view
         for i, key in enumerate(keys):
-            rect = self.atlas.GetCustomRectByIndex(i)
+            rect = atlas.GetCustomRectByIndex(i)
             ym = rect.Y
             yM = rect.Y + rect.Height
             xm = rect.X
@@ -617,10 +623,10 @@ cdef class FontTexture(baseItem):
         self._texture.set_value(array)
         assert(self._texture.allocated_texture != NULL)
         self._texture.readonly = True
-        self.atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
+        atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
 
         # Release temporary CPU memory
-        self.atlas.ClearInputData()
+        atlas.ClearInputData()
         self._built = True
 
     @property
@@ -646,14 +652,16 @@ cdef class FontTexture(baseItem):
         lock_gil_friendly(m, self.mutex)
         if not(self._built):
             return 0
-        return <int>self.atlas.Fonts.size()
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        return <int>atlas.Fonts.size()
 
     def __getitem__(self, index):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if not(self._built):
             raise ValueError("Texture not yet built")
-        if index < 0 or index >= <int>self.atlas.Fonts.size():
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        if index < 0 or index >= <int>atlas.Fonts.size():
             raise IndexError("Outside range")
         return self.fonts[index]
 
@@ -666,18 +674,19 @@ cdef class FontTexture(baseItem):
         lock_gil_friendly(m, self.mutex)
         if self._built:
             return
-        if self.atlas.Fonts.Size == 0:
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        if atlas.Fonts.Size == 0:
             raise ValueError("You must add fonts first")
         # build
-        if not(self.atlas.Build()):
+        if not(atlas.Build()):
             raise RuntimeError("Failed to build target texture data")
         # Retrieve the target buffer
         cdef unsigned char *data = NULL
         cdef int width, height, bpp
-        if self.atlas.TexPixelsUseColors:
-            self.atlas.GetTexDataAsRGBA32(&data, &width, &height, &bpp)
+        if atlas.TexPixelsUseColors:
+            atlas.GetTexDataAsRGBA32(&data, &width, &height, &bpp)
         else:
-            self.atlas.GetTexDataAsAlpha8(&data, &width, &height, &bpp)
+            atlas.GetTexDataAsAlpha8(&data, &width, &height, &bpp)
 
         # Upload texture
         cdef cython.view.array data_array = cython.view.array(shape=(height, width, bpp), itemsize=1, format='B', mode='c', allocate_buffer=False)
@@ -686,10 +695,10 @@ cdef class FontTexture(baseItem):
         self._texture.set_value(np.asarray(data_array, dtype=np.uint8))
         assert(self._texture.allocated_texture != NULL)
         self._texture.readonly = True
-        self.atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
+        atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
 
         # Release temporary CPU memory
-        self.atlas.ClearInputData()
+        atlas.ClearInputData()
         self._built = True
 
 cdef class GlyphSet:

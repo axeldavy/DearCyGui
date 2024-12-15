@@ -1,4 +1,3 @@
-from dearcygui.wrapper cimport imgui
 from libcpp.deque cimport deque
 from libcpp.vector cimport vector
 from cpython.ref cimport PyObject
@@ -6,7 +5,7 @@ from .types cimport *
 from .core cimport baseItem, baseFont, Texture
 
 cdef class Font(baseFont):
-    cdef imgui.ImFont *font
+    cdef void* font # imgui.ImFont*
     cdef FontTexture container
     cdef bint dpi_scaling
     cdef float _scale
@@ -40,7 +39,7 @@ cdef class FontTexture(baseItem):
     Packs one or several fonts into
     a texture for internal use by ImGui.
     """
-    cdef imgui.ImFontAtlas atlas
+    cdef void* atlas # imgui.ImFontAtlas *
     cdef Texture _texture
     cdef bint _built
     cdef list fonts_files # content of the font files

@@ -6,6 +6,7 @@ from dearcygui.core import *
 from dearcygui.draw import *
 from dearcygui.font import *
 from dearcygui.handler import *
+from dearcygui.imgui_types import *
 from dearcygui.layout import *
 from dearcygui.os import *
 from dearcygui.plot import *

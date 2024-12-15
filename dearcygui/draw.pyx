@@ -15,10 +15,11 @@
 #distutils: language=c++
 
 from dearcygui.wrapper cimport imgui
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from .core cimport baseItem, drawingItem, \
-    lock_gil_friendly, draw_drawing_children, read_point, read_coord, \
+    lock_gil_friendly, draw_drawing_children, read_point, read_coord
+from .imgui_types cimport \
     unparse_color, parse_color
+from .c_types cimport *
 from .types cimport child_type, Coord
 
 from libcpp.algorithm cimport swap
@@ -56,7 +57,7 @@ cdef class ViewportDrawList(drawingItem):
         lock_gil_friendly(m, self.mutex)
         self._front = value
 
-    cdef void draw(self, imgui.ImDrawList* unused) noexcept nogil:
+    cdef void draw(self, void* unused) noexcept nogil:
         # drawlist is an unused argument set to NULL
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
@@ -66,15 +67,15 @@ cdef class ViewportDrawList(drawingItem):
 
         # Reset current drawInfo
         self.context._viewport.in_plot = False
-        self.context._viewport.window_pos = imgui.ImVec2(0., 0.)
-        self.context._viewport.parent_pos = imgui.ImVec2(0., 0.)
+        self.context._viewport.window_pos = make_Vec2(0., 0.)
+        self.context._viewport.parent_pos = make_Vec2(0., 0.)
         # TODO: dpi scaling
         self.context._viewport.shifts = [0., 0.]
         self.context._viewport.scales = [1., 1.]
         self.context._viewport.thickness_multiplier = 1.
         self.context._viewport.size_multiplier = 1.
 
-        cdef imgui.ImDrawList* internal_drawlist = \
+        cdef void* internal_drawlist = \
             imgui.GetForegroundDrawList() if self._front else \
             imgui.GetBackgroundDrawList()
         draw_drawing_children(self, internal_drawlist)
@@ -95,7 +96,7 @@ cdef class DrawingList(drawingItem):
         self.can_have_drawing_child = True
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -220,7 +221,7 @@ cdef class DrawingClip(drawingItem):
         self._no_global_scale = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -238,8 +239,8 @@ cdef class DrawingClip(drawingItem):
         self.context._viewport.apply_current_transform(pmin, self._pmin)
         self.context._viewport.apply_current_transform(pmax, self._pmax)
 
-        cdef imgui.ImVec2 rect_min = drawlist.GetClipRectMin()
-        cdef imgui.ImVec2 rect_max = drawlist.GetClipRectMax()
+        cdef imgui.ImVec2 rect_min = (<imgui.ImDrawList*>drawlist).GetClipRectMin()
+        cdef imgui.ImVec2 rect_max = (<imgui.ImDrawList*>drawlist).GetClipRectMax()
         cdef bint visible = True
         if max(pmin[0], pmax[0]) < rect_min.x:
             visible = False
@@ -361,7 +362,7 @@ cdef class DrawingScale(drawingItem):
         self._no_global_scale = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -431,8 +432,8 @@ cdef class DrawSplitBatch(drawingItem):
     overlap another, this item will force later items
     to be drawn in separate batches to the previous one.
     """
-    cdef void draw(self, imgui.ImDrawList* drawlist) noexcept nogil:
-        drawlist.AddDrawCmd()
+    cdef void draw(self, void* drawlist) noexcept nogil:
+        (<imgui.ImDrawList*>drawlist).AddDrawCmd()
 
 
 """
@@ -545,7 +546,7 @@ cdef class DrawArrow(drawingItem):
                         y1 - 0.5 * self._size * sin((M_PI / 2.0) - angle)]
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -568,9 +569,9 @@ cdef class DrawArrow(drawingItem):
         cdef imgui.ImVec2 itend  = imgui.ImVec2(tend[0], tend[1])
         cdef imgui.ImVec2 itcorner1 = imgui.ImVec2(tcorner1[0], tcorner1[1])
         cdef imgui.ImVec2 itcorner2 = imgui.ImVec2(tcorner2[0], tcorner2[1])
-        drawlist.AddTriangleFilled(itend, itcorner1, itcorner2, self._color)
-        drawlist.AddLine(itend, itstart, self._color, thickness)
-        drawlist.AddTriangle(itend, itcorner1, itcorner2, self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddTriangleFilled(itend, itcorner1, itcorner2, <imgui.ImU32>self._color)
+        (<imgui.ImDrawList*>drawlist).AddLine(itend, itstart, <imgui.ImU32>self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddTriangle(itend, itcorner1, itcorner2, <imgui.ImU32>self._color, thickness)
 
 
 cdef class DrawBezierCubic(drawingItem):
@@ -668,7 +669,7 @@ cdef class DrawBezierCubic(drawingItem):
         self._segments = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -691,7 +692,7 @@ cdef class DrawBezierCubic(drawingItem):
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
         cdef imgui.ImVec2 ip4 = imgui.ImVec2(p4[0], p4[1])
-        drawlist.AddBezierCubic(ip1, ip2, ip3, ip4, self._color, self._thickness, self._segments)
+        (<imgui.ImDrawList*>drawlist).AddBezierCubic(ip1, ip2, ip3, ip4, <imgui.ImU32>self._color, self._thickness, self._segments)
 
 cdef class DrawBezierQuadratic(drawingItem):
     """
@@ -777,7 +778,7 @@ cdef class DrawBezierQuadratic(drawingItem):
         self._segments = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -797,7 +798,7 @@ cdef class DrawBezierQuadratic(drawingItem):
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
-        drawlist.AddBezierQuadratic(ip1, ip2, ip3, self._color, self._thickness, self._segments)
+        (<imgui.ImDrawList*>drawlist).AddBezierQuadratic(ip1, ip2, ip3, <imgui.ImU32>self._color, self._thickness, self._segments)
 
 cdef class DrawCircle(drawingItem):
     """
@@ -887,7 +888,7 @@ cdef class DrawCircle(drawingItem):
         self._segments = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -908,8 +909,8 @@ cdef class DrawCircle(drawingItem):
         self.context._viewport.apply_current_transform(center, self._center)
         cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
         if self._fill & imgui.IM_COL32_A_MASK != 0:
-            drawlist.AddCircleFilled(icenter, radius, self._fill, self._segments)
-        drawlist.AddCircle(icenter, radius, self._color, self._segments, thickness)
+            (<imgui.ImDrawList*>drawlist).AddCircleFilled(icenter, radius, <imgui.ImU32>self._fill, self._segments)
+        (<imgui.ImDrawList*>drawlist).AddCircle(icenter, radius, <imgui.ImU32>self._color, self._segments, thickness)
 
 
 cdef class DrawEllipse(drawingItem):
@@ -1060,7 +1061,7 @@ cdef class DrawEllipse(drawingItem):
         self._points.push_back(self._points[0])
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show) or self._points.size() < 3:
             return
@@ -1081,10 +1082,10 @@ cdef class DrawEllipse(drawingItem):
         # TODO imgui requires clockwise order for correct AA
         # Reverse order if needed
         if self._fill & imgui.IM_COL32_A_MASK != 0:
-            drawlist.AddConvexPolyFilled(transformed_points.data(),
+            (<imgui.ImDrawList*>drawlist).AddConvexPolyFilled(transformed_points.data(),
                                                 <int>transformed_points.size(),
                                                 self._fill)
-        drawlist.AddPolyline(transformed_points.data(),
+        (<imgui.ImDrawList*>drawlist).AddPolyline(transformed_points.data(),
                                     <int>transformed_points.size(),
                                     self._color,
                                     0,
@@ -1481,7 +1482,7 @@ cdef class DrawImage(drawingItem):
                 )
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -1550,11 +1551,11 @@ cdef class DrawImage(drawingItem):
         cdef imgui.ImVec2 iuv4 = imgui.ImVec2(self._uv4[0], self._uv4[1])
         if self._rounding != 0.:
             # TODO: we could allow to control what is rounded.
-            drawlist.AddImageRounded(<imgui.ImTextureID>self._texture.allocated_texture, \
-            ip1, ip3, iuv1, iuv3, self._color_multiplier, self._rounding, imgui.ImDrawFlags_RoundCornersAll)
+            (<imgui.ImDrawList*>drawlist).AddImageRounded(<imgui.ImTextureID>self._texture.allocated_texture, \
+            ip1, ip3, iuv1, iuv3, <imgui.ImU32>self._color_multiplier, self._rounding, imgui.ImDrawFlags_RoundCornersAll)
         else:
-            drawlist.AddImageQuad(<imgui.ImTextureID>self._texture.allocated_texture, \
-                ip1, ip2, ip3, ip4, iuv1, iuv2, iuv3, iuv4, self._color_multiplier)
+            (<imgui.ImDrawList*>drawlist).AddImageQuad(<imgui.ImTextureID>self._texture.allocated_texture, \
+                ip1, ip2, ip3, ip4, iuv1, iuv2, iuv3, iuv4, <imgui.ImU32>self._color_multiplier)
 
 cdef class DrawLine(drawingItem):
     """
@@ -1723,7 +1724,7 @@ cdef class DrawLine(drawingItem):
         self._thickness = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -1752,7 +1753,7 @@ cdef class DrawLine(drawingItem):
 
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
-        drawlist.AddLine(ip1, ip2, self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ip1, ip2, <imgui.ImU32>self._color, thickness)
 
 cdef class DrawPolyline(drawingItem):
     """
@@ -1851,7 +1852,7 @@ cdef class DrawPolyline(drawingItem):
         self._thickness = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show) or self._points.size() < 2:
             return
@@ -1875,10 +1876,10 @@ cdef class DrawPolyline(drawingItem):
         for i in range(1, <int>self._points.size()):
             self.context._viewport.apply_current_transform(p, self._points[i].p)
             ip2 = imgui.ImVec2(p[0], p[1])
-            drawlist.AddLine(ip1, ip2, self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ip1, ip2, <imgui.ImU32>self._color, thickness)
             ip1 = ip2
         if self._closed and self._points.size() > 2:
-            drawlist.AddLine(ip1_, ip2, self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ip1_, ip2, <imgui.ImU32>self._color, thickness)
 
 
 cdef inline bint is_counter_clockwise(imgui.ImVec2 p1,
@@ -2003,7 +2004,7 @@ cdef class DrawPolygon(drawingItem):
         self._triangulation_indices = scipy.spatial.Delaunay(points).simplices
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show) or self._points.size() < 2:
             return
@@ -2037,12 +2038,12 @@ cdef class DrawPolygon(drawingItem):
                                            ipoints[self._triangulation_indices[i, 1]],
                                            ipoints[self._triangulation_indices[i, 2]])
                 if ccw:
-                    drawlist.AddTriangleFilled(ipoints[self._triangulation_indices[i, 0]],
+                    (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ipoints[self._triangulation_indices[i, 0]],
                                                       ipoints[self._triangulation_indices[i, 2]],
                                                       ipoints[self._triangulation_indices[i, 1]],
                                                       self._fill)
                 else:
-                    drawlist.AddTriangleFilled(ipoints[self._triangulation_indices[i, 0]],
+                    (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ipoints[self._triangulation_indices[i, 0]],
                                                       ipoints[self._triangulation_indices[i, 1]],
                                                       ipoints[self._triangulation_indices[i, 2]],
                                                       self._fill)
@@ -2051,9 +2052,9 @@ cdef class DrawPolygon(drawingItem):
         # imgui requires clockwise order + convexity for correct AA of AddPolyline
         # Thus we only call AddLine
         for i in range(1, <int>self._points.size()):
-            drawlist.AddLine(ipoints[i-1], ipoints[i], self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ipoints[i-1], ipoints[i], <imgui.ImU32>self._color, thickness)
         if self._points.size() > 2:
-            drawlist.AddLine(ipoints[0], ipoints[<int>self._points.size()-1], self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ipoints[0], ipoints[<int>self._points.size()-1], <imgui.ImU32>self._color, thickness)
 
 cdef class DrawQuad(drawingItem):
     """
@@ -2195,7 +2196,7 @@ cdef class DrawQuad(drawingItem):
         self._thickness = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -2231,21 +2232,21 @@ cdef class DrawQuad(drawingItem):
                                        ip2,
                                        ip3)
             if ccw:
-                drawlist.AddTriangleFilled(ip1, ip3, ip2, self._fill)
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip3, ip2, <imgui.ImU32>self._fill)
             else:
-                drawlist.AddTriangleFilled(ip1, ip2, ip3, self._fill)
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip2, ip3, <imgui.ImU32>self._fill)
             ccw = is_counter_clockwise(ip1,
                                        ip4,
                                        ip3)
             if ccw:
-                drawlist.AddTriangleFilled(ip1, ip3, ip4, self._fill)
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip3, ip4, <imgui.ImU32>self._fill)
             else:
-                drawlist.AddTriangleFilled(ip1, ip4, ip3, self._fill)
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip4, ip3, <imgui.ImU32>self._fill)
 
-        drawlist.AddLine(ip1, ip2, self._color, thickness)
-        drawlist.AddLine(ip2, ip3, self._color, thickness)
-        drawlist.AddLine(ip3, ip4, self._color, thickness)
-        drawlist.AddLine(ip4, ip1, self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ip1, ip2, <imgui.ImU32>self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ip2, ip3, <imgui.ImU32>self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ip3, ip4, <imgui.ImU32>self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ip4, ip1, <imgui.ImU32>self._color, thickness)
 
 cdef class DrawRect(drawingItem):
     """
@@ -2460,7 +2461,7 @@ cdef class DrawRect(drawingItem):
         self._rounding = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -2507,7 +2508,7 @@ cdef class DrawRect(drawingItem):
 
         if self._multicolor:
             if (col_up_left|col_up_right|col_bot_left|col_up_right) & imgui.IM_COL32_A_MASK != 0:
-                drawlist.AddRectFilledMultiColor(ipmin,
+                (<imgui.ImDrawList*>drawlist).AddRectFilledMultiColor(ipmin,
                                                  ipmax,
                                                  col_up_left,
                                                  col_up_right,
@@ -2516,13 +2517,13 @@ cdef class DrawRect(drawingItem):
                 rounding = 0
         else:
             if self._fill & imgui.IM_COL32_A_MASK != 0:
-                drawlist.AddRectFilled(ipmin,
+                (<imgui.ImDrawList*>drawlist).AddRectFilled(ipmin,
                                        ipmax,
                                        self._fill,
                                        rounding,
                                        imgui.ImDrawFlags_RoundCornersAll)
 
-        drawlist.AddRect(ipmin,
+        (<imgui.ImDrawList*>drawlist).AddRect(ipmin,
                                 ipmax,
                                 self._color,
                                 rounding,
@@ -2669,7 +2670,7 @@ cdef class DrawRegularPolygon(drawingItem):
         self._thickness = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -2720,8 +2721,8 @@ cdef class DrawRegularPolygon(drawingItem):
 
         if num_points == 1:
             if self._fill & imgui.IM_COL32_A_MASK != 0:
-                drawlist.AddCircleFilled(icenter, radius, self._fill, 0)
-            drawlist.AddCircle(icenter, radius, self._color, 0, thickness)
+                (<imgui.ImDrawList*>drawlist).AddCircleFilled(icenter, radius, <imgui.ImU32>self._fill, 0)
+            (<imgui.ImDrawList*>drawlist).AddCircle(icenter, radius, <imgui.ImU32>self._color, 0, thickness)
             return
 
         # TODO: imgui does (radius - 0.5) for outline and radius for fill... Should we ? Is it correct with thickness != 1 ?
@@ -2733,12 +2734,12 @@ cdef class DrawRegularPolygon(drawingItem):
             ipoints.push_back(ip)
 
         if num_points == 2:
-            drawlist.AddLine(ipoints[0], ipoints[1], self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ipoints[0], ipoints[1], <imgui.ImU32>self._color, thickness)
             return
 
         if self._fill & imgui.IM_COL32_A_MASK != 0:
-            drawlist.AddConvexPolyFilled(ipoints.data(), <int>ipoints.size(), self._fill)
-        drawlist.AddPolyline(ipoints.data(), <int>ipoints.size(), self._color, imgui.ImDrawFlags_Closed, thickness)
+            (<imgui.ImDrawList*>drawlist).AddConvexPolyFilled(ipoints.data(), <int>ipoints.size(), <imgui.ImU32>self._fill)
+        (<imgui.ImDrawList*>drawlist).AddPolyline(ipoints.data(), <int>ipoints.size(), <imgui.ImU32>self._color, imgui.ImDrawFlags_Closed, thickness)
 
 
 cdef class DrawStar(drawingItem):
@@ -2901,7 +2902,7 @@ cdef class DrawStar(drawingItem):
         self._thickness = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -2976,10 +2977,10 @@ cdef class DrawStar(drawingItem):
         if inner_radius == 0.:
             if num_points % 2 == 0:
                 for i in range(num_points//2):
-                    drawlist.AddLine(ipoints[i], ipoints[i+num_points//2], self._color, thickness)
+                    (<imgui.ImDrawList*>drawlist).AddLine(ipoints[i], ipoints[i+num_points//2], <imgui.ImU32>self._color, thickness)
             else:
                 for i in range(num_points):
-                    drawlist.AddLine(ipoints[i], icenter, self._color, thickness)
+                    (<imgui.ImDrawList*>drawlist).AddLine(ipoints[i], icenter, <imgui.ImU32>self._color, thickness)
             return
 
         inner_ipoints.reserve(self._inner_points.size())
@@ -2991,23 +2992,23 @@ cdef class DrawStar(drawingItem):
 
         if self._fill & imgui.IM_COL32_A_MASK != 0:
             # fill inner region
-            drawlist.AddConvexPolyFilled(inner_ipoints.data(), <int>inner_ipoints.size(), self._fill)
+            (<imgui.ImDrawList*>drawlist).AddConvexPolyFilled(inner_ipoints.data(), <int>inner_ipoints.size(), <imgui.ImU32>self._fill)
             # fill the rest
             for i in range(num_points-1):
-                drawlist.AddTriangleFilled(ipoints[i],
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ipoints[i],
                                            inner_ipoints[i],
                                            inner_ipoints[i+1],
                                            self._fill)
-            drawlist.AddTriangleFilled(ipoints[num_points-1],
+            (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ipoints[num_points-1],
                                        inner_ipoints[num_points-1],
                                        inner_ipoints[0],
                                        self._fill)
 
         for i in range(num_points-1):
-            drawlist.AddLine(ipoints[i], inner_ipoints[i], self._color, thickness)
-            drawlist.AddLine(ipoints[i], inner_ipoints[i+1], self._color, thickness)
-        drawlist.AddLine(ipoints[num_points-1], inner_ipoints[num_points-1], self._color, thickness)
-        drawlist.AddLine(ipoints[num_points-1], inner_ipoints[0], self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ipoints[i], inner_ipoints[i], <imgui.ImU32>self._color, thickness)
+            (<imgui.ImDrawList*>drawlist).AddLine(ipoints[i], inner_ipoints[i+1], <imgui.ImU32>self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ipoints[num_points-1], inner_ipoints[num_points-1], <imgui.ImU32>self._color, thickness)
+        (<imgui.ImDrawList*>drawlist).AddLine(ipoints[num_points-1], inner_ipoints[0], <imgui.ImU32>self._color, thickness)
 
 cdef class DrawText(drawingItem):
     """
@@ -3104,7 +3105,7 @@ cdef class DrawText(drawingItem):
         self._size = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -3122,9 +3123,9 @@ cdef class DrawText(drawingItem):
         if self._font is not None:
             self._font.push()
         if size == 0:
-            drawlist.AddText(ip, self._color, self._text.c_str())
+            (<imgui.ImDrawList*>drawlist).AddText(ip, <imgui.ImU32>self._color, self._text.c_str())
         else:
-            drawlist.AddText(NULL, size, ip, self._color, self._text.c_str())
+            (<imgui.ImDrawList*>drawlist).AddText(NULL, size, ip, <imgui.ImU32>self._color, self._text.c_str())
         if self._font is not None:
             self._font.pop()
 
@@ -3253,7 +3254,7 @@ cdef class DrawTriangle(drawingItem):
         self._thickness = value
 
     cdef void draw(self,
-                   imgui.ImDrawList* drawlist) noexcept nogil:
+                   void* drawlist) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         if not(self._show):
             return
@@ -3285,9 +3286,9 @@ cdef class DrawTriangle(drawingItem):
         # imgui requires clockwise order + convex for correct AA
         if ccw:
             if self._fill & imgui.IM_COL32_A_MASK != 0:
-                drawlist.AddTriangleFilled(ip1, ip3, ip2, self._fill)
-            drawlist.AddTriangle(ip1, ip3, ip2, self._color, thickness)
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip3, ip2, <imgui.ImU32>self._fill)
+            (<imgui.ImDrawList*>drawlist).AddTriangle(ip1, ip3, ip2, <imgui.ImU32>self._color, thickness)
         else:
             if self._fill & imgui.IM_COL32_A_MASK != 0:
-                drawlist.AddTriangleFilled(ip1, ip2, ip3, self._fill)
-            drawlist.AddTriangle(ip1, ip2, ip3, self._color, thickness)
+                (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip2, ip3, <imgui.ImU32>self._fill)
+            (<imgui.ImDrawList*>drawlist).AddTriangle(ip1, ip2, ip3, <imgui.ImU32>self._color, thickness)

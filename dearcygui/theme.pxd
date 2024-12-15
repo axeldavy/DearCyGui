@@ -1,12 +1,10 @@
 from libcpp.unordered_map cimport unordered_map
-from libcpp.string cimport string
-from dearcygui.wrapper cimport imgui
 from .core cimport *
 from .types cimport *
 
 cdef class baseThemeColor(baseTheme):
     cdef list names
-    cdef unordered_map[int, imgui.ImU32] index_to_value
+    cdef unordered_map[int, unsigned int] index_to_value
     cdef object __common_getter(self, int)
     cdef void __common_setter(self, int, object)
 

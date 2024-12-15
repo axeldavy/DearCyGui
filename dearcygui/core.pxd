@@ -1,12 +1,10 @@
-from dearcygui.wrapper cimport imgui, implot, imnodes
-from dearcygui.backends.backend cimport platformViewport
 from libcpp.string cimport string
 from libcpp cimport bool
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock, defer_lock_t
 from libcpp.atomic cimport atomic
 from libcpp.vector cimport vector
 from cpython.ref cimport PyObject, Py_INCREF, Py_DECREF
 cimport numpy as cnp
+from .c_types cimport *
 from .types cimport *
 
 """
@@ -74,9 +72,9 @@ cdef class Context:
     # call to imgui, glfw, etc
     cdef recursive_mutex imgui_mutex
     cdef Viewport _viewport
-    cdef imgui.ImGuiContext* imgui_context
-    cdef implot.ImPlotContext* implot_context
-    cdef imnodes.ImNodesContext* imnodes_context
+    cdef void* imgui_context # imgui.ImGuiContext
+    cdef void* implot_context # implot.ImPlotContext
+    cdef void* imnodes_context # imnodes.ImNodesContext
     #cdef Graphics graphics
     cdef bint resetTheme
     #cdef IO IO
@@ -110,30 +108,6 @@ cdef class Context:
     cpdef void pop_next_parent(self)
     cpdef object fetch_parent_queue_back(self)
     cpdef object fetch_parent_queue_front(self)
-
-"""
-Each .so has its own current context. To be able to work
-with various .so and contexts, we must ensure the correct
-context is current. The call is almost free as it's just
-a pointer that is set.
-If you create your own custom rendering objects, you must ensure
-that you link to the same version of ImGui (ImPlot/ImNodes if
-applicable) and you must call ensure_correct_* at the start
-of your draw() overrides
-"""
-cdef inline void ensure_correct_imgui_context(Context context) noexcept nogil:
-    imgui.SetCurrentContext(context.imgui_context)
-
-cdef inline void ensure_correct_implot_context(Context context) noexcept nogil:
-    implot.SetCurrentContext(context.implot_context)
-
-cdef inline void ensure_correct_imnodes_context(Context context) noexcept nogil:
-    imnodes.SetCurrentContext(context.imnodes_context)
-
-cdef inline void ensure_correct_im_context(Context context) noexcept nogil:
-    ensure_correct_imgui_context(context)
-    ensure_correct_implot_context(context)
-    ensure_correct_imnodes_context(context)
 
 """
 Main item types
@@ -238,19 +212,19 @@ cdef struct itemStateValues:
     bint hovered  # Mouse is over the item + overlap rules of mouse ownership
     bint active # Item is 'active': mouse pressed, editing field, etc.
     bint focused # Item has focus
-    bint[<int>imgui.ImGuiMouseButton_COUNT] clicked
-    bint[<int>imgui.ImGuiMouseButton_COUNT] double_clicked
-    bint[<int>imgui.ImGuiMouseButton_COUNT] dragging
-    imgui.ImVec2[<int>imgui.ImGuiMouseButton_COUNT] drag_deltas # only valid when dragging
+    bint[5] clicked # <int>imgui.ImGuiMouseButton_COUNT
+    bint[5] double_clicked
+    bint[5] dragging
+    Vec2[5] drag_deltas # only valid when dragging
     bint edited
     bint deactivated_after_edited
     bint open
-    imgui.ImVec2 pos_to_viewport
-    imgui.ImVec2 pos_to_window
-    imgui.ImVec2 pos_to_parent
-    imgui.ImVec2 pos_to_default
-    imgui.ImVec2 rect_size
-    imgui.ImVec2 content_region_size
+    Vec2 pos_to_viewport
+    Vec2 pos_to_window
+    Vec2 pos_to_parent
+    Vec2 pos_to_default
+    Vec2 rect_size
+    Vec2 content_region_size
     # No optimization due to parent menu not open or clipped
     bint rendered
 
@@ -264,7 +238,7 @@ cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 cdef class Viewport(baseItem):
     cdef recursive_mutex mutex_backend
-    cdef platformViewport *platform
+    cdef void *platform # platformViewport
     cdef bint initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback
@@ -274,7 +248,7 @@ cdef class Viewport(baseItem):
     cdef bint drop_is_file_type
     cdef vector[string] _drop_data
     cdef itemState state # Unused. Just for compatibility with handlers
-    cdef imgui.ImGuiMouseCursor _cursor
+    cdef int _cursor # imgui.ImGuiMouseCursor
     # For timing stats
     cdef long long last_t_before_event_handling
     cdef long long last_t_before_rendering
@@ -292,15 +266,15 @@ cdef class Viewport(baseItem):
     cdef bint skipped_last_frame
     cdef double[2] scales
     cdef double[2] shifts
-    cdef imgui.ImVec2 window_pos
-    cdef imgui.ImVec2 parent_pos
-    cdef imgui.ImVec2 parent_size
-    cdef imgui.ImVec2 window_cursor # Window layout
+    cdef Vec2 window_pos
+    cdef Vec2 parent_pos
+    cdef Vec2 parent_size
+    cdef Vec2 window_cursor # Window layout
     cdef bint in_plot
     cdef bint plot_fit
     cdef float thickness_multiplier
     cdef float size_multiplier # May not be scales[0]
-    cdef bint[<int>implot.ImAxis_COUNT] enabled_axes
+    cdef bint[6] enabled_axes # <int>implot.ImAxis_COUNT
     cdef int start_pending_theme_actions # managed outside viewport
     cdef vector[theme_action] pending_theme_actions # managed outside viewport
     cdef vector[theme_action] applied_theme_actions # managed by viewport
@@ -321,6 +295,7 @@ cdef class Viewport(baseItem):
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
     cdef void cwake(self) noexcept nogil
+    cdef Vec2 get_size(self) noexcept nogil
 
 
 cdef class Callback:
@@ -330,14 +305,14 @@ cdef class Callback:
 # Rendering children
 
 cdef inline void draw_drawing_children(baseItem item,
-                                       imgui.ImDrawList* drawlist) noexcept nogil:
+                                       void* drawlist) noexcept nogil:
     if item.last_drawings_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_drawings_child
     while (<baseItem>child)._prev_sibling is not None:
         child = <PyObject *>(<baseItem>child)._prev_sibling
     while (<baseItem>child) is not None:
-        (<drawingItem>child).draw(drawlist)
+        (<drawingItem>child).draw(drawlist) # drawlist is imgui.ImDrawList*
         child = <PyObject *>(<baseItem>child)._next_sibling
 
 cdef inline void draw_menubar_children(baseItem item) noexcept nogil:
@@ -406,7 +381,7 @@ Drawing Items
 
 cdef class drawingItem(baseItem):
     cdef bint _show
-    cdef void draw(self, imgui.ImDrawList*) noexcept nogil
+    cdef void draw(self, void *) noexcept nogil # imgui.ImDrawList*
     pass
 
 """
@@ -441,7 +416,7 @@ cdef class uiItem(baseItem):
     cdef bint enabled_update_requested
     cdef int last_frame_update
     cdef bint dpi_scaling
-    cdef imgui.ImVec2 requested_size
+    cdef Vec2 requested_size
     cdef float _indent
     cdef ThemeEnablers theme_condition_enabled
     cdef ThemeCategories theme_condition_category
@@ -452,11 +427,11 @@ cdef class uiItem(baseItem):
     cdef vector[PyObject*] _callbacks # type Callback
     cdef SharedValue _value
     cdef float _scaling_factor
-    cdef imgui.ImVec2 _content_pos
+    cdef Vec2 _content_pos
 
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_subset(self) noexcept nogil
-    cdef imgui.ImVec2 scaled_requested_size(self) noexcept nogil
+    cdef Vec2 scaled_requested_size(self) noexcept nogil
     cdef void draw(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
 
@@ -484,7 +459,7 @@ cdef class TimeWatcher(uiItem):
     pass
 
 cdef class Window(uiItem):
-    cdef imgui.ImGuiWindowFlags window_flags
+    cdef int window_flags # imgui.ImGuiWindowFlags
     cdef bint main_window
     cdef bint resized
     cdef bint modal
@@ -503,8 +478,8 @@ cdef class Window(uiItem):
     cdef bint no_open_over_existing_popup
     cdef Callback on_close_callback
     cdef Callback on_drop_callback
-    cdef imgui.ImVec2 min_size
-    cdef imgui.ImVec2 max_size
+    cdef Vec2 min_size
+    cdef Vec2 max_size
     cdef float scroll_x
     cdef float scroll_y
     cdef float scroll_max_x
@@ -512,9 +487,9 @@ cdef class Window(uiItem):
     cdef bint collapse_update_requested
     cdef bint scroll_x_update_requested
     cdef bint scroll_y_update_requested
-    cdef imgui.ImGuiWindowFlags backup_window_flags
-    cdef imgui.ImVec2 backup_pos
-    cdef imgui.ImVec2 backup_rect_size
+    cdef int backup_window_flags # imgui.ImGuiWindowFlags
+    cdef Vec2 backup_pos
+    cdef Vec2 backup_rect_size
     cdef void draw(self) noexcept nogil
 
 """

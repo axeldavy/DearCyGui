@@ -21,8 +21,9 @@ from dearcygui.wrapper cimport imgui, implot, imnodes
 cimport cython
 from cython.operator cimport dereference
 from .core cimport *
+from .imgui_types cimport *
+from .c_types cimport *
 from .types cimport *
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from cpython cimport PyObject_GenericSetAttr
 
 cdef inline void imgui_PushStyleVar2(int i, float[2] val) noexcept nogil:
@@ -116,7 +117,7 @@ cdef class baseThemeColor(baseTheme):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         cdef list result = []
-        cdef pair[int, imgui.ImU32] element_content
+        cdef pair[int, unsigned int] element_content
         for element_content in self.index_to_value:
             name = self.names[element_content.first] 
             result.append((name, int(element_content.second)))
@@ -125,11 +126,11 @@ cdef class baseThemeColor(baseTheme):
     cdef object __common_getter(self, int index):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef unordered_map[int, imgui.ImU32].iterator element_content = self.index_to_value.find(index)
+        cdef unordered_map[int, unsigned int].iterator element_content = self.index_to_value.find(index)
         if element_content == self.index_to_value.end():
             # None: default
             return None
-        cdef imgui.ImU32 value = dereference(element_content).second
+        cdef unsigned int value = dereference(element_content).second
         return value
 
     cdef void __common_setter(self, int index, value):
@@ -139,7 +140,7 @@ cdef class baseThemeColor(baseTheme):
             self.index_to_value.erase(index)
             return
         cdef imgui.ImU32 color = parse_color(value)
-        self.index_to_value[index] = color
+        self.index_to_value[index] = <unsigned int> color
 
 cdef class ThemeColorImGui(baseThemeColor):
     """
@@ -838,7 +839,7 @@ cdef class ThemeColorImGui(baseThemeColor):
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
-        cdef pair[int, imgui.ImU32] element_content
+        cdef pair[int, unsigned int] element_content
         for element_content in self.index_to_value:
             # Note: imgui seems to convert U32 for this. Maybe use float4
             imgui.PushStyleColor(<imgui.ImGuiCol>element_content.first, <imgui.ImU32>element_content.second)
@@ -846,7 +847,7 @@ cdef class ThemeColorImGui(baseThemeColor):
 
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef pair[int, imgui.ImU32] element_content
+        cdef pair[int, unsigned int] element_content
         cdef theme_action action
         if not(self.enabled):
             return
@@ -1144,7 +1145,7 @@ cdef class ThemeColorImPlot(baseThemeColor):
         if not(self.enabled):
             self.last_push_size.push_back(0)
             return
-        cdef pair[int, imgui.ImU32] element_content
+        cdef pair[int, unsigned int] element_content
         for element_content in self.index_to_value:
             # Note: imgui seems to convert U32 for this. Maybe use float4
             implot.PushStyleColor(<implot.ImPlotCol>element_content.first, <imgui.ImU32>element_content.second)
@@ -1152,7 +1153,7 @@ cdef class ThemeColorImPlot(baseThemeColor):
 
     cdef void push_to_list(self, vector[theme_action]& v) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
-        cdef pair[int, imgui.ImU32] element_content
+        cdef pair[int, unsigned int] element_content
         cdef theme_action action
         if not(self.enabled):
             return

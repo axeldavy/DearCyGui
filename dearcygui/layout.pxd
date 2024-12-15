@@ -1,5 +1,5 @@
-from dearcygui.wrapper cimport imgui
 from .core cimport uiItem
+from .c_types cimport Vec2
 from .types cimport Alignment
 
 from cpython.ref cimport PyObject
@@ -7,9 +7,9 @@ from libcpp.vector cimport vector
 
 cdef class Layout(uiItem):
     cdef bint force_update
-    cdef imgui.ImVec2 spacing
+    cdef Vec2 spacing
     cdef PyObject* previous_last_child
-    cdef imgui.ImVec2 update_content_area(self) noexcept nogil
+    cdef Vec2 update_content_area(self) noexcept nogil
     cdef void draw_child(self, uiItem child) noexcept nogil
     cdef void draw_children(self) noexcept nogil
     cdef bint check_change(self) noexcept nogil
@@ -34,9 +34,9 @@ cdef class VerticalLayout(Layout):
 
 cdef class WindowLayout(uiItem):
     cdef bint force_update
-    cdef imgui.ImVec2 spacing
+    cdef Vec2 spacing
     cdef PyObject* previous_last_child
-    cdef imgui.ImVec2 update_content_area(self) noexcept nogil
+    cdef Vec2 update_content_area(self) noexcept nogil
     cdef void draw_child(self, uiItem child) noexcept nogil
     cdef void draw_children(self) noexcept nogil
     cdef bint check_change(self) noexcept nogil

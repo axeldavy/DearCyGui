@@ -15,10 +15,11 @@
 #distutils: language=c++
 
 from .core cimport *
+from .imgui_types cimport *
+from .c_types cimport *
 from .types cimport *
 from .types import Key
 from cython.operator cimport dereference
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
 from dearcygui.wrapper cimport imgui, implot
 import traceback
 

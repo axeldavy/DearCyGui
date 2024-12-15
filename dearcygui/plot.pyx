@@ -17,8 +17,6 @@
 from libcpp cimport bool
 
 from dearcygui.wrapper cimport imgui, implot
-from dearcygui.wrapper.mutex cimport recursive_mutex, unique_lock
-from libcpp.algorithm cimport swap
 from libc.math cimport INFINITY
 
 from .core cimport baseHandler, baseItem, uiItem, \
@@ -27,6 +25,8 @@ from .core cimport baseHandler, baseItem, uiItem, \
     draw_ui_children, baseFont, plotElement, \
     update_current_mouse_states, \
     draw_plot_element_children, itemState
+from .imgui_types cimport *
+from .c_types cimport *
 from .types cimport *
 from .types import KeyMod
 
@@ -189,7 +189,7 @@ cdef class PlotAxisConfig(baseItem):
         self.state.cap.can_be_clicked = True
         self.p_state = &self.state
         self._enabled = True
-        self._scale = AxisScale.LINEAR
+        self._scale = <int>AxisScale.LINEAR
         self._tick_format = b""
         self.flags = 0
         self._min = 0
@@ -225,7 +225,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._scale
+        return <AxisScale>self._scale
 
     @scale.setter
     def scale(self, AxisScale value):
@@ -235,7 +235,7 @@ cdef class PlotAxisConfig(baseItem):
            value == AxisScale.TIME or \
            value == AxisScale.LOG10 or\
            value == AxisScale.SYMLOG:
-            self._scale = value
+            self._scale = <int>value
         else:
             raise ValueError("Invalid scale. Expecting an AxisScale")
 
@@ -787,7 +787,7 @@ cdef class PlotAxisConfig(baseItem):
         else:
             raise ValueError(f"Invalid type {type(value)} passed as labels_coord. Expected array of strings")
 
-    cdef void setup(self, implot.ImAxis axis) noexcept nogil:
+    cdef void setup(self, int axis) noexcept nogil:
         """
         Apply the config to the target axis during plot
         setup
@@ -850,7 +850,7 @@ cdef class PlotAxisConfig(baseItem):
                                   label_count,
                                   self._labels_cstr.data())
 
-    cdef void after_setup(self, implot.ImAxis axis) noexcept nogil:
+    cdef void after_setup(self, int axis) noexcept nogil:
         """
         Update states, etc. after the elements were setup
         """
@@ -898,7 +898,7 @@ cdef class PlotAxisConfig(baseItem):
             self.state.cur.clicked[i] = self.state.cur.hovered and imgui.IsMouseClicked(i, False)
             self.state.cur.double_clicked[i] = self.state.cur.hovered and imgui.IsMouseDoubleClicked(i)
 
-    cdef void after_plot(self, implot.ImAxis axis) noexcept nogil:
+    cdef void after_plot(self, int axis) noexcept nogil:
         # The fit only impacts the next frame
         if self._enabled and (self._min != self.prev_min or self._max != self.prev_max):
             self.context._viewport.redraw_needed = True
@@ -917,7 +917,7 @@ cdef class PlotAxisConfig(baseItem):
 cdef class PlotLegendConfig(baseItem):
     def __cinit__(self):
         self._show = True
-        self._location = LegendLocation.NORTHWEST
+        self._location = <int>LegendLocation.NORTHWEST
         self.flags = 0
 
     '''
@@ -948,7 +948,7 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._location
+        return <LegendLocation>self._location
 
     @location.setter
     def location(self, LegendLocation value):
@@ -963,7 +963,7 @@ cdef class PlotLegendConfig(baseItem):
            value == LegendLocation.NORTHWEST or \
            value == LegendLocation.SOUTHEAST or \
            value == LegendLocation.SOUTHWEST:
-            self._location = value
+            self._location = <int>value
         else:
             raise ValueError("Invalid location. Must be a LegendLocation")
 
@@ -1103,7 +1103,7 @@ cdef class PlotLegendConfig(baseItem):
     cdef void after_setup(self) noexcept nogil:
         # The user can interact with legend configuration
         # with the mouse
-        self._location = <LegendLocation>GetLegendConfig(self.flags)
+        self._location = <int>GetLegendConfig(self.flags)
 
 
 cdef class Plot(uiItem):
@@ -1552,7 +1552,7 @@ cdef class Plot(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef int i
-        cdef imgui.ImVec2 rect_size
+        cdef Vec2 rect_size
         cdef bint visible
         implot.GetStyle().UseLocalTime = self._use_local_time
         implot.GetStyle().UseISO8601 = self._use_ISO8601
@@ -1576,10 +1576,10 @@ cdef class Plot(uiItem):
         # Check at least one axis of each is enabled ?
 
         visible = implot.BeginPlot(self.imgui_label.c_str(),
-                                   self.scaled_requested_size(),
+                                   Vec2ImVec2(self.scaled_requested_size()),
                                    self.flags)
         # BeginPlot created the imgui Item
-        self.state.cur.rect_size = imgui.GetItemRectSize()
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         if visible:
             self.state.cur.rendered = True
             
@@ -1606,8 +1606,8 @@ cdef class Plot(uiItem):
             # Update now to have up to date data for handlers of children.
             self.state.cur.hovered = implot.IsPlotHovered()
             update_current_mouse_states(self.state)
-            self.state.cur.content_region_size = implot.GetPlotSize()
-            self._content_pos = implot.GetPlotPos()
+            self.state.cur.content_region_size =ImVec2Vec2( implot.GetPlotSize())
+            self._content_pos = ImVec2Vec2(implot.GetPlotPos())
 
             self._X1.after_setup(implot.ImAxis_X1)
             self._X2.after_setup(implot.ImAxis_X2)
@@ -1850,7 +1850,7 @@ cdef class plotElementWithLegend(plotElement):
 
         self.state.cur.rendered = True
         self.state.cur.hovered = False
-        cdef imgui.ImVec2 pos_w, pos_p
+        cdef Vec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
             # We don't open it if it will be empty as it will
@@ -1861,10 +1861,10 @@ cdef class plotElementWithLegend(plotElement):
                                            self._legend_button):
                     if self.last_widgets_child is not None:
                         # sub-window
-                        pos_w = imgui.GetCursorScreenPos()
+                        pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                         pos_p = pos_w
-                        swap(pos_w, self.context._viewport.window_pos)
-                        swap(pos_p, self.context._viewport.parent_pos)
+                        swap_Vec2(pos_w, self.context._viewport.window_pos)
+                        swap_Vec2(pos_p, self.context._viewport.parent_pos)
                         draw_ui_children(self)
                         self.context._viewport.window_pos = pos_w
                         self.context._viewport.parent_pos = pos_p
@@ -2860,7 +2860,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         self.context._viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
         self.context._viewport.thickness_multiplier = implot.GetStyle().LineWeight
         self.context._viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
-        self.context._viewport.parent_pos = implot.GetPlotPos()
+        self.context._viewport.parent_pos = ImVec2Vec2(implot.GetPlotPos())
 
         if render:
             draw_drawing_children(self, implot.GetPlotDrawList())
@@ -2872,7 +2872,7 @@ cdef class DrawInPlot(plotElementWithLegend):
 
         self.state.cur.rendered = True
         self.state.cur.hovered = False
-        cdef imgui.ImVec2 pos_w, pos_p
+        cdef Vec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
             # We don't open it if it will be empty as it will
@@ -2883,10 +2883,10 @@ cdef class DrawInPlot(plotElementWithLegend):
                                            self._legend_button):
                     if self.last_widgets_child is not None:
                         # sub-window
-                        pos_w = imgui.GetCursorScreenPos()
+                        pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                         pos_p = pos_w
-                        swap(pos_w, self.context._viewport.window_pos)
-                        swap(pos_p, self.context._viewport.parent_pos)
+                        swap_Vec2(pos_w, self.context._viewport.window_pos)
+                        swap_Vec2(pos_p, self.context._viewport.parent_pos)
                         draw_ui_children(self)
                         self.context._viewport.window_pos = pos_w
                         self.context._viewport.parent_pos = pos_p
