@@ -49,12 +49,21 @@ cpdef enum class MouseCursor:
     Hand,              # (Unused by Dear ImGui functions. Use for e.g. hyperlinks)
     NotAllowed
 
+"""Class to describe the positioning policy of an item"""
 cpdef enum class Positioning:
-    DEFAULT,
-    REL_DEFAULT,
-    REL_PARENT,
-    REL_WINDOW,
-    REL_VIEWPORT
+    DEFAULT, # Cursor position
+    REL_DEFAULT, # Shift relative to the cursor position
+    REL_PARENT, # Shift relative to the parent position
+    REL_WINDOW, # Shift relative to the window position
+    REL_VIEWPORT # Shift relative to the viewport position
+
+"""Class to describe the sizing policy of an item"""
+cpdef enum class Sizing:
+    SCALED, # fixed, but scaled by the global scale factor
+    ABSOLUTE, # fixed, not affected by the global scale factor
+    RELATIVE, # Delta relative to the parent size
+    PERCENTAGE, # Percentage of the parent size
+    AUTO # Automatically calculated
 
 cpdef enum class Alignment:
     LEFT=0,
