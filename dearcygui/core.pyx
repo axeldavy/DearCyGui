@@ -5677,6 +5677,7 @@ cdef class Window(uiItem):
         # not(visible) means either closed or clipped
         # if has_close_button, show can be switched from True to False if closed
 
+        cdef imgui.ImVec2 parent_size_backup
 
         if visible:
             # Retrieve the full region size before the cursor is moved.
@@ -5685,6 +5686,7 @@ cdef class Window(uiItem):
             self.context._viewport.window_pos = imgui.GetCursorScreenPos()
             self._content_pos = self.context._viewport.window_pos
             self.context._viewport.parent_pos = self.context._viewport.window_pos # should we restore after ? TODO
+            parent_size_backup = self.context._viewport.parent_size
             self.context._viewport.parent_size = self.state.cur.content_region_size
 
             #if self.last_0_child is not None:
@@ -5695,6 +5697,7 @@ cdef class Window(uiItem):
             #    imgui.SetScrollHereY(self.children_widgets[i].trackOffset)
 
             draw_menubar_children(self)
+            self.context._viewport.parent_size = parent_size_backup
 
         cdef imgui.ImVec2 rect_size
         if visible:

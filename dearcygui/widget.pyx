@@ -3402,7 +3402,7 @@ cdef class MenuBar(uiItem):
             menu_allowed = imgui.BeginMainMenuBar()
         else:
             menu_allowed = imgui.BeginMenuBar()
-        cdef imgui.ImVec2 pos_w, pos_p
+        cdef imgui.ImVec2 pos_w, pos_p, parent_size_backup
         if menu_allowed:
             self.update_current_state()
             self.state.cur.content_region_size = imgui.GetContentRegionAvail()
@@ -3412,10 +3412,12 @@ cdef class MenuBar(uiItem):
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
+                parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
+                self.context._viewport.parent_size = parent_size_backup
             if parent_viewport:
                 imgui.EndMainMenuBar()
             else:
@@ -3463,7 +3465,7 @@ cdef class Menu(uiItem):
         cdef bint menu_open = imgui.BeginMenu(self.imgui_label.c_str(),
                                               self._enabled)
         self.update_current_state()
-        cdef imgui.ImVec2 pos_w, pos_p
+        cdef imgui.ImVec2 pos_w, pos_p, parent_size_backup
         if menu_open:
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
@@ -3475,10 +3477,12 @@ cdef class Menu(uiItem):
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
+                parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
+                self.context._viewport.parent_size = parent_size_backup
             imgui.EndMenu()
         else:
             self.propagate_hidden_state_to_children_with_handlers()
@@ -3606,7 +3610,7 @@ cdef class Tooltip(uiItem):
             display_condition = False
 
         cdef bint was_visible = self.state.cur.rendered
-        cdef imgui.ImVec2 pos_w, pos_p
+        cdef imgui.ImVec2 pos_w, pos_p, parent_size_backup
         cdef imgui.ImVec2 content_min, content_max
         if display_condition and imgui.BeginTooltip():
             self.state.cur.content_region_size = imgui.GetContentRegionAvail()
@@ -3617,10 +3621,12 @@ cdef class Tooltip(uiItem):
                 self._content_pos = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
+                parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
+                self.context._viewport.parent_size = parent_size_backup
 
             imgui.EndTooltip()
             self.update_current_state()
@@ -3844,14 +3850,16 @@ cdef class Tab(uiItem):
         if not(self._show):
             self.show_update_requested = True
         self.update_current_state()
-        cdef imgui.ImVec2 pos_p
+        cdef imgui.ImVec2 pos_p, parent_size_backup
         if menu_open:
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
+                parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size # unsure
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
+                self.context._viewport.parent_size = parent_size_backup
             imgui.EndTabItem()
         else:
             self.propagate_hidden_state_to_children_with_handlers()
@@ -4229,14 +4237,16 @@ cdef class TreeNode(uiItem):
             SharedBool.set(<SharedBool>self._value, False)
             self.state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
-        cdef imgui.ImVec2 pos_p
+        cdef imgui.ImVec2 pos_p, parent_size_backup
         if open_and_visible:
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
+                parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
+                self.context._viewport.parent_size = parent_size_backup
             imgui.TreePop()
 
         #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
@@ -4369,14 +4379,16 @@ cdef class CollapsingHeader(uiItem):
             SharedBool.set(<SharedBool>self._value, False)
             self.state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
-        cdef imgui.ImVec2 pos_p
+        cdef imgui.ImVec2 pos_p, parent_size_backup
         if open_and_visible:
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
+                parent_size_backup = self.context._viewport.parent_size
                 self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
+                self.context._viewport.parent_size = parent_size_backup
         # TODO: rect_size from group ?
         return not(was_open) and self.state.cur.open
 
@@ -4723,7 +4735,7 @@ cdef class ChildWindow(uiItem):
         cdef imgui.ImGuiWindowFlags flags = self.window_flags
         if self.last_menubar_child is not None:
             flags |= imgui.ImGuiWindowFlags_MenuBar
-        cdef imgui.ImVec2 pos_p, pos_w
+        cdef imgui.ImVec2 pos_p, pos_w, parent_size_backup
         cdef imgui.ImVec2 requested_size = self.scaled_requested_size()
         cdef imgui.ImGuiChildFlags child_flags = self.child_flags
         # Else they have no effect
@@ -4748,11 +4760,13 @@ cdef class ChildWindow(uiItem):
             self._content_pos = pos_p
             swap(pos_p, self.context._viewport.parent_pos)
             swap(pos_w, self.context._viewport.window_pos)
+            parent_size_backup = self.context._viewport.parent_size
             self.context._viewport.parent_size = self.state.cur.content_region_size
             draw_ui_children(self)
             draw_menubar_children(self)
             self.context._viewport.window_pos = pos_w
             self.context._viewport.parent_pos = pos_p
+            self.context._viewport.parent_size = parent_size_backup
             self.state.cur.rendered = True
             self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
             self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)

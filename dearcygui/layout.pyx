@@ -69,8 +69,6 @@ cdef class Layout(uiItem):
         self.state.cap.can_be_toggled = True
         self.state.cap.has_content_region = True
         self.theme_condition_category = ThemeCategories.t_layout
-        self.prev_content_area.x = 0
-        self.prev_content_area.y = 0
         self.previous_last_child = NULL
 
     def update_layout(self):
@@ -82,8 +80,10 @@ cdef class Layout(uiItem):
 
     # final enables inlining
     @cython.final
-    cdef imgui.ImVec2 get_content_area(self) noexcept nogil:
+    cdef imgui.ImVec2 update_content_area(self) noexcept nogil:
         cdef imgui.ImVec2 full_content_area = self.context._viewport.parent_size
+        full_content_area.x -= self.state.cur.pos_to_parent.x
+        full_content_area.y -= self.state.cur.pos_to_parent.y
         cdef imgui.ImVec2 cur_content_area
         cdef float global_scale = self.context._viewport.global_scale
         if not(self.dpi_scaling):
@@ -119,18 +119,18 @@ cdef class Layout(uiItem):
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.get_content_area()
+        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
+        cdef imgui.ImVec2 prev_content_area = self.state.prev.content_region_size
         cdef imgui.ImVec2 cur_spacing = imgui.GetStyle().ItemSpacing
         cdef bint changed = False
-        if cur_content_area.x != self.prev_content_area.x or \
-           cur_content_area.y != self.prev_content_area.y or \
+        if cur_content_area.x != prev_content_area.x or \
+           cur_content_area.y != prev_content_area.y or \
            self.previous_last_child != <PyObject*>self.last_widgets_child or \
            cur_spacing.x != self.spacing.x or \
            cur_spacing.y != self.spacing.y or \
            self.size_update_requested or \
            self.force_update: # TODO: check spacing too
             changed = True
-            self.prev_content_area = cur_content_area
             self.spacing = cur_spacing
             self.previous_last_child = <PyObject*>self.last_widgets_child
             self.force_update = False
@@ -153,6 +153,7 @@ cdef class Layout(uiItem):
         """
         if self.last_widgets_child is None:
             return
+        cdef imgui.ImVec2 parent_size_backup = self.context._viewport.parent_size
         self.context._viewport.parent_size = self.state.cur.content_region_size
         cdef PyObject *child = <PyObject*> self.last_widgets_child
         while (<uiItem>child)._prev_sibling is not None:
@@ -160,14 +161,15 @@ cdef class Layout(uiItem):
         while (<uiItem>child) is not None:
             self.draw_child(<uiItem>child)
             child = <PyObject *>(<uiItem>child)._next_sibling
+        self.context._viewport.parent_size = parent_size_backup
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
             #self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             return False
+        self.update_content_area()
         cdef bint changed = self.check_change()
         imgui.PushID(self.uuid)
         imgui.BeginGroup()
@@ -325,7 +327,7 @@ cdef class HorizontalLayout(Layout):
     cdef void __update_layout(self) noexcept nogil:
         # Assumes all children are locked
         cdef PyObject *child = <PyObject*>self.last_widgets_child
-        cdef float end_x = self.prev_content_area.x
+        cdef float end_x = self.state.cur.content_region_size.x
         cdef float available_width = end_x
         #cdef float available_height = self.prev_content_area.y
         cdef float spacing_x = self.spacing.x
@@ -433,12 +435,12 @@ cdef class HorizontalLayout(Layout):
 
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
             # self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             return False
+        self.update_content_area()
         cdef bint changed = self.check_change()
         if changed:
             self.last_widgets_child.lock_and_previous_siblings()
@@ -571,12 +573,7 @@ cdef class VerticalLayout(Layout):
             child = <PyObject*>((<uiItem>child)._prev_sibling)
         self.last_widgets_child._no_newline = False
 
-        cdef float available_height = self.scaled_requested_size().y
-        if available_height == 0:
-            available_height = self.prev_content_area.y
-        elif available_height < 0:
-            available_height = available_height + self.prev_content_area.y
-
+        cdef float available_height = self.state.cur.content_region_size.y
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
         cdef int n_items = 0
@@ -655,32 +652,13 @@ cdef class VerticalLayout(Layout):
             # Prevent not refreshing
             self.context._viewport.redraw_needed = True
 
-    cdef bint check_change(self) noexcept nogil:
-        # Same as Layout check_change but ignores horizontal content
-        # area changes
-        cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
-        cdef float cur_spacing = imgui.GetStyle().ItemSpacing.y
-        cdef bint changed = False
-        if cur_content_area.y != self.prev_content_area.y or \
-           self.previous_last_child != <PyObject*>self.last_widgets_child or \
-           self.size_update_requested or \
-           self._spacing != cur_spacing or \
-           self.force_update:
-            changed = True
-            self.prev_content_area = cur_content_area
-            self.previous_last_child = <PyObject*>self.last_widgets_child
-            self._spacing = cur_spacing
-            self.force_update = False
-            self.size_update_requested = False
-        return changed
-
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
             # self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             return False
+        self.update_content_area()
         cdef bint changed = self.check_change()
         if changed:
             self.last_widgets_child.lock_and_previous_siblings()
@@ -721,8 +699,6 @@ cdef class WindowLayout(uiItem):
         self.can_have_window_child = True
         self.theme_condition_category = ThemeCategories.t_layout
         self.element_child_category = child_type.cat_window
-        self.prev_content_area.x = 0
-        self.prev_content_area.y = 0
         self.can_be_disabled = False
         self.previous_last_child = NULL
         self.state.cap.has_content_region = True
@@ -736,7 +712,7 @@ cdef class WindowLayout(uiItem):
 
     # final enables inlining
     @cython.final
-    cdef imgui.ImVec2 get_content_area(self) noexcept nogil:
+    cdef imgui.ImVec2 update_content_area(self) noexcept nogil:
         cdef imgui.ImVec2 full_content_area = self.context._viewport.parent_size
         cdef imgui.ImVec2 cur_content_area
         full_content_area.x -= self.state.cur.pos_to_viewport.x
@@ -774,18 +750,18 @@ cdef class WindowLayout(uiItem):
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.get_content_area()
+        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
+        cdef imgui.ImVec2 prev_content_area = self.state.prev.content_region_size
         cdef imgui.ImVec2 cur_spacing = imgui.ImVec2(0., 0.)
         cdef bint changed = False
-        if cur_content_area.x != self.prev_content_area.x or \
-           cur_content_area.y != self.prev_content_area.y or \
+        if cur_content_area.x != prev_content_area.x or \
+           cur_content_area.y != prev_content_area.y or \
            self.previous_last_child != <PyObject*>self.last_window_child or \
            cur_spacing.x != self.spacing.x or \
            cur_spacing.y != self.spacing.y or \
            self.size_update_requested or \
            self.force_update: # TODO: check spacing too
             changed = True
-            self.prev_content_area = cur_content_area
             self.spacing = cur_spacing
             self.previous_last_child = <PyObject*>self.last_window_child
             self.force_update = False
@@ -811,6 +787,7 @@ cdef class WindowLayout(uiItem):
         """
         if self.last_window_child is None:
             return
+        cdef imgui.ImVec2 parent_size_backup = self.context._viewport.parent_size
         self.context._viewport.parent_size = self.state.cur.content_region_size
         cdef imgui.ImVec2 cursor_pos_backup = self.context._viewport.window_cursor
         cdef imgui.ImVec2 pos_min, pos_max
@@ -830,6 +807,7 @@ cdef class WindowLayout(uiItem):
         self.state.cur.pos_to_viewport = pos_min
         self.state.cur.rect_size.x = pos_max.x - pos_min.x
         self.state.cur.rect_size.y = pos_max.y - pos_min.y
+        self.context._viewport.parent_size = parent_size_backup
 
     cdef void __update_layout(self) noexcept nogil:
         cdef int i
@@ -839,9 +817,9 @@ cdef class WindowLayout(uiItem):
                 self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)
 
     cdef void draw(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
         if self.last_window_child is None:
             return
+        self.update_content_area()
         cdef bint changed = self.check_change()
         if changed:
             self.last_window_child.lock_and_previous_siblings()
@@ -1030,7 +1008,7 @@ cdef class WindowHorizontalLayout(WindowLayout):
     cdef void __update_layout(self) noexcept nogil:
         """Position the windows horizontally according to alignment mode"""
         cdef PyObject *child = <PyObject*>self.last_window_child
-        cdef float end_x = self.prev_content_area.x
+        cdef float end_x = self.state.cur.content_region_size.x
         cdef float available_width = end_x
         cdef float spacing_x = self.spacing.x
         cdef float spacing_y = self.spacing.y
@@ -1217,7 +1195,7 @@ cdef class WindowVerticalLayout(WindowLayout):
     cdef void __update_layout(self) noexcept nogil:
         """Position the windows vertically according to alignment mode"""
         cdef PyObject *child = <PyObject*>self.last_window_child
-        cdef float end_y = self.prev_content_area.y
+        cdef float end_y = self.state.cur.content_region_size.y
         cdef float available_height = end_y
         cdef float spacing_x = self.spacing.x
         cdef float spacing_y = self.spacing.y
