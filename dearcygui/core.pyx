@@ -35,6 +35,7 @@ from dearcygui.font import AutoFont
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from libcpp.algorithm cimport swap
+from libcpp.cmath cimport floor
 from libcpp.cmath cimport round as cround
 from libcpp.set cimport set as cpp_set
 from libcpp.vector cimport vector
@@ -4682,9 +4683,17 @@ cdef class uiItem(baseItem):
     @cython.final
     cdef imgui.ImVec2 scaled_requested_size(self) noexcept nogil:
         cdef imgui.ImVec2 requested_size = self.requested_size
-        if self.dpi_scaling:
-            requested_size.x *= self.context._viewport.global_scale
-            requested_size.y *= self.context._viewport.global_scale
+        cdef float global_scale = self.context._viewport.global_scale
+        if not(self.dpi_scaling):
+            global_scale = 1.
+        if requested_size.x > 0 and requested_size.x < 1.:
+            requested_size.x = floor(self.context._viewport.parent_size.x * self.requested_size.x)
+        else:
+            requested_size.x *= global_scale
+        if requested_size.y > 0 and requested_size.y < 1.:
+            requested_size.y = floor(self.context._viewport.parent_size.y * self.requested_size.y)
+        else:
+            requested_size.y *= global_scale
         return requested_size
 
     cdef void draw(self) noexcept nogil:
