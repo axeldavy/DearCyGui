@@ -121,25 +121,25 @@ cdef class AxesResizeHandler(baseHandler):
         if changed:
             return True
         if self._axes[0] == implot.ImAxis_X1:
-            changed = (<Plot>item)._X1._min != (<Plot>item)._X1.prev_min or \
-                      (<Plot>item)._X1._max != (<Plot>item)._X1.prev_max
+            changed = (<Plot>item)._X1._min != (<Plot>item)._X1._prev_min or \
+                      (<Plot>item)._X1._max != (<Plot>item)._X1._prev_max
         elif self._axes[0] == implot.ImAxis_X2:
-            changed = (<Plot>item)._X2._min != (<Plot>item)._X2.prev_min or \
-                      (<Plot>item)._X2._max != (<Plot>item)._X2.prev_max
+            changed = (<Plot>item)._X2._min != (<Plot>item)._X2._prev_min or \
+                      (<Plot>item)._X2._max != (<Plot>item)._X2._prev_max
         elif self._axes[0] == implot.ImAxis_X3:
-            changed = (<Plot>item)._X3._min != (<Plot>item)._X3.prev_min or \
-                      (<Plot>item)._X3._max != (<Plot>item)._X3.prev_max
+            changed = (<Plot>item)._X3._min != (<Plot>item)._X3._prev_min or \
+                      (<Plot>item)._X3._max != (<Plot>item)._X3._prev_max
         if changed:
             return True
         if self._axes[1] == implot.ImAxis_Y1:
-            changed = (<Plot>item)._Y1._min != (<Plot>item)._Y1.prev_min or \
-                      (<Plot>item)._Y1._max != (<Plot>item)._Y1.prev_max
+            changed = (<Plot>item)._Y1._min != (<Plot>item)._Y1._prev_min or \
+                      (<Plot>item)._Y1._max != (<Plot>item)._Y1._prev_max
         elif self._axes[1] == implot.ImAxis_Y2:
-            changed = (<Plot>item)._Y2._min != (<Plot>item)._Y2.prev_min or \
-                      (<Plot>item)._Y2._max != (<Plot>item)._Y2.prev_max
+            changed = (<Plot>item)._Y2._min != (<Plot>item)._Y2._prev_min or \
+                      (<Plot>item)._Y2._max != (<Plot>item)._Y2._prev_max
         elif self._axes[1] == implot.ImAxis_Y3:
-            changed = (<Plot>item)._Y3._min != (<Plot>item)._Y3.prev_min or \
-                      (<Plot>item)._Y3._max != (<Plot>item)._Y3.prev_max
+            changed = (<Plot>item)._Y3._min != (<Plot>item)._Y3._prev_min or \
+                      (<Plot>item)._Y3._max != (<Plot>item)._Y3._prev_max
 
         return changed
 
@@ -185,17 +185,17 @@ cdef class AxesResizeHandler(baseHandler):
 # BaseItem that has has no parent/child nor sibling
 cdef class PlotAxisConfig(baseItem):
     def __cinit__(self):
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_clicked = True
-        self.p_state = &self.state
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_clicked = True
+        self.p_state = &self._state
         self._enabled = True
         self._scale = <int>AxisScale.LINEAR
         self._tick_format = b""
-        self.flags = 0
+        self._flags = 0
         self._min = 0
         self._max = 1
-        self.to_fit = True
-        self.dirty_minmax = False
+        self._to_fit = True
+        self._dirty_minmax = False
         self._constraint_min = -INFINITY
         self._constraint_max = INFINITY
         self._zoom_min = 0
@@ -255,7 +255,7 @@ cdef class PlotAxisConfig(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._min = value
-        self.dirty_minmax = True
+        self._dirty_minmax = True
 
     @property
     def max(self):
@@ -273,7 +273,7 @@ cdef class PlotAxisConfig(baseItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._max = value
-        self.dirty_minmax = True
+        self._dirty_minmax = True
 
     @property
     def constraint_min(self):
@@ -346,15 +346,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoLabel) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoLabel) != 0
 
     @no_label.setter
     def no_label(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoLabel
+        self._flags &= ~implot.ImPlotAxisFlags_NoLabel
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoLabel
+            self._flags |= implot.ImPlotAxisFlags_NoLabel
 
     @property
     def no_gridlines(self):
@@ -363,15 +363,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoGridLines) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoGridLines) != 0
 
     @no_gridlines.setter
     def no_gridlines(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoGridLines
+        self._flags &= ~implot.ImPlotAxisFlags_NoGridLines
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoGridLines
+            self._flags |= implot.ImPlotAxisFlags_NoGridLines
 
     @property
     def no_tick_marks(self):
@@ -380,15 +380,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoTickMarks) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoTickMarks) != 0
 
     @no_tick_marks.setter
     def no_tick_marks(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoTickMarks
+        self._flags &= ~implot.ImPlotAxisFlags_NoTickMarks
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoTickMarks
+            self._flags |= implot.ImPlotAxisFlags_NoTickMarks
 
     @property
     def no_tick_labels(self):
@@ -397,15 +397,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoTickLabels) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoTickLabels) != 0
 
     @no_tick_labels.setter
     def no_tick_labels(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoTickLabels
+        self._flags &= ~implot.ImPlotAxisFlags_NoTickLabels
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoTickLabels
+            self._flags |= implot.ImPlotAxisFlags_NoTickLabels
 
     @property
     def no_initial_fit(self):
@@ -415,16 +415,16 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoInitialFit) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoInitialFit) != 0
 
     @no_initial_fit.setter
     def no_initial_fit(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoInitialFit
+        self._flags &= ~implot.ImPlotAxisFlags_NoInitialFit
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoInitialFit
-            self.to_fit = False
+            self._flags |= implot.ImPlotAxisFlags_NoInitialFit
+            self._to_fit = False
 
     @property
     def no_menus(self):
@@ -434,15 +434,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoMenus) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoMenus) != 0
 
     @no_menus.setter
     def no_menus(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoMenus
+        self._flags &= ~implot.ImPlotAxisFlags_NoMenus
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoMenus
+            self._flags |= implot.ImPlotAxisFlags_NoMenus
 
     @property
     def no_side_switch(self):
@@ -452,15 +452,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoSideSwitch) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoSideSwitch) != 0
 
     @no_side_switch.setter
     def no_side_switch(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoSideSwitch
+        self._flags &= ~implot.ImPlotAxisFlags_NoSideSwitch
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoSideSwitch
+            self._flags |= implot.ImPlotAxisFlags_NoSideSwitch
 
     @property
     def no_highlight(self):
@@ -470,15 +470,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_NoHighlight) != 0
+        return (self._flags & implot.ImPlotAxisFlags_NoHighlight) != 0
 
     @no_highlight.setter
     def no_highlight(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_NoHighlight
+        self._flags &= ~implot.ImPlotAxisFlags_NoHighlight
         if value:
-            self.flags |= implot.ImPlotAxisFlags_NoHighlight
+            self._flags |= implot.ImPlotAxisFlags_NoHighlight
 
     @property
     def opposite(self):
@@ -488,15 +488,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_Opposite) != 0
+        return (self._flags & implot.ImPlotAxisFlags_Opposite) != 0
 
     @opposite.setter
     def opposite(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_Opposite
+        self._flags &= ~implot.ImPlotAxisFlags_Opposite
         if value:
-            self.flags |= implot.ImPlotAxisFlags_Opposite
+            self._flags |= implot.ImPlotAxisFlags_Opposite
 
     @property
     def foreground_grid(self):
@@ -506,15 +506,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_Foreground) != 0
+        return (self._flags & implot.ImPlotAxisFlags_Foreground) != 0
 
     @foreground_grid.setter
     def foreground_grid(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_Foreground
+        self._flags &= ~implot.ImPlotAxisFlags_Foreground
         if value:
-            self.flags |= implot.ImPlotAxisFlags_Foreground
+            self._flags |= implot.ImPlotAxisFlags_Foreground
 
     @property
     def invert(self):
@@ -523,15 +523,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_Invert) != 0
+        return (self._flags & implot.ImPlotAxisFlags_Invert) != 0
 
     @invert.setter
     def invert(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_Invert
+        self._flags &= ~implot.ImPlotAxisFlags_Invert
         if value:
-            self.flags |= implot.ImPlotAxisFlags_Invert
+            self._flags |= implot.ImPlotAxisFlags_Invert
 
     @property
     def auto_fit(self):
@@ -541,15 +541,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_AutoFit) != 0
+        return (self._flags & implot.ImPlotAxisFlags_AutoFit) != 0
 
     @auto_fit.setter
     def auto_fit(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_AutoFit
+        self._flags &= ~implot.ImPlotAxisFlags_AutoFit
         if value:
-            self.flags |= implot.ImPlotAxisFlags_AutoFit
+            self._flags |= implot.ImPlotAxisFlags_AutoFit
 
     @property
     def restrict_fit_to_range(self):
@@ -560,15 +560,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_RangeFit) != 0
+        return (self._flags & implot.ImPlotAxisFlags_RangeFit) != 0
 
     @restrict_fit_to_range.setter
     def restrict_fit_to_range(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_RangeFit
+        self._flags &= ~implot.ImPlotAxisFlags_RangeFit
         if value:
-            self.flags |= implot.ImPlotAxisFlags_RangeFit
+            self._flags |= implot.ImPlotAxisFlags_RangeFit
 
     @property
     def pan_stretch(self):
@@ -579,15 +579,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_PanStretch) != 0
+        return (self._flags & implot.ImPlotAxisFlags_PanStretch) != 0
 
     @pan_stretch.setter
     def pan_stretch(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_PanStretch
+        self._flags &= ~implot.ImPlotAxisFlags_PanStretch
         if value:
-            self.flags |= implot.ImPlotAxisFlags_PanStretch
+            self._flags |= implot.ImPlotAxisFlags_PanStretch
 
     @property
     def lock_min(self):
@@ -597,15 +597,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_LockMin) != 0
+        return (self._flags & implot.ImPlotAxisFlags_LockMin) != 0
 
     @lock_min.setter
     def lock_min(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_LockMin
+        self._flags &= ~implot.ImPlotAxisFlags_LockMin
         if value:
-            self.flags |= implot.ImPlotAxisFlags_LockMin
+            self._flags |= implot.ImPlotAxisFlags_LockMin
 
     @property
     def lock_max(self):
@@ -615,15 +615,15 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotAxisFlags_LockMax) != 0
+        return (self._flags & implot.ImPlotAxisFlags_LockMax) != 0
 
     @lock_max.setter
     def lock_max(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotAxisFlags_LockMax
+        self._flags &= ~implot.ImPlotAxisFlags_LockMax
         if value:
-            self.flags |= implot.ImPlotAxisFlags_LockMax
+            self._flags |= implot.ImPlotAxisFlags_LockMax
 
     @property
     def hovered(self):
@@ -632,7 +632,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.hovered
+        return self._state.cur.hovered
 
     @property
     def clicked(self):
@@ -645,7 +645,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.cur.clicked)
+        return tuple(self._state.cur.clicked)
 
     @property
     def mouse_coord(self):
@@ -706,7 +706,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.to_fit = True
+        self._to_fit = True
 
     @property
     def label(self):
@@ -793,24 +793,24 @@ cdef class PlotAxisConfig(baseItem):
         setup
         """
         self.set_previous_states()
-        self.state.cur.hovered = False
-        self.state.cur.rendered = False
+        self._state.cur.hovered = False
+        self._state.cur.rendered = False
 
         if self._enabled == False:
             self.context._viewport.enabled_axes[axis] = False
             return
         self.context._viewport.enabled_axes[axis] = True
-        self.state.cur.rendered = True
+        self._state.cur.rendered = True
 
-        cdef implot.ImPlotAxisFlags flags = self.flags
-        if self.to_fit:
+        cdef implot.ImPlotAxisFlags flags = self._flags
+        if self._to_fit:
             flags |= implot.ImPlotAxisFlags_AutoFit
         if <int>self._label.size() > 0:
             implot.SetupAxis(axis, self._label.c_str(), flags)
         else:
             implot.SetupAxis(axis, NULL, flags)
         """
-        if self.dirty_minmax:
+        if self._dirty_minmax:
             # enforce min < max
             self._max = max(self._max, self._min + 1e-12)
             implot.SetupAxisLimits(axis,
@@ -818,8 +818,8 @@ cdef class PlotAxisConfig(baseItem):
                                    self._max,
                                    implot.ImPlotCond_Always)
         """
-        self.prev_min = self._min
-        self.prev_max = self._max
+        self._prev_min = self._min
+        self._prev_max = self._max
         # We use SetupAxisLinks to get the min/max update
         # right away during EndPlot(), rather than the
         # next frame
@@ -855,13 +855,13 @@ cdef class PlotAxisConfig(baseItem):
         Update states, etc. after the elements were setup
         """
         if not(self.context._viewport.enabled_axes[axis]):
-            if self.state.cur.rendered:
+            if self._state.cur.rendered:
                 self.set_hidden()
             return
         cdef implot.ImPlotRect rect
-        #self.prev_min = self._min
-        #self.prev_max = self._max
-        self.dirty_minmax = False
+        #self._prev_min = self._min
+        #self._prev_max = self._max
+        self._dirty_minmax = False
         if axis <= implot.ImAxis_X3:
             rect = implot.GetPlotLimits(axis, implot.IMPLOT_AUTO)
             #self._min = rect.X.Min
@@ -875,42 +875,42 @@ cdef class PlotAxisConfig(baseItem):
 
         # Take into accounts flags changed by user interactions
         cdef implot.ImPlotAxisFlags flags = GetAxisConfig(<int>axis)
-        if self.to_fit and (self.flags & implot.ImPlotAxisFlags_AutoFit) == 0:
+        if self._to_fit and (self._flags & implot.ImPlotAxisFlags_AutoFit) == 0:
             # Remove Autofit flag introduced for to_fit
             flags &= ~implot.ImPlotAxisFlags_AutoFit
-            self.to_fit = False
-        self.flags = flags
+            self._to_fit = False
+        self._flags = flags
 
         cdef bint hovered = implot.IsAxisHovered(axis)
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self.state.cur.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
-            self.state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
-        cdef bint backup_hovered = self.state.cur.hovered
-        self.state.cur.hovered = hovered
+            self._state.cur.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
+            self._state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
+        cdef bint backup_hovered = self._state.cur.hovered
+        self._state.cur.hovered = hovered
         self.run_handlers() # TODO FIX multiple configs tied. Maybe just not support ?
-        if not(backup_hovered) or self.state.cur.hovered:
+        if not(backup_hovered) or self._state.cur.hovered:
             return
         # Restore correct states
         # We do it here and not above to trigger the handlers only once
-        self.state.cur.hovered |= backup_hovered
+        self._state.cur.hovered |= backup_hovered
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self.state.cur.clicked[i] = self.state.cur.hovered and imgui.IsMouseClicked(i, False)
-            self.state.cur.double_clicked[i] = self.state.cur.hovered and imgui.IsMouseDoubleClicked(i)
+            self._state.cur.clicked[i] = self._state.cur.hovered and imgui.IsMouseClicked(i, False)
+            self._state.cur.double_clicked[i] = self._state.cur.hovered and imgui.IsMouseDoubleClicked(i)
 
     cdef void after_plot(self, int axis) noexcept nogil:
         # The fit only impacts the next frame
-        if self._enabled and (self._min != self.prev_min or self._max != self.prev_max):
+        if self._enabled and (self._min != self._prev_min or self._max != self._prev_max):
             self.context._viewport.redraw_needed = True
 
     cdef void set_hidden(self) noexcept nogil:
         self.set_previous_states()
-        self.state.cur.hovered = False
-        self.state.cur.rendered = False
+        self._state.cur.hovered = False
+        self._state.cur.rendered = False
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self.state.cur.clicked[i] = False
-            self.state.cur.double_clicked[i] = False
+            self._state.cur.clicked[i] = False
+            self._state.cur.double_clicked[i] = False
         self.run_handlers()
 
 
@@ -918,7 +918,7 @@ cdef class PlotLegendConfig(baseItem):
     def __cinit__(self):
         self._show = True
         self._location = <int>LegendLocation.NORTHWEST
-        self.flags = 0
+        self._flags = 0
 
     '''
     # Probable doesn't work. Use instead plot no_legend
@@ -975,15 +975,15 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_NoButtons) != 0
+        return (self._flags & implot.ImPlotLegendFlags_NoButtons) != 0
 
     @no_buttons.setter
     def no_buttons(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_NoButtons
+        self._flags &= ~implot.ImPlotLegendFlags_NoButtons
         if value:
-            self.flags |= implot.ImPlotLegendFlags_NoButtons
+            self._flags |= implot.ImPlotLegendFlags_NoButtons
 
     @property
     def no_highlight_item(self):
@@ -993,15 +993,15 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_NoHighlightItem) != 0
+        return (self._flags & implot.ImPlotLegendFlags_NoHighlightItem) != 0
 
     @no_highlight_item.setter
     def no_highlight_item(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_NoHighlightItem
+        self._flags &= ~implot.ImPlotLegendFlags_NoHighlightItem
         if value:
-            self.flags |= implot.ImPlotLegendFlags_NoHighlightItem
+            self._flags |= implot.ImPlotLegendFlags_NoHighlightItem
 
     @property
     def no_highlight_axis(self):
@@ -1012,15 +1012,15 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_NoHighlightAxis) != 0
+        return (self._flags & implot.ImPlotLegendFlags_NoHighlightAxis) != 0
 
     @no_highlight_axis.setter
     def no_highlight_axis(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_NoHighlightAxis
+        self._flags &= ~implot.ImPlotLegendFlags_NoHighlightAxis
         if value:
-            self.flags |= implot.ImPlotLegendFlags_NoHighlightAxis
+            self._flags |= implot.ImPlotLegendFlags_NoHighlightAxis
 
     @property
     def no_menus(self):
@@ -1030,15 +1030,15 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_NoMenus) != 0
+        return (self._flags & implot.ImPlotLegendFlags_NoMenus) != 0
 
     @no_menus.setter
     def no_menus(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_NoMenus
+        self._flags &= ~implot.ImPlotLegendFlags_NoMenus
         if value:
-            self.flags |= implot.ImPlotLegendFlags_NoMenus
+            self._flags |= implot.ImPlotLegendFlags_NoMenus
 
     @property
     def outside(self):
@@ -1048,15 +1048,15 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_Outside) != 0
+        return (self._flags & implot.ImPlotLegendFlags_Outside) != 0
 
     @outside.setter
     def outside(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_Outside
+        self._flags &= ~implot.ImPlotLegendFlags_Outside
         if value:
-            self.flags |= implot.ImPlotLegendFlags_Outside
+            self._flags |= implot.ImPlotLegendFlags_Outside
 
     @property
     def horizontal(self):
@@ -1066,15 +1066,15 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_Horizontal) != 0
+        return (self._flags & implot.ImPlotLegendFlags_Horizontal) != 0
 
     @horizontal.setter
     def horizontal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_Horizontal
+        self._flags &= ~implot.ImPlotLegendFlags_Horizontal
         if value:
-            self.flags |= implot.ImPlotLegendFlags_Horizontal
+            self._flags |= implot.ImPlotLegendFlags_Horizontal
 
     @property
     def sorted(self):
@@ -1084,18 +1084,18 @@ cdef class PlotLegendConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLegendFlags_Sort) != 0
+        return (self._flags & implot.ImPlotLegendFlags_Sort) != 0
 
     @sorted.setter
     def sorted(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLegendFlags_Sort
+        self._flags &= ~implot.ImPlotLegendFlags_Sort
         if value:
-            self.flags |= implot.ImPlotLegendFlags_Sort
+            self._flags |= implot.ImPlotLegendFlags_Sort
 
     cdef void setup(self) noexcept nogil:
-        implot.SetupLegend(<int>self._location, self.flags)
+        implot.SetupLegend(<int>self._location, self._flags)
         # NOTE: Setup does just fill the location and flags.
         # No item is created at this point,
         # and thus we don't push fonts, check states, etc.
@@ -1103,7 +1103,7 @@ cdef class PlotLegendConfig(baseItem):
     cdef void after_setup(self) noexcept nogil:
         # The user can interact with legend configuration
         # with the mouse
-        self._location = <int>GetLegendConfig(self.flags)
+        self._location = <int>GetLegendConfig(self._flags)
 
 
 cdef class Plot(uiItem):
@@ -1127,10 +1127,10 @@ cdef class Plot(uiItem):
     """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_plot_element_child = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.has_content_region = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.has_content_region = True
         self._X1 = PlotAxisConfig(context)
         self._X2 = PlotAxisConfig(context, enabled=False)
         self._X3 = PlotAxisConfig(context, enabled=False)
@@ -1151,7 +1151,7 @@ cdef class Plot(uiItem):
         # Box select/Query rects. To remove
         # Disabling implot query rects. This is better
         # to have it implemented outside implot.
-        self.flags = implot.ImPlotFlags_NoBoxSelect
+        self._flags = implot.ImPlotFlags_NoBoxSelect
 
     @property
     def X1(self):
@@ -1414,15 +1414,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoTitle) != 0
+        return (self._flags & implot.ImPlotFlags_NoTitle) != 0
 
     @no_title.setter
     def no_title(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoTitle
+        self._flags &= ~implot.ImPlotFlags_NoTitle
         if value:
-            self.flags |= implot.ImPlotFlags_NoTitle
+            self._flags |= implot.ImPlotFlags_NoTitle
 
     @property
     def no_menus(self):
@@ -1432,15 +1432,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoMenus) != 0
+        return (self._flags & implot.ImPlotFlags_NoMenus) != 0
 
     @no_menus.setter
     def no_menus(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoMenus
+        self._flags &= ~implot.ImPlotFlags_NoMenus
         if value:
-            self.flags |= implot.ImPlotFlags_NoMenus
+            self._flags |= implot.ImPlotFlags_NoMenus
 
     @property
     def no_mouse_pos(self):
@@ -1450,15 +1450,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoMouseText) != 0
+        return (self._flags & implot.ImPlotFlags_NoMouseText) != 0
 
     @no_mouse_pos.setter
     def no_mouse_pos(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoMouseText
+        self._flags &= ~implot.ImPlotFlags_NoMouseText
         if value:
-            self.flags |= implot.ImPlotFlags_NoMouseText
+            self._flags |= implot.ImPlotFlags_NoMouseText
 
     @property
     def crosshairs(self):
@@ -1468,15 +1468,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_Crosshairs) != 0
+        return (self._flags & implot.ImPlotFlags_Crosshairs) != 0
 
     @crosshairs.setter
     def crosshairs(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_Crosshairs
+        self._flags &= ~implot.ImPlotFlags_Crosshairs
         if value:
-            self.flags |= implot.ImPlotFlags_Crosshairs
+            self._flags |= implot.ImPlotFlags_Crosshairs
 
     @property
     def equal_aspects(self):
@@ -1486,15 +1486,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_Equal) != 0
+        return (self._flags & implot.ImPlotFlags_Equal) != 0
 
     @equal_aspects.setter
     def equal_aspects(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_Equal
+        self._flags &= ~implot.ImPlotFlags_Equal
         if value:
-            self.flags |= implot.ImPlotFlags_Equal
+            self._flags |= implot.ImPlotFlags_Equal
 
     @property
     def no_inputs(self):
@@ -1504,15 +1504,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoInputs) != 0
+        return (self._flags & implot.ImPlotFlags_NoInputs) != 0
 
     @no_inputs.setter
     def no_inputs(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoInputs
+        self._flags &= ~implot.ImPlotFlags_NoInputs
         if value:
-            self.flags |= implot.ImPlotFlags_NoInputs
+            self._flags |= implot.ImPlotFlags_NoInputs
 
     @property
     def no_frame(self):
@@ -1522,15 +1522,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoFrame) != 0
+        return (self._flags & implot.ImPlotFlags_NoFrame) != 0
 
     @no_frame.setter
     def no_frame(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoFrame
+        self._flags &= ~implot.ImPlotFlags_NoFrame
         if value:
-            self.flags |= implot.ImPlotFlags_NoFrame
+            self._flags |= implot.ImPlotFlags_NoFrame
 
     @property
     def no_legend(self):
@@ -1540,15 +1540,15 @@ cdef class Plot(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotFlags_NoLegend) != 0
+        return (self._flags & implot.ImPlotFlags_NoLegend) != 0
 
     @no_legend.setter
     def no_legend(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotFlags_NoLegend
+        self._flags &= ~implot.ImPlotFlags_NoLegend
         if value:
-            self.flags |= implot.ImPlotFlags_NoLegend
+            self._flags |= implot.ImPlotFlags_NoLegend
 
     cdef bint draw_item(self) noexcept nogil:
         cdef int i
@@ -1577,11 +1577,11 @@ cdef class Plot(uiItem):
 
         visible = implot.BeginPlot(self.imgui_label.c_str(),
                                    Vec2ImVec2(self.scaled_requested_size()),
-                                   self.flags)
+                                   self._flags)
         # BeginPlot created the imgui Item
-        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         if visible:
-            self.state.cur.rendered = True
+            self._state.cur.rendered = True
             
             # Setup axes
             self._X1.setup(implot.ImAxis_X1)
@@ -1604,9 +1604,9 @@ cdef class Plot(uiItem):
 
             # These states are valid after SetupFinish
             # Update now to have up to date data for handlers of children.
-            self.state.cur.hovered = implot.IsPlotHovered()
-            update_current_mouse_states(self.state)
-            self.state.cur.content_region_size =ImVec2Vec2( implot.GetPlotSize())
+            self._state.cur.hovered = implot.IsPlotHovered()
+            update_current_mouse_states(self._state)
+            self._state.cur.content_region_size =ImVec2Vec2( implot.GetPlotSize())
             self._content_pos = ImVec2Vec2(implot.GetPlotPos())
 
             self._X1.after_setup(implot.ImAxis_X1)
@@ -1624,7 +1624,7 @@ cdef class Plot(uiItem):
             implot.PopPlotClipRect()
             # The user can interact with the plot
             # configuration with the mouse
-            self.flags = GetPlotConfig()
+            self._flags = GetPlotConfig()
             implot.EndPlot()
             self._X1.after_plot(implot.ImAxis_X1)
             self._X2.after_plot(implot.ImAxis_X2)
@@ -1632,7 +1632,7 @@ cdef class Plot(uiItem):
             self._Y1.after_plot(implot.ImAxis_Y1)
             self._Y2.after_plot(implot.ImAxis_Y2)
             self._Y3.after_plot(implot.ImAxis_Y3)
-        elif self.state.cur.rendered:
+        elif self._state.cur.rendered:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             self._X1.set_hidden()
             self._X2.set_hidden()
@@ -1660,13 +1660,13 @@ cdef class plotElementWithLegend(plotElement):
     popup entry that gets shown on a right click (by default).
     """
     def __cinit__(self):
-        self.state.cap.can_be_hovered = True # The legend only
-        self.p_state = &self.state
+        self._state.cap.can_be_hovered = True # The legend only
+        self.p_state = &self._state
         self._enabled = True
-        self.enabled_dirty = True
+        self._enabled_dirty = True
         self._legend_button = imgui.ImGuiMouseButton_Right
         self._legend = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_hovered = True
         self.can_have_widget_child = True
 
     @property
@@ -1685,9 +1685,9 @@ cdef class plotElementWithLegend(plotElement):
         lock_gil_friendly(m, self.mutex)
         self._legend = not(value)
         # unsure if needed
-        self.flags &= ~implot.ImPlotItemFlags_NoLegend
+        self._flags &= ~implot.ImPlotItemFlags_NoLegend
         if value:
-            self.flags |= implot.ImPlotItemFlags_NoLegend
+            self._flags |= implot.ImPlotItemFlags_NoLegend
 
     @property
     def ignore_fit(self):
@@ -1697,15 +1697,15 @@ cdef class plotElementWithLegend(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotItemFlags_NoFit) != 0
+        return (self._flags & implot.ImPlotItemFlags_NoFit) != 0
 
     @ignore_fit.setter
     def ignore_fit(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotItemFlags_NoFit
+        self._flags &= ~implot.ImPlotItemFlags_NoFit
         if value:
-            self.flags |= implot.ImPlotItemFlags_NoFit
+            self._flags |= implot.ImPlotItemFlags_NoFit
 
     @property
     def enabled(self):
@@ -1723,7 +1723,7 @@ cdef class plotElementWithLegend(plotElement):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value != self._enabled:
-            self.enabled_dirty = True
+            self._enabled_dirty = True
         self._enabled = value
 
     @property
@@ -1809,7 +1809,7 @@ cdef class plotElementWithLegend(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.hovered
+        return self._state.cur.hovered
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -1819,8 +1819,8 @@ cdef class plotElementWithLegend(plotElement):
            not(self.context._viewport.enabled_axes[self._axes[0]]) or \
            not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.set_previous_states()
-            self.state.cur.rendered = False
-            self.state.cur.hovered = False
+            self._state.cur.rendered = False
+            self._state.cur.hovered = False
             self.propagate_hidden_state_to_children_with_handlers()
             self.run_handlers()
             return
@@ -1841,15 +1841,15 @@ cdef class plotElementWithLegend(plotElement):
 
         implot.SetAxes(self._axes[0], self._axes[1])
 
-        if self.enabled_dirty:
+        if self._enabled_dirty:
             implot.HideNextItem(not(self._enabled), implot.ImPlotCond_Always)
-            self.enabled_dirty = False
+            self._enabled_dirty = False
         else:
             self._enabled = IsItemHidden(self.imgui_label.c_str())
         self.draw_element()
 
-        self.state.cur.rendered = True
-        self.state.cur.hovered = False
+        self._state.cur.rendered = True
+        self._state.cur.hovered = False
         cdef Vec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
@@ -1869,7 +1869,7 @@ cdef class plotElementWithLegend(plotElement):
                         self.context._viewport.window_pos = pos_w
                         self.context._viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
-            self.state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
+            self._state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
 
 
         # pop theme, font
@@ -1961,15 +1961,15 @@ cdef class PlotLine(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLineFlags_Segments) != 0
+        return (self._flags & implot.ImPlotLineFlags_Segments) != 0
 
     @segments.setter
     def segments(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLineFlags_Segments
+        self._flags &= ~implot.ImPlotLineFlags_Segments
         if value:
-            self.flags |= implot.ImPlotLineFlags_Segments
+            self._flags |= implot.ImPlotLineFlags_Segments
 
     @property
     def loop(self):
@@ -1978,15 +1978,15 @@ cdef class PlotLine(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLineFlags_Loop) != 0
+        return (self._flags & implot.ImPlotLineFlags_Loop) != 0
 
     @loop.setter
     def loop(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLineFlags_Loop
+        self._flags &= ~implot.ImPlotLineFlags_Loop
         if value:
-            self.flags |= implot.ImPlotLineFlags_Loop
+            self._flags |= implot.ImPlotLineFlags_Loop
 
     @property
     def skip_nan(self):
@@ -1996,15 +1996,15 @@ cdef class PlotLine(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLineFlags_SkipNaN) != 0
+        return (self._flags & implot.ImPlotLineFlags_SkipNaN) != 0
 
     @skip_nan.setter
     def skip_nan(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLineFlags_SkipNaN
+        self._flags &= ~implot.ImPlotLineFlags_SkipNaN
         if value:
-            self.flags |= implot.ImPlotLineFlags_SkipNaN
+            self._flags |= implot.ImPlotLineFlags_SkipNaN
 
     @property
     def no_clip(self):
@@ -2013,15 +2013,15 @@ cdef class PlotLine(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLineFlags_NoClip) != 0
+        return (self._flags & implot.ImPlotLineFlags_NoClip) != 0
 
     @no_clip.setter
     def no_clip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLineFlags_NoClip
+        self._flags &= ~implot.ImPlotLineFlags_NoClip
         if value:
-            self.flags |= implot.ImPlotLineFlags_NoClip
+            self._flags |= implot.ImPlotLineFlags_NoClip
 
     @property
     def shaded(self):
@@ -2031,15 +2031,15 @@ cdef class PlotLine(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotLineFlags_Shaded) != 0
+        return (self._flags & implot.ImPlotLineFlags_Shaded) != 0
 
     @shaded.setter
     def shaded(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotLineFlags_Shaded
+        self._flags &= ~implot.ImPlotLineFlags_Shaded
         if value:
-            self.flags |= implot.ImPlotLineFlags_Shaded
+            self._flags |= implot.ImPlotLineFlags_Shaded
 
     cdef void draw_element(self) noexcept nogil:
         self.check_arrays()
@@ -2052,7 +2052,7 @@ cdef class PlotLine(plotElementXY):
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2060,7 +2060,7 @@ cdef class PlotLine(plotElementXY):
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2068,7 +2068,7 @@ cdef class PlotLine(plotElementXY):
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2179,7 +2179,7 @@ cdef class PlotShadedLine(plotElementXYY):
                                    <const int*>cnp.PyArray_DATA(self._Y1),
                                    <const int*>cnp.PyArray_DATA(self._Y2),
                                    size,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2188,7 +2188,7 @@ cdef class PlotShadedLine(plotElementXYY):
                                      <const float*>cnp.PyArray_DATA(self._Y1),
                                      <const float*>cnp.PyArray_DATA(self._Y2),
                                      size,
-                                     self.flags,
+                                     self._flags,
                                      0,
                                      cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2197,7 +2197,7 @@ cdef class PlotShadedLine(plotElementXYY):
                                       <const double*>cnp.PyArray_DATA(self._Y1),
                                       <const double*>cnp.PyArray_DATA(self._Y2),
                                       size,
-                                      self.flags,
+                                      self._flags,
                                       0,
                                       cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2209,15 +2209,15 @@ cdef class PlotStems(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotStemsFlags_Horizontal) != 0
+        return (self._flags & implot.ImPlotStemsFlags_Horizontal) != 0
 
     @horizontal.setter
     def horizontal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotStemsFlags_Horizontal
+        self._flags &= ~implot.ImPlotStemsFlags_Horizontal
         if value:
-            self.flags |= implot.ImPlotStemsFlags_Horizontal
+            self._flags |= implot.ImPlotStemsFlags_Horizontal
 
     cdef void draw_element(self) noexcept nogil:
         self.check_arrays()
@@ -2231,7 +2231,7 @@ cdef class PlotStems(plotElementXY):
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
                                  0.,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2240,7 +2240,7 @@ cdef class PlotStems(plotElementXY):
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
                                    0.,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2249,7 +2249,7 @@ cdef class PlotStems(plotElementXY):
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
                                     0.,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2279,15 +2279,15 @@ cdef class PlotBars(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotBarsFlags_Horizontal) != 0
+        return (self._flags & implot.ImPlotBarsFlags_Horizontal) != 0
 
     @horizontal.setter
     def horizontal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotBarsFlags_Horizontal
+        self._flags &= ~implot.ImPlotBarsFlags_Horizontal
         if value:
-            self.flags |= implot.ImPlotBarsFlags_Horizontal
+            self._flags |= implot.ImPlotBarsFlags_Horizontal
 
     cdef void draw_element(self) noexcept nogil:
         self.check_arrays()
@@ -2301,7 +2301,7 @@ cdef class PlotBars(plotElementXY):
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
                                  self._weight,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2310,7 +2310,7 @@ cdef class PlotBars(plotElementXY):
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
                                    self._weight,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2319,7 +2319,7 @@ cdef class PlotBars(plotElementXY):
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
                                     self._weight,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2333,15 +2333,15 @@ cdef class PlotStairs(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotStairsFlags_PreStep) != 0
+        return (self._flags & implot.ImPlotStairsFlags_PreStep) != 0
 
     @pre_step.setter
     def pre_step(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotStairsFlags_PreStep
+        self._flags &= ~implot.ImPlotStairsFlags_PreStep
         if value:
-            self.flags |= implot.ImPlotStairsFlags_PreStep
+            self._flags |= implot.ImPlotStairsFlags_PreStep
 
     @property
     def shaded(self):
@@ -2352,15 +2352,15 @@ cdef class PlotStairs(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotStairsFlags_Shaded) != 0
+        return (self._flags & implot.ImPlotStairsFlags_Shaded) != 0
 
     @shaded.setter
     def shaded(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotStairsFlags_Shaded
+        self._flags &= ~implot.ImPlotStairsFlags_Shaded
         if value:
-            self.flags |= implot.ImPlotStairsFlags_Shaded
+            self._flags |= implot.ImPlotStairsFlags_Shaded
 
     cdef void draw_element(self) noexcept nogil:
         self.check_arrays()
@@ -2373,7 +2373,7 @@ cdef class PlotStairs(plotElementXY):
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2381,7 +2381,7 @@ cdef class PlotStairs(plotElementXY):
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2389,7 +2389,7 @@ cdef class PlotStairs(plotElementXY):
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2442,15 +2442,15 @@ cdef class PlotInfLines(plotElementX):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotInfLinesFlags_Horizontal) != 0
+        return (self._flags & implot.ImPlotInfLinesFlags_Horizontal) != 0
 
     @horizontal.setter
     def horizontal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotInfLinesFlags_Horizontal
+        self._flags &= ~implot.ImPlotInfLinesFlags_Horizontal
         if value:
-            self.flags |= implot.ImPlotInfLinesFlags_Horizontal
+            self._flags |= implot.ImPlotInfLinesFlags_Horizontal
 
     cdef void draw_element(self) noexcept nogil:
         self.check_arrays()
@@ -2462,21 +2462,21 @@ cdef class PlotInfLines(plotElementX):
             implot.PlotInfLines[int](self.imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  size,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
             implot.PlotInfLines[float](self.imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    size,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
             implot.PlotInfLines[double](self.imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     size,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2488,15 +2488,15 @@ cdef class PlotScatter(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotScatterFlags_NoClip) != 0
+        return (self._flags & implot.ImPlotScatterFlags_NoClip) != 0
 
     @no_clip.setter
     def no_clip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotScatterFlags_NoClip
+        self._flags &= ~implot.ImPlotScatterFlags_NoClip
         if value:
-            self.flags |= implot.ImPlotScatterFlags_NoClip
+            self._flags |= implot.ImPlotScatterFlags_NoClip
 
     cdef void draw_element(self) noexcept nogil:
         self.check_arrays()
@@ -2509,7 +2509,7 @@ cdef class PlotScatter(plotElementXY):
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2517,7 +2517,7 @@ cdef class PlotScatter(plotElementXY):
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2525,7 +2525,7 @@ cdef class PlotScatter(plotElementXY):
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 
@@ -2538,15 +2538,15 @@ cdef class PlotHistogram2D(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotHistogramFlags_Density) != 0
+        return (self._flags & implot.ImPlotHistogramFlags_Density) != 0
 
     @density.setter
     def density(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotHistogramFlags_Density
+        self._flags &= ~implot.ImPlotHistogramFlags_Density
         if value:
-            self.flags |= implot.ImPlotHistogramFlags_Density
+            self._flags |= implot.ImPlotHistogramFlags_Density
 
     @property
     def no_outliers(self):
@@ -2556,15 +2556,15 @@ cdef class PlotHistogram2D(plotElementXY):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotHistogramFlags_NoOutliers) != 0
+        return (self._flags & implot.ImPlotHistogramFlags_NoOutliers) != 0
 
     @no_outliers.setter
     def no_outliers(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotHistogramFlags_NoOutliers
+        self._flags &= ~implot.ImPlotHistogramFlags_NoOutliers
         if value:
-            self.flags |= implot.ImPlotHistogramFlags_NoOutliers
+            self._flags |= implot.ImPlotHistogramFlags_NoOutliers
 
 # TODO: row col flag ???
 
@@ -2580,7 +2580,7 @@ cdef class PlotHistogram2D(plotElementXY):
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
                                  self._weight,
-                                 self.flags,
+                                 self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
@@ -2589,7 +2589,7 @@ cdef class PlotHistogram2D(plotElementXY):
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
                                    self._weight,
-                                   self.flags,
+                                   self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
@@ -2598,7 +2598,7 @@ cdef class PlotHistogram2D(plotElementXY):
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
                                     self._weight,
-                                    self.flags,
+                                    self._flags,
                                     0,
                                     cnp.PyArray_STRIDE(self._X, 0))
 '''
@@ -2608,10 +2608,10 @@ cdef class plotDraggable(plotElement):
     Base class for plot draggable elements.
     """
     def __cinit__(self):
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_active = True
-        self.flags = implot.ImPlotDragToolFlags_None
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_active = True
+        self._flags = implot.ImPlotDragToolFlags_None
 
     @property
     def color(self):
@@ -2639,15 +2639,15 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotDragToolFlags_NoCursors) != 0
+        return (self._flags & implot.ImPlotDragToolFlags_NoCursors) != 0
 
     @no_cursors.setter
     def no_cursors(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotDragToolFlags_NoCursors
+        self._flags &= ~implot.ImPlotDragToolFlags_NoCursors
         if value:
-            self.flags |= implot.ImPlotDragToolFlags_NoCursors
+            self._flags |= implot.ImPlotDragToolFlags_NoCursors
 
     @property
     def ignore_fit(self):
@@ -2657,15 +2657,15 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotDragToolFlags_NoFit) != 0
+        return (self._flags & implot.ImPlotDragToolFlags_NoFit) != 0
 
     @ignore_fit.setter
     def ignore_fit(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotDragToolFlags_NoFit
+        self._flags &= ~implot.ImPlotDragToolFlags_NoFit
         if value:
-            self.flags |= implot.ImPlotDragToolFlags_NoFit
+            self._flags |= implot.ImPlotDragToolFlags_NoFit
 
     @property
     def ignore_inputs(self):
@@ -2674,15 +2674,15 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotDragToolFlags_NoInputs) != 0
+        return (self._flags & implot.ImPlotDragToolFlags_NoInputs) != 0
 
     @ignore_inputs.setter
     def ignore_inputs(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotDragToolFlags_NoInputs
+        self._flags &= ~implot.ImPlotDragToolFlags_NoInputs
         if value:
-            self.flags |= implot.ImPlotDragToolFlags_NoInputs
+            self._flags |= implot.ImPlotDragToolFlags_NoInputs
 
     @property
     def delayed(self):
@@ -2694,15 +2694,15 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & implot.ImPlotDragToolFlags_Delayed) != 0
+        return (self._flags & implot.ImPlotDragToolFlags_Delayed) != 0
 
     @delayed.setter
     def delayed(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~implot.ImPlotDragToolFlags_Delayed
+        self._flags &= ~implot.ImPlotDragToolFlags_Delayed
         if value:
-            self.flags |= implot.ImPlotDragToolFlags_Delayed
+            self._flags |= implot.ImPlotDragToolFlags_Delayed
 
     @property
     def active(self):
@@ -2711,7 +2711,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.active
+        return self._state.cur.active
 
     @property
     def clicked(self):
@@ -2724,7 +2724,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.cur.clicked)
+        return tuple(self._state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -2737,7 +2737,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.double_clicked
+        return self._state.cur.double_clicked
 
     @property
     def hovered(self):
@@ -2746,7 +2746,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.hovered
+        return self._state.cur.hovered
 
     cdef void draw(self) noexcept nogil:
         cdef int i
@@ -2756,11 +2756,11 @@ cdef class plotDraggable(plotElement):
         if not(self._show) or \
            not(self.context._viewport.enabled_axes[self._axes[0]]) or \
            not(self.context._viewport.enabled_axes[self._axes[1]]):
-            self.state.cur.hovered = False
-            self.state.cur.rendered = False
+            self._state.cur.hovered = False
+            self._state.cur.rendered = False
             for i in range(imgui.ImGuiMouseButton_COUNT):
-                self.state.cur.clicked[i] = False
-                self.state.cur.double_clicked[i] = False
+                self._state.cur.clicked[i] = False
+                self._state.cur.double_clicked[i] = False
             self.propagate_hidden_state_to_children_with_handlers()
             return
 
@@ -2774,7 +2774,7 @@ cdef class plotDraggable(plotElement):
             self._theme.push()
 
         implot.SetAxes(self._axes[0], self._axes[1])
-        self.state.cur.rendered = True
+        self._state.cur.rendered = True
         self.draw_element()
 
         # pop theme, font
@@ -2824,8 +2824,8 @@ cdef class DrawInPlot(plotElementWithLegend):
            not(self.context._viewport.enabled_axes[self._axes[0]]) or \
            not(self.context._viewport.enabled_axes[self._axes[1]]):
             self.set_previous_states()
-            self.state.cur.rendered = False
-            self.state.cur.hovered = False
+            self._state.cur.rendered = False
+            self._state.cur.hovered = False
             self.propagate_hidden_state_to_children_with_handlers()
             self.run_handlers()
             return
@@ -2849,7 +2849,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         cdef bint render = True
 
         if self._legend:
-            render = implot.BeginItem(self.imgui_label.c_str(), self.flags, -1)
+            render = implot.BeginItem(self.imgui_label.c_str(), self._flags, -1)
         else:
             implot.PushPlotClipRect(0.)
 
@@ -2870,8 +2870,8 @@ cdef class DrawInPlot(plotElementWithLegend):
             else:
                 implot.PopPlotClipRect()
 
-        self.state.cur.rendered = True
-        self.state.cur.hovered = False
+        self._state.cur.rendered = True
+        self._state.cur.hovered = False
         cdef Vec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
@@ -2891,7 +2891,7 @@ cdef class DrawInPlot(plotElementWithLegend):
                         self.context._viewport.window_pos = pos_w
                         self.context._viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
-            self.state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
+            self._state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
 
         # pop theme, font
         if self._theme is not None:

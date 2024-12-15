@@ -2357,8 +2357,8 @@ cdef class Viewport(baseItem):
         self.last_t_after_swapping = self.last_t_before_event_handling
         self.skipped_last_frame = False
         self.frame_count = 0
-        self.state.cur.rendered = True # For compatibility with RenderHandlers
-        self.p_state = &self.state
+        self._state.cur.rendered = True # For compatibility with RenderHandlers
+        self.p_state = &self._state
         self._cursor = imgui.ImGuiMouseCursor_Arrow
         self._scale = 1.
         self.platform = \
@@ -3796,9 +3796,9 @@ cdef class uiItem(baseItem):
         self.theme_condition_category = ThemeCategories.t_any
         self.can_have_sibling = True
         self.element_child_category = child_type.cat_widget
-        self.state.cap.has_position = True # ALL widgets have position
-        self.state.cap.has_rect_size = True # ALL items have a rectangle size
-        self.p_state = &self.state
+        self._state.cap.has_position = True # ALL widgets have position
+        self._state.cap.has_rect_size = True # ALL items have a rectangle size
+        self.p_state = &self._state
         self._pos_policy = [Positioning.DEFAULT, Positioning.DEFAULT]
         self._size_policy = [Sizing.AUTO, Sizing.AUTO]
         self._scaling_factor = 1.0
@@ -3817,7 +3817,7 @@ cdef class uiItem(baseItem):
             pos = kwargs.pop("pos")
             if pos is not None and len(pos) == 2:
                 self.pos_to_window = pos
-                self.state.cur.pos_to_viewport = self.state.cur.pos_to_window # for windows TODO move to own configure
+                self._state.cur.pos_to_viewport = self._state.cur.pos_to_window # for windows TODO move to own configure
         if 'callback' in kwargs:
             self.callbacks = kwargs.pop("callback")
         return super().configure(**kwargs)
@@ -3826,25 +3826,25 @@ cdef class uiItem(baseItem):
         """
         Updates the state of the last imgui object.
         """
-        if self.state.cap.can_be_hovered:
-            self.state.cur.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
-        if self.state.cap.can_be_active:
-            self.state.cur.active = imgui.IsItemActive()
-        if self.state.cap.can_be_clicked or self.state.cap.can_be_dragged:
-            update_current_mouse_states(self.state)
-        if self.state.cap.can_be_deactivated_after_edited:
-            self.state.cur.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
-        if self.state.cap.can_be_edited:
-            self.state.cur.edited = imgui.IsItemEdited()
-        if self.state.cap.can_be_focused:
-            self.state.cur.focused = imgui.IsItemFocused()
-        if self.state.cap.can_be_toggled:
+        if self._state.cap.can_be_hovered:
+            self._state.cur.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        if self._state.cap.can_be_active:
+            self._state.cur.active = imgui.IsItemActive()
+        if self._state.cap.can_be_clicked or self._state.cap.can_be_dragged:
+            update_current_mouse_states(self._state)
+        if self._state.cap.can_be_deactivated_after_edited:
+            self._state.cur.deactivated_after_edited = imgui.IsItemDeactivatedAfterEdit()
+        if self._state.cap.can_be_edited:
+            self._state.cur.edited = imgui.IsItemEdited()
+        if self._state.cap.can_be_focused:
+            self._state.cur.focused = imgui.IsItemFocused()
+        if self._state.cap.can_be_toggled:
             if imgui.IsItemToggledOpen():
-                self.state.cur.open = True
-        if self.state.cap.has_rect_size:
-            self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
-        self.state.cur.rendered = imgui.IsItemVisible()
-        #if not(self.state.cur.rendered):
+                self._state.cur.open = True
+        if self._state.cap.has_rect_size:
+            self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self._state.cur.rendered = imgui.IsItemVisible()
+        #if not(self._state.cur.rendered):
         #    self.propagate_hidden_state_to_children_with_handlers()
 
     cdef void update_current_state_subset(self) noexcept nogil:
@@ -3852,16 +3852,16 @@ cdef class uiItem(baseItem):
         Helper for items that manage themselves the active,
         edited, etc states
         """
-        if self.state.cap.can_be_hovered:
-            self.state.cur.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
-        if self.state.cap.can_be_focused:
-            self.state.cur.focused = imgui.IsItemFocused()
-        if self.state.cap.can_be_clicked or self.state.cap.can_be_dragged:
-            update_current_mouse_states(self.state)
-        if self.state.cap.has_rect_size:
-            self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
-        self.state.cur.rendered = imgui.IsItemVisible()
-        #if not(self.state.cur.rendered):
+        if self._state.cap.can_be_hovered:
+            self._state.cur.hovered = imgui.IsItemHovered(imgui.ImGuiHoveredFlags_None)
+        if self._state.cap.can_be_focused:
+            self._state.cur.focused = imgui.IsItemFocused()
+        if self._state.cap.can_be_clicked or self._state.cap.can_be_dragged:
+            update_current_mouse_states(self._state)
+        if self._state.cap.has_rect_size:
+            self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self._state.cur.rendered = imgui.IsItemVisible()
+        #if not(self._state.cur.rendered):
         #    self.propagate_hidden_state_to_children_with_handlers()
 
     # TODO: Find a better way to share all these attributes while avoiding AttributeError
@@ -3883,11 +3883,11 @@ cdef class uiItem(baseItem):
         For example for a button, it is when pressed. For tabs
         it is when selected, etc.
         """
-        if not(self.state.cap.can_be_active):
+        if not(self._state.cap.can_be_active):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.active
+        return self._state.cur.active
 
     @property
     def activated(self):
@@ -3896,11 +3896,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_active):
+        if not(self._state.cap.can_be_active):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.active and not(self.state.prev.active)
+        return self._state.cur.active and not(self._state.prev.active)
 
     @property
     def clicked(self):
@@ -3911,11 +3911,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_clicked):
+        if not(self._state.cap.can_be_clicked):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.cur.clicked)
+        return tuple(self._state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -3926,11 +3926,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_clicked):
+        if not(self._state.cap.can_be_clicked):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.double_clicked
+        return self._state.cur.double_clicked
 
     @property
     def deactivated(self):
@@ -3939,11 +3939,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_active):
+        if not(self._state.cap.can_be_active):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return not(self.state.cur.active) and self.state.prev.active
+        return not(self._state.cur.active) and self._state.prev.active
 
     @property
     def deactivated_after_edited(self):
@@ -3953,11 +3953,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_deactivated_after_edited):
+        if not(self._state.cap.can_be_deactivated_after_edited):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.deactivated_after_edited
+        return self._state.cur.deactivated_after_edited
 
     @property
     def edited(self):
@@ -3966,11 +3966,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_edited):
+        if not(self._state.cap.can_be_edited):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.edited
+        return self._state.cur.edited
 
     @property
     def focused(self):
@@ -3979,11 +3979,11 @@ cdef class uiItem(baseItem):
         For windows it means the window is at the top,
         while for items it could mean the keyboard inputs are redirected to it.
         """
-        if not(self.state.cap.can_be_focused):
+        if not(self._state.cap.can_be_focused):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.focused
+        return self._state.cur.focused
 
     @focused.setter
     def focused(self, bint value):
@@ -3992,11 +3992,11 @@ cdef class uiItem(baseItem):
         For windows it means the window is at the top,
         while for items it could mean the keyboard inputs are redirected to it.
         """
-        if not(self.state.cap.can_be_focused):
+        if not(self._state.cap.can_be_focused):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.state.cur.focused = value
+        self._state.cur.focused = value
         self.focus_update_requested = True
 
     @property
@@ -4006,11 +4006,11 @@ cdef class uiItem(baseItem):
         Only one element is hovered at a time, thus
         subitems/subwindows take priority over their parent.
         """
-        if not(self.state.cap.can_be_hovered):
+        if not(self._state.cap.can_be_hovered):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.hovered
+        return self._state.cur.hovered
 
     @property
     def resized(self):
@@ -4019,12 +4019,12 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.has_rect_size):
+        if not(self._state.cap.has_rect_size):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-               self.state.cur.rect_size.y != self.state.prev.rect_size.y
+        return self._state.cur.rect_size.x != self._state.prev.rect_size.x or \
+               self._state.cur.rect_size.y != self._state.prev.rect_size.y
 
     @property
     def toggled(self):
@@ -4033,11 +4033,11 @@ cdef class uiItem(baseItem):
         If True, the attribute is reset the next frame. It's better to rely
         on handlers to catch this event.
         """
-        if not(self.state.cap.can_be_toggled):
+        if not(self._state.cap.can_be_toggled):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.open and not(self.state.prev.open)
+        return self._state.cur.open and not(self._state.prev.open)
 
     @property
     def visible(self):
@@ -4048,7 +4048,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.rendered
+        return self._state.cur.rendered
 
     @property
     def callbacks(self):
@@ -4344,7 +4344,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_viewport)
+        return Coord.build_v(self._state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -4369,7 +4369,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_window)
+        return Coord.build_v(self._state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -4394,7 +4394,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_parent)
+        return Coord.build_v(self._state.cur.pos_to_parent)
 
     @property
     def pos_to_default(self):
@@ -4415,7 +4415,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_default)
+        return Coord.build_v(self._state.cur.pos_to_default)
 
     @property
     def rect_size(self):
@@ -4430,11 +4430,11 @@ cdef class uiItem(baseItem):
         Not the rect_size refers to the size within the parent
         window. If a popup menu is opened, it is not included.
         """
-        if not(self.state.cap.has_rect_size):
+        if not(self._state.cap.has_rect_size):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.rect_size)
+        return Coord.build_v(self._state.cur.rect_size)
 
     @property
     def content_region_avail(self):
@@ -4448,11 +4448,11 @@ cdef class uiItem(baseItem):
         be scrolled are not accounted). Basically the item size
         minus the margins and borders.
         """
-        if not(self.state.cap.has_content_region):
+        if not(self._state.cap.has_content_region):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.content_region_size)
+        return Coord.build_v(self._state.cur.content_region_size)
 
     @property
     def content_pos(self):
@@ -4464,7 +4464,7 @@ cdef class uiItem(baseItem):
         The size of the content area is available with
         content_region_avail.
         """
-        if not(self.state.cap.has_content_region):
+        if not(self._state.cap.has_content_region):
             raise AttributeError("Field undefined for type {}".format(type(self)))
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
@@ -4619,10 +4619,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.cur.pos_to_viewport.x = x
+            self._state.cur.pos_to_viewport.x = x
             self._pos_policy[0] = Positioning.REL_VIEWPORT
         if y is not None:
-            self.state.cur.pos_to_viewport.y = y
+            self._state.cur.pos_to_viewport.y = y
             self._pos_policy[1] = Positioning.REL_VIEWPORT
         self.pos_update_requested = True # TODO remove ?
 
@@ -4634,10 +4634,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.cur.pos_to_window.x = x
+            self._state.cur.pos_to_window.x = x
             self._pos_policy[0] = Positioning.REL_WINDOW
         if y is not None:
-            self.state.cur.pos_to_window.y = y
+            self._state.cur.pos_to_window.y = y
             self._pos_policy[1] = Positioning.REL_WINDOW
         self.pos_update_requested = True
 
@@ -4649,10 +4649,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.cur.pos_to_parent.x = x
+            self._state.cur.pos_to_parent.x = x
             self._pos_policy[0] = Positioning.REL_PARENT
         if y is not None:
-            self.state.cur.pos_to_parent.y = y
+            self._state.cur.pos_to_parent.y = y
             self._pos_policy[1] = Positioning.REL_PARENT
         self.pos_update_requested = True
 
@@ -4664,10 +4664,10 @@ cdef class uiItem(baseItem):
             raise ValueError("Expected tuple for pos: (x, y)")
         (x, y) = value
         if x is not None:
-            self.state.cur.pos_to_default.x = x
+            self._state.cur.pos_to_default.x = x
             self._pos_policy[0] = Positioning.REL_DEFAULT
         if y is not None:
-            self.state.cur.pos_to_default.y = y
+            self._state.cur.pos_to_default.y = y
             self._pos_policy[1] = Positioning.REL_DEFAULT
         self.pos_update_requested = True
 
@@ -4746,7 +4746,7 @@ cdef class uiItem(baseItem):
         self.set_previous_states()
 
         if self.focus_update_requested:
-            if self.state.cur.focused:
+            if self._state.cur.focused:
                 imgui.SetKeyboardFocusHere(0)
             self.focus_update_requested = False
 
@@ -4769,35 +4769,35 @@ cdef class uiItem(baseItem):
         cdef Vec2 pos = cursor_pos_backup
 
         if policy[0] == Positioning.REL_DEFAULT:
-            pos.x += self.state.cur.pos_to_default.x
+            pos.x += self._state.cur.pos_to_default.x
         elif policy[0] == Positioning.REL_PARENT:
-            pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
+            pos.x = self.context._viewport.parent_pos.x + self._state.cur.pos_to_parent.x
         elif policy[0] == Positioning.REL_WINDOW:
-            pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
+            pos.x = self.context._viewport.window_pos.x + self._state.cur.pos_to_window.x
         elif policy[0] == Positioning.REL_VIEWPORT:
-            pos.x = self.state.cur.pos_to_viewport.x
+            pos.x = self._state.cur.pos_to_viewport.x
         # else: DEFAULT
 
         if policy[1] == Positioning.REL_DEFAULT:
-            pos.y += self.state.cur.pos_to_default.y
+            pos.y += self._state.cur.pos_to_default.y
         elif policy[1] == Positioning.REL_PARENT:
-            pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
+            pos.y = self.context._viewport.parent_pos.y + self._state.cur.pos_to_parent.y
         elif policy[1] == Positioning.REL_WINDOW:
-            pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
+            pos.y = self.context._viewport.window_pos.y + self._state.cur.pos_to_window.y
         elif policy[1] == Positioning.REL_VIEWPORT:
-            pos.y = self.state.cur.pos_to_viewport.y
+            pos.y = self._state.cur.pos_to_viewport.y
         # else: DEFAULT
 
         imgui.SetCursorScreenPos(Vec2ImVec2(pos))
 
         # Retrieve current positions
-        self.state.cur.pos_to_viewport = ImVec2Vec2(imgui.GetCursorScreenPos())
-        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
-        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
-        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
-        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
-        self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
-        self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
+        self._state.cur.pos_to_viewport = ImVec2Vec2(imgui.GetCursorScreenPos())
+        self._state.cur.pos_to_window.x = self._state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+        self._state.cur.pos_to_window.y = self._state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+        self._state.cur.pos_to_parent.x = self._state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+        self._state.cur.pos_to_parent.y = self._state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
+        self._state.cur.pos_to_default.x = self._state.cur.pos_to_viewport.x - cursor_pos_backup.x
+        self._state.cur.pos_to_default.y = self._state.cur.pos_to_viewport.y - cursor_pos_backup.y
 
         # handle fonts
         if self._font is not None:
@@ -4914,8 +4914,8 @@ cdef class TimeWatcher(uiItem):
     GPU data, etc), not to GPU rendering time.
     """
     def __cinit__(self):
-        self.state.cap.has_position = False
-        self.state.cap.has_rect_size = False
+        self._state.cap.has_position = False
+        self._state.cap.has_rect_size = False
         self.can_be_disabled = False
         self.can_have_widget_child = True
 
@@ -4976,7 +4976,7 @@ cdef class Window(uiItem):
         self.modal = False
         self.popup = False
         self.has_close_button = True
-        self.state.cur.open = True
+        self._state.cur.open = True
         self.collapse_update_requested = False
         self.no_open_over_existing_popup = True
         self.on_close_callback = None
@@ -4997,15 +4997,15 @@ cdef class Window(uiItem):
         # backup states when we set/unset primary
         #self.backup_window_flags = imgui.ImGuiWindowFlags_None
         #self.backup_pos = self.position
-        #self.backup_rect_size = self.state.cur.rect_size
+        #self.backup_rect_size = self._state.cur.rect_size
         # Type info
         self.can_have_widget_child = True
         #self.can_have_drawing_child = True
         self.can_have_menubar_child = True
         self.element_child_category = child_type.cat_window
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.has_content_region = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.has_content_region = True
 
     @property
     def no_title_bar(self):
@@ -5413,13 +5413,13 @@ cdef class Window(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return not(self.state.cur.open)
+        return not(self._state.cur.open)
 
     @collapsed.setter
     def collapsed(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.state.cur.open = not(value)
+        self._state.cur.open = not(value)
         self.collapse_update_requested = True
 
     @property
@@ -5496,8 +5496,8 @@ cdef class Window(uiItem):
         if value:
             # backup previous state
             self.backup_window_flags = self.window_flags
-            self.backup_pos = self.state.cur.pos_to_viewport
-            self.backup_rect_size = self.requested_size # We should backup self.state.cur.rect_size, but the we have a dpi scaling issue
+            self.backup_pos = self._state.cur.pos_to_viewport
+            self.backup_rect_size = self.requested_size # We should backup self._state.cur.rect_size, but the we have a dpi scaling issue
             # Make primary
             self.window_flags = \
                 imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
@@ -5505,8 +5505,8 @@ cdef class Window(uiItem):
 			    imgui.ImGuiWindowFlags_NoResize | \
                 imgui.ImGuiWindowFlags_NoCollapse | \
                 imgui.ImGuiWindowFlags_NoTitleBar
-            self.state.cur.pos_to_viewport.x = 0
-            self.state.cur.pos_to_viewport.y = 0
+            self._state.cur.pos_to_viewport.x = 0
+            self._state.cur.pos_to_viewport.y = 0
             self.requested_size.x = 0
             self.requested_size.y = 0
             self.pos_update_requested = True
@@ -5514,7 +5514,7 @@ cdef class Window(uiItem):
         else:
             # Restore previous state
             self.window_flags = self.backup_window_flags
-            self.state.cur.pos_to_viewport = self.backup_pos
+            self._state.cur.pos_to_viewport = self.backup_pos
             self.requested_size = self.backup_rect_size
             # Tell imgui to update the window shape
             self.pos_update_requested = True
@@ -5525,7 +5525,7 @@ cdef class Window(uiItem):
         cdef Window next = None
         while w is not None:
             lock_gil_friendly(m3, w.mutex)
-            w.state.cur.focused = True
+            w._state.cur.focused = True
             w.focus_update_requested = True
             next = w._prev_sibling
             # TODO: previous code did restore previous states on each window. Figure out why
@@ -5580,7 +5580,7 @@ cdef class Window(uiItem):
         self.set_previous_states()
 
         if self.focus_update_requested:
-            if self.state.cur.focused:
+            if self._state.cur.focused:
                 imgui.SetNextWindowFocus()
             self.focus_update_requested = False
 
@@ -5590,31 +5590,31 @@ cdef class Window(uiItem):
 
         if self.pos_update_requested:
             if self.main_window:
-                self.state.cur.pos_to_viewport.x = 0
-                self.state.cur.pos_to_viewport.y = 0
+                self._state.cur.pos_to_viewport.x = 0
+                self._state.cur.pos_to_viewport.y = 0
                 self._pos_policy[0] = Positioning.REL_VIEWPORT
                 self._pos_policy[1] = Positioning.REL_VIEWPORT
                 policy = self._pos_policy
             # Note the parent may be a WindowLayout and it is
             # considered a window (thus REL_WINDOW and REL_PARENT apply)
             if policy[0] == Positioning.REL_DEFAULT:
-                pos.x += self.state.cur.pos_to_default.x
+                pos.x += self._state.cur.pos_to_default.x
             elif policy[0] == Positioning.REL_PARENT:
-                pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
+                pos.x = self.context._viewport.parent_pos.x + self._state.cur.pos_to_parent.x
             elif policy[0] == Positioning.REL_WINDOW:
-                pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
+                pos.x = self.context._viewport.window_pos.x + self._state.cur.pos_to_window.x
             elif policy[0] == Positioning.REL_VIEWPORT:
-                pos.x = self.state.cur.pos_to_viewport.x
+                pos.x = self._state.cur.pos_to_viewport.x
             # else: DEFAULT
 
             if policy[1] == Positioning.REL_DEFAULT:
-                pos.y += self.state.cur.pos_to_default.y
+                pos.y += self._state.cur.pos_to_default.y
             elif policy[1] == Positioning.REL_PARENT:
-                pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
+                pos.y = self.context._viewport.parent_pos.y + self._state.cur.pos_to_parent.y
             elif policy[1] == Positioning.REL_WINDOW:
-                pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
+                pos.y = self.context._viewport.window_pos.y + self._state.cur.pos_to_window.y
             elif policy[1] == Positioning.REL_VIEWPORT:
-                pos.y = self.state.cur.pos_to_viewport.y
+                pos.y = self._state.cur.pos_to_viewport.y
             # else: DEFAULT
             imgui.SetNextWindowPos(Vec2ImVec2(pos), imgui.ImGuiCond_Always)
             self.pos_update_requested = False
@@ -5625,7 +5625,7 @@ cdef class Window(uiItem):
             self.size_update_requested = False
 
         if self.collapse_update_requested:
-            imgui.SetNextWindowCollapsed(not(self.state.cur.open), imgui.ImGuiCond_Always)
+            imgui.SetNextWindowCollapsed(not(self._state.cur.open), imgui.ImGuiCond_Always)
             self.collapse_update_requested = False
 
         cdef Vec2 min_size = self.min_size
@@ -5714,13 +5714,13 @@ cdef class Window(uiItem):
 
         if visible:
             # Retrieve the full region size before the cursor is moved.
-            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             # Draw the window content
             self.context._viewport.window_pos = ImVec2Vec2(imgui.GetCursorScreenPos())
             self._content_pos = self.context._viewport.window_pos
             self.context._viewport.parent_pos = self.context._viewport.window_pos # should we restore after ? TODO
             parent_size_backup = self.context._viewport.parent_size
-            self.context._viewport.parent_size = self.state.cur.content_region_size
+            self.context._viewport.parent_size = self._state.cur.content_region_size
 
             #if self.last_0_child is not None:
             #    self.last_0_child.draw(this_drawlist, startx, starty)
@@ -5735,32 +5735,32 @@ cdef class Window(uiItem):
         cdef Vec2 rect_size
         if visible:
             # Set current states
-            self.state.cur.rendered = True
-            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self._state.cur.rendered = True
+            self._state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self._state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
             rect_size = ImVec2Vec2(imgui.GetWindowSize())
-            self.state.cur.rect_size = rect_size
+            self._state.cur.rect_size = rect_size
             self.last_frame_update = self.context._viewport.frame_count # TODO remove ?
-            self.state.cur.pos_to_viewport = ImVec2Vec2(imgui.GetWindowPos())
-            self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
-            self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
-            self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
-            self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
-            self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
-            self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
+            self._state.cur.pos_to_viewport = ImVec2Vec2(imgui.GetWindowPos())
+            self._state.cur.pos_to_window.x = self._state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+            self._state.cur.pos_to_window.y = self._state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+            self._state.cur.pos_to_parent.x = self._state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+            self._state.cur.pos_to_parent.y = self._state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
+            self._state.cur.pos_to_default.x = self._state.cur.pos_to_viewport.x - cursor_pos_backup.x
+            self._state.cur.pos_to_default.y = self._state.cur.pos_to_viewport.y - cursor_pos_backup.y
             if self._no_newline and \
                (policy[1] == Positioning.REL_DEFAULT or \
                 policy[1] == Positioning.DEFAULT):
-                self.context._viewport.window_cursor.x = self.state.cur.pos_to_viewport.x + rect_size.x
-                self.context._viewport.window_cursor.y = self.state.cur.pos_to_viewport.y
+                self.context._viewport.window_cursor.x = self._state.cur.pos_to_viewport.x + rect_size.x
+                self.context._viewport.window_cursor.y = self._state.cur.pos_to_viewport.y
             else:
                 self.context._viewport.window_cursor.x = 0
-                self.context._viewport.window_cursor.y = self.state.cur.pos_to_viewport.y + rect_size.y
+                self.context._viewport.window_cursor.y = self._state.cur.pos_to_viewport.y + rect_size.y
         else:
             # Window is hidden or closed
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
 
-        self.state.cur.open = not(imgui.IsWindowCollapsed())
+        self._state.cur.open = not(imgui.IsWindowCollapsed())
         self.scroll_x = imgui.GetScrollX()
         self.scroll_y = imgui.GetScrollY()
 
@@ -5810,8 +5810,8 @@ cdef class Window(uiItem):
 
         self.run_handlers()
         # The sizing of windows might not converge right away
-        if self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
-           self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
+        if self._state.cur.content_region_size.x != self._state.prev.content_region_size.x or \
+           self._state.cur.content_region_size.y != self._state.prev.content_region_size.y:
             self.context._viewport.redraw_needed = True
 
 

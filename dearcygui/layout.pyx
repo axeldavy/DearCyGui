@@ -59,17 +59,17 @@ cdef class Layout(uiItem):
     """
     def __cinit__(self):
         self.can_have_widget_child = True
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_toggled = True
-        self.state.cap.has_content_region = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_toggled = True
+        self._state.cap.has_content_region = True
         self.theme_condition_category = ThemeCategories.t_layout
-        self.previous_last_child = NULL
+        self._previous_last_child = NULL
 
     def update_layout(self):
         cdef int i
@@ -82,8 +82,8 @@ cdef class Layout(uiItem):
     @cython.final
     cdef Vec2 update_content_area(self) noexcept nogil:
         cdef Vec2 full_content_area = self.context._viewport.parent_size
-        full_content_area.x -= self.state.cur.pos_to_parent.x
-        full_content_area.y -= self.state.cur.pos_to_parent.y
+        full_content_area.x -= self._state.cur.pos_to_parent.x
+        full_content_area.y -= self._state.cur.pos_to_parent.y
         cdef Vec2 cur_content_area
         cdef float global_scale = self.context._viewport.global_scale
         if not(self.dpi_scaling):
@@ -115,35 +115,35 @@ cdef class Layout(uiItem):
 
         cur_content_area.x = max(0, cur_content_area.x)
         cur_content_area.y = max(0, cur_content_area.y)
-        self.state.cur.content_region_size = cur_content_area
+        self._state.cur.content_region_size = cur_content_area
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
-        cdef Vec2 cur_content_area = self.state.cur.content_region_size
-        cdef Vec2 prev_content_area = self.state.prev.content_region_size
+        cdef Vec2 cur_content_area = self._state.cur.content_region_size
+        cdef Vec2 prev_content_area = self._state.prev.content_region_size
         cdef Vec2 cur_spacing = ImVec2Vec2(imgui.GetStyle().ItemSpacing)
         cdef bint changed = False
         if cur_content_area.x != prev_content_area.x or \
            cur_content_area.y != prev_content_area.y or \
-           self.previous_last_child != <PyObject*>self.last_widgets_child or \
-           cur_spacing.x != self.spacing.x or \
-           cur_spacing.y != self.spacing.y or \
+           self._previous_last_child != <PyObject*>self.last_widgets_child or \
+           cur_spacing.x != self._spacing.x or \
+           cur_spacing.y != self._spacing.y or \
            self.size_update_requested or \
-           self.force_update: # TODO: check spacing too
+           self._force_update: # TODO: check spacing too
             changed = True
-            self.spacing = cur_spacing
-            self.previous_last_child = <PyObject*>self.last_widgets_child
-            self.force_update = False
+            self._spacing = cur_spacing
+            self._previous_last_child = <PyObject*>self.last_widgets_child
+            self._force_update = False
             self.size_update_requested = False
         return changed
 
     @cython.final
     cdef void draw_child(self, uiItem child) noexcept nogil:
         child.draw()
-        if child.state.cur.rect_size.x != child.state.prev.rect_size.x or \
-           child.state.cur.rect_size.y != child.state.prev.rect_size.y:
+        if child._state.cur.rect_size.x != child._state.prev.rect_size.x or \
+           child._state.cur.rect_size.y != child._state.prev.rect_size.y:
             child.context._viewport.redraw_needed = True
-            self.force_update = True
+            self._force_update = True
 
     @cython.final
     cdef void draw_children(self) noexcept nogil:
@@ -154,7 +154,7 @@ cdef class Layout(uiItem):
         if self.last_widgets_child is None:
             return
         cdef Vec2 parent_size_backup = self.context._viewport.parent_size
-        self.context._viewport.parent_size = self.state.cur.content_region_size
+        self.context._viewport.parent_size = self._state.cur.content_region_size
         cdef PyObject *child = <PyObject*> self.last_widgets_child
         while (<uiItem>child)._prev_sibling is not None:
             child = <PyObject *>(<uiItem>child)._prev_sibling
@@ -224,7 +224,7 @@ cdef class HorizontalLayout(Layout):
             raise ValueError("Invalid alignment value")
         if value == self._alignment_mode:
             return
-        self.force_update = True
+        self._force_update = True
         self._alignment_mode = value
 
     @property
@@ -243,7 +243,7 @@ cdef class HorizontalLayout(Layout):
         lock_gil_friendly(m, self.mutex)
         if value == self._no_wrap:
             return
-        self.force_update = True
+        self._force_update = True
         self._no_wrap = value
 
     @property
@@ -300,7 +300,7 @@ cdef class HorizontalLayout(Layout):
         self._positions.clear()
         for v in value:
             self._positions.push_back(v)
-        self.force_update = True
+        self._force_update = True
 
     def update_layout(self):
         """
@@ -309,29 +309,29 @@ cdef class HorizontalLayout(Layout):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.force_update = True
+        self._force_update = True
 
     cdef float __compute_items_size(self, int &n_items) noexcept nogil:
         cdef float size = 0.
         n_items = 0
         cdef PyObject *child = <PyObject*>self.last_widgets_child
         while (<uiItem>child) is not None:
-            size += (<uiItem>child).state.cur.rect_size.x
+            size += (<uiItem>child)._state.cur.rect_size.x
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).requested_size.x == 0 and not(self.state.prev.rendered):
+            if (<uiItem>child).requested_size.x == 0 and not(self._state.prev.rendered):
                 # Will need to recompute layout after the size is computed
-                self.force_update = True
+                self._force_update = True
         return size
 
     cdef void __update_layout(self) noexcept nogil:
         # Assumes all children are locked
         cdef PyObject *child = <PyObject*>self.last_widgets_child
-        cdef float end_x = self.state.cur.content_region_size.x
+        cdef float end_x = self._state.cur.content_region_size.x
         cdef float available_width = end_x
         #cdef float available_height = self.prev_content_area.y
-        cdef float spacing_x = self.spacing.x
-        cdef float spacing_y = self.spacing.y
+        cdef float spacing_x = self._spacing.x
+        cdef float spacing_y = self._spacing.y
         # Get back to the first child
         while ((<uiItem>child)._prev_sibling) is not None:
             child = <PyObject*>((<uiItem>child)._prev_sibling)
@@ -339,7 +339,7 @@ cdef class HorizontalLayout(Layout):
         cdef int i, n_items_this_row, row
         cdef float target_x, expected_x, expected_size, expected_size_next
         cdef float y, next_y = 0
-        cdef float wrap_x = max(-self.state.cur.pos_to_window.x, self._wrap_x)
+        cdef float wrap_x = max(-self._state.cur.pos_to_window.x, self._wrap_x)
         cdef bint pos_change = False
         row = 0
         while (<uiItem>child) is not None:
@@ -349,18 +349,18 @@ cdef class HorizontalLayout(Layout):
                 available_width -= wrap_x
             y = next_y
             n_items_this_row = 1
-            expected_size = (<uiItem>child).state.cur.rect_size.x
-            next_y = (<uiItem>child).state.cur.rect_size.y
+            expected_size = (<uiItem>child)._state.cur.rect_size.x
+            next_y = (<uiItem>child)._state.cur.rect_size.y
             sibling = child
             while (<uiItem>sibling)._next_sibling is not None:
                 # Does the next item fit ?
-                expected_size_next = expected_size + self.spacing.x + \
-                    (<uiItem>(<uiItem>sibling)._next_sibling).state.cur.rect_size.x
+                expected_size_next = expected_size + self._spacing.x + \
+                    (<uiItem>(<uiItem>sibling)._next_sibling)._state.cur.rect_size.x
                 # No: stop there
                 if expected_size_next > available_width and not(self._no_wrap):
                     break
                 expected_size = expected_size_next
-                next_y = max(next_y, y + (<uiItem>sibling).state.cur.rect_size.y)
+                next_y = max(next_y, y + (<uiItem>sibling)._state.cur.rect_size.y)
                 sibling = <PyObject*>(<uiItem>sibling)._next_sibling
                 n_items_this_row += 1
             next_y = next_y + spacing_y
@@ -387,7 +387,7 @@ cdef class HorizontalLayout(Layout):
             else: #self._alignment_mode == Alignment.JUSTIFIED:
                 target_x = 0 if row == 0 else wrap_x
                 # Increase spacing to fit target space
-                spacing_x = self.spacing.x + \
+                spacing_x = self._spacing.x + \
                     max(0, \
                         floor((available_width - expected_size) /
                                (n_items_this_row-1)))
@@ -397,18 +397,18 @@ cdef class HorizontalLayout(Layout):
 
             expected_x = 0
             for i in range(n_items_this_row-1):
-                (<uiItem>sibling).state.cur.pos_to_default.x = target_x - expected_x
-                pos_change |= (<uiItem>sibling).state.cur.pos_to_default.x != (<uiItem>sibling).state.prev.pos_to_default.x
+                (<uiItem>sibling)._state.cur.pos_to_default.x = target_x - expected_x
+                pos_change |= (<uiItem>sibling)._state.cur.pos_to_default.x != (<uiItem>sibling)._state.prev.pos_to_default.x
                 (<uiItem>sibling)._pos_policy[0] = Positioning.REL_DEFAULT
                 (<uiItem>sibling)._pos_policy[1] = Positioning.DEFAULT
                 (<uiItem>sibling)._no_newline = True
-                expected_x = target_x + self.spacing.x + (<uiItem>sibling).state.cur.rect_size.x
-                target_x = target_x + spacing_x + (<uiItem>sibling).state.cur.rect_size.x
+                expected_x = target_x + self._spacing.x + (<uiItem>sibling)._state.cur.rect_size.x
+                target_x = target_x + spacing_x + (<uiItem>sibling)._state.cur.rect_size.x
                 sibling = <PyObject*>(<uiItem>sibling)._next_sibling
             # Last item of the row
             if (self._alignment_mode == Alignment.RIGHT or \
                (self._alignment_mode == Alignment.JUSTIFIED and n_items_this_row != 1)) and \
-               (<uiItem>child).state.cur.rect_size.x == (<uiItem>child).state.prev.rect_size.x:
+               (<uiItem>child)._state.cur.rect_size.x == (<uiItem>child)._state.prev.rect_size.x:
                 # Align right item properly even if rounding
                 # occured on spacing.
                 # We check the item size is fixed because if the item tries to autosize
@@ -417,12 +417,12 @@ cdef class HorizontalLayout(Layout):
                 target_x -= spacing_x
                 # ideal spacing
                 spacing_x = \
-                    end_x - (target_x + (<uiItem>sibling).state.cur.rect_size.x)
+                    end_x - (target_x + (<uiItem>sibling)._state.cur.rect_size.x)
                 # real spacing
-                target_x += max(spacing_x, self.spacing.x)
+                target_x += max(spacing_x, self._spacing.x)
 
-            (<uiItem>sibling).state.cur.pos_to_default.x = target_x - expected_x
-            pos_change |= (<uiItem>sibling).state.cur.pos_to_default.x != (<uiItem>sibling).state.prev.pos_to_default.x
+            (<uiItem>sibling)._state.cur.pos_to_default.x = target_x - expected_x
+            pos_change |= (<uiItem>sibling)._state.cur.pos_to_default.x != (<uiItem>sibling)._state.prev.pos_to_default.x
             (<uiItem>sibling)._pos_policy[0] = Positioning.REL_DEFAULT
             (<uiItem>sibling)._pos_policy[1] = Positioning.DEFAULT
             (<uiItem>sibling)._no_newline = False
@@ -430,7 +430,7 @@ cdef class HorizontalLayout(Layout):
             row += 1
         # A change in position change alter the size for some items
         if pos_change:
-            self.force_update = True
+            self._force_update = True
             self.context._viewport.redraw_needed = True
 
 
@@ -464,9 +464,9 @@ cdef class HorizontalLayout(Layout):
         #imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
-        if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
-            self.force_update = True
+        if self._state.cur.rect_size.x != self._state.prev.rect_size.x or \
+           self._state.cur.rect_size.y != self._state.prev.rect_size.y:
+            self._force_update = True
             self.context._viewport.redraw_needed = True
         return changed
 
@@ -547,19 +547,19 @@ cdef class VerticalLayout(Layout):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.force_update = True
+        self._force_update = True
 
     cdef float __compute_items_size(self, int &n_items) noexcept nogil:
         cdef float size = 0.
         n_items = 0
         cdef PyObject *child = <PyObject*>self.last_widgets_child
         while (<uiItem>child) is not None:
-            size += (<uiItem>child).state.cur.rect_size.y
+            size += (<uiItem>child)._state.cur.rect_size.y
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).requested_size.y == 0 and not(self.state.prev.rendered):
+            if (<uiItem>child).requested_size.y == 0 and not(self._state.prev.rendered):
                 # Will need to recompute layout after the size is computed
-                self.force_update = True
+                self._force_update = True
         return size
 
     cdef void __update_layout(self) noexcept nogil:
@@ -573,7 +573,7 @@ cdef class VerticalLayout(Layout):
             child = <PyObject*>((<uiItem>child)._prev_sibling)
         self.last_widgets_child._no_newline = False
 
-        cdef float available_height = self.state.cur.content_region_size.y
+        cdef float available_height = self._state.cur.content_region_size.y
 
         cdef float pos_end, pos_start, target_pos, size, spacing, rem
         cdef int n_items = 0
@@ -587,22 +587,22 @@ cdef class VerticalLayout(Layout):
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 # Position at which to render to end at pos_end
-                target_pos = pos_end - (<uiItem>child).state.cur.rect_size.y
-                (<uiItem>child).state.cur.pos_to_parent.y = target_pos
-                pos_end = target_pos - self._spacing
+                target_pos = pos_end - (<uiItem>child)._state.cur.rect_size.y
+                (<uiItem>child)._state.cur.pos_to_parent.y = target_pos
+                pos_end = target_pos - self._spacing.y
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == Alignment.CENTER:
             size = self.__compute_items_size(n_items)
-            size += max(0, (n_items - 1)) * self._spacing
+            size += max(0, (n_items - 1)) * self._spacing.y
             pos_start = available_height // 2 - \
                         size // 2 # integer rounding to avoid blurring
             pos_end = pos_start + size
             child = <PyObject*>self.last_widgets_child
             while (<uiItem>child) is not None:
                 # Position at which to render to end at size
-                target_pos = pos_end - (<uiItem>child).state.cur.rect_size.y
-                (<uiItem>child).state.cur.pos_to_parent.y = target_pos
-                pos_end = target_pos - self._spacing
+                target_pos = pos_end - (<uiItem>child)._state.cur.rect_size.y
+                (<uiItem>child)._state.cur.pos_to_parent.y = target_pos
+                pos_end = target_pos - self._spacing.y
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
         elif self._alignment_mode == Alignment.JUSTIFIED:
             size = self.__compute_items_size(n_items)
@@ -617,8 +617,8 @@ cdef class VerticalLayout(Layout):
                 rem += spacing
                 child = <PyObject*>self.last_widgets_child
                 while (<uiItem>child) is not None:
-                    target_pos = pos_end - (<uiItem>child).state.cur.rect_size.y
-                    (<uiItem>child).state.cur.pos_to_parent.y = target_pos
+                    target_pos = pos_end - (<uiItem>child)._state.cur.rect_size.y
+                    (<uiItem>child)._state.cur.pos_to_parent.y = target_pos
                     pos_end = target_pos
                     pos_end -= rem
                     # Use rem for the last item, then spacing
@@ -644,11 +644,11 @@ cdef class VerticalLayout(Layout):
                     else:
                         pos_start += available_height
 
-                (<uiItem>child).state.cur.pos_to_parent.y = pos_start
+                (<uiItem>child)._state.cur.pos_to_parent.y = pos_start
                 child = <PyObject*>((<uiItem>child)._prev_sibling)
                 n_items += 1
 
-        if self.force_update:
+        if self._force_update:
             # Prevent not refreshing
             self.context._viewport.redraw_needed = True
 
@@ -682,8 +682,8 @@ cdef class VerticalLayout(Layout):
         #imgui.PopStyleVar(1)
         imgui.PopID()
         self.update_current_state()
-        if self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-           self.state.cur.rect_size.y != self.state.prev.rect_size.y:
+        if self._state.cur.rect_size.x != self._state.prev.rect_size.x or \
+           self._state.cur.rect_size.y != self._state.prev.rect_size.y:
             self.context._viewport.redraw_needed = True
         return changed
 
@@ -700,8 +700,8 @@ cdef class WindowLayout(uiItem):
         self.theme_condition_category = ThemeCategories.t_layout
         self.element_child_category = child_type.cat_window
         self.can_be_disabled = False
-        self.previous_last_child = NULL
-        self.state.cap.has_content_region = True
+        self._previous_last_child = NULL
+        self._state.cap.has_content_region = True
 
     def update_layout(self):
         cdef int i
@@ -715,8 +715,8 @@ cdef class WindowLayout(uiItem):
     cdef Vec2 update_content_area(self) noexcept nogil:
         cdef Vec2 full_content_area = self.context._viewport.parent_size
         cdef Vec2 cur_content_area
-        full_content_area.x -= self.state.cur.pos_to_viewport.x
-        full_content_area.y -= self.state.cur.pos_to_viewport.y
+        full_content_area.x -= self._state.cur.pos_to_viewport.x
+        full_content_area.y -= self._state.cur.pos_to_viewport.y
         cdef float global_scale = self.context._viewport.global_scale
         if not(self.dpi_scaling):
             global_scale = 1.
@@ -746,25 +746,25 @@ cdef class WindowLayout(uiItem):
             cur_content_area.y = full_content_area.y
         cur_content_area.x = max(0, cur_content_area.x)
         cur_content_area.y = max(0, cur_content_area.y)
-        self.state.cur.content_region_size = cur_content_area
+        self._state.cur.content_region_size = cur_content_area
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
-        cdef Vec2 cur_content_area = self.state.cur.content_region_size
-        cdef Vec2 prev_content_area = self.state.prev.content_region_size
+        cdef Vec2 cur_content_area = self._state.cur.content_region_size
+        cdef Vec2 prev_content_area = self._state.prev.content_region_size
         cdef Vec2 cur_spacing = make_Vec2(0., 0.)
         cdef bint changed = False
         if cur_content_area.x != prev_content_area.x or \
            cur_content_area.y != prev_content_area.y or \
-           self.previous_last_child != <PyObject*>self.last_window_child or \
-           cur_spacing.x != self.spacing.x or \
-           cur_spacing.y != self.spacing.y or \
+           self._previous_last_child != <PyObject*>self.last_window_child or \
+           cur_spacing.x != self._spacing.x or \
+           cur_spacing.y != self._spacing.y or \
            self.size_update_requested or \
-           self.force_update: # TODO: check spacing too
+           self._force_update: # TODO: check spacing too
             changed = True
-            self.spacing = cur_spacing
-            self.previous_last_child = <PyObject*>self.last_window_child
-            self.force_update = False
+            self._spacing = cur_spacing
+            self._previous_last_child = <PyObject*>self.last_window_child
+            self._force_update = False
             self.size_update_requested = False
         return changed
 
@@ -772,12 +772,12 @@ cdef class WindowLayout(uiItem):
     cdef void draw_child(self, uiItem child) noexcept nogil:
         child.pos_update_requested = True
         child.draw()
-        if child.state.cur.rect_size.x != child.state.prev.rect_size.x or \
-           child.state.cur.rect_size.y != child.state.prev.rect_size.y or \
-           child.state.cur.pos_to_viewport.x != child.state.prev.pos_to_viewport.x or \
-           child.state.cur.pos_to_viewport.y != child.state.prev.pos_to_viewport.y:
+        if child._state.cur.rect_size.x != child._state.prev.rect_size.x or \
+           child._state.cur.rect_size.y != child._state.prev.rect_size.y or \
+           child._state.cur.pos_to_viewport.x != child._state.prev.pos_to_viewport.x or \
+           child._state.cur.pos_to_viewport.y != child._state.prev.pos_to_viewport.y:
             child.context._viewport.redraw_needed = True
-            self.force_update = True
+            self._force_update = True
 
     @cython.final
     cdef void draw_children(self) noexcept nogil:
@@ -788,7 +788,7 @@ cdef class WindowLayout(uiItem):
         if self.last_window_child is None:
             return
         cdef Vec2 parent_size_backup = self.context._viewport.parent_size
-        self.context._viewport.parent_size = self.state.cur.content_region_size
+        self.context._viewport.parent_size = self._state.cur.content_region_size
         cdef Vec2 cursor_pos_backup = self.context._viewport.window_cursor
         cdef Vec2 pos_min, pos_max
         pos_min = self.context._viewport.get_size()
@@ -798,14 +798,14 @@ cdef class WindowLayout(uiItem):
             child = <PyObject *>(<uiItem>child)._prev_sibling
         while (<uiItem>child) is not None:
             self.draw_child(<uiItem>child)
-            pos_min.x = min(pos_min.x, (<uiItem>child).state.cur.pos_to_viewport.x)
-            pos_min.y = min(pos_min.y, (<uiItem>child).state.cur.pos_to_viewport.y)
-            pos_max.x = max(pos_max.x, (<uiItem>child).state.cur.pos_to_viewport.x + (<uiItem>child).state.cur.rect_size.x)
-            pos_max.y = max(pos_max.y, (<uiItem>child).state.cur.pos_to_viewport.y + (<uiItem>child).state.cur.rect_size.y)
+            pos_min.x = min(pos_min.x, (<uiItem>child)._state.cur.pos_to_viewport.x)
+            pos_min.y = min(pos_min.y, (<uiItem>child)._state.cur.pos_to_viewport.y)
+            pos_max.x = max(pos_max.x, (<uiItem>child)._state.cur.pos_to_viewport.x + (<uiItem>child)._state.cur.rect_size.x)
+            pos_max.y = max(pos_max.y, (<uiItem>child)._state.cur.pos_to_viewport.y + (<uiItem>child)._state.cur.rect_size.y)
             child = <PyObject *>(<uiItem>child)._next_sibling
-        self.state.cur.pos_to_viewport = pos_min
-        self.state.cur.rect_size.x = pos_max.x - pos_min.x
-        self.state.cur.rect_size.y = pos_max.y - pos_min.y
+        self._state.cur.pos_to_viewport = pos_min
+        self._state.cur.rect_size.x = pos_max.x - pos_min.x
+        self._state.cur.rect_size.y = pos_max.y - pos_min.y
         self.context._viewport.parent_size = parent_size_backup
 
     cdef void __update_layout(self) noexcept nogil:
@@ -828,23 +828,23 @@ cdef class WindowLayout(uiItem):
         cdef Vec2 cursor_pos_backup = self.context._viewport.window_cursor
         cdef Vec2 pos_p, pos = cursor_pos_backup
         if policy[0] == Positioning.REL_DEFAULT:
-            pos.x += self.state.cur.pos_to_default.x
+            pos.x += self._state.cur.pos_to_default.x
         elif policy[0] == Positioning.REL_PARENT:
-            pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
+            pos.x = self.context._viewport.parent_pos.x + self._state.cur.pos_to_parent.x
         elif policy[0] == Positioning.REL_WINDOW:
-            pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
+            pos.x = self.context._viewport.window_pos.x + self._state.cur.pos_to_window.x
         elif policy[0] == Positioning.REL_VIEWPORT:
-            pos.x = self.state.cur.pos_to_viewport.x
+            pos.x = self._state.cur.pos_to_viewport.x
         # else: DEFAULT
 
         if policy[1] == Positioning.REL_DEFAULT:
-            pos.y += self.state.cur.pos_to_default.y
+            pos.y += self._state.cur.pos_to_default.y
         elif policy[1] == Positioning.REL_PARENT:
-            pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
+            pos.y = self.context._viewport.parent_pos.y + self._state.cur.pos_to_parent.y
         elif policy[1] == Positioning.REL_WINDOW:
-            pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
+            pos.y = self.context._viewport.window_pos.y + self._state.cur.pos_to_window.y
         elif policy[1] == Positioning.REL_VIEWPORT:
-            pos.y = self.state.cur.pos_to_viewport.y
+            pos.y = self._state.cur.pos_to_viewport.y
 
         if self.last_window_child is not None:
             pos_p = pos
@@ -857,12 +857,12 @@ cdef class WindowLayout(uiItem):
         if changed:
             self.last_window_child.unlock_and_previous_siblings()
 
-        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
-        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
-        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
-        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
-        self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
-        self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
+        self._state.cur.pos_to_window.x = self._state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+        self._state.cur.pos_to_window.y = self._state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+        self._state.cur.pos_to_parent.x = self._state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+        self._state.cur.pos_to_parent.y = self._state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
+        self._state.cur.pos_to_default.x = self._state.cur.pos_to_viewport.x - cursor_pos_backup.x
+        self._state.cur.pos_to_default.y = self._state.cur.pos_to_viewport.y - cursor_pos_backup.y
 
 
 cdef class WindowHorizontalLayout(WindowLayout):
@@ -916,7 +916,7 @@ cdef class WindowHorizontalLayout(WindowLayout):
             raise ValueError("Invalid alignment value")
         if value == self._alignment_mode:
             return
-        self.force_update = True
+        self._force_update = True
         self._alignment_mode = value
 
     @property 
@@ -935,7 +935,7 @@ cdef class WindowHorizontalLayout(WindowLayout):
         lock_gil_friendly(m, self.mutex)
         if value == self._no_wrap:
             return
-        self.force_update = True
+        self._force_update = True
         self._no_wrap = value
 
     @property
@@ -989,7 +989,7 @@ cdef class WindowHorizontalLayout(WindowLayout):
         self._positions.clear()
         for v in value:
             self._positions.push_back(v)
-        self.force_update = True
+        self._force_update = True
 
     cdef float __compute_items_size(self, int &n_items) noexcept nogil:
         """Compute total width of all windows"""
@@ -997,20 +997,20 @@ cdef class WindowHorizontalLayout(WindowLayout):
         n_items = 0
         cdef PyObject *child = <PyObject*>self.last_window_child
         while (<uiItem>child) is not None:
-            size += (<uiItem>child).state.cur.rect_size.x
+            size += (<uiItem>child)._state.cur.rect_size.x
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).requested_size.x == 0 and not(self.state.prev.rendered):
-                self.force_update = True
+            if (<uiItem>child).requested_size.x == 0 and not(self._state.prev.rendered):
+                self._force_update = True
         return size
 
     cdef void __update_layout(self) noexcept nogil:
         """Position the windows horizontally according to alignment mode"""
         cdef PyObject *child = <PyObject*>self.last_window_child
-        cdef float end_x = self.state.cur.content_region_size.x
+        cdef float end_x = self._state.cur.content_region_size.x
         cdef float available_width = end_x
-        cdef float spacing_x = self.spacing.x
-        cdef float spacing_y = self.spacing.y
+        cdef float spacing_x = self._spacing.x
+        cdef float spacing_y = self._spacing.y
         # Get back to the first child
         while ((<uiItem>child)._prev_sibling) is not None:
             child = <PyObject*>((<uiItem>child)._prev_sibling) 
@@ -1023,10 +1023,10 @@ cdef class WindowHorizontalLayout(WindowLayout):
         while (<uiItem>child) is not None:
             sibling = child
             n_items_this_row = 1
-            expected_size = (<uiItem>child).state.cur.rect_size.x
+            expected_size = (<uiItem>child)._state.cur.rect_size.x
             while (<uiItem>sibling)._next_sibling is not None:
-                expected_size = expected_size + self.spacing.x + \
-                    (<uiItem>(<uiItem>sibling)._next_sibling).state.cur.rect_size.x
+                expected_size = expected_size + self._spacing.x + \
+                    (<uiItem>(<uiItem>sibling)._next_sibling)._state.cur.rect_size.x
                 sibling = <PyObject*>(<uiItem>sibling)._next_sibling
                 n_items_this_row += 1
 
@@ -1044,7 +1044,7 @@ cdef class WindowHorizontalLayout(WindowLayout):
             else: # JUSTIFIED
                 target_x = 0
                 # Increase spacing to fit target space
-                spacing_x = self.spacing.x + \
+                spacing_x = self._spacing.x + \
                     max(0, \
                         floor((available_width - expected_size) /
                                (n_items_this_row-1)))
@@ -1053,28 +1053,28 @@ cdef class WindowHorizontalLayout(WindowLayout):
 
             expected_x = 0
             for i in range(n_items_this_row-1):
-                (<uiItem>sibling).state.cur.pos_to_parent.x = target_x
-                (<uiItem>sibling).state.cur.pos_to_parent.y = 0
-                pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.x != (<uiItem>sibling).state.prev.pos_to_viewport.x
+                (<uiItem>sibling)._state.cur.pos_to_parent.x = target_x
+                (<uiItem>sibling)._state.cur.pos_to_parent.y = 0
+                pos_change |= (<uiItem>sibling)._state.cur.pos_to_viewport.x != (<uiItem>sibling)._state.prev.pos_to_viewport.x
                 (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
                 (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
                 (<uiItem>sibling).pos_update_requested = pos_change
-                target_x = target_x + spacing_x + (<uiItem>sibling).state.cur.rect_size.x
+                target_x = target_x + spacing_x + (<uiItem>sibling)._state.cur.rect_size.x
                 sibling = <PyObject*>(<uiItem>sibling)._next_sibling
 
             # Last item of the row
             if (self._alignment_mode == Alignment.RIGHT or \
                (self._alignment_mode == Alignment.JUSTIFIED and n_items_this_row != 1)) and \
-               (<uiItem>child).state.cur.rect_size.x == (<uiItem>child).state.prev.rect_size.x:
+               (<uiItem>child)._state.cur.rect_size.x == (<uiItem>child)._state.prev.rect_size.x:
                 # Align right item properly even if rounding occurred
                 target_x -= spacing_x
                 spacing_x = \
-                    end_x - (target_x + (<uiItem>sibling).state.cur.rect_size.x)
-                target_x += max(spacing_x, self.spacing.x)
+                    end_x - (target_x + (<uiItem>sibling)._state.cur.rect_size.x)
+                target_x += max(spacing_x, self._spacing.x)
 
-            (<uiItem>sibling).state.cur.pos_to_viewport.x = target_x
-            (<uiItem>sibling).state.cur.pos_to_viewport.y = 0
-            pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.x != (<uiItem>sibling).state.prev.pos_to_viewport.x
+            (<uiItem>sibling)._state.cur.pos_to_viewport.x = target_x
+            (<uiItem>sibling)._state.cur.pos_to_viewport.y = 0
+            pos_change |= (<uiItem>sibling)._state.cur.pos_to_viewport.x != (<uiItem>sibling)._state.prev.pos_to_viewport.x
             (<uiItem>sibling).pos_update_requested = pos_change
             (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
             (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
@@ -1082,7 +1082,7 @@ cdef class WindowHorizontalLayout(WindowLayout):
 
         # A change in position changes the size for some items
         if pos_change:
-            self.force_update = True
+            self._force_update = True
             self.context._viewport.redraw_needed = True
             with gil:
                 for i in range(<int>self._callbacks.size()):
@@ -1143,7 +1143,7 @@ cdef class WindowVerticalLayout(WindowLayout):
             raise ValueError("Invalid alignment value")
         if value == self._alignment_mode:
             return
-        self.force_update = True
+        self._force_update = True
         self._alignment_mode = value
 
     @property
@@ -1177,27 +1177,27 @@ cdef class WindowVerticalLayout(WindowLayout):
         self._positions.clear()
         for v in value:
             self._positions.push_back(v)
-        self.force_update = True
+        self._force_update = True
 
     cdef float __compute_items_size(self, int &n_items) noexcept nogil:
         cdef float size = 0.
         n_items = 0
         cdef PyObject *child = <PyObject*>self.last_window_child
         while (<uiItem>child) is not None:
-            size += (<uiItem>child).state.cur.rect_size.y
+            size += (<uiItem>child)._state.cur.rect_size.y
             n_items += 1
             child = <PyObject*>((<uiItem>child)._prev_sibling)
-            if (<uiItem>child).requested_size.y == 0 and not(self.state.prev.rendered):
-                self.force_update = True
+            if (<uiItem>child).requested_size.y == 0 and not(self._state.prev.rendered):
+                self._force_update = True
         return size
 
     cdef void __update_layout(self) noexcept nogil:
         """Position the windows vertically according to alignment mode"""
         cdef PyObject *child = <PyObject*>self.last_window_child
-        cdef float end_y = self.state.cur.content_region_size.y
+        cdef float end_y = self._state.cur.content_region_size.y
         cdef float available_height = end_y
-        cdef float spacing_x = self.spacing.x
-        cdef float spacing_y = self.spacing.y
+        cdef float spacing_x = self._spacing.x
+        cdef float spacing_y = self._spacing.y
         # Get back to the first child
         while ((<uiItem>child)._prev_sibling) is not None:
             child = <PyObject*>((<uiItem>child)._prev_sibling) 
@@ -1210,10 +1210,10 @@ cdef class WindowVerticalLayout(WindowLayout):
         while (<uiItem>child) is not None:
             sibling = child
             n_items_this_row = 1
-            expected_size = (<uiItem>child).state.cur.rect_size.y
+            expected_size = (<uiItem>child)._state.cur.rect_size.y
             while (<uiItem>sibling)._next_sibling is not None:
-                expected_size = expected_size + self.spacing.y + \
-                    (<uiItem>(<uiItem>sibling)._next_sibling).state.cur.rect_size.y
+                expected_size = expected_size + self._spacing.y + \
+                    (<uiItem>(<uiItem>sibling)._next_sibling)._state.cur.rect_size.y
                 sibling = <PyObject*>(<uiItem>sibling)._next_sibling
                 n_items_this_row += 1
 
@@ -1231,7 +1231,7 @@ cdef class WindowVerticalLayout(WindowLayout):
             else: # JUSTIFIED
                 target_y = 0
                 # Increase spacing to fit target space
-                spacing_y = self.spacing.y + \
+                spacing_y = self._spacing.y + \
                     max(0, \
                         floor((available_height - expected_size) /
                                (n_items_this_row-1)))
@@ -1240,28 +1240,28 @@ cdef class WindowVerticalLayout(WindowLayout):
 
             expected_y = 0
             for i in range(n_items_this_row-1):
-                (<uiItem>sibling).state.cur.pos_to_parent.y = target_y
-                (<uiItem>sibling).state.cur.pos_to_parent.x = 0
-                pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.y != (<uiItem>sibling).state.prev.pos_to_viewport.y
+                (<uiItem>sibling)._state.cur.pos_to_parent.y = target_y
+                (<uiItem>sibling)._state.cur.pos_to_parent.x = 0
+                pos_change |= (<uiItem>sibling)._state.cur.pos_to_viewport.y != (<uiItem>sibling)._state.prev.pos_to_viewport.y
                 (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
                 (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
                 (<uiItem>sibling).pos_update_requested = pos_change
-                target_y = target_y + spacing_y + (<uiItem>sibling).state.cur.rect_size.y
+                target_y = target_y + spacing_y + (<uiItem>sibling)._state.cur.rect_size.y
                 sibling = <PyObject*>(<uiItem>sibling)._next_sibling
 
             # Last item of the row
             if (self._alignment_mode == Alignment.BOTTOM or \
                (self._alignment_mode == Alignment.JUSTIFIED and n_items_this_row != 1)) and \
-               (<uiItem>child).state.cur.rect_size.y == (<uiItem>child).state.prev.rect_size.y:
+               (<uiItem>child)._state.cur.rect_size.y == (<uiItem>child)._state.prev.rect_size.y:
                 # Align bottom item properly even if rounding occurred
                 target_y -= spacing_y
                 spacing_y = \
-                    end_y - (target_y + (<uiItem>sibling).state.cur.rect_size.y)
-                target_y += max(spacing_y, self.spacing.y)
+                    end_y - (target_y + (<uiItem>sibling)._state.cur.rect_size.y)
+                target_y += max(spacing_y, self._spacing.y)
 
-            (<uiItem>sibling).state.cur.pos_to_viewport.y = target_y
-            (<uiItem>sibling).state.cur.pos_to_viewport.x = 0
-            pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.y != (<uiItem>sibling).state.prev.pos_to_viewport.y
+            (<uiItem>sibling)._state.cur.pos_to_viewport.y = target_y
+            (<uiItem>sibling)._state.cur.pos_to_viewport.x = 0
+            pos_change |= (<uiItem>sibling)._state.cur.pos_to_viewport.y != (<uiItem>sibling)._state.prev.pos_to_viewport.y
             (<uiItem>sibling).pos_update_requested = pos_change
             (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
             (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
@@ -1269,7 +1269,7 @@ cdef class WindowVerticalLayout(WindowLayout):
 
         # A change in position changes the size for some items
         if pos_change:
-            self.force_update = True
+            self._force_update = True
             self.context._viewport.redraw_needed = True
             with gil:
                 for i in range(<int>self._callbacks.size()):

@@ -137,13 +137,13 @@ cdef class DrawInvisibleButton(drawingItem):
     """
     def __cinit__(self):
         self._button = 1
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.has_rect_size = True
-        self.state.cap.has_position = True
-        self.p_state = &self.state
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.has_rect_size = True
+        self._state.cap.has_position = True
+        self.p_state = &self._state
         self.can_have_drawing_child = True
         self._min_side = 0
         self._max_side = INFINITY
@@ -297,7 +297,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.active and not(self.state.prev.active)
+        return self._state.cur.active and not(self._state.prev.active)
 
     @property
     def active(self):
@@ -306,7 +306,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.active
+        return self._state.cur.active
 
     @property
     def clicked(self):
@@ -319,7 +319,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self.state.cur.clicked)
+        return tuple(self._state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -332,7 +332,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.double_clicked
+        return self._state.cur.double_clicked
 
     @property
     def deactivated(self):
@@ -341,7 +341,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.prev.active and not(self.state.cur.active)
+        return self._state.prev.active and not(self._state.cur.active)
 
     @property
     def hovered(self):
@@ -350,7 +350,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.hovered
+        return self._state.cur.hovered
 
     @property
     def pos_to_viewport(self):
@@ -362,7 +362,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_viewport)
+        return Coord.build_v(self._state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -373,7 +373,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_window)
+        return Coord.build_v(self._state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -383,7 +383,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.pos_to_parent)
+        return Coord.build_v(self._state.cur.pos_to_parent)
 
     @property
     def rect_size(self):
@@ -392,7 +392,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self.state.cur.rect_size)
+        return Coord.build_v(self._state.cur.rect_size)
 
     @property
     def resized(self):
@@ -403,8 +403,8 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
-               self.state.cur.rect_size.y != self.state.prev.rect_size.y
+        return self._state.cur.rect_size.x != self._state.prev.rect_size.x or \
+               self._state.cur.rect_size.y != self._state.prev.rect_size.y
 
     @property
     def no_input(self):
@@ -500,15 +500,15 @@ cdef class DrawInvisibleButton(drawingItem):
         top_left.y = center.y - size.y * 0.5
         bottom_right.y = top_left.y + size.y
         # Update rect and position size
-        self.state.cur.rect_size = ImVec2Vec2(size)
-        self.state.cur.pos_to_viewport = ImVec2Vec2(top_left)
-        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
-        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
-        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
-        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
-        cdef bint was_visible = self.state.cur.rendered
-        self.state.cur.rendered = imgui.IsRectVisible(top_left, bottom_right) or self.state.cur.active
-        if not(was_visible) and not(self.state.cur.rendered):
+        self._state.cur.rect_size = ImVec2Vec2(size)
+        self._state.cur.pos_to_viewport = ImVec2Vec2(top_left)
+        self._state.cur.pos_to_window.x = self._state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+        self._state.cur.pos_to_window.y = self._state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+        self._state.cur.pos_to_parent.x = self._state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+        self._state.cur.pos_to_parent.y = self._state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
+        cdef bint was_visible = self._state.cur.rendered
+        self._state.cur.rendered = imgui.IsRectVisible(top_left, bottom_right) or self._state.cur.active
+        if not(was_visible) and not(self._state.cur.rendered):
             # Item is entirely clipped.
             # Do not skip the first time it is clipped,
             # in order to update the relevant states to False.
@@ -562,8 +562,8 @@ cdef class DrawInvisibleButton(drawingItem):
         else:
             activated = False
         self._capture_mouse = False
-        self.state.cur.active = activated or held
-        self.state.cur.hovered = hovered
+        self._state.cur.active = activated or held
+        self._state.cur.hovered = hovered
         if activated:
             if self.context._viewport.in_plot:
                 # IMPLOT_AUTO uses current axes
@@ -572,12 +572,12 @@ cdef class DrawInvisibleButton(drawingItem):
                                            implot.IMPLOT_AUTO)
                 cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
                 cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
-                self.initial_mouse_position = cur_mouse_pos
+                self._initial_mouse_position = cur_mouse_pos
             else:
-                self.initial_mouse_position = ImVec2Vec2(imgui.GetMousePos())
+                self._initial_mouse_position = ImVec2Vec2(imgui.GetMousePos())
         cdef bint dragging = False
         cdef int i
-        if self.state.cur.active:
+        if self._state.cur.active:
             if self.context._viewport.in_plot:
                 cur_mouse_pos_plot = implot.GetPlotMousePos(implot.IMPLOT_AUTO,
                                                             implot.IMPLOT_AUTO)
@@ -585,25 +585,25 @@ cdef class DrawInvisibleButton(drawingItem):
                 cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
             else:
                 cur_mouse_pos = ImVec2Vec2(imgui.GetMousePos())
-            dragging = cur_mouse_pos.x != self.initial_mouse_position.x or \
-                       cur_mouse_pos.y != self.initial_mouse_position.y
+            dragging = cur_mouse_pos.x != self._initial_mouse_position.x or \
+                       cur_mouse_pos.y != self._initial_mouse_position.y
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.cur.dragging[i] = dragging and imgui.IsMouseDown(i)
+                self._state.cur.dragging[i] = dragging and imgui.IsMouseDown(i)
                 if dragging:
-                    self.state.cur.drag_deltas[i].x = cur_mouse_pos.x - self.initial_mouse_position.x
-                    self.state.cur.drag_deltas[i].y = cur_mouse_pos.y - self.initial_mouse_position.y
+                    self._state.cur.drag_deltas[i].x = cur_mouse_pos.x - self._initial_mouse_position.x
+                    self._state.cur.drag_deltas[i].y = cur_mouse_pos.y - self._initial_mouse_position.y
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.cur.dragging[i] = False
+                self._state.cur.dragging[i] = False
 
-        if self.state.cur.hovered:
+        if self._state.cur.hovered:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.cur.clicked[i] = imgui.IsMouseClicked(i, False)
-                self.state.cur.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
+                self._state.cur.clicked[i] = imgui.IsMouseClicked(i, False)
+                self._state.cur.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self.state.cur.clicked[i] = False
-                self.state.cur.double_clicked[i] = False
+                self._state.cur.clicked[i] = False
+                self._state.cur.double_clicked[i] = False
 
         self.run_handlers()
 
@@ -641,10 +641,10 @@ cdef class DrawInWindow(uiItem):
     """
     def __cinit__(self):
         self.can_have_drawing_child = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_active = True
-        self.state.cap.has_rect_size = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.has_rect_size = True
 
     cdef bint draw_item(self) noexcept nogil:
         # negative width is used to indicate UI alignment
@@ -699,16 +699,16 @@ cdef class SimplePlot(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_simpleplot
         self._value = <SharedValue>(SharedFloatVect.__new__(SharedFloatVect, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._scale_min = 0.
         self._scale_max = 0.
         self.histogram = False
         self._autoscale = True
-        self.last_frame_autoscale_update = -1
+        self._last_frame_autoscale_update = -1
 
     @property
     def scale_min(self):
@@ -790,8 +790,8 @@ cdef class SimplePlot(uiItem):
         cdef float[:] data = SharedFloatVect.get(<SharedFloatVect>self._value)
         cdef int i
         if self._autoscale and data.shape[0] > 0:
-            if self._value._last_frame_change != self.last_frame_autoscale_update:
-                self.last_frame_autoscale_update = self._value._last_frame_change
+            if self._value._last_frame_change != self._last_frame_autoscale_update:
+                self._last_frame_autoscale_update = self._value._last_frame_change
                 self._scale_min = data[0]
                 self._scale_max = data[0]
                 for i in range(1, data.shape[0]):
@@ -827,11 +827,11 @@ cdef class Button(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_button
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._direction = imgui.ImGuiDir_Up
         self._small = False
         self._arrow = False
@@ -913,7 +913,7 @@ cdef class Button(uiItem):
                                      Vec2ImVec2(self.scaled_requested_size()))
         imgui.PopItemFlag()
         self.update_current_state()
-        SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
+        SharedBool.set(<SharedBool>self._value, self._state.cur.active) # Unsure. Not in original
         return activated
 
 
@@ -921,15 +921,15 @@ cdef class Combo(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_combo
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_toggled = True
-        self.flags = imgui.ImGuiComboFlags_HeightRegular
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_toggled = True
+        self._flags = imgui.ImGuiComboFlags_HeightRegular
 
     @property
     def items(self):
@@ -974,11 +974,11 @@ cdef class Combo(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if (self.flags & imgui.ImGuiComboFlags_HeightSmall) != 0:
+        if (self._flags & imgui.ImGuiComboFlags_HeightSmall) != 0:
             return "small"
-        elif (self.flags & imgui.ImGuiComboFlags_HeightLargest) != 0:
+        elif (self._flags & imgui.ImGuiComboFlags_HeightLargest) != 0:
             return "largest"
-        elif (self.flags & imgui.ImGuiComboFlags_HeightLarge) != 0:
+        elif (self._flags & imgui.ImGuiComboFlags_HeightLarge) != 0:
             return "large"
         return "regular"
 
@@ -986,20 +986,20 @@ cdef class Combo(uiItem):
     def height_mode(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~(imgui.ImGuiComboFlags_HeightSmall |
+        self._flags &= ~(imgui.ImGuiComboFlags_HeightSmall |
                         imgui.ImGuiComboFlags_HeightRegular |
                         imgui.ImGuiComboFlags_HeightLarge |
                         imgui.ImGuiComboFlags_HeightLargest)
         if value == "small":
-            self.flags |= imgui.ImGuiComboFlags_HeightSmall
+            self._flags |= imgui.ImGuiComboFlags_HeightSmall
         elif value == "regular":
-            self.flags |= imgui.ImGuiComboFlags_HeightRegular
+            self._flags |= imgui.ImGuiComboFlags_HeightRegular
         elif value == "large":
-            self.flags |= imgui.ImGuiComboFlags_HeightLarge
+            self._flags |= imgui.ImGuiComboFlags_HeightLarge
         elif value == "largest":
-            self.flags |= imgui.ImGuiComboFlags_HeightLargest
+            self._flags |= imgui.ImGuiComboFlags_HeightLargest
         else:
-            self.flags |= imgui.ImGuiComboFlags_HeightRegular
+            self._flags |= imgui.ImGuiComboFlags_HeightRegular
             raise ValueError("Invalid height mode {value}")
 
     @property
@@ -1009,15 +1009,15 @@ cdef class Combo(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiComboFlags_PopupAlignLeft) != 0
+        return (self._flags & imgui.ImGuiComboFlags_PopupAlignLeft) != 0
 
     @popup_align_left.setter
     def popup_align_left(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiComboFlags_PopupAlignLeft
+        self._flags &= ~imgui.ImGuiComboFlags_PopupAlignLeft
         if value:
-            self.flags |= imgui.ImGuiComboFlags_PopupAlignLeft
+            self._flags |= imgui.ImGuiComboFlags_PopupAlignLeft
 
     @property
     def no_arrow_button(self):
@@ -1026,15 +1026,15 @@ cdef class Combo(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiComboFlags_NoArrowButton) != 0
+        return (self._flags & imgui.ImGuiComboFlags_NoArrowButton) != 0
 
     @no_arrow_button.setter
     def no_arrow_button(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiComboFlags_NoArrowButton
+        self._flags &= ~imgui.ImGuiComboFlags_NoArrowButton
         if value:
-            self.flags |= imgui.ImGuiComboFlags_NoArrowButton
+            self._flags |= imgui.ImGuiComboFlags_NoArrowButton
 
     @property
     def no_preview(self):
@@ -1043,15 +1043,15 @@ cdef class Combo(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiComboFlags_NoPreview) != 0
+        return (self._flags & imgui.ImGuiComboFlags_NoPreview) != 0
 
     @no_preview.setter
     def no_preview(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiComboFlags_NoPreview
+        self._flags &= ~imgui.ImGuiComboFlags_NoPreview
         if value:
-            self.flags |= imgui.ImGuiComboFlags_NoPreview
+            self._flags |= imgui.ImGuiComboFlags_NoPreview
 
     @property
     def fit_width(self):
@@ -1060,15 +1060,15 @@ cdef class Combo(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiComboFlags_WidthFitPreview) != 0
+        return (self._flags & imgui.ImGuiComboFlags_WidthFitPreview) != 0
 
     @fit_width.setter
     def fit_width(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiComboFlags_WidthFitPreview
+        self._flags &= ~imgui.ImGuiComboFlags_WidthFitPreview
         if value:
-            self.flags |= imgui.ImGuiComboFlags_WidthFitPreview
+            self._flags |= imgui.ImGuiComboFlags_WidthFitPreview
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint open
@@ -1077,12 +1077,12 @@ cdef class Combo(uiItem):
         SharedStr.get(<SharedStr>self._value, current_value)
         open = imgui.BeginCombo(self.imgui_label.c_str(),
                                 current_value.c_str(),
-                                self.flags)
+                                self._flags)
         # Old code called update_current_state now, and updated edited state
         # later. Looking at ImGui code there seems to be two items. One
         # for the combo, and one for the popup that opens. The edited flag
         # is not set, looking at imgui demo so we have to handle it manually.
-        self.state.cur.open = open
+        self._state.cur.open = open
         self.update_current_state_subset()
 
         cdef bool pressed = False
@@ -1117,8 +1117,8 @@ cdef class Combo(uiItem):
             imgui.PopID()
             imgui.EndCombo()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
-        self.state.cur.edited = changed
-        self.state.cur.deactivated_after_edited = self.state.prev.active and changed and not(self.state.cur.active)
+        self._state.cur.edited = changed
+        self._state.cur.deactivated_after_edited = self._state.prev.active and changed and not(self._state.cur.active)
         return pressed
 
 
@@ -1126,10 +1126,10 @@ cdef class Checkbox(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_checkbox
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bool checked = SharedBool.get(<SharedBool>self._value)
@@ -1157,17 +1157,17 @@ cdef class Slider(uiItem):
         self._drag = False
         self._drag_speed = 1.
         self._print_format = b"%.3f"
-        self.flags = 0
+        self._flags = 0
         self._min = 0.
         self._max = 100.
         self._vertical = False
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self.state.cap.can_be_active = True # unsure
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True # unsure
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     def configure(self, **kwargs):
         # Since some options cancel each other, one
@@ -1285,15 +1285,15 @@ cdef class Slider(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSliderFlags_AlwaysClamp) != 0
+        return (self._flags & imgui.ImGuiSliderFlags_AlwaysClamp) != 0
 
     @clamped.setter
     def clamped(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiSliderFlags_AlwaysClamp
+        self._flags &= ~imgui.ImGuiSliderFlags_AlwaysClamp
         if value:
-            self.flags |= imgui.ImGuiSliderFlags_AlwaysClamp
+            self._flags |= imgui.ImGuiSliderFlags_AlwaysClamp
 
     @property
     def drag(self):
@@ -1322,15 +1322,15 @@ cdef class Slider(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSliderFlags_Logarithmic) != 0
+        return (self._flags & imgui.ImGuiSliderFlags_Logarithmic) != 0
 
     @logarithmic.setter
     def logarithmic(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~(imgui.ImGuiSliderFlags_Logarithmic | imgui.ImGuiSliderFlags_NoRoundToFormat)
+        self._flags &= ~(imgui.ImGuiSliderFlags_Logarithmic | imgui.ImGuiSliderFlags_NoRoundToFormat)
         if value:
-            self.flags |= (imgui.ImGuiSliderFlags_Logarithmic | imgui.ImGuiSliderFlags_NoRoundToFormat)
+            self._flags |= (imgui.ImGuiSliderFlags_Logarithmic | imgui.ImGuiSliderFlags_NoRoundToFormat)
 
     @property
     def min_value(self):
@@ -1372,15 +1372,15 @@ cdef class Slider(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSliderFlags_NoInput) != 0
+        return (self._flags & imgui.ImGuiSliderFlags_NoInput) != 0
 
     @no_input.setter
     def no_input(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiSliderFlags_NoInput
+        self._flags &= ~imgui.ImGuiSliderFlags_NoInput
         if value:
-            self.flags |= imgui.ImGuiSliderFlags_NoInput
+            self._flags |= imgui.ImGuiSliderFlags_NoInput
 
     @property
     def print_format(self):
@@ -1410,20 +1410,20 @@ cdef class Slider(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSliderFlags_NoRoundToFormat) == 0
+        return (self._flags & imgui.ImGuiSliderFlags_NoRoundToFormat) == 0
 
     @round_to_format.setter
     def round_to_format(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if value and (self.flags & imgui.ImGuiSliderFlags_Logarithmic) != 0:
+        if value and (self._flags & imgui.ImGuiSliderFlags_Logarithmic) != 0:
             # Note this is not a limitation from imgui, but they strongly
             # advise not to combine both, and thus we let the user do his
             # own rounding if he really wants to.
             raise ValueError("round_to_format cannot be enabled with logarithmic set")
-        self.flags &= ~imgui.ImGuiSliderFlags_NoRoundToFormat
+        self._flags &= ~imgui.ImGuiSliderFlags_NoRoundToFormat
         if not(value):
-            self.flags |= imgui.ImGuiSliderFlags_NoRoundToFormat
+            self._flags |= imgui.ImGuiSliderFlags_NoRoundToFormat
 
     @property
     def speed(self):
@@ -1464,7 +1464,7 @@ cdef class Slider(uiItem):
             self._drag = False
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImGuiSliderFlags flags = self.flags
+        cdef imgui.ImGuiSliderFlags flags = self._flags
         if not(self._enabled):
             flags |= imgui.ImGuiSliderFlags_NoInput
         cdef imgui.ImGuiDataType type
@@ -1599,13 +1599,13 @@ cdef class ListBox(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_listbox
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._num_items_shown_when_open = -1
 
     @property
@@ -1677,9 +1677,9 @@ cdef class ListBox(uiItem):
         # later. Looking at ImGui code there seems to be two items. One
         # for the combo, and one for the popup that opens. The edited flag
         # is not set, looking at imgui demo so we have to handle it manually.
-        self.state.cur.active = open # TODO move to toggled ?
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_edited = True
+        self._state.cur.active = open # TODO move to toggled ?
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_edited = True
         self.update_current_state_subset()
 
         cdef bool pressed = False
@@ -1717,8 +1717,8 @@ cdef class ListBox(uiItem):
             imgui.PopID()
             imgui.EndListBox()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
-        self.state.cur.edited = changed
-        #self.state.cur.deactivated_after_edited = self.state.cur.deactivated and changed -> TODO Unsure. Isn't it rather focus loss ?
+        self._state.cur.edited = changed
+        #self._state.cur.deactivated_after_edited = self._state.cur.deactivated and changed -> TODO Unsure. Isn't it rather focus loss ?
         return pressed
 
 
@@ -1726,13 +1726,13 @@ cdef class RadioButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_radiobutton
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._horizontal = False
 
     @property
@@ -1819,16 +1819,16 @@ cdef class InputText(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_inputtext
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._multiline = False
         self._max_characters = 1024
-        self.flags = imgui.ImGuiInputTextFlags_None
+        self._flags = imgui.ImGuiInputTextFlags_None
         self._buffer = <char*>malloc(self._max_characters + 1)
         if self._buffer == NULL:
             raise MemoryError("Failed to allocate input buffer")
@@ -1915,15 +1915,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsDecimal) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsDecimal) != 0
 
     @decimal.setter
     def decimal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsDecimal
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsDecimal
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsDecimal
+            self._flags |= imgui.ImGuiInputTextFlags_CharsDecimal
 
     @property
     def hexadecimal(self):
@@ -1932,15 +1932,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsHexadecimal) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsHexadecimal) != 0
 
     @hexadecimal.setter
     def hexadecimal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsHexadecimal
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsHexadecimal
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsHexadecimal
+            self._flags |= imgui.ImGuiInputTextFlags_CharsHexadecimal
 
     @property
     def scientific(self):
@@ -1949,15 +1949,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsScientific) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsScientific) != 0
 
     @scientific.setter
     def scientific(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsScientific
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsScientific
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsScientific
+            self._flags |= imgui.ImGuiInputTextFlags_CharsScientific
 
     @property
     def uppercase(self):
@@ -1966,15 +1966,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsUppercase) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsUppercase) != 0
 
     @uppercase.setter
     def uppercase(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsUppercase
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsUppercase
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsUppercase
+            self._flags |= imgui.ImGuiInputTextFlags_CharsUppercase
 
     @property
     def no_spaces(self):
@@ -1983,15 +1983,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsNoBlank) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsNoBlank) != 0
 
     @no_spaces.setter
     def no_spaces(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsNoBlank
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsNoBlank
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsNoBlank
+            self._flags |= imgui.ImGuiInputTextFlags_CharsNoBlank
 
     @property
     def tab_input(self):
@@ -2000,15 +2000,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_AllowTabInput) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_AllowTabInput) != 0
 
     @tab_input.setter
     def tab_input(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_AllowTabInput
+        self._flags &= ~imgui.ImGuiInputTextFlags_AllowTabInput
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_AllowTabInput
+            self._flags |= imgui.ImGuiInputTextFlags_AllowTabInput
 
     @property
     def on_enter(self):
@@ -2018,15 +2018,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_EnterReturnsTrue) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_EnterReturnsTrue) != 0
 
     @on_enter.setter
     def on_enter(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_EnterReturnsTrue
+        self._flags &= ~imgui.ImGuiInputTextFlags_EnterReturnsTrue
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_EnterReturnsTrue
+            self._flags |= imgui.ImGuiInputTextFlags_EnterReturnsTrue
 
     @property
     def escape_clears_all(self):
@@ -2037,15 +2037,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_EscapeClearsAll) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_EscapeClearsAll) != 0
 
     @escape_clears_all.setter
     def escape_clears_all(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_EscapeClearsAll
+        self._flags &= ~imgui.ImGuiInputTextFlags_EscapeClearsAll
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_EscapeClearsAll
+            self._flags |= imgui.ImGuiInputTextFlags_EscapeClearsAll
 
     @property
     def ctrl_enter_for_new_line(self):
@@ -2056,15 +2056,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CtrlEnterForNewLine) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CtrlEnterForNewLine) != 0
 
     @ctrl_enter_for_new_line.setter
     def ctrl_enter_for_new_line(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CtrlEnterForNewLine
+        self._flags &= ~imgui.ImGuiInputTextFlags_CtrlEnterForNewLine
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CtrlEnterForNewLine
+            self._flags |= imgui.ImGuiInputTextFlags_CtrlEnterForNewLine
 
     @property
     def readonly(self):
@@ -2073,15 +2073,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_ReadOnly) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_ReadOnly) != 0
 
     @readonly.setter
     def readonly(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_ReadOnly
+        self._flags &= ~imgui.ImGuiInputTextFlags_ReadOnly
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_ReadOnly
+            self._flags |= imgui.ImGuiInputTextFlags_ReadOnly
 
     @property
     def password(self):
@@ -2090,15 +2090,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_Password) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_Password) != 0
 
     @password.setter
     def password(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_Password
+        self._flags &= ~imgui.ImGuiInputTextFlags_Password
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_Password
+            self._flags |= imgui.ImGuiInputTextFlags_Password
 
     @property
     def always_overwrite(self):
@@ -2107,15 +2107,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_AlwaysOverwrite) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_AlwaysOverwrite) != 0
 
     @always_overwrite.setter
     def always_overwrite(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_AlwaysOverwrite
+        self._flags &= ~imgui.ImGuiInputTextFlags_AlwaysOverwrite
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_AlwaysOverwrite
+            self._flags |= imgui.ImGuiInputTextFlags_AlwaysOverwrite
 
     @property
     def auto_select_all(self):
@@ -2124,15 +2124,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_AutoSelectAll) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_AutoSelectAll) != 0
 
     @auto_select_all.setter
     def auto_select_all(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_AutoSelectAll
+        self._flags &= ~imgui.ImGuiInputTextFlags_AutoSelectAll
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_AutoSelectAll
+            self._flags |= imgui.ImGuiInputTextFlags_AutoSelectAll
 
     @property
     def no_horizontal_scroll(self):
@@ -2141,15 +2141,15 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_NoHorizontalScroll) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_NoHorizontalScroll) != 0
 
     @no_horizontal_scroll.setter
     def no_horizontal_scroll(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_NoHorizontalScroll
+        self._flags &= ~imgui.ImGuiInputTextFlags_NoHorizontalScroll
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_NoHorizontalScroll
+            self._flags |= imgui.ImGuiInputTextFlags_NoHorizontalScroll
 
     @property
     def no_undo_redo(self):
@@ -2158,20 +2158,20 @@ cdef class InputText(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_NoUndoRedo) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_NoUndoRedo) != 0
 
     @no_undo_redo.setter
     def no_undo_redo(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_NoUndoRedo
+        self._flags &= ~imgui.ImGuiInputTextFlags_NoUndoRedo
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_NoUndoRedo
+            self._flags |= imgui.ImGuiInputTextFlags_NoUndoRedo
 
     cdef bint draw_item(self) noexcept nogil:
         cdef string current_value
         cdef int size
-        cdef imgui.ImGuiInputTextFlags flags = self.flags
+        cdef imgui.ImGuiInputTextFlags flags = self._flags
         
         # Get current value from source if needed
         SharedStr.get(<SharedStr>self._value, current_value)
@@ -2216,9 +2216,9 @@ cdef class InputText(uiItem):
 
         if not(self._enabled):
             changed = False
-            self.state.cur.edited = False
-            self.state.cur.deactivated_after_edited = False
-            self.state.cur.active = False
+            self._state.cur.edited = False
+            self._state.cur.deactivated_after_edited = False
+            self._state.cur.active = False
 
         return changed
 
@@ -2251,19 +2251,19 @@ cdef class InputValue(uiItem):
         self._format = 1
         self._size = 1
         self._print_format = b"%.3f"
-        self.flags = 0
+        self._flags = 0
         self._min = -INFINITY
         self._max = INFINITY
         self._step = 0.1
         self._step_fast = 1.
-        self.flags = imgui.ImGuiInputTextFlags_None
+        self._flags = imgui.ImGuiInputTextFlags_None
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self.state.cap.can_be_active = True # unsure
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True # unsure
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     def configure(self, **kwargs):
         # Since some options cancel each other, one
@@ -2460,15 +2460,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsDecimal) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsDecimal) != 0
 
     @decimal.setter
     def decimal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsDecimal
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsDecimal
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsDecimal
+            self._flags |= imgui.ImGuiInputTextFlags_CharsDecimal
 
     @property
     def hexadecimal(self):
@@ -2477,15 +2477,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsHexadecimal) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsHexadecimal) != 0
 
     @hexadecimal.setter
     def hexadecimal(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsHexadecimal
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsHexadecimal
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsHexadecimal
+            self._flags |= imgui.ImGuiInputTextFlags_CharsHexadecimal
 
     @property
     def scientific(self):
@@ -2494,15 +2494,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_CharsScientific) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_CharsScientific) != 0
 
     @scientific.setter
     def scientific(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_CharsScientific
+        self._flags &= ~imgui.ImGuiInputTextFlags_CharsScientific
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_CharsScientific
+            self._flags |= imgui.ImGuiInputTextFlags_CharsScientific
 
     @property
     def on_enter(self):
@@ -2512,15 +2512,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_EnterReturnsTrue) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_EnterReturnsTrue) != 0
 
     @on_enter.setter
     def on_enter(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_EnterReturnsTrue
+        self._flags &= ~imgui.ImGuiInputTextFlags_EnterReturnsTrue
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_EnterReturnsTrue
+            self._flags |= imgui.ImGuiInputTextFlags_EnterReturnsTrue
 
     @property
     def escape_clears_all(self):
@@ -2531,15 +2531,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_EscapeClearsAll) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_EscapeClearsAll) != 0
 
     @escape_clears_all.setter
     def escape_clears_all(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_EscapeClearsAll
+        self._flags &= ~imgui.ImGuiInputTextFlags_EscapeClearsAll
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_EscapeClearsAll
+            self._flags |= imgui.ImGuiInputTextFlags_EscapeClearsAll
 
     @property
     def readonly(self):
@@ -2548,15 +2548,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_ReadOnly) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_ReadOnly) != 0
 
     @readonly.setter
     def readonly(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_ReadOnly
+        self._flags &= ~imgui.ImGuiInputTextFlags_ReadOnly
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_ReadOnly
+            self._flags |= imgui.ImGuiInputTextFlags_ReadOnly
 
     @property
     def password(self):
@@ -2565,15 +2565,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_Password) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_Password) != 0
 
     @password.setter
     def password(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_Password
+        self._flags &= ~imgui.ImGuiInputTextFlags_Password
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_Password
+            self._flags |= imgui.ImGuiInputTextFlags_Password
 
     @property
     def always_overwrite(self):
@@ -2582,15 +2582,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_AlwaysOverwrite) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_AlwaysOverwrite) != 0
 
     @always_overwrite.setter
     def always_overwrite(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_AlwaysOverwrite
+        self._flags &= ~imgui.ImGuiInputTextFlags_AlwaysOverwrite
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_AlwaysOverwrite
+            self._flags |= imgui.ImGuiInputTextFlags_AlwaysOverwrite
 
     @property
     def auto_select_all(self):
@@ -2599,15 +2599,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_AutoSelectAll) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_AutoSelectAll) != 0
 
     @auto_select_all.setter
     def auto_select_all(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_AutoSelectAll
+        self._flags &= ~imgui.ImGuiInputTextFlags_AutoSelectAll
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_AutoSelectAll
+            self._flags |= imgui.ImGuiInputTextFlags_AutoSelectAll
 
     @property
     def empty_as_zero(self):
@@ -2616,15 +2616,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_ParseEmptyRefVal) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_ParseEmptyRefVal) != 0
 
     @empty_as_zero.setter
     def empty_as_zero(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_ParseEmptyRefVal
+        self._flags &= ~imgui.ImGuiInputTextFlags_ParseEmptyRefVal
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_ParseEmptyRefVal
+            self._flags |= imgui.ImGuiInputTextFlags_ParseEmptyRefVal
 
     @property
     def empty_if_zero(self):
@@ -2633,15 +2633,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_DisplayEmptyRefVal) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_DisplayEmptyRefVal) != 0
 
     @empty_if_zero.setter
     def empty_if_zero(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_DisplayEmptyRefVal
+        self._flags &= ~imgui.ImGuiInputTextFlags_DisplayEmptyRefVal
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_DisplayEmptyRefVal
+            self._flags |= imgui.ImGuiInputTextFlags_DisplayEmptyRefVal
 
     @property
     def no_horizontal_scroll(self):
@@ -2650,15 +2650,15 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_NoHorizontalScroll) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_NoHorizontalScroll) != 0
 
     @no_horizontal_scroll.setter
     def no_horizontal_scroll(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_NoHorizontalScroll
+        self._flags &= ~imgui.ImGuiInputTextFlags_NoHorizontalScroll
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_NoHorizontalScroll
+            self._flags |= imgui.ImGuiInputTextFlags_NoHorizontalScroll
 
     @property
     def no_undo_redo(self):
@@ -2667,18 +2667,18 @@ cdef class InputValue(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiInputTextFlags_NoUndoRedo) != 0
+        return (self._flags & imgui.ImGuiInputTextFlags_NoUndoRedo) != 0
 
     @no_undo_redo.setter
     def no_undo_redo(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiInputTextFlags_NoUndoRedo
+        self._flags &= ~imgui.ImGuiInputTextFlags_NoUndoRedo
         if value:
-            self.flags |= imgui.ImGuiInputTextFlags_NoUndoRedo
+            self._flags |= imgui.ImGuiInputTextFlags_NoUndoRedo
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImGuiInputTextFlags flags = self.flags
+        cdef imgui.ImGuiInputTextFlags flags = self._flags
         if not(self._enabled):
             flags |= imgui.ImGuiInputTextFlags_ReadOnly
         cdef imgui.ImGuiDataType type
@@ -2805,11 +2805,11 @@ cdef class Text(uiItem):
         self._bullet = False
         self._show_label = False
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self.state.cap.can_be_active = True # unsure
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True # unsure
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     @property
     def color(self):
@@ -2943,14 +2943,14 @@ cdef class Selectable(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_selectable
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.flags = imgui.ImGuiSelectableFlags_None
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._flags = imgui.ImGuiSelectableFlags_None
 
     @property
     def disable_popup_close(self):
@@ -2959,15 +2959,15 @@ cdef class Selectable(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSelectableFlags_NoAutoClosePopups) != 0
+        return (self._flags & imgui.ImGuiSelectableFlags_NoAutoClosePopups) != 0
 
     @disable_popup_close.setter
     def disable_popup_close(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiSelectableFlags_NoAutoClosePopups
+        self._flags &= ~imgui.ImGuiSelectableFlags_NoAutoClosePopups
         if value:
-            self.flags |= imgui.ImGuiSelectableFlags_NoAutoClosePopups
+            self._flags |= imgui.ImGuiSelectableFlags_NoAutoClosePopups
 
     @property
     def span_columns(self):
@@ -2976,15 +2976,15 @@ cdef class Selectable(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSelectableFlags_SpanAllColumns) != 0
+        return (self._flags & imgui.ImGuiSelectableFlags_SpanAllColumns) != 0
 
     @span_columns.setter
     def span_columns(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiSelectableFlags_SpanAllColumns
+        self._flags &= ~imgui.ImGuiSelectableFlags_SpanAllColumns
         if value:
-            self.flags |= imgui.ImGuiSelectableFlags_SpanAllColumns
+            self._flags |= imgui.ImGuiSelectableFlags_SpanAllColumns
 
     @property
     def on_double_click(self):
@@ -2993,15 +2993,15 @@ cdef class Selectable(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSelectableFlags_AllowDoubleClick) != 0
+        return (self._flags & imgui.ImGuiSelectableFlags_AllowDoubleClick) != 0
 
     @on_double_click.setter
     def on_double_click(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiSelectableFlags_AllowDoubleClick
+        self._flags &= ~imgui.ImGuiSelectableFlags_AllowDoubleClick
         if value:
-            self.flags |= imgui.ImGuiSelectableFlags_AllowDoubleClick
+            self._flags |= imgui.ImGuiSelectableFlags_AllowDoubleClick
 
     @property
     def highlighted(self):
@@ -3010,18 +3010,18 @@ cdef class Selectable(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiSelectableFlags_Highlight) != 0
+        return (self._flags & imgui.ImGuiSelectableFlags_Highlight) != 0
 
     @highlighted.setter
     def highlighted(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiSelectableFlags_Highlight
+        self._flags &= ~imgui.ImGuiSelectableFlags_Highlight
         if value:
-            self.flags |= imgui.ImGuiSelectableFlags_Highlight
+            self._flags |= imgui.ImGuiSelectableFlags_Highlight
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImGuiSelectableFlags flags = self.flags
+        cdef imgui.ImGuiSelectableFlags flags = self._flags
         if not(self._enabled):
             flags |= imgui.ImGuiSelectableFlags_Disabled
 
@@ -3040,12 +3040,12 @@ cdef class MenuItem(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_menuitem
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._check = False
 
     @property
@@ -3093,10 +3093,10 @@ cdef class ProgressBar(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_progressbar
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     @property
     def overlay(self):
@@ -3127,10 +3127,10 @@ cdef class ProgressBar(uiItem):
 cdef class Image(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_image
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._uv = [0., 0., 1., 1.]
         self._border_color = 0
         self._color_multiplier = 4294967295
@@ -3211,10 +3211,10 @@ cdef class ImageButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_imagebutton
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
         self._background_color = 0
         self._color_multiplier = 4294967295
         self._frame_padding = -1
@@ -3340,7 +3340,7 @@ cdef class Separator(uiItem):
             imgui.Separator()
         else:
             imgui.SeparatorText(self.imgui_label.c_str())
-        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         return False
 
 cdef class Spacer(uiItem):
@@ -3353,7 +3353,7 @@ cdef class Spacer(uiItem):
             # TODO rect_size
         else:
             imgui.Dummy(Vec2ImVec2(self.scaled_requested_size()))
-        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         return False
 
 cdef class MenuBar(uiItem):
@@ -3362,10 +3362,10 @@ cdef class MenuBar(uiItem):
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_menubar
         self.theme_condition_category = ThemeCategories.t_menubar
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.has_content_region = True # TODO
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.has_content_region = True # TODO
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
@@ -3407,7 +3407,7 @@ cdef class MenuBar(uiItem):
         cdef Vec2 pos_w, pos_p, parent_size_backup
         if menu_allowed:
             self.update_current_state()
-            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             if self.last_widgets_child is not None:
                 # We are at the top of the window, but behave as if popup
                 pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
@@ -3415,7 +3415,7 @@ cdef class MenuBar(uiItem):
                 swap_Vec2(pos_w, self.context._viewport.window_pos)
                 swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self.state.cur.content_region_size
+                self.context._viewport.parent_size = self._state.cur.content_region_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
@@ -3428,7 +3428,7 @@ cdef class MenuBar(uiItem):
             # We should hit this only if window is invisible
             # or has no menu bar
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
-        cdef bint activated = self.state.cur.active and not(self.state.prev.active)
+        cdef bint activated = self._state.cur.active and not(self._state.prev.active)
         cdef int i
         if activated and not(self._callbacks.empty()):
             for i in range(<int>self._callbacks.size()):
@@ -3457,11 +3457,11 @@ cdef class Menu(uiItem):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.theme_condition_category = ThemeCategories.t_menu
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_active = True
-        self.state.cap.has_rect_size = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.has_rect_size = True
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint menu_open = imgui.BeginMenu(self.imgui_label.c_str(),
@@ -3469,10 +3469,10 @@ cdef class Menu(uiItem):
         self.update_current_state()
         cdef Vec2 pos_w, pos_p, parent_size_backup
         if menu_open:
-            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self.state.cur.rect_size.x = imgui.GetWindowWidth()
-            self.state.cur.rect_size.y = imgui.GetWindowHeight()
+            self._state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self._state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self._state.cur.rect_size.x = imgui.GetWindowWidth()
+            self._state.cur.rect_size.y = imgui.GetWindowHeight()
             if self.last_widgets_child is not None:
                 # We are in a separate window
                 pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
@@ -3480,7 +3480,7 @@ cdef class Menu(uiItem):
                 swap_Vec2(pos_w, self.context._viewport.window_pos)
                 swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self.state.cur.rect_size
+                self.context._viewport.parent_size = self._state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
@@ -3489,16 +3489,16 @@ cdef class Menu(uiItem):
         else:
             self.propagate_hidden_state_to_children_with_handlers()
         SharedBool.set(<SharedBool>self._value, menu_open)
-        return self.state.cur.active and not(self.state.prev.active)
+        return self._state.cur.active and not(self._state.prev.active)
 
 cdef class Tooltip(uiItem):
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
         self.theme_condition_category = ThemeCategories.t_tooltip
-        self.state.cap.can_be_active = True # TODO unsure. Maybe use open instead ?
-        self.state.cap.has_position = False
-        self.state.cap.has_rect_size = False
+        self._state.cap.can_be_active = True # TODO unsure. Maybe use open instead ?
+        self._state.cap.has_position = False
+        self._state.cap.has_rect_size = False
         self._delay = 0.
         self._hide_on_activity = False
         self._target = None
@@ -3528,8 +3528,8 @@ cdef class Tooltip(uiItem):
         self._target = None
         if target is None:
             return
-        if self.secondary_handler is not None:
-            self.secondary_handler.check_bind(target)
+        if self._secondary_handler is not None:
+            self._secondary_handler.check_bind(target)
         # TODO: Raise a warning ?
         #elif target.p_state == NULL or not(target.p_state.cap.can_be_hovered):
         #    raise TypeError(f"Unsupported target instance {target}")
@@ -3545,7 +3545,7 @@ cdef class Tooltip(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self.secondary_handler
+        return self._secondary_handler
 
     @condition_from_handler.setter
     def condition_from_handler(self, baseHandler handler):
@@ -3553,7 +3553,7 @@ cdef class Tooltip(uiItem):
         lock_gil_friendly(m, self.mutex)
         if self._target is not None:
             handler.check_bind(self._target)
-        self.secondary_handler = handler
+        self._secondary_handler = handler
 
     @property
     def delay(self):
@@ -3591,7 +3591,7 @@ cdef class Tooltip(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         cdef float hoverDelay_backup
         cdef bint display_condition = False
-        if self.secondary_handler is None:
+        if self._secondary_handler is None:
             if self._target is None:# or self._target is self._prev_sibling: # disabled as doesn't work
                 if self._delay > 0.:
                     hoverDelay_backup = imgui.GetStyle().HoverStationaryDelay
@@ -3605,17 +3605,17 @@ cdef class Tooltip(uiItem):
             elif self._target.p_state != NULL:
                 display_condition = self._target.p_state.cur.hovered
         elif self._target is not None:
-            display_condition = self.secondary_handler.check_state(self._target)
+            display_condition = self._secondary_handler.check_state(self._target)
 
         if self._hide_on_activity and imgui.GetIO().MouseDelta.x != 0. and \
            imgui.GetIO().MouseDelta.y != 0.:
             display_condition = False
 
-        cdef bint was_visible = self.state.cur.rendered
+        cdef bint was_visible = self._state.cur.rendered
         cdef Vec2 pos_w, pos_p, parent_size_backup
         cdef Vec2 content_min, content_max
         if display_condition and imgui.BeginTooltip():
-            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             if self.last_widgets_child is not None:
                 # We are in a popup window
                 pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
@@ -3624,7 +3624,7 @@ cdef class Tooltip(uiItem):
                 swap_Vec2(pos_w, self.context._viewport.window_pos)
                 swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self.state.cur.content_region_size
+                self.context._viewport.parent_size = self._state.cur.content_region_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
@@ -3636,24 +3636,24 @@ cdef class Tooltip(uiItem):
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             # NOTE: we could also set the rects. DPG does it.
         # The sizing of a tooltip takes a few frames to converge
-        if self.state.cur.rendered != was_visible or \
-           self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
-           self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
+        if self._state.cur.rendered != was_visible or \
+           self._state.cur.content_region_size.x != self._state.prev.content_region_size.x or \
+           self._state.cur.content_region_size.y != self._state.prev.content_region_size.y:
             self.context._viewport.redraw_needed = True
-        return self.state.cur.rendered and not(was_visible)
+        return self._state.cur.rendered and not(was_visible)
 
 cdef class TabButton(uiItem):
     def __cinit__(self):
         self.theme_condition_category = ThemeCategories.t_tabbutton
         self.element_child_category = child_type.cat_tab
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_deactivated_after_edited = True
-        self.state.cap.can_be_edited = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.flags = imgui.ImGuiTabItemFlags_None
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_deactivated_after_edited = True
+        self._state.cap.can_be_edited = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._flags = imgui.ImGuiTabItemFlags_None
 
     @property
     def no_reorder(self):
@@ -3663,15 +3663,15 @@ cdef class TabButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_NoReorder) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_NoReorder) != 0
 
     @no_reorder.setter
     def no_reorder(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_NoReorder
+        self._flags &= ~imgui.ImGuiTabItemFlags_NoReorder
         if value:
-            self.flags |= imgui.ImGuiTabItemFlags_NoReorder
+            self._flags |= imgui.ImGuiTabItemFlags_NoReorder
 
     @property
     def leading(self):
@@ -3681,16 +3681,16 @@ cdef class TabButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_Leading) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_Leading) != 0
 
     @leading.setter
     def leading(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_Leading
+        self._flags &= ~imgui.ImGuiTabItemFlags_Leading
         if value:
-            self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
-            self.flags |= imgui.ImGuiTabItemFlags_Leading
+            self._flags &= ~imgui.ImGuiTabItemFlags_Trailing
+            self._flags |= imgui.ImGuiTabItemFlags_Leading
 
     @property
     def trailing(self):
@@ -3700,16 +3700,16 @@ cdef class TabButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_Trailing) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_Trailing) != 0
 
     @trailing.setter
     def trailing(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
+        self._flags &= ~imgui.ImGuiTabItemFlags_Trailing
         if value:
-            self.flags &= ~imgui.ImGuiTabItemFlags_Leading
-            self.flags |= imgui.ImGuiTabItemFlags_Trailing
+            self._flags &= ~imgui.ImGuiTabItemFlags_Leading
+            self._flags |= imgui.ImGuiTabItemFlags_Trailing
 
     @property
     def no_tooltip(self):
@@ -3718,21 +3718,21 @@ cdef class TabButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_NoTooltip) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_NoTooltip) != 0
 
     @no_tooltip.setter
     def no_tooltip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_NoTooltip
+        self._flags &= ~imgui.ImGuiTabItemFlags_NoTooltip
         if value:
-            self.flags |= imgui.ImGuiTabItemFlags_NoTooltip
+            self._flags |= imgui.ImGuiTabItemFlags_NoTooltip
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint pressed = imgui.TabItemButton(self.imgui_label.c_str(),
-                                                self.flags)
+                                                self._flags)
         self.update_current_state()
-        #SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
+        #SharedBool.set(<SharedBool>self._value, self._state.cur.active) # Unsure. Not in original
         return pressed
 
 
@@ -3742,13 +3742,13 @@ cdef class Tab(uiItem):
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_tab
         self.theme_condition_category = ThemeCategories.t_tab
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_active = True
-        self.state.cap.has_rect_size = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.has_rect_size = True
         self._closable = False
-        self.flags = imgui.ImGuiTabItemFlags_None
+        self._flags = imgui.ImGuiTabItemFlags_None
 
     @property
     def closable(self):
@@ -3773,15 +3773,15 @@ cdef class Tab(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_NoReorder) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_NoReorder) != 0
 
     @no_reorder.setter
     def no_reorder(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_NoReorder
+        self._flags &= ~imgui.ImGuiTabItemFlags_NoReorder
         if value:
-            self.flags |= imgui.ImGuiTabItemFlags_NoReorder
+            self._flags |= imgui.ImGuiTabItemFlags_NoReorder
 
     @property
     def leading(self):
@@ -3791,16 +3791,16 @@ cdef class Tab(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_Leading) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_Leading) != 0
 
     @leading.setter
     def leading(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_Leading
+        self._flags &= ~imgui.ImGuiTabItemFlags_Leading
         if value:
-            self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
-            self.flags |= imgui.ImGuiTabItemFlags_Leading
+            self._flags &= ~imgui.ImGuiTabItemFlags_Trailing
+            self._flags |= imgui.ImGuiTabItemFlags_Leading
 
     @property
     def trailing(self):
@@ -3810,16 +3810,16 @@ cdef class Tab(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_Trailing) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_Trailing) != 0
 
     @trailing.setter
     def trailing(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_Trailing
+        self._flags &= ~imgui.ImGuiTabItemFlags_Trailing
         if value:
-            self.flags &= ~imgui.ImGuiTabItemFlags_Leading
-            self.flags |= imgui.ImGuiTabItemFlags_Trailing
+            self._flags &= ~imgui.ImGuiTabItemFlags_Leading
+            self._flags |= imgui.ImGuiTabItemFlags_Trailing
 
     @property
     def no_tooltip(self):
@@ -3828,18 +3828,18 @@ cdef class Tab(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabItemFlags_NoTooltip) != 0
+        return (self._flags & imgui.ImGuiTabItemFlags_NoTooltip) != 0
 
     @no_tooltip.setter
     def no_tooltip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabItemFlags_NoTooltip
+        self._flags &= ~imgui.ImGuiTabItemFlags_NoTooltip
         if value:
-            self.flags |= imgui.ImGuiTabItemFlags_NoTooltip
+            self._flags |= imgui.ImGuiTabItemFlags_NoTooltip
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImGuiTabItemFlags flags = self.flags
+        cdef imgui.ImGuiTabItemFlags flags = self._flags
         if (<SharedBool>self._value)._last_frame_change == self.context._viewport.frame_count:
             # The value was changed after the last time we drew
             # TODO: will have no effect if we switch from show to no show.
@@ -3858,7 +3858,7 @@ cdef class Tab(uiItem):
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
                 swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self.state.cur.rect_size # unsure
+                self.context._viewport.parent_size = self._state.cur.rect_size # unsure
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
                 self.context._viewport.parent_size = parent_size_backup
@@ -3866,7 +3866,7 @@ cdef class Tab(uiItem):
         else:
             self.propagate_hidden_state_to_children_with_handlers()
         SharedBool.set(<SharedBool>self._value, menu_open)
-        return self.state.cur.active and not(self.state.prev.active)
+        return self._state.cur.active and not(self._state.prev.active)
 
 
 cdef class TabBar(uiItem):
@@ -3874,12 +3874,12 @@ cdef class TabBar(uiItem):
         #self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_tab_child = True
         self.theme_condition_category = ThemeCategories.t_tabbar
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_active = True
-        self.state.cap.has_rect_size = True
-        self.flags = imgui.ImGuiTabBarFlags_None
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.has_rect_size = True
+        self._flags = imgui.ImGuiTabBarFlags_None
 
     @property
     def reorderable(self):
@@ -3889,15 +3889,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_Reorderable) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_Reorderable) != 0
 
     @reorderable.setter
     def reorderable(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_Reorderable
+        self._flags &= ~imgui.ImGuiTabBarFlags_Reorderable
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_Reorderable
+            self._flags |= imgui.ImGuiTabBarFlags_Reorderable
 
     @property
     def autoselect_new_tabs(self):
@@ -3907,15 +3907,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_AutoSelectNewTabs) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_AutoSelectNewTabs) != 0
 
     @autoselect_new_tabs.setter
     def autoselect_new_tabs(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_AutoSelectNewTabs
+        self._flags &= ~imgui.ImGuiTabBarFlags_AutoSelectNewTabs
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_AutoSelectNewTabs
+            self._flags |= imgui.ImGuiTabBarFlags_AutoSelectNewTabs
 
     @property
     def no_tab_list_popup_button(self):
@@ -3924,15 +3924,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_TabListPopupButton) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_TabListPopupButton) != 0
 
     @no_tab_list_popup_button.setter
     def no_tab_list_popup_button(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_TabListPopupButton
+        self._flags &= ~imgui.ImGuiTabBarFlags_TabListPopupButton
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_TabListPopupButton
+            self._flags |= imgui.ImGuiTabBarFlags_TabListPopupButton
 
     @property
     def no_close_with_middle_mouse_button(self):
@@ -3941,15 +3941,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) != 0
 
     @no_close_with_middle_mouse_button.setter
     def no_close_with_middle_mouse_button(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton
+        self._flags &= ~imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton
+            self._flags |= imgui.ImGuiTabBarFlags_NoCloseWithMiddleMouseButton
 
     @property
     def no_scrolling_button(self):
@@ -3958,15 +3958,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_NoTabListScrollingButtons) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_NoTabListScrollingButtons) != 0
 
     @no_scrolling_button.setter
     def no_scrolling_button(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_NoTabListScrollingButtons
+        self._flags &= ~imgui.ImGuiTabBarFlags_NoTabListScrollingButtons
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_NoTabListScrollingButtons
+            self._flags |= imgui.ImGuiTabBarFlags_NoTabListScrollingButtons
 
     @property
     def no_tooltip(self):
@@ -3975,15 +3975,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_NoTooltip) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_NoTooltip) != 0
 
     @no_tooltip.setter
     def no_tooltip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_NoTooltip
+        self._flags &= ~imgui.ImGuiTabBarFlags_NoTooltip
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_NoTooltip
+            self._flags |= imgui.ImGuiTabBarFlags_NoTooltip
 
     @property
     def selected_overline(self):
@@ -3992,15 +3992,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_DrawSelectedOverline) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_DrawSelectedOverline) != 0
 
     @selected_overline.setter
     def selected_overline(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_DrawSelectedOverline
+        self._flags &= ~imgui.ImGuiTabBarFlags_DrawSelectedOverline
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_DrawSelectedOverline
+            self._flags |= imgui.ImGuiTabBarFlags_DrawSelectedOverline
 
     @property
     def resize_to_fit(self):
@@ -4009,15 +4009,15 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_FittingPolicyResizeDown) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_FittingPolicyResizeDown) != 0
 
     @resize_to_fit.setter
     def resize_to_fit(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_FittingPolicyResizeDown
+        self._flags &= ~imgui.ImGuiTabBarFlags_FittingPolicyResizeDown
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_FittingPolicyResizeDown
+            self._flags |= imgui.ImGuiTabBarFlags_FittingPolicyResizeDown
 
     @property
     def allow_tab_scroll(self):
@@ -4026,21 +4026,21 @@ cdef class TabBar(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTabBarFlags_FittingPolicyScroll) != 0
+        return (self._flags & imgui.ImGuiTabBarFlags_FittingPolicyScroll) != 0
 
     @allow_tab_scroll.setter
     def allow_tab_scroll(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTabBarFlags_FittingPolicyScroll
+        self._flags &= ~imgui.ImGuiTabBarFlags_FittingPolicyScroll
         if value:
-            self.flags |= imgui.ImGuiTabBarFlags_FittingPolicyScroll
+            self._flags |= imgui.ImGuiTabBarFlags_FittingPolicyScroll
 
     cdef bint draw_item(self) noexcept nogil:
         imgui.PushID(self.uuid)
         imgui.BeginGroup() # from original. Unsure if needed
         cdef bint visible = imgui.BeginTabBar(self.imgui_label.c_str(),
-                                              self.flags)
+                                              self._flags)
         self.update_current_state()
         cdef Vec2 pos_p
         if visible:
@@ -4060,7 +4060,7 @@ cdef class TabBar(uiItem):
         imgui.EndGroup()
         #imgui.PopStyleVar(1)
         imgui.PopID()
-        return self.state.cur.active and not(self.state.prev.active)
+        return self._state.cur.active and not(self._state.prev.active)
 
 
 
@@ -4068,14 +4068,14 @@ cdef class TreeNode(uiItem):
     def __cinit__(self):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_toggled = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_toggled = True
         self._selectable = False
-        self.flags = imgui.ImGuiTreeNodeFlags_None
+        self._flags = imgui.ImGuiTreeNodeFlags_None
         self.theme_condition_category = ThemeCategories.t_treenode
 
     @property
@@ -4100,15 +4100,15 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_DefaultOpen) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_DefaultOpen) != 0
 
     @default_open.setter
     def default_open(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_DefaultOpen
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_DefaultOpen
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_DefaultOpen
+            self._flags |= imgui.ImGuiTreeNodeFlags_DefaultOpen
 
     @property
     def open_on_double_click(self):
@@ -4117,15 +4117,15 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick) != 0
 
     @open_on_double_click.setter
     def open_on_double_click(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
+            self._flags |= imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
 
     @property
     def open_on_arrow(self):
@@ -4136,15 +4136,15 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_OpenOnArrow) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_OpenOnArrow) != 0
 
     @open_on_arrow.setter
     def open_on_arrow(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnArrow
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnArrow
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_OpenOnArrow
+            self._flags |= imgui.ImGuiTreeNodeFlags_OpenOnArrow
 
     @property
     def leaf(self):
@@ -4153,15 +4153,15 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_Leaf) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_Leaf) != 0
 
     @leaf.setter
     def leaf(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_Leaf
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_Leaf
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_Leaf
+            self._flags |= imgui.ImGuiTreeNodeFlags_Leaf
 
     @property
     def bullet(self):
@@ -4172,15 +4172,15 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_Bullet) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_Bullet) != 0
 
     @bullet.setter
     def bullet(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_Bullet
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_Bullet
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_Bullet
+            self._flags |= imgui.ImGuiTreeNodeFlags_Bullet
 
     @property
     def span_text_width(self):
@@ -4190,15 +4190,15 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_SpanTextWidth) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_SpanTextWidth) != 0
 
     @span_text_width.setter
     def span_text_width(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_SpanTextWidth
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_SpanTextWidth
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_SpanTextWidth
+            self._flags |= imgui.ImGuiTreeNodeFlags_SpanTextWidth
 
     @property
     def span_full_width(self):
@@ -4208,20 +4208,20 @@ cdef class TreeNode(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_SpanFullWidth) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_SpanFullWidth) != 0
 
     @span_full_width.setter
     def span_full_width(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_SpanFullWidth
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_SpanFullWidth
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_SpanFullWidth
+            self._flags |= imgui.ImGuiTreeNodeFlags_SpanFullWidth
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint was_open = SharedBool.get(<SharedBool>self._value)
         cdef bint closed = False
-        cdef imgui.ImGuiTreeNodeFlags flags = self.flags
+        cdef imgui.ImGuiTreeNodeFlags flags = self._flags
         imgui.PushID(self.uuid)
         # Unsure group is needed
         imgui.BeginGroup()
@@ -4229,15 +4229,15 @@ cdef class TreeNode(uiItem):
             flags |= imgui.ImGuiTreeNodeFlags_Selected
 
         imgui.SetNextItemOpen(was_open, imgui.ImGuiCond_Always)
-        self.state.cur.open = was_open
+        self._state.cur.open = was_open
         cdef bint open_and_visible = imgui.TreeNodeEx(self.imgui_label.c_str(),
                                                       flags)
         self.update_current_state()
-        if self.state.cur.open and not(was_open):
+        if self._state.cur.open and not(was_open):
             SharedBool.set(<SharedBool>self._value, True)
-        elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
+        elif self._state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
             SharedBool.set(<SharedBool>self._value, False)
-            self.state.cur.open = False
+            self._state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
         cdef Vec2 pos_p, parent_size_backup
         if open_and_visible:
@@ -4245,7 +4245,7 @@ cdef class TreeNode(uiItem):
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
                 swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self.state.cur.rect_size
+                self.context._viewport.parent_size = self._state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
                 self.context._viewport.parent_size = parent_size_backup
@@ -4262,14 +4262,14 @@ cdef class CollapsingHeader(uiItem):
     def __cinit__(self):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.can_be_toggled = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.can_be_toggled = True
         self._closable = False
-        self.flags = imgui.ImGuiTreeNodeFlags_None
+        self._flags = imgui.ImGuiTreeNodeFlags_None
         self.theme_condition_category = ThemeCategories.t_collapsingheader
 
     @property
@@ -4294,15 +4294,15 @@ cdef class CollapsingHeader(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick) != 0
 
     @open_on_double_click.setter
     def open_on_double_click(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
+            self._flags |= imgui.ImGuiTreeNodeFlags_OpenOnDoubleClick
 
     @property
     def open_on_arrow(self):
@@ -4313,15 +4313,15 @@ cdef class CollapsingHeader(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_OpenOnArrow) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_OpenOnArrow) != 0
 
     @open_on_arrow.setter
     def open_on_arrow(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnArrow
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_OpenOnArrow
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_OpenOnArrow
+            self._flags |= imgui.ImGuiTreeNodeFlags_OpenOnArrow
 
     @property
     def leaf(self):
@@ -4330,15 +4330,15 @@ cdef class CollapsingHeader(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_Leaf) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_Leaf) != 0
 
     @leaf.setter
     def leaf(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_Leaf
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_Leaf
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_Leaf
+            self._flags |= imgui.ImGuiTreeNodeFlags_Leaf
 
     @property
     def bullet(self):
@@ -4349,25 +4349,25 @@ cdef class CollapsingHeader(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiTreeNodeFlags_Bullet) != 0
+        return (self._flags & imgui.ImGuiTreeNodeFlags_Bullet) != 0
 
     @bullet.setter
     def bullet(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiTreeNodeFlags_Bullet
+        self._flags &= ~imgui.ImGuiTreeNodeFlags_Bullet
         if value:
-            self.flags |= imgui.ImGuiTreeNodeFlags_Bullet
+            self._flags |= imgui.ImGuiTreeNodeFlags_Bullet
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bint was_open = SharedBool.get(<SharedBool>self._value)
         cdef bint closed = False
-        cdef imgui.ImGuiTreeNodeFlags flags = self.flags
+        cdef imgui.ImGuiTreeNodeFlags flags = self._flags
         if self._closable:
             flags |= imgui.ImGuiTreeNodeFlags_Selected
 
         imgui.SetNextItemOpen(was_open, imgui.ImGuiCond_Always)
-        self.state.cur.open = was_open
+        self._state.cur.open = was_open
         cdef bint open_and_visible = \
             imgui.CollapsingHeader(self.imgui_label.c_str(),
                                    &self._show if self._closable else NULL,
@@ -4375,11 +4375,11 @@ cdef class CollapsingHeader(uiItem):
         if not(self._show):
             self.show_update_requested = True
         self.update_current_state()
-        if self.state.cur.open and not(was_open):
+        if self._state.cur.open and not(was_open):
             SharedBool.set(<SharedBool>self._value, True)
-        elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
+        elif self._state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
             SharedBool.set(<SharedBool>self._value, False)
-            self.state.cur.open = False
+            self._state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
         cdef Vec2 pos_p, parent_size_backup
         if open_and_visible:
@@ -4387,12 +4387,12 @@ cdef class CollapsingHeader(uiItem):
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
                 swap_Vec2(pos_p, self.context._viewport.parent_pos)
                 parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self.state.cur.rect_size
+                self.context._viewport.parent_size = self._state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
                 self.context._viewport.parent_size = parent_size_backup
         # TODO: rect_size from group ?
-        return not(was_open) and self.state.cur.open
+        return not(was_open) and self._state.cur.open
 
 cdef class ChildWindow(uiItem):
     """A child window container that enables hierarchical UI layout.
@@ -4446,17 +4446,17 @@ cdef class ChildWindow(uiItem):
     - Menu bar support allows structured layouts
     """
     def __cinit__(self):
-        self.child_flags = imgui.ImGuiChildFlags_Borders | imgui.ImGuiChildFlags_NavFlattened
-        self.window_flags = imgui.ImGuiWindowFlags_NoSavedSettings
+        self._child_flags = imgui.ImGuiChildFlags_Borders | imgui.ImGuiChildFlags_NavFlattened
+        self._window_flags = imgui.ImGuiWindowFlags_NoSavedSettings
         # TODO scrolling
         self.can_have_widget_child = True
         self.can_have_menubar_child = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
-        self.state.cap.has_content_region = True
-        #self.state.cap.can_be_toggled = True # maybe ?
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
+        self._state.cap.has_content_region = True
+        #self._state.cap.can_be_toggled = True # maybe ?
         self.theme_condition_category = ThemeCategories.t_child
 
     @property
@@ -4467,15 +4467,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar) else False
+        return True if (self._window_flags & imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar) else False
 
     @always_show_vertical_scrollvar.setter
     def always_show_vertical_scrollvar(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
+        self._window_flags &= ~imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
         if value:
-            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
+            self._window_flags |= imgui.ImGuiWindowFlags_AlwaysVerticalScrollbar
 
     @property
     def always_show_horizontal_scrollvar(self):
@@ -4486,15 +4486,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return True if (self.window_flags & imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar) else False
+        return True if (self._window_flags & imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar) else False
 
     @always_show_horizontal_scrollvar.setter
     def always_show_horizontal_scrollvar(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.window_flags &= ~imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
+        self._window_flags &= ~imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
         if value:
-            self.window_flags |= imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
+            self._window_flags |= imgui.ImGuiWindowFlags_AlwaysHorizontalScrollbar
 
     @property
     def no_scrollbar(self):
@@ -4503,15 +4503,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return True if (self.window_flags & imgui.ImGuiWindowFlags_NoScrollbar) else False
+        return True if (self._window_flags & imgui.ImGuiWindowFlags_NoScrollbar) else False
 
     @no_scrollbar.setter
     def no_scrollbar(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.window_flags &= ~imgui.ImGuiWindowFlags_NoScrollbar
+        self._window_flags &= ~imgui.ImGuiWindowFlags_NoScrollbar
         if value:
-            self.window_flags |= imgui.ImGuiWindowFlags_NoScrollbar
+            self._window_flags |= imgui.ImGuiWindowFlags_NoScrollbar
 
     @property
     def horizontal_scrollbar(self):
@@ -4520,15 +4520,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return True if (self.window_flags & imgui.ImGuiWindowFlags_HorizontalScrollbar) else False
+        return True if (self._window_flags & imgui.ImGuiWindowFlags_HorizontalScrollbar) else False
 
     @horizontal_scrollbar.setter
     def horizontal_scrollbar(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.window_flags &= ~imgui.ImGuiWindowFlags_HorizontalScrollbar
+        self._window_flags &= ~imgui.ImGuiWindowFlags_HorizontalScrollbar
         if value:
-            self.window_flags |= imgui.ImGuiWindowFlags_HorizontalScrollbar
+            self._window_flags |= imgui.ImGuiWindowFlags_HorizontalScrollbar
 
     @property
     def menubar(self):
@@ -4540,15 +4540,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.last_menubar_child is not None) or (self.window_flags & imgui.ImGuiWindowFlags_MenuBar) != 0
+        return (self.last_menubar_child is not None) or (self._window_flags & imgui.ImGuiWindowFlags_MenuBar) != 0
 
     @menubar.setter
     def menubar(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.window_flags &= ~imgui.ImGuiWindowFlags_MenuBar
+        self._window_flags &= ~imgui.ImGuiWindowFlags_MenuBar
         if value:
-            self.window_flags |= imgui.ImGuiWindowFlags_MenuBar
+            self._window_flags |= imgui.ImGuiWindowFlags_MenuBar
 
     @property
     def no_scroll_with_mouse(self):
@@ -4558,15 +4558,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.window_flags & imgui.ImGuiWindowFlags_NoScrollWithMouse) != 0
+        return (self._window_flags & imgui.ImGuiWindowFlags_NoScrollWithMouse) != 0
 
     @no_scroll_with_mouse.setter
     def no_scroll_with_mouse(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.window_flags &= ~imgui.ImGuiWindowFlags_NoScrollWithMouse
+        self._window_flags &= ~imgui.ImGuiWindowFlags_NoScrollWithMouse
         if value:
-            self.window_flags |= imgui.ImGuiWindowFlags_NoScrollWithMouse
+            self._window_flags |= imgui.ImGuiWindowFlags_NoScrollWithMouse
 
     @property
     def flattened_navigation(self):
@@ -4578,15 +4578,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_NavFlattened) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_NavFlattened) != 0
 
     @flattened_navigation.setter
     def flattened_navigation(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_NavFlattened
+        self._child_flags &= ~imgui.ImGuiChildFlags_NavFlattened
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_NavFlattened
+            self._child_flags |= imgui.ImGuiChildFlags_NavFlattened
 
     @property
     def border(self):
@@ -4596,15 +4596,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_Borders) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_Borders) != 0
 
     @border.setter
     def border(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_Borders
+        self._child_flags &= ~imgui.ImGuiChildFlags_Borders
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_Borders
+            self._child_flags |= imgui.ImGuiChildFlags_Borders
 
     @property
     def always_auto_resize(self):
@@ -4615,15 +4615,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_AlwaysAutoResize) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_AlwaysAutoResize) != 0
 
     @always_auto_resize.setter
     def always_auto_resize(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_AlwaysAutoResize
+        self._child_flags &= ~imgui.ImGuiChildFlags_AlwaysAutoResize
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_AlwaysAutoResize
+            self._child_flags |= imgui.ImGuiChildFlags_AlwaysAutoResize
 
     @property
     def always_use_window_padding(self):
@@ -4634,15 +4634,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_AlwaysUseWindowPadding) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_AlwaysUseWindowPadding) != 0
 
     @always_use_window_padding.setter
     def always_use_window_padding(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_AlwaysUseWindowPadding
+        self._child_flags &= ~imgui.ImGuiChildFlags_AlwaysUseWindowPadding
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_AlwaysUseWindowPadding
+            self._child_flags |= imgui.ImGuiChildFlags_AlwaysUseWindowPadding
 
     @property
     def auto_resize_x(self):
@@ -4652,15 +4652,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_AutoResizeX) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_AutoResizeX) != 0
 
     @auto_resize_x.setter
     def auto_resize_x(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_AutoResizeX
+        self._child_flags &= ~imgui.ImGuiChildFlags_AutoResizeX
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_AutoResizeX
+            self._child_flags |= imgui.ImGuiChildFlags_AutoResizeX
 
     @property
     def auto_resize_y(self):
@@ -4670,15 +4670,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_AutoResizeY) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_AutoResizeY) != 0
 
     @auto_resize_y.setter
     def auto_resize_y(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_AutoResizeY
+        self._child_flags &= ~imgui.ImGuiChildFlags_AutoResizeY
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_AutoResizeY
+            self._child_flags |= imgui.ImGuiChildFlags_AutoResizeY
 
     @property
     def frame_style(self):
@@ -4689,15 +4689,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_FrameStyle) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_FrameStyle) != 0
 
     @frame_style.setter
     def frame_style(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_FrameStyle
+        self._child_flags &= ~imgui.ImGuiChildFlags_FrameStyle
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_FrameStyle
+            self._child_flags |= imgui.ImGuiChildFlags_FrameStyle
 
     @property
     def resizable_x(self):
@@ -4706,15 +4706,15 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_ResizeX) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_ResizeX) != 0
 
     @resizable_x.setter
     def resizable_x(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_ResizeX
+        self._child_flags &= ~imgui.ImGuiChildFlags_ResizeX
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_ResizeX
+            self._child_flags |= imgui.ImGuiChildFlags_ResizeX
 
     @property
     def resizable_y(self):
@@ -4723,23 +4723,23 @@ cdef class ChildWindow(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.child_flags & imgui.ImGuiChildFlags_ResizeY) != 0
+        return (self._child_flags & imgui.ImGuiChildFlags_ResizeY) != 0
 
     @resizable_y.setter
     def resizable_y(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.child_flags &= ~imgui.ImGuiChildFlags_ResizeY
+        self._child_flags &= ~imgui.ImGuiChildFlags_ResizeY
         if value:
-            self.child_flags |= imgui.ImGuiChildFlags_ResizeY
+            self._child_flags |= imgui.ImGuiChildFlags_ResizeY
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImGuiWindowFlags flags = self.window_flags
+        cdef imgui.ImGuiWindowFlags flags = self._window_flags
         if self.last_menubar_child is not None:
             flags |= imgui.ImGuiWindowFlags_MenuBar
         cdef Vec2 pos_p, pos_w, parent_size_backup
         cdef Vec2 requested_size = self.scaled_requested_size()
-        cdef imgui.ImGuiChildFlags child_flags = self.child_flags
+        cdef imgui.ImGuiChildFlags child_flags = self._child_flags
         # Else they have no effect
         if child_flags & imgui.ImGuiChildFlags_AutoResizeX:
             requested_size.x = 0
@@ -4756,28 +4756,28 @@ cdef class ChildWindow(uiItem):
                             Vec2ImVec2(requested_size),
                             child_flags,
                             flags):
-            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
             pos_w = pos_p
             self._content_pos = pos_p
             swap_Vec2(pos_p, self.context._viewport.parent_pos)
             swap_Vec2(pos_w, self.context._viewport.window_pos)
             parent_size_backup = self.context._viewport.parent_size
-            self.context._viewport.parent_size = self.state.cur.content_region_size
+            self.context._viewport.parent_size = self._state.cur.content_region_size
             draw_ui_children(self)
             draw_menubar_children(self)
             self.context._viewport.window_pos = pos_w
             self.context._viewport.parent_pos = pos_p
             self.context._viewport.parent_size = parent_size_backup
-            self.state.cur.rendered = True
-            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self.state.cur.rect_size = ImVec2Vec2(imgui.GetWindowSize())
-            update_current_mouse_states(self.state)
+            self._state.cur.rendered = True
+            self._state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self._state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self._state.cur.rect_size = ImVec2Vec2(imgui.GetWindowSize())
+            update_current_mouse_states(self._state)
             # TODO scrolling
             # The sizing of windows might not converge right away
-            if self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
-               self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
+            if self._state.cur.content_region_size.x != self._state.prev.content_region_size.x or \
+               self._state.cur.content_region_size.y != self._state.prev.content_region_size.y:
                 self.context._viewport.redraw_needed = True
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
@@ -4786,14 +4786,14 @@ cdef class ChildWindow(uiItem):
 
 cdef class ColorButton(uiItem):
     def __cinit__(self):
-        self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
+        self._flags = imgui.ImGuiColorEditFlags_DefaultOptions_
         self.theme_condition_category = ThemeCategories.t_colorbutton
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     @property
     def no_alpha(self):
@@ -4802,15 +4802,15 @@ cdef class ColorButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
 
     @no_alpha.setter
     def no_alpha(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoAlpha
+            self._flags |= imgui.ImGuiColorEditFlags_NoAlpha
 
     @property
     def no_tooltip(self):
@@ -4819,15 +4819,15 @@ cdef class ColorButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
 
     @no_tooltip.setter
     def no_tooltip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoTooltip
+            self._flags |= imgui.ImGuiColorEditFlags_NoTooltip
 
     @property
     def no_drag_drop(self):
@@ -4836,15 +4836,15 @@ cdef class ColorButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoDragDrop) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoDragDrop) != 0
 
     @no_drag_drop.setter
     def no_drag_drop(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoDragDrop
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoDragDrop
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoDragDrop
+            self._flags |= imgui.ImGuiColorEditFlags_NoDragDrop
 
     @property
     def no_border(self):
@@ -4853,15 +4853,15 @@ cdef class ColorButton(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoBorder) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoBorder) != 0
 
     @no_border.setter
     def no_border(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoBorder
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoBorder
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoBorder
+            self._flags |= imgui.ImGuiColorEditFlags_NoBorder
 
     # TODO: there are more options, which can be user toggled.
 
@@ -4870,7 +4870,7 @@ cdef class ColorButton(uiItem):
         cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
         activated = imgui.ColorButton(self.imgui_label.c_str(),
                                       Vec4ImVec4(col),
-                                      self.flags,
+                                      self._flags,
                                       Vec2ImVec2(self.scaled_requested_size()))
         self.update_current_state()
         SharedColor.setF4(<SharedColor>self._value, col)
@@ -4879,14 +4879,14 @@ cdef class ColorButton(uiItem):
 
 cdef class ColorEdit(uiItem):
     def __cinit__(self):
-        self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
+        self._flags = imgui.ImGuiColorEditFlags_DefaultOptions_
         self.theme_condition_category = ThemeCategories.t_coloredit
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     @property
     def no_alpha(self):
@@ -4895,15 +4895,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
 
     @no_alpha.setter
     def no_alpha(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoAlpha
+            self._flags |= imgui.ImGuiColorEditFlags_NoAlpha
 
     @property
     def no_picker(self):
@@ -4912,15 +4912,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoPicker) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoPicker) != 0
 
     @no_picker.setter
     def no_picker(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoPicker
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoPicker
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoPicker
+            self._flags |= imgui.ImGuiColorEditFlags_NoPicker
 
     @property
     def no_options(self):
@@ -4929,15 +4929,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoOptions) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoOptions) != 0
 
     @no_options.setter
     def no_options(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoOptions
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoOptions
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoOptions
+            self._flags |= imgui.ImGuiColorEditFlags_NoOptions
 
     @property
     def no_small_preview(self):
@@ -4946,15 +4946,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoSmallPreview) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoSmallPreview) != 0
 
     @no_small_preview.setter
     def no_small_preview(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoSmallPreview
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoSmallPreview
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoSmallPreview
+            self._flags |= imgui.ImGuiColorEditFlags_NoSmallPreview
 
     @property
     def no_inputs(self):
@@ -4963,15 +4963,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoInputs) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoInputs) != 0
 
     @no_inputs.setter
     def no_inputs(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoInputs
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoInputs
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoInputs
+            self._flags |= imgui.ImGuiColorEditFlags_NoInputs
 
     @property
     def no_tooltip(self):
@@ -4980,15 +4980,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
 
     @no_tooltip.setter
     def no_tooltip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoTooltip
+            self._flags |= imgui.ImGuiColorEditFlags_NoTooltip
 
     @property
     def no_label(self):
@@ -4997,15 +4997,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoLabel) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoLabel) != 0
 
     @no_label.setter
     def no_label(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoLabel
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoLabel
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoLabel
+            self._flags |= imgui.ImGuiColorEditFlags_NoLabel
 
     @property
     def no_drag_drop(self):
@@ -5014,15 +5014,15 @@ cdef class ColorEdit(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoDragDrop) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoDragDrop) != 0
 
     @no_drag_drop.setter
     def no_drag_drop(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoDragDrop
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoDragDrop
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoDragDrop
+            self._flags |= imgui.ImGuiColorEditFlags_NoDragDrop
 
     # TODO: there are more options, which can be user toggled.
 
@@ -5032,7 +5032,7 @@ cdef class ColorEdit(uiItem):
         cdef float[4] color = [col.x, col.y, col.z, col.w]
         activated = imgui.ColorEdit4(self.imgui_label.c_str(),
                                       color,
-                                      self.flags)
+                                      self._flags)
         self.update_current_state()
         col = ImVec4Vec4(imgui.ImVec4(color[0], color[1], color[2], color[3]))
         SharedColor.setF4(<SharedColor>self._value, col)
@@ -5041,14 +5041,14 @@ cdef class ColorEdit(uiItem):
 
 cdef class ColorPicker(uiItem):
     def __cinit__(self):
-        self.flags = imgui.ImGuiColorEditFlags_DefaultOptions_
+        self._flags = imgui.ImGuiColorEditFlags_DefaultOptions_
         self.theme_condition_category = ThemeCategories.t_colorpicker
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
-        self.state.cap.can_be_active = True
-        self.state.cap.can_be_clicked = True
-        self.state.cap.can_be_dragged = True
-        self.state.cap.can_be_focused = True
-        self.state.cap.can_be_hovered = True
+        self._state.cap.can_be_active = True
+        self._state.cap.can_be_clicked = True
+        self._state.cap.can_be_dragged = True
+        self._state.cap.can_be_focused = True
+        self._state.cap.can_be_hovered = True
 
     @property
     def no_alpha(self):
@@ -5057,15 +5057,15 @@ cdef class ColorPicker(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoAlpha) != 0
 
     @no_alpha.setter
     def no_alpha(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoAlpha
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoAlpha
+            self._flags |= imgui.ImGuiColorEditFlags_NoAlpha
 
     @property
     def no_small_preview(self):
@@ -5074,15 +5074,15 @@ cdef class ColorPicker(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoSmallPreview) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoSmallPreview) != 0
 
     @no_small_preview.setter
     def no_small_preview(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoSmallPreview
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoSmallPreview
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoSmallPreview
+            self._flags |= imgui.ImGuiColorEditFlags_NoSmallPreview
 
     @property
     def no_inputs(self):
@@ -5091,15 +5091,15 @@ cdef class ColorPicker(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoInputs) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoInputs) != 0
 
     @no_inputs.setter
     def no_inputs(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoInputs
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoInputs
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoInputs
+            self._flags |= imgui.ImGuiColorEditFlags_NoInputs
 
     @property
     def no_tooltip(self):
@@ -5108,15 +5108,15 @@ cdef class ColorPicker(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoTooltip) != 0
 
     @no_tooltip.setter
     def no_tooltip(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoTooltip
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoTooltip
+            self._flags |= imgui.ImGuiColorEditFlags_NoTooltip
 
     @property
     def no_label(self):
@@ -5125,15 +5125,15 @@ cdef class ColorPicker(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoLabel) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoLabel) != 0
 
     @no_label.setter
     def no_label(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoLabel
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoLabel
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoLabel
+            self._flags |= imgui.ImGuiColorEditFlags_NoLabel
 
     @property
     def no_side_preview(self):
@@ -5142,15 +5142,15 @@ cdef class ColorPicker(uiItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return (self.flags & imgui.ImGuiColorEditFlags_NoSidePreview) != 0
+        return (self._flags & imgui.ImGuiColorEditFlags_NoSidePreview) != 0
 
     @no_side_preview.setter
     def no_side_preview(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.flags &= ~imgui.ImGuiColorEditFlags_NoSidePreview
+        self._flags &= ~imgui.ImGuiColorEditFlags_NoSidePreview
         if value:
-            self.flags |= imgui.ImGuiColorEditFlags_NoSidePreview
+            self._flags |= imgui.ImGuiColorEditFlags_NoSidePreview
 
     # TODO: there are more options, which can be user toggled.
 
@@ -5160,7 +5160,7 @@ cdef class ColorPicker(uiItem):
         cdef float[4] color = [col.x, col.y, col.z, col.w]
         activated = imgui.ColorPicker4(self.imgui_label.c_str(),
                                        color,
-                                       self.flags,
+                                       self._flags,
                                        NULL) # ref_col ??
         self.update_current_state()
         col = ImVec4Vec4(imgui.ImVec4(color[0], color[1], color[2], color[3]))

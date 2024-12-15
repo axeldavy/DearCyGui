@@ -247,7 +247,7 @@ cdef class Viewport(baseItem):
     cdef bint _disable_close
     cdef bint drop_is_file_type
     cdef vector[string] _drop_data
-    cdef itemState state # Unused. Just for compatibility with handlers
+    cdef itemState _state # Unused. Just for compatibility with handlers
     cdef int _cursor # imgui.ImGuiMouseCursor
     # For timing stats
     cdef long long last_t_before_event_handling
@@ -405,7 +405,7 @@ cdef class uiItem(baseItem):
     cdef bool _show
     cdef Positioning[2] _pos_policy
     cdef Sizing[2] _size_policy
-    cdef itemState state
+    cdef itemState _state
     cdef bint can_be_disabled
     cdef bint _enabled
     cdef bint focus_update_requested
@@ -498,7 +498,7 @@ Plots
 cdef class plotElement(baseItem):
     cdef string imgui_label
     cdef str user_label
-    cdef int flags
+    cdef int _flags
     cdef bint _show
     cdef int[2] _axes
     cdef baseTheme _theme

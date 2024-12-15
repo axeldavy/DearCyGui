@@ -18,19 +18,19 @@ cdef class PlotAxisConfig(baseItem):
     cdef bint _enabled
     cdef int _scale # AxisScale
     cdef string _tick_format
-    cdef int flags # implot.ImPlotAxisFlags
+    cdef int _flags # implot.ImPlotAxisFlags
     cdef double _min
     cdef double _max
-    cdef double prev_min
-    cdef double prev_max
-    cdef bint dirty_minmax
+    cdef double _prev_min
+    cdef double _prev_max
+    cdef bint _dirty_minmax
     cdef double _constraint_min
     cdef double _constraint_max
     cdef double _zoom_min
     cdef double _zoom_max
     cdef double _mouse_coord
-    cdef bint to_fit
-    cdef itemState state
+    cdef bint _to_fit
+    cdef itemState _state
     cdef Callback _resize_callback
     cdef string _label
     cdef string _format
@@ -45,7 +45,7 @@ cdef class PlotAxisConfig(baseItem):
 cdef class PlotLegendConfig(baseItem):
     cdef bint _show
     cdef int _location # LegendLocation
-    cdef int flags # implot.ImPlotLegendFlags
+    cdef int _flags # implot.ImPlotLegendFlags
     cdef void setup(self) noexcept nogil
     cdef void after_setup(self) noexcept nogil
 
@@ -67,16 +67,16 @@ cdef class Plot(uiItem):
     cdef bint _use_local_time
     cdef bint _use_ISO8601
     cdef bint _use_24hour_clock
-    cdef int flags # implot.ImPlotFlags
+    cdef int _flags # implot.ImPlotFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class plotElementWithLegend(plotElement):
-    cdef itemState state
+    cdef itemState _state
     cdef bint _legend
     cdef int _legend_button
     cdef baseFont _font
     cdef bint _enabled
-    cdef bint enabled_dirty
+    cdef bint _enabled_dirty
     cdef void draw(self) noexcept nogil
     cdef void draw_element(self) noexcept nogil
 

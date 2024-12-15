@@ -8,7 +8,7 @@ from libcpp.vector cimport vector
 cimport numpy as cnp
 
 cdef class DrawInvisibleButton(drawingItem):
-    cdef itemState state
+    cdef itemState _state
     cdef int _button # imgui.ImGuiButtonFlags
     cdef float _min_side
     cdef float _max_side
@@ -16,7 +16,7 @@ cdef class DrawInvisibleButton(drawingItem):
     cdef bint _capture_mouse
     cdef double[2] _p1
     cdef double[2] _p2
-    cdef Vec2 initial_mouse_position
+    cdef Vec2 _initial_mouse_position
 
 cdef class DrawInWindow(uiItem):
     cdef bint draw_item(self) noexcept nogil
@@ -27,7 +27,7 @@ cdef class SimplePlot(uiItem):
     cdef float _scale_max
     cdef bint _histogram
     cdef bint _autoscale
-    cdef int last_frame_autoscale_update
+    cdef int _last_frame_autoscale_update
     cdef bint draw_item(self) noexcept nogil
 
 
@@ -40,9 +40,9 @@ cdef class Button(uiItem):
 
 
 cdef class Combo(uiItem):
-    cdef int flags # imgui.ImGuiComboFlags
+    cdef int _flags # imgui.ImGuiComboFlags
     cdef vector[string] _items
-    cdef string disabled_value
+    cdef string _disabled_value
     cdef bint draw_item(self) noexcept nogil
 
 
@@ -59,7 +59,7 @@ cdef class Slider(uiItem):
     cdef double _max
     cdef string _print_format
     cdef bint _vertical
-    cdef int flags # imgui.ImGuiSliderFlags
+    cdef int _flags # imgui.ImGuiSliderFlags
     cdef bint draw_item(self) noexcept nogil
 
 
@@ -81,7 +81,7 @@ cdef class InputText(uiItem):
     cdef int _max_characters
     cdef char* _buffer
     cdef int _last_frame_update
-    cdef int flags # imgui.ImGuiInputTextFlags
+    cdef int _flags # imgui.ImGuiInputTextFlags
     cdef bint draw_item(self) noexcept nogil
 
 
@@ -93,7 +93,7 @@ cdef class InputValue(uiItem):
     cdef double _min
     cdef double _max
     cdef string _print_format
-    cdef int flags # imgui.ImGuiInputTextFlags
+    cdef int _flags # imgui.ImGuiInputTextFlags
     cdef bint draw_item(self) noexcept nogil
 
 
@@ -106,7 +106,7 @@ cdef class Text(uiItem):
 
 
 cdef class Selectable(uiItem):
-    cdef int flags # imgui.ImGuiSelectableFlags
+    cdef int _flags # imgui.ImGuiSelectableFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class MenuItem(uiItem):
@@ -154,45 +154,45 @@ cdef class Tooltip(uiItem):
     cdef bint _only_if_previous_item_hovered
     cdef bint _only_if_
     cdef baseItem _target
-    cdef baseHandler secondary_handler
+    cdef baseHandler _secondary_handler
     cdef bint draw_item(self) noexcept nogil
 
 cdef class TabButton(uiItem):
-    cdef int flags # imgui.ImGuiTabBarFlags
+    cdef int _flags # imgui.ImGuiTabBarFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class Tab(uiItem):
     cdef bint _closable
-    cdef int flags # imgui.ImGuiTabItemFlags
+    cdef int _flags # imgui.ImGuiTabItemFlags
 
 cdef class TabBar(uiItem):
-    cdef int flags # imgui.ImGuiTabBarFlags
+    cdef int _flags # imgui.ImGuiTabBarFlags
 
 cdef class TreeNode(uiItem):
-    cdef int flags # imgui.ImGuiTreeNodeFlags
+    cdef int _flags # imgui.ImGuiTreeNodeFlags
     cdef bint _selectable
     cdef bint draw_item(self) noexcept nogil
 
 cdef class CollapsingHeader(uiItem):
-    cdef int flags # imgui.ImGuiTreeNodeFlags
+    cdef int _flags # imgui.ImGuiTreeNodeFlags
     cdef bint _closable
     cdef bint draw_item(self) noexcept nogil
 
 cdef class ChildWindow(uiItem):
-    cdef int window_flags # imgui.ImGuiWindowFlags
-    cdef int child_flags # imgui.ImGuiChildFlags
+    cdef int _window_flags # imgui.ImGuiWindowFlags
+    cdef int _child_flags # imgui.ImGuiChildFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class ColorButton(uiItem):
-    cdef int flags # imgui.ImGuiColorEditFlags
+    cdef int _flags # imgui.ImGuiColorEditFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class ColorEdit(uiItem):
-    cdef int flags # imgui.ImGuiColorEditFlags
+    cdef int _flags # imgui.ImGuiColorEditFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class ColorPicker(uiItem):
-    cdef int flags # imgui.ImGuiColorEditFlags
+    cdef int _flags # imgui.ImGuiColorEditFlags
     cdef bint draw_item(self) noexcept nogil
 
 cdef class SharedBool(SharedValue):
