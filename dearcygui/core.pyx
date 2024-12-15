@@ -3768,6 +3768,7 @@ cdef class uiItem(baseItem):
         self.state.cap.has_rect_size = True # ALL items have a rectangle size
         self.p_state = &self.state
         self._pos_policy = [Positioning.DEFAULT, Positioning.DEFAULT]
+        self._size_policy = [Sizing.AUTO, Sizing.AUTO]
         self._scaling_factor = 1.0
         #self.trackOffset = 0.5 # 0.0f:top, 0.5f:center, 1.0f:bottom
         #self.tracked = False

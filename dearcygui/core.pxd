@@ -429,6 +429,7 @@ cdef class uiItem(baseItem):
     cdef str user_label
     cdef bool _show
     cdef Positioning[2] _pos_policy
+    cdef Sizing[2] _size_policy
     cdef itemState state
     cdef bint can_be_disabled
     cdef bint _enabled
