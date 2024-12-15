@@ -33,3 +33,27 @@ cdef class VerticalLayout(Layout):
     cdef void __update_layout(self) noexcept nogil
     cdef bint check_change(self) noexcept nogil
     cdef bint draw_item(self) noexcept nogil
+
+cdef class WindowLayout(uiItem):
+    cdef bint force_update
+    cdef imgui.ImVec2 spacing
+    cdef PyObject* previous_last_child
+    cdef imgui.ImVec2 prev_content_area
+    cdef imgui.ImVec2 get_content_area(self) noexcept nogil
+    cdef void draw_child(self, uiItem child) noexcept nogil
+    cdef void draw_children(self) noexcept nogil
+    cdef bint check_change(self) noexcept nogil
+    cdef void __update_layout(self) noexcept nogil
+    cdef void draw(self) noexcept nogil
+
+cdef class WindowHorizontalLayout(WindowLayout):
+    cdef Alignment _alignment_mode
+    cdef vector[float] _positions 
+    cdef float __compute_items_size(self, int &n_items) noexcept nogil
+    cdef void __update_layout(self) noexcept nogil
+
+cdef class WindowVerticalLayout(WindowLayout):
+    cdef Alignment _alignment_mode
+    cdef vector[float] _positions 
+    cdef float __compute_items_size(self, int &n_items) noexcept nogil
+    cdef void __update_layout(self) noexcept nogil

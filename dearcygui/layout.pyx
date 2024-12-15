@@ -67,6 +67,7 @@ cdef class Layout(uiItem):
         self.state.cap.can_be_focused = True
         self.state.cap.can_be_hovered = True
         self.state.cap.can_be_toggled = True
+        self.state.cap.has_content_region = True
         self.theme_condition_category = ThemeCategories.t_layout
         self.prev_content_area.x = 0
         self.prev_content_area.y = 0
@@ -82,7 +83,8 @@ cdef class Layout(uiItem):
     # final enables inlining
     @cython.final
     cdef imgui.ImVec2 get_content_area(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
+        cdef imgui.ImVec2 full_content_area = self.context._viewport.parent_size
+        cdef imgui.ImVec2 cur_content_area
         cdef float global_scale = self.context._viewport.global_scale
         if not(self.dpi_scaling):
             global_scale = 1.
@@ -90,24 +92,30 @@ cdef class Layout(uiItem):
         if self.requested_size.x > 0:
             if self.requested_size.x < 1.:
                 # percentage of available space
-                cur_content_area.x = floor(cur_content_area.x * self.requested_size.x)
+                cur_content_area.x = floor(full_content_area.x * self.requested_size.x)
             else:
                 # direct size.
                 cur_content_area.x = floor(global_scale * self.requested_size.x)
         # 0 means default, which is full available size
         elif self.requested_size.x < 0:
             # negative size: subtraction from available size
-            cur_content_area.x = floor(cur_content_area.x + global_scale * self.requested_size.x)
+            cur_content_area.x = floor(full_content_area.x + global_scale * self.requested_size.x)
+        else:
+            cur_content_area.x = full_content_area.x
 
         if self.requested_size.y > 0:
             if self.requested_size.y < 1.:
-                cur_content_area.y = floor(cur_content_area.y * self.requested_size.y)
+                cur_content_area.y = floor(full_content_area.y * self.requested_size.y)
             else:
                 cur_content_area.y = floor(global_scale * self.requested_size.y)
         elif self.requested_size.y < 0:
-            cur_content_area.y = floor(cur_content_area.y + global_scale * self.requested_size.y)
+            cur_content_area.y = floor(full_content_area.y + global_scale * self.requested_size.y)
+        else:
+            cur_content_area.y = full_content_area.y
+
         cur_content_area.x = max(0, cur_content_area.x)
         cur_content_area.y = max(0, cur_content_area.y)
+        self.state.cur.content_region_size = cur_content_area
         return cur_content_area
 
     cdef bint check_change(self) noexcept nogil:
@@ -145,6 +153,7 @@ cdef class Layout(uiItem):
         """
         if self.last_widgets_child is None:
             return
+        self.context._viewport.parent_size = self.state.cur.content_region_size
         cdef PyObject *child = <PyObject*> self.last_widgets_child
         while (<uiItem>child)._prev_sibling is not None:
             child = <PyObject *>(<uiItem>child)._prev_sibling
@@ -153,7 +162,7 @@ cdef class Layout(uiItem):
             child = <PyObject *>(<uiItem>child)._next_sibling
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = self.get_content_area() # TODO: pass to the callback ? Or set as state ?
+        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
@@ -424,7 +433,7 @@ cdef class HorizontalLayout(Layout):
 
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef imgui.ImVec2 cur_content_area = imgui.GetContentRegionAvail()
+        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
         if self.last_widgets_child is None:# or \
             #cur_content_area.x <= 0 or \
             #cur_content_area.y <= 0: # <= 0 occurs when not visible
@@ -699,3 +708,592 @@ cdef class VerticalLayout(Layout):
            self.state.cur.rect_size.y != self.state.prev.rect_size.y:
             self.context._viewport.redraw_needed = True
         return changed
+
+
+cdef class WindowLayout(uiItem):
+    """
+    Same as Layout, but for windows.
+    Unlike Layout, WindowLayout doesn't
+    have any accessible state, except
+    for the position and rect size.
+    """
+    def __cinit__(self):
+        self.can_have_window_child = True
+        self.theme_condition_category = ThemeCategories.t_layout
+        self.element_child_category = child_type.cat_window
+        self.prev_content_area.x = 0
+        self.prev_content_area.y = 0
+        self.can_be_disabled = False
+        self.previous_last_child = NULL
+        self.state.cap.has_content_region = True
+
+    def update_layout(self):
+        cdef int i
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        for i in range(<int>self._callbacks.size()):
+            self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)
+
+    # final enables inlining
+    @cython.final
+    cdef imgui.ImVec2 get_content_area(self) noexcept nogil:
+        cdef imgui.ImVec2 full_content_area = self.context._viewport.parent_size
+        cdef imgui.ImVec2 cur_content_area
+        full_content_area.x -= self.state.cur.pos_to_viewport.x
+        full_content_area.y -= self.state.cur.pos_to_viewport.y
+        cdef float global_scale = self.context._viewport.global_scale
+        if not(self.dpi_scaling):
+            global_scale = 1.
+
+        if self.requested_size.x > 0:
+            if self.requested_size.x < 1.:
+                # percentage of available space
+                cur_content_area.x = floor(full_content_area.x * self.requested_size.x)
+            else:
+                # direct size.
+                cur_content_area.x = floor(global_scale * self.requested_size.x)
+        # 0 means default, which is full available size
+        elif self.requested_size.x < 0:
+            # negative size: subtraction from available size
+            cur_content_area.x = floor(full_content_area.x + global_scale * self.requested_size.x)
+        else:
+            cur_content_area.x = full_content_area.x
+
+        if self.requested_size.y > 0:
+            if self.requested_size.y < 1.:
+                cur_content_area.y = floor(full_content_area.y * self.requested_size.y)
+            else:
+                cur_content_area.y = floor(global_scale * self.requested_size.y)
+        elif self.requested_size.y < 0:
+            cur_content_area.y = floor(full_content_area.y + global_scale * self.requested_size.y)
+        else:
+            cur_content_area.y = full_content_area.y
+        cur_content_area.x = max(0, cur_content_area.x)
+        cur_content_area.y = max(0, cur_content_area.y)
+        self.state.cur.content_region_size = cur_content_area
+        return cur_content_area
+
+    cdef bint check_change(self) noexcept nogil:
+        cdef imgui.ImVec2 cur_content_area = self.get_content_area()
+        cdef imgui.ImVec2 cur_spacing = imgui.ImVec2(0., 0.)
+        cdef bint changed = False
+        if cur_content_area.x != self.prev_content_area.x or \
+           cur_content_area.y != self.prev_content_area.y or \
+           self.previous_last_child != <PyObject*>self.last_window_child or \
+           cur_spacing.x != self.spacing.x or \
+           cur_spacing.y != self.spacing.y or \
+           self.size_update_requested or \
+           self.force_update: # TODO: check spacing too
+            changed = True
+            self.prev_content_area = cur_content_area
+            self.spacing = cur_spacing
+            self.previous_last_child = <PyObject*>self.last_window_child
+            self.force_update = False
+            self.size_update_requested = False
+        return changed
+
+    @cython.final
+    cdef void draw_child(self, uiItem child) noexcept nogil:
+        child.pos_update_requested = True
+        child.draw()
+        if child.state.cur.rect_size.x != child.state.prev.rect_size.x or \
+           child.state.cur.rect_size.y != child.state.prev.rect_size.y or \
+           child.state.cur.pos_to_viewport.x != child.state.prev.pos_to_viewport.x or \
+           child.state.cur.pos_to_viewport.y != child.state.prev.pos_to_viewport.y:
+            child.context._viewport.redraw_needed = True
+            self.force_update = True
+
+    @cython.final
+    cdef void draw_children(self) noexcept nogil:
+        """
+        Similar to draw_ui_children, but detects
+        any change relative to expected sizes
+        """
+        if self.last_window_child is None:
+            return
+        self.context._viewport.parent_size = self.state.cur.content_region_size
+        cdef imgui.ImVec2 cursor_pos_backup = self.context._viewport.window_cursor
+        cdef imgui.ImVec2 pos_min, pos_max
+        pos_min = imgui.ImVec2(self.context._viewport.platform.frameWidth,
+                               self.context._viewport.platform.frameHeight)
+        pos_max = imgui.ImVec2(0, 0)
+        cdef PyObject *child = <PyObject*> self.last_window_child
+        while (<uiItem>child)._prev_sibling is not None:
+            child = <PyObject *>(<uiItem>child)._prev_sibling
+        while (<uiItem>child) is not None:
+            self.draw_child(<uiItem>child)
+            pos_min.x = min(pos_min.x, (<uiItem>child).state.cur.pos_to_viewport.x)
+            pos_min.y = min(pos_min.y, (<uiItem>child).state.cur.pos_to_viewport.y)
+            pos_max.x = max(pos_max.x, (<uiItem>child).state.cur.pos_to_viewport.x + (<uiItem>child).state.cur.rect_size.x)
+            pos_max.y = max(pos_max.y, (<uiItem>child).state.cur.pos_to_viewport.y + (<uiItem>child).state.cur.rect_size.y)
+            child = <PyObject *>(<uiItem>child)._next_sibling
+        self.state.cur.pos_to_viewport = pos_min
+        self.state.cur.rect_size.x = pos_max.x - pos_min.x
+        self.state.cur.rect_size.y = pos_max.y - pos_min.y
+
+    cdef void __update_layout(self) noexcept nogil:
+        cdef int i
+
+        with gil:
+            for i in range(<int>self._callbacks.size()):
+                self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)
+
+    cdef void draw(self) noexcept nogil:
+        cdef imgui.ImVec2 cur_content_area = self.state.cur.content_region_size
+        if self.last_window_child is None:
+            return
+        cdef bint changed = self.check_change()
+        if changed:
+            self.last_window_child.lock_and_previous_siblings()
+            self.__update_layout()
+
+        cdef Positioning[2] policy = self._pos_policy
+        cdef imgui.ImVec2 cursor_pos_backup = self.context._viewport.window_cursor
+        cdef imgui.ImVec2 pos_p, pos = cursor_pos_backup
+        if policy[0] == Positioning.REL_DEFAULT:
+            pos.x += self.state.cur.pos_to_default.x
+        elif policy[0] == Positioning.REL_PARENT:
+            pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
+        elif policy[0] == Positioning.REL_WINDOW:
+            pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
+        elif policy[0] == Positioning.REL_VIEWPORT:
+            pos.x = self.state.cur.pos_to_viewport.x
+        # else: DEFAULT
+
+        if policy[1] == Positioning.REL_DEFAULT:
+            pos.y += self.state.cur.pos_to_default.y
+        elif policy[1] == Positioning.REL_PARENT:
+            pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
+        elif policy[1] == Positioning.REL_WINDOW:
+            pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
+        elif policy[1] == Positioning.REL_VIEWPORT:
+            pos.y = self.state.cur.pos_to_viewport.y
+
+        if self.last_window_child is not None:
+            pos_p = pos
+            swap(pos_p, self.context._viewport.parent_pos)
+            self.context._viewport.window_pos = self.context._viewport.parent_pos
+            self.draw_children()
+            self.context._viewport.parent_pos = pos_p
+            self.context._viewport.window_pos = pos_p
+
+        if changed:
+            self.last_window_child.unlock_and_previous_siblings()
+
+        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
+        self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
+        self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
+
+
+cdef class WindowHorizontalLayout(WindowLayout):
+    """
+    Layout to organize windows horizontally.
+
+    Similar to HorizontalLayout but handles window positioning.
+    Windows will be arranged left-to-right with customizable alignment
+    and spacing.
+
+    Attributes:
+    ----------
+    alignment_mode : Alignment
+        Horizontal alignment of windows.
+        LEFT: Windows start from left edge
+        RIGHT: Windows start from right edge  
+        CENTER: Windows are centered
+        JUSTIFIED: Space is distributed evenly between windows
+        MANUAL: Windows positioned at specified positions
+    positions : list[float]
+        When in MANUAL mode, the x positions for each window
+    """
+
+    def __cinit__(self):
+        self._alignment_mode = Alignment.LEFT
+
+    @property
+    def alignment_mode(self):
+        """
+        Horizontal alignment mode of the windows.
+        LEFT: windows are appended from the left
+        RIGHT: windows are appended from the right
+        CENTER: windows are centered
+        JUSTIFIED: spacing is organized such
+        that windows start at the left and end
+        at the right.
+        MANUAL: windows are positionned at the requested
+        positions
+
+        The default is LEFT.
+        """
+        cdef unique_lock[recursive_mutex] m 
+        lock_gil_friendly(m, self.mutex)
+        return self._alignment_mode
+
+    @alignment_mode.setter
+    def alignment_mode(self, Alignment value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if <int>value < 0 or value > Alignment.MANUAL:
+            raise ValueError("Invalid alignment value")
+        if value == self._alignment_mode:
+            return
+        self.force_update = True
+        self._alignment_mode = value
+
+    @property 
+    def no_wrap(self):
+        """
+        Disable wrapping to the next row when the
+        windows cannot fit in the available region.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._no_wrap
+
+    @no_wrap.setter
+    def no_wrap(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value == self._no_wrap:
+            return
+        self.force_update = True
+        self._no_wrap = value
+
+    @property
+    def wrap_y(self):
+        """
+        When wrapping, on the second row and later rows,
+        start from the wrap_y position relative to the
+        starting position. The wrapping position
+        is clamped such that you always start at a position >= 0
+        relative to the viewport, thus passing
+        a significant negative value will bring back to
+        the start of the viewport.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._wrap_y
+
+    @wrap_y.setter
+    def wrap_y(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._wrap_y = value
+
+    @property
+    def positions(self):
+        """
+        When in MANUAL mode, the x position starting
+        from the top left of this item at which to
+        place the windows.
+
+        If the positions are between 0 and 1, they are
+        interpreted as percentages relative to the
+        available viewport width.
+        If the positions are negatives, they are interpreted
+        as in reference to the right of the viewport rather
+        than the left.
+
+        Setting this field sets the alignment mode to
+        MANUAL.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._positions
+
+    @positions.setter
+    def positions(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if len(value) > 0:
+            self._alignment_mode = Alignment.MANUAL
+        self._positions.clear()
+        for v in value:
+            self._positions.push_back(v)
+        self.force_update = True
+
+    cdef float __compute_items_size(self, int &n_items) noexcept nogil:
+        """Compute total width of all windows"""
+        cdef float size = 0.
+        n_items = 0
+        cdef PyObject *child = <PyObject*>self.last_window_child
+        while (<uiItem>child) is not None:
+            size += (<uiItem>child).state.cur.rect_size.x
+            n_items += 1
+            child = <PyObject*>((<uiItem>child)._prev_sibling)
+            if (<uiItem>child).requested_size.x == 0 and not(self.state.prev.rendered):
+                self.force_update = True
+        return size
+
+    cdef void __update_layout(self) noexcept nogil:
+        """Position the windows horizontally according to alignment mode"""
+        cdef PyObject *child = <PyObject*>self.last_window_child
+        cdef float end_x = self.prev_content_area.x
+        cdef float available_width = end_x
+        cdef float spacing_x = self.spacing.x
+        cdef float spacing_y = self.spacing.y
+        # Get back to the first child
+        while ((<uiItem>child)._prev_sibling) is not None:
+            child = <PyObject*>((<uiItem>child)._prev_sibling) 
+
+        cdef PyObject *sibling
+        cdef int i, n_items_this_row
+        cdef float target_x, expected_x, expected_size
+        cdef bint pos_change = False
+
+        while (<uiItem>child) is not None:
+            sibling = child
+            n_items_this_row = 1
+            expected_size = (<uiItem>child).state.cur.rect_size.x
+            while (<uiItem>sibling)._next_sibling is not None:
+                expected_size = expected_size + self.spacing.x + \
+                    (<uiItem>(<uiItem>sibling)._next_sibling).state.cur.rect_size.x
+                sibling = <PyObject*>(<uiItem>sibling)._next_sibling
+                n_items_this_row += 1
+
+            # Position elements in this row
+            sibling = child
+
+            # Determine starting x position based on alignment mode
+            if self._alignment_mode == Alignment.LEFT:
+                target_x = 0
+            elif self._alignment_mode == Alignment.RIGHT:
+                target_x = end_x - expected_size
+            elif self._alignment_mode == Alignment.CENTER:
+                target_x = end_x // 2 - \
+                    expected_size // 2 
+            else: # JUSTIFIED
+                target_x = 0
+                # Increase spacing to fit target space
+                spacing_x = self.spacing.x + \
+                    max(0, \
+                        floor((available_width - expected_size) /
+                               (n_items_this_row-1)))
+
+            target_x = max(0, target_x)
+
+            expected_x = 0
+            for i in range(n_items_this_row-1):
+                (<uiItem>sibling).state.cur.pos_to_parent.x = target_x
+                (<uiItem>sibling).state.cur.pos_to_parent.y = 0
+                pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.x != (<uiItem>sibling).state.prev.pos_to_viewport.x
+                (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
+                (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
+                (<uiItem>sibling).pos_update_requested = pos_change
+                target_x = target_x + spacing_x + (<uiItem>sibling).state.cur.rect_size.x
+                sibling = <PyObject*>(<uiItem>sibling)._next_sibling
+
+            # Last item of the row
+            if (self._alignment_mode == Alignment.RIGHT or \
+               (self._alignment_mode == Alignment.JUSTIFIED and n_items_this_row != 1)) and \
+               (<uiItem>child).state.cur.rect_size.x == (<uiItem>child).state.prev.rect_size.x:
+                # Align right item properly even if rounding occurred
+                target_x -= spacing_x
+                spacing_x = \
+                    end_x - (target_x + (<uiItem>sibling).state.cur.rect_size.x)
+                target_x += max(spacing_x, self.spacing.x)
+
+            (<uiItem>sibling).state.cur.pos_to_viewport.x = target_x
+            (<uiItem>sibling).state.cur.pos_to_viewport.y = 0
+            pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.x != (<uiItem>sibling).state.prev.pos_to_viewport.x
+            (<uiItem>sibling).pos_update_requested = pos_change
+            (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
+            (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
+            child = <PyObject*>(<uiItem>sibling)._next_sibling
+
+        # A change in position changes the size for some items
+        if pos_change:
+            self.force_update = True
+            self.context._viewport.redraw_needed = True
+            with gil:
+                for i in range(<int>self._callbacks.size()):
+                    self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)
+
+cdef class WindowVerticalLayout(WindowLayout):
+    """
+    Layout to organize windows vertically.
+
+    Similar to VerticalLayout but handles window positioning.
+    Windows will be arranged top-to-bottom with customizable alignment
+    and spacing.
+
+    Attributes:
+    ----------
+    alignment_mode : Alignment
+        Vertical alignment of windows.
+        TOP: Windows start from top edge
+        BOTTOM: Windows start from bottom edge  
+        CENTER: Windows are centered
+        JUSTIFIED: Space is distributed evenly between windows
+        MANUAL: Windows positioned at specified positions
+    positions : list[float]
+        When in MANUAL mode, the y positions for each window.
+        Values between 0-1 are interpreted as percentages.
+        Negative values reference from bottom edge.
+    """
+
+    def __cinit__(self):
+        self._alignment_mode = Alignment.TOP
+
+    @property
+    def alignment_mode(self):
+        """
+        Vertical alignment mode of the windows.
+        TOP: windows are appended from the top
+        BOTTOM: windows are appended from the bottom 
+        CENTER: windows are centered
+        JUSTIFIED: spacing is organized such 
+        that windows start at the TOP and end
+        at the BOTTOM.
+        MANUAL: windows are positionned at the requested
+        positions
+
+        FOR TOP/BOTTOM/CENTER, ItemSpacing's style can
+        be used to control spacing between the windows.
+        Default is TOP.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._alignment_mode
+
+    @alignment_mode.setter
+    def alignment_mode(self, Alignment value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if <int>value < 0 or value > Alignment.MANUAL:
+            raise ValueError("Invalid alignment value")
+        if value == self._alignment_mode:
+            return
+        self.force_update = True
+        self._alignment_mode = value
+
+    @property
+    def positions(self):
+        """
+        When in MANUAL mode, the y position starting
+        from the top left of this item at which to
+        place the windows.
+
+        If the positions are between 0 and 1, they are
+        interpreted as percentages relative to the
+        size of the Layout height.
+        If the positions are negatives, they are interpreted
+        as in reference to the bottom of the layout rather
+        than the top. Items are still top aligned to
+        the target position though.
+
+        Setting this field sets the alignment mode to
+        MANUAL.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._positions
+
+    @positions.setter
+    def positions(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if len(value) > 0:
+            self._alignment_mode = Alignment.MANUAL
+        self._positions.clear()
+        for v in value:
+            self._positions.push_back(v)
+        self.force_update = True
+
+    cdef float __compute_items_size(self, int &n_items) noexcept nogil:
+        cdef float size = 0.
+        n_items = 0
+        cdef PyObject *child = <PyObject*>self.last_window_child
+        while (<uiItem>child) is not None:
+            size += (<uiItem>child).state.cur.rect_size.y
+            n_items += 1
+            child = <PyObject*>((<uiItem>child)._prev_sibling)
+            if (<uiItem>child).requested_size.y == 0 and not(self.state.prev.rendered):
+                self.force_update = True
+        return size
+
+    cdef void __update_layout(self) noexcept nogil:
+        """Position the windows vertically according to alignment mode"""
+        cdef PyObject *child = <PyObject*>self.last_window_child
+        cdef float end_y = self.prev_content_area.y
+        cdef float available_height = end_y
+        cdef float spacing_x = self.spacing.x
+        cdef float spacing_y = self.spacing.y
+        # Get back to the first child
+        while ((<uiItem>child)._prev_sibling) is not None:
+            child = <PyObject*>((<uiItem>child)._prev_sibling) 
+
+        cdef PyObject *sibling
+        cdef int i, n_items_this_row
+        cdef float target_y, expected_y, expected_size
+        cdef bint pos_change = False
+
+        while (<uiItem>child) is not None:
+            sibling = child
+            n_items_this_row = 1
+            expected_size = (<uiItem>child).state.cur.rect_size.y
+            while (<uiItem>sibling)._next_sibling is not None:
+                expected_size = expected_size + self.spacing.y + \
+                    (<uiItem>(<uiItem>sibling)._next_sibling).state.cur.rect_size.y
+                sibling = <PyObject*>(<uiItem>sibling)._next_sibling
+                n_items_this_row += 1
+
+            # Position elements in this row
+            sibling = child
+
+            # Determine starting x position based on alignment mode
+            if self._alignment_mode == Alignment.TOP:
+                target_y = 0
+            elif self._alignment_mode == Alignment.BOTTOM:
+                target_y = end_y - expected_size
+            elif self._alignment_mode == Alignment.CENTER:
+                target_y = end_y // 2 - \
+                    expected_size // 2 
+            else: # JUSTIFIED
+                target_y = 0
+                # Increase spacing to fit target space
+                spacing_y = self.spacing.y + \
+                    max(0, \
+                        floor((available_height - expected_size) /
+                               (n_items_this_row-1)))
+
+            target_y = max(0, target_y)
+
+            expected_y = 0
+            for i in range(n_items_this_row-1):
+                (<uiItem>sibling).state.cur.pos_to_parent.y = target_y
+                (<uiItem>sibling).state.cur.pos_to_parent.x = 0
+                pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.y != (<uiItem>sibling).state.prev.pos_to_viewport.y
+                (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
+                (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
+                (<uiItem>sibling).pos_update_requested = pos_change
+                target_y = target_y + spacing_y + (<uiItem>sibling).state.cur.rect_size.y
+                sibling = <PyObject*>(<uiItem>sibling)._next_sibling
+
+            # Last item of the row
+            if (self._alignment_mode == Alignment.BOTTOM or \
+               (self._alignment_mode == Alignment.JUSTIFIED and n_items_this_row != 1)) and \
+               (<uiItem>child).state.cur.rect_size.y == (<uiItem>child).state.prev.rect_size.y:
+                # Align bottom item properly even if rounding occurred
+                target_y -= spacing_y
+                spacing_y = \
+                    end_y - (target_y + (<uiItem>sibling).state.cur.rect_size.y)
+                target_y += max(spacing_y, self.spacing.y)
+
+            (<uiItem>sibling).state.cur.pos_to_viewport.y = target_y
+            (<uiItem>sibling).state.cur.pos_to_viewport.x = 0
+            pos_change |= (<uiItem>sibling).state.cur.pos_to_viewport.y != (<uiItem>sibling).state.prev.pos_to_viewport.y
+            (<uiItem>sibling).pos_update_requested = pos_change
+            (<uiItem>sibling)._pos_policy[0] = Positioning.REL_PARENT
+            (<uiItem>sibling)._pos_policy[1] = Positioning.REL_PARENT
+            child = <PyObject*>(<uiItem>sibling)._next_sibling
+
+        # A change in position changes the size for some items
+        if pos_change:
+            self.force_update = True
+            self.context._viewport.redraw_needed = True
+            with gil:
+                for i in range(<int>self._callbacks.size()):
+                    self.context.queue_callback_arg1value(<Callback>self._callbacks[i], self, self, self._value)

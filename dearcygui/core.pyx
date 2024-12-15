@@ -2999,7 +2999,10 @@ cdef class Viewport(baseItem):
         self.in_plot = False
         self.start_pending_theme_actions = 0
         self.parent_pos = imgui.ImVec2(0., 0.)
+        self.parent_size = imgui.ImVec2(self.platform.frameWidth,
+                                        self.platform.frameHeight)
         self.window_pos = imgui.ImVec2(0., 0.)
+        self.window_cursor = imgui.ImVec2(0., 0.)
         imgui.PushID(self.uuid)
         draw_menubar_children(self)
         draw_window_children(self)
@@ -4570,7 +4573,7 @@ cdef class uiItem(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._indent
+        return self._no_newline
 
     ## setters
 
@@ -4938,6 +4941,9 @@ cdef class Window(uiItem):
         self.min_size = imgui.ImVec2(100., 100.)
         self.max_size = imgui.ImVec2(30000., 30000.)
         self.theme_condition_category = ThemeCategories.t_window
+        # Default is the viewport for windows
+        self._pos_policy[0] = Positioning.REL_VIEWPORT
+        self._pos_policy[1] = Positioning.REL_VIEWPORT
         self.scroll_x = 0. # TODO
         self.scroll_y = 0.
         self.scroll_x_update_requested = False
@@ -5536,8 +5542,39 @@ cdef class Window(uiItem):
                 imgui.SetNextWindowFocus()
             self.focus_update_requested = False
 
+        cdef Positioning[2] policy = self._pos_policy
+        cdef imgui.ImVec2 cursor_pos_backup = self.context._viewport.window_cursor
+        cdef imgui.ImVec2 pos = cursor_pos_backup
+
         if self.pos_update_requested:
-            imgui.SetNextWindowPos(self.state.cur.pos_to_viewport, imgui.ImGuiCond_Always)
+            if self.main_window:
+                self.state.cur.pos_to_viewport.x = 0
+                self.state.cur.pos_to_viewport.y = 0
+                self._pos_policy[0] = Positioning.REL_VIEWPORT
+                self._pos_policy[1] = Positioning.REL_VIEWPORT
+                policy = self._pos_policy
+            # Note the parent may be a WindowLayout and it is
+            # considered a window (thus REL_WINDOW and REL_PARENT apply)
+            if policy[0] == Positioning.REL_DEFAULT:
+                pos.x += self.state.cur.pos_to_default.x
+            elif policy[0] == Positioning.REL_PARENT:
+                pos.x = self.context._viewport.parent_pos.x + self.state.cur.pos_to_parent.x
+            elif policy[0] == Positioning.REL_WINDOW:
+                pos.x = self.context._viewport.window_pos.x + self.state.cur.pos_to_window.x
+            elif policy[0] == Positioning.REL_VIEWPORT:
+                pos.x = self.state.cur.pos_to_viewport.x
+            # else: DEFAULT
+
+            if policy[1] == Positioning.REL_DEFAULT:
+                pos.y += self.state.cur.pos_to_default.y
+            elif policy[1] == Positioning.REL_PARENT:
+                pos.y = self.context._viewport.parent_pos.y + self.state.cur.pos_to_parent.y
+            elif policy[1] == Positioning.REL_WINDOW:
+                pos.y = self.context._viewport.window_pos.y + self.state.cur.pos_to_window.y
+            elif policy[1] == Positioning.REL_VIEWPORT:
+                pos.y = self.state.cur.pos_to_viewport.y
+            # else: DEFAULT
+            imgui.SetNextWindowPos(pos, imgui.ImGuiCond_Always)
             self.pos_update_requested = False
 
         if self.size_update_requested:
@@ -5583,7 +5620,6 @@ cdef class Window(uiItem):
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowRounding, 0.0)
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowPadding, imgui.ImVec2(0.0, 0.))
             imgui.PushStyleVar(imgui.ImGuiStyleVar_WindowBorderSize, 0.)
-            imgui.SetNextWindowPos(imgui.ImVec2(0.0, 0.0), imgui.ImGuiCond_Always)
             imgui.SetNextWindowSize(imgui.ImVec2(<float>self.context._viewport.platform.frameWidth,
                                            <float>self.context._viewport.platform.frameHeight),
                                     imgui.ImGuiCond_Always)
@@ -5640,6 +5676,7 @@ cdef class Window(uiItem):
             self.context._viewport.window_pos = imgui.GetCursorScreenPos()
             self._content_pos = self.context._viewport.window_pos
             self.context._viewport.parent_pos = self.context._viewport.window_pos # should we restore after ? TODO
+            self.context._viewport.parent_size = self.state.cur.content_region_size
 
             #if self.last_0_child is not None:
             #    self.last_0_child.draw(this_drawlist, startx, starty)
@@ -5660,7 +5697,20 @@ cdef class Window(uiItem):
             self.state.cur.rect_size = rect_size
             self.last_frame_update = self.context._viewport.frame_count # TODO remove ?
             self.state.cur.pos_to_viewport = imgui.GetWindowPos()
-            self.state.cur.pos_to_parent = self.state.cur.pos_to_viewport
+            self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
+            self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
+            self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
+            self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
+            self.state.cur.pos_to_default.x = self.state.cur.pos_to_viewport.x - cursor_pos_backup.x
+            self.state.cur.pos_to_default.y = self.state.cur.pos_to_viewport.y - cursor_pos_backup.y
+            if self._no_newline and \
+               (policy[1] == Positioning.REL_DEFAULT or \
+                policy[1] == Positioning.DEFAULT):
+                self.context._viewport.window_cursor.x = self.state.cur.pos_to_viewport.x + rect_size.x
+                self.context._viewport.window_cursor.y = self.state.cur.pos_to_viewport.y
+            else:
+                self.context._viewport.window_cursor.x = 0
+                self.context._viewport.window_cursor.y = self.state.cur.pos_to_viewport.y + rect_size.y
         else:
             # Window is hidden or closed
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()

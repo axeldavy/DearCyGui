@@ -3405,12 +3405,14 @@ cdef class MenuBar(uiItem):
         cdef imgui.ImVec2 pos_w, pos_p
         if menu_allowed:
             self.update_current_state()
+            self.state.cur.content_region_size = imgui.GetContentRegionAvail()
             if self.last_widgets_child is not None:
                 # We are at the top of the window, but behave as if popup
                 pos_w = imgui.GetCursorScreenPos()
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
+                self.context._viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
@@ -3473,6 +3475,7 @@ cdef class Menu(uiItem):
                 pos_p = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
+                self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
@@ -3614,6 +3617,7 @@ cdef class Tooltip(uiItem):
                 self._content_pos = pos_w
                 swap(pos_w, self.context._viewport.window_pos)
                 swap(pos_p, self.context._viewport.parent_pos)
+                self.context._viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
                 self.context._viewport.window_pos = pos_w
                 self.context._viewport.parent_pos = pos_p
@@ -3845,6 +3849,7 @@ cdef class Tab(uiItem):
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
+                self.context._viewport.parent_size = self.state.cur.rect_size # unsure
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
             imgui.EndTabItem()
@@ -4229,6 +4234,7 @@ cdef class TreeNode(uiItem):
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
+                self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
             imgui.TreePop()
@@ -4368,6 +4374,7 @@ cdef class CollapsingHeader(uiItem):
             if self.last_widgets_child is not None:
                 pos_p = imgui.GetCursorScreenPos()
                 swap(pos_p, self.context._viewport.parent_pos)
+                self.context._viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
                 self.context._viewport.parent_pos = pos_p
         # TODO: rect_size from group ?
@@ -4741,6 +4748,7 @@ cdef class ChildWindow(uiItem):
             self._content_pos = pos_p
             swap(pos_p, self.context._viewport.parent_pos)
             swap(pos_w, self.context._viewport.window_pos)
+            self.context._viewport.parent_size = self.state.cur.content_region_size
             draw_ui_children(self)
             draw_menubar_children(self)
             self.context._viewport.window_pos = pos_w

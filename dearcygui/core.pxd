@@ -294,6 +294,8 @@ cdef class Viewport(baseItem):
     cdef double[2] shifts
     cdef imgui.ImVec2 window_pos
     cdef imgui.ImVec2 parent_pos
+    cdef imgui.ImVec2 parent_size
+    cdef imgui.ImVec2 window_cursor # Window layout
     cdef bint in_plot
     cdef bint plot_fit
     cdef float thickness_multiplier
