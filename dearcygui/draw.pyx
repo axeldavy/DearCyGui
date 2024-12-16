@@ -66,14 +66,14 @@ cdef class ViewportDrawList(drawingItem):
             return
 
         # Reset current drawInfo
-        self.context._viewport.in_plot = False
-        self.context._viewport.window_pos = make_Vec2(0., 0.)
-        self.context._viewport.parent_pos = make_Vec2(0., 0.)
+        self.context.viewport.in_plot = False
+        self.context.viewport.window_pos = make_Vec2(0., 0.)
+        self.context.viewport.parent_pos = make_Vec2(0., 0.)
         # TODO: dpi scaling
-        self.context._viewport.shifts = [0., 0.]
-        self.context._viewport.scales = [1., 1.]
-        self.context._viewport.thickness_multiplier = 1.
-        self.context._viewport.size_multiplier = 1.
+        self.context.viewport.shifts = [0., 0.]
+        self.context.viewport.scales = [1., 1.]
+        self.context.viewport.thickness_multiplier = 1.
+        self.context.viewport.size_multiplier = 1.
 
         cdef void* internal_drawlist = \
             imgui.GetForegroundDrawList() if self._front else \
@@ -236,8 +236,8 @@ cdef class DrawingClip(drawingItem):
         cdef float[2] p2
         cdef float scale
 
-        self.context._viewport.apply_current_transform(pmin, self._pmin)
-        self.context._viewport.apply_current_transform(pmax, self._pmax)
+        self.context.viewport.apply_current_transform(pmin, self._pmin)
+        self.context.viewport.apply_current_transform(pmax, self._pmax)
 
         cdef imgui.ImVec2 rect_min = (<imgui.ImDrawList*>drawlist).GetClipRectMin()
         cdef imgui.ImVec2 rect_max = (<imgui.ImDrawList*>drawlist).GetClipRectMax()
@@ -255,11 +255,11 @@ cdef class DrawingClip(drawingItem):
             unscaled_p1[1] = 0
             unscaled_p2[0] = 1
             unscaled_p2[1] = 0
-            self.context._viewport.apply_current_transform(p1, unscaled_p1)
-            self.context._viewport.apply_current_transform(p2, unscaled_p2)
+            self.context.viewport.apply_current_transform(p1, unscaled_p1)
+            self.context.viewport.apply_current_transform(p2, unscaled_p2)
             scale = p2[0] - p1[0]
             if not(self._no_global_scale):
-                scale /= self.context._viewport.global_scale
+                scale /= self.context.viewport.global_scale
             if scale <= self._scale_min or scale > self._scale_max:
                 visible = False
 
@@ -370,49 +370,49 @@ cdef class DrawingScale(drawingItem):
             return
 
         # save states
-        cdef float global_scale = self.context._viewport.global_scale
-        cdef double[2] cur_scales = self.context._viewport.scales
-        cdef double[2] cur_shifts = self.context._viewport.shifts
-        cdef bint cur_in_plot = self.context._viewport.in_plot
-        cdef float cur_size_mul = self.context._viewport.size_multiplier
-        cdef float cur_thick_mul = self.context._viewport.thickness_multiplier
+        cdef float global_scale = self.context.viewport.global_scale
+        cdef double[2] cur_scales = self.context.viewport.scales
+        cdef double[2] cur_shifts = self.context.viewport.shifts
+        cdef bint cur_in_plot = self.context.viewport.in_plot
+        cdef float cur_size_mul = self.context.viewport.size_multiplier
+        cdef float cur_thick_mul = self.context.viewport.thickness_multiplier
 
         cdef float[2] p
         if self._no_parent_scale:
-            self.context._viewport.apply_current_transform(p, self._shifts)
-            self.context._viewport.shifts[0] = <double>p[0]
-            self.context._viewport.shifts[1] = <double>p[1]
+            self.context.viewport.apply_current_transform(p, self._shifts)
+            self.context.viewport.shifts[0] = <double>p[0]
+            self.context.viewport.shifts[1] = <double>p[1]
         else:
             # Doing manually keeps precision and plot transform
-            self.context._viewport.shifts[0] = self.context._viewport.shifts[0] + cur_scales[0] * self._shifts[0]
-            self.context._viewport.shifts[1] = self.context._viewport.shifts[1] + cur_scales[1] * self._shifts[1]
+            self.context.viewport.shifts[0] = self.context.viewport.shifts[0] + cur_scales[0] * self._shifts[0]
+            self.context.viewport.shifts[1] = self.context.viewport.shifts[1] + cur_scales[1] * self._shifts[1]
 
         if self._no_parent_scale:
-            self.context._viewport.scales = self._scales
+            self.context.viewport.scales = self._scales
             if not(self._no_global_scale):
-                self.context._viewport.scales[0] = self.context._viewport.scales[0] * global_scale
-                self.context._viewport.scales[1] = self.context._viewport.scales[1] * global_scale
-                self.context._viewport.thickness_multiplier = global_scale
+                self.context.viewport.scales[0] = self.context.viewport.scales[0] * global_scale
+                self.context.viewport.scales[1] = self.context.viewport.scales[1] * global_scale
+                self.context.viewport.thickness_multiplier = global_scale
             else:
-                self.context._viewport.thickness_multiplier = 1.
-            self.context._viewport.size_multiplier = self.context._viewport.scales[0]
+                self.context.viewport.thickness_multiplier = 1.
+            self.context.viewport.size_multiplier = self.context.viewport.scales[0]
             # Disable using plot transform
-            self.context._viewport.in_plot = False
+            self.context.viewport.in_plot = False
         else:
-            self.context._viewport.scales[0] = cur_scales[0] * self._scales[0]
-            self.context._viewport.scales[1] = cur_scales[1] * self._scales[1]
-            self.context._viewport.size_multiplier = self.context._viewport.size_multiplier * self._scales[0]
+            self.context.viewport.scales[0] = cur_scales[0] * self._scales[0]
+            self.context.viewport.scales[1] = cur_scales[1] * self._scales[1]
+            self.context.viewport.size_multiplier = self.context.viewport.size_multiplier * self._scales[0]
 
         # draw children
         draw_drawing_children(self, drawlist)
 
         # restore states
-        #self.context._viewport.global_scale = global_scale
-        self.context._viewport.scales = cur_scales
-        self.context._viewport.shifts = cur_shifts
-        self.context._viewport.in_plot = cur_in_plot
-        self.context._viewport.size_multiplier = cur_size_mul
-        self.context._viewport.thickness_multiplier = cur_thick_mul
+        #self.context.viewport.global_scale = global_scale
+        self.context.viewport.scales = cur_scales
+        self.context.viewport.shifts = cur_shifts
+        self.context.viewport.in_plot = cur_in_plot
+        self.context.viewport.size_multiplier = cur_size_mul
+        self.context.viewport.thickness_multiplier = cur_thick_mul
 
 
 """
@@ -552,19 +552,19 @@ cdef class DrawArrow(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] tstart
         cdef float[2] tend
         cdef float[2] tcorner1
         cdef float[2] tcorner2
-        self.context._viewport.apply_current_transform(tstart, self._start)
-        self.context._viewport.apply_current_transform(tend, self._end)
-        self.context._viewport.apply_current_transform(tcorner1, self._corner1)
-        self.context._viewport.apply_current_transform(tcorner2, self._corner2)
+        self.context.viewport.apply_current_transform(tstart, self._start)
+        self.context.viewport.apply_current_transform(tend, self._end)
+        self.context.viewport.apply_current_transform(tcorner1, self._corner1)
+        self.context.viewport.apply_current_transform(tcorner2, self._corner2)
         cdef imgui.ImVec2 itstart = imgui.ImVec2(tstart[0], tstart[1])
         cdef imgui.ImVec2 itend  = imgui.ImVec2(tend[0], tend[1])
         cdef imgui.ImVec2 itcorner1 = imgui.ImVec2(tcorner1[0], tcorner1[1])
@@ -675,19 +675,19 @@ cdef class DrawBezierCubic(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
         cdef float[2] p2
         cdef float[2] p3
         cdef float[2] p4
-        self.context._viewport.apply_current_transform(p1, self._p1)
-        self.context._viewport.apply_current_transform(p2, self._p2)
-        self.context._viewport.apply_current_transform(p3, self._p3)
-        self.context._viewport.apply_current_transform(p4, self._p4)
+        self.context.viewport.apply_current_transform(p1, self._p1)
+        self.context.viewport.apply_current_transform(p2, self._p2)
+        self.context.viewport.apply_current_transform(p3, self._p3)
+        self.context.viewport.apply_current_transform(p4, self._p4)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -784,17 +784,17 @@ cdef class DrawBezierQuadratic(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
         cdef float[2] p2
         cdef float[2] p3
-        self.context._viewport.apply_current_transform(p1, self._p1)
-        self.context._viewport.apply_current_transform(p2, self._p2)
-        self.context._viewport.apply_current_transform(p3, self._p3)
+        self.context.viewport.apply_current_transform(p1, self._p1)
+        self.context.viewport.apply_current_transform(p2, self._p2)
+        self.context.viewport.apply_current_transform(p3, self._p3)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -895,18 +895,18 @@ cdef class DrawCircle(drawingItem):
 
         cdef float thickness = self._thickness
         cdef float radius = self._radius
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         if radius > 0:
-            radius *= self.context._viewport.size_multiplier
+            radius *= self.context.viewport.size_multiplier
         else:
-            radius *= self.context._viewport.global_scale
+            radius *= self.context.viewport.global_scale
         thickness = abs(thickness)
         radius = abs(radius)
 
         cdef float[2] center
-        self.context._viewport.apply_current_transform(center, self._center)
+        self.context.viewport.apply_current_transform(center, self._center)
         cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
         if self._fill & imgui.IM_COL32_A_MASK != 0:
             (<imgui.ImDrawList*>drawlist).AddCircleFilled(icenter, radius, <imgui.ImU32>self._fill, self._segments)
@@ -1067,9 +1067,9 @@ cdef class DrawEllipse(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef vector[imgui.ImVec2] transformed_points
@@ -1077,7 +1077,7 @@ cdef class DrawEllipse(drawingItem):
         cdef int i
         cdef float[2] p
         for i in range(<int>self._points.size()):
-            self.context._viewport.apply_current_transform(p, self._points[i].p)
+            self.context.viewport.apply_current_transform(p, self._points[i].p)
             transformed_points.push_back(imgui.ImVec2(p[0], p[1]))
         # TODO imgui requires clockwise order for correct AA
         # Reverse order if needed
@@ -1506,18 +1506,18 @@ cdef class DrawImage(drawingItem):
         cdef double actual_height
 
         if self._width >= 0 and self._height >= 0:
-            self.context._viewport.apply_current_transform(p1, self._p1)
-            self.context._viewport.apply_current_transform(p2, self._p2)
-            self.context._viewport.apply_current_transform(p3, self._p3)
-            self.context._viewport.apply_current_transform(p4, self._p4)
+            self.context.viewport.apply_current_transform(p1, self._p1)
+            self.context.viewport.apply_current_transform(p2, self._p2)
+            self.context.viewport.apply_current_transform(p3, self._p3)
+            self.context.viewport.apply_current_transform(p4, self._p4)
         else:
-            self.context._viewport.apply_current_transform(center, self._center)
+            self.context.viewport.apply_current_transform(center, self._center)
             actual_width = -self._width
             actual_height = -self._height
             if self._height >= 0 or self._width >= 0:
-                self.context._viewport.apply_current_transform(p1, self._p1)
-                self.context._viewport.apply_current_transform(p2, self._p2)
-                self.context._viewport.apply_current_transform(p3, self._p3)
+                self.context.viewport.apply_current_transform(p1, self._p1)
+                self.context.viewport.apply_current_transform(p2, self._p2)
+                self.context.viewport.apply_current_transform(p3, self._p3)
                 if actual_width < 0:
                     # compute the coordinate space width
                     actual_width = sqrt(
@@ -1730,9 +1730,9 @@ cdef class DrawLine(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
@@ -1740,10 +1740,10 @@ cdef class DrawLine(drawingItem):
         cdef float[2] center
         cdef float dx, dy
         if self._length >= 0:
-            self.context._viewport.apply_current_transform(p1, self._p1)
-            self.context._viewport.apply_current_transform(p2, self._p2)
+            self.context.viewport.apply_current_transform(p1, self._p1)
+            self.context.viewport.apply_current_transform(p2, self._p2)
         else:
-            self.context._viewport.apply_current_transform(center, self._center)
+            self.context.viewport.apply_current_transform(center, self._center)
             dx = -0.5 * cos(self._direction) * self._length
             dy = -0.5 * sin(self._direction) * self._length
             p1[0] = center[0] - dx
@@ -1858,23 +1858,23 @@ cdef class DrawPolyline(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip1_
         cdef imgui.ImVec2 ip2
-        self.context._viewport.apply_current_transform(p, self._points[0].p)
+        self.context.viewport.apply_current_transform(p, self._points[0].p)
         ip1 = imgui.ImVec2(p[0], p[1])
         ip1_ = ip1
         # imgui requires clockwise order + convexity for correct AA of AddPolyline
         # Thus we only call AddLine
         cdef int i
         for i in range(1, <int>self._points.size()):
-            self.context._viewport.apply_current_transform(p, self._points[i].p)
+            self.context.viewport.apply_current_transform(p, self._points[i].p)
             ip2 = imgui.ImVec2(p[0], p[1])
             (<imgui.ImDrawList*>drawlist).AddLine(ip1, ip2, <imgui.ImU32>self._color, thickness)
             ip1 = ip2
@@ -2010,9 +2010,9 @@ cdef class DrawPolygon(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p
@@ -2022,7 +2022,7 @@ cdef class DrawPolygon(drawingItem):
         cdef bint ccw
         ipoints.reserve(self._points.size())
         for i in range(<int>self._points.size()):
-            self.context._viewport.apply_current_transform(p, self._points[i].p)
+            self.context.viewport.apply_current_transform(p, self._points[i].p)
             ip = imgui.ImVec2(p[0], p[1])
             ipoints.push_back(ip)
 
@@ -2202,9 +2202,9 @@ cdef class DrawQuad(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
@@ -2217,10 +2217,10 @@ cdef class DrawQuad(drawingItem):
         cdef imgui.ImVec2 ip4
         cdef bint ccw
 
-        self.context._viewport.apply_current_transform(p1, self._p1)
-        self.context._viewport.apply_current_transform(p2, self._p2)
-        self.context._viewport.apply_current_transform(p3, self._p3)
-        self.context._viewport.apply_current_transform(p4, self._p4)
+        self.context.viewport.apply_current_transform(p1, self._p1)
+        self.context.viewport.apply_current_transform(p2, self._p2)
+        self.context.viewport.apply_current_transform(p3, self._p3)
+        self.context.viewport.apply_current_transform(p4, self._p4)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -2468,9 +2468,9 @@ cdef class DrawRect(drawingItem):
 
         cdef float rounding = self._rounding
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] pmin
@@ -2482,8 +2482,8 @@ cdef class DrawRect(drawingItem):
         cdef imgui.ImU32 col_bot_left = self._color_bottom_left
         cdef imgui.ImU32 col_bot_right = self._color_bottom_right
 
-        self.context._viewport.apply_current_transform(pmin, self._pmin)
-        self.context._viewport.apply_current_transform(pmax, self._pmax)
+        self.context.viewport.apply_current_transform(pmin, self._pmin)
+        self.context.viewport.apply_current_transform(pmax, self._pmax)
         ipmin = imgui.ImVec2(pmin[0], pmin[1])
         ipmax = imgui.ImVec2(pmax[0], pmax[1])
 
@@ -2597,7 +2597,7 @@ cdef class DrawRegularPolygon(drawingItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._direction = value
-        self.dirty = True
+        self._dirty = True
     @property
     def num_points(self):
         """
@@ -2615,7 +2615,7 @@ cdef class DrawRegularPolygon(drawingItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._num_points = value
-        self.dirty = True
+        self._dirty = True
     @property
     def color(self):
         """
@@ -2676,9 +2676,9 @@ cdef class DrawRegularPolygon(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
         cdef float radius = self._radius
         cdef int num_points = self._num_points
@@ -2699,7 +2699,7 @@ cdef class DrawRegularPolygon(drawingItem):
         cdef float angle
         cdef float2 pp
 
-        if self.dirty and num_points >= 2:
+        if self._dirty and num_points >= 2:
             self._points.clear()
             for i in range(num_points):
                 # Similar to imgui draw code, we guarantee
@@ -2708,15 +2708,15 @@ cdef class DrawRegularPolygon(drawingItem):
                 pp.p[0] = cos(angle)
                 pp.p[1] = sin(angle)
                 self._points.push_back(pp)
-            self.dirty = False
+            self._dirty = False
 
         if radius < 0:
             # screen space radius
-            radius = -radius * self.context._viewport.global_scale
+            radius = -radius * self.context.viewport.global_scale
         else:
-            radius = radius * self.context._viewport.size_multiplier
+            radius = radius * self.context.viewport.size_multiplier
 
-        self.context._viewport.apply_current_transform(center, self._center)
+        self.context.viewport.apply_current_transform(center, self._center)
         icenter = imgui.ImVec2(center[0], center[1])
 
         if num_points == 1:
@@ -2761,7 +2761,7 @@ cdef class DrawStar(drawingItem):
         self._color = 4294967295 # 0xffffffff
         self._thickness = 1.
         self._num_points = 5
-        self.dirty = True
+        self._dirty = True
 
     @property
     def center(self):
@@ -2829,7 +2829,7 @@ cdef class DrawStar(drawingItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._direction = value
-        self.dirty = True
+        self._dirty = True
     @property
     def num_points(self):
         """
@@ -2847,7 +2847,7 @@ cdef class DrawStar(drawingItem):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         self._num_points = value
-        self.dirty = True
+        self._dirty = True
     @property
     def color(self):
         """
@@ -2908,9 +2908,9 @@ cdef class DrawStar(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
         cdef float radius = self._radius
         cdef float inner_radius = self._inner_radius
@@ -2936,7 +2936,7 @@ cdef class DrawStar(drawingItem):
         cdef vector[imgui.ImVec2] ipoints
         cdef vector[imgui.ImVec2] inner_ipoints
 
-        if self.dirty:
+        if self._dirty:
             self._points.clear()
             for i in range(num_points):
                 # Similar to imgui draw code, we guarantee
@@ -2953,18 +2953,18 @@ cdef class DrawStar(drawingItem):
                 pp.p[0] = cos(angle)
                 pp.p[1] = sin(angle)
                 self._inner_points.push_back(pp)
-            self.dirty = False
+            self._dirty = False
 
         if radius < 0:
             # screen space radius
-            radius = -radius * self.context._viewport.global_scale
-            inner_radius = abs(inner_radius) * self.context._viewport.global_scale
+            radius = -radius * self.context.viewport.global_scale
+            inner_radius = abs(inner_radius) * self.context.viewport.global_scale
         else:
-            radius = radius * self.context._viewport.size_multiplier
-            inner_radius = abs(inner_radius) * self.context._viewport.size_multiplier
+            radius = radius * self.context.viewport.size_multiplier
+            inner_radius = abs(inner_radius) * self.context.viewport.size_multiplier
         inner_radius = min(radius, inner_radius)
 
-        self.context._viewport.apply_current_transform(center, self._center)
+        self.context.viewport.apply_current_transform(center, self._center)
         icenter = imgui.ImVec2(center[0], center[1])
 
         ipoints.reserve(self._points.size())
@@ -3112,13 +3112,13 @@ cdef class DrawText(drawingItem):
 
         cdef float[2] p
 
-        self.context._viewport.apply_current_transform(p, self._pos)
+        self.context.viewport.apply_current_transform(p, self._pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
         cdef float size = self._size
         if size > 0:
-            size *= self.context._viewport.size_multiplier
+            size *= self.context.viewport.size_multiplier
         else:
-            size *= self.context._viewport.global_scale
+            size *= self.context.viewport.global_scale
         size = abs(size)
         if self._font is not None:
             self._font.push()
@@ -3260,9 +3260,9 @@ cdef class DrawTriangle(drawingItem):
             return
 
         cdef float thickness = self._thickness
-        thickness *= self.context._viewport.thickness_multiplier
+        thickness *= self.context.viewport.thickness_multiplier
         if thickness > 0:
-            thickness *= self.context._viewport.size_multiplier
+            thickness *= self.context.viewport.size_multiplier
         thickness = abs(thickness)
 
         cdef float[2] p1
@@ -3273,9 +3273,9 @@ cdef class DrawTriangle(drawingItem):
         cdef imgui.ImVec2 ip3
         cdef bint ccw
 
-        self.context._viewport.apply_current_transform(p1, self._p1)
-        self.context._viewport.apply_current_transform(p2, self._p2)
-        self.context._viewport.apply_current_transform(p3, self._p3)
+        self.context.viewport.apply_current_transform(p1, self._p1)
+        self.context.viewport.apply_current_transform(p2, self._p2)
+        self.context.viewport.apply_current_transform(p3, self._p3)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])

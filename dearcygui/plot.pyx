@@ -185,9 +185,9 @@ cdef class AxesResizeHandler(baseHandler):
 # BaseItem that has has no parent/child nor sibling
 cdef class PlotAxisConfig(baseItem):
     def __cinit__(self):
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_clicked = True
-        self.p_state = &self._state
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.p_state = &self.state
         self._enabled = True
         self._scale = <int>AxisScale.LINEAR
         self._tick_format = b""
@@ -632,7 +632,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.hovered
+        return self.state.cur.hovered
 
     @property
     def clicked(self):
@@ -645,7 +645,7 @@ cdef class PlotAxisConfig(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self._state.cur.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def mouse_coord(self):
@@ -793,14 +793,14 @@ cdef class PlotAxisConfig(baseItem):
         setup
         """
         self.set_previous_states()
-        self._state.cur.hovered = False
-        self._state.cur.rendered = False
+        self.state.cur.hovered = False
+        self.state.cur.rendered = False
 
         if self._enabled == False:
-            self.context._viewport.enabled_axes[axis] = False
+            self.context.viewport.enabled_axes[axis] = False
             return
-        self.context._viewport.enabled_axes[axis] = True
-        self._state.cur.rendered = True
+        self.context.viewport.enabled_axes[axis] = True
+        self.state.cur.rendered = True
 
         cdef implot.ImPlotAxisFlags flags = self._flags
         if self._to_fit:
@@ -854,8 +854,8 @@ cdef class PlotAxisConfig(baseItem):
         """
         Update states, etc. after the elements were setup
         """
-        if not(self.context._viewport.enabled_axes[axis]):
-            if self._state.cur.rendered:
+        if not(self.context.viewport.enabled_axes[axis]):
+            if self.state.cur.rendered:
                 self.set_hidden()
             return
         cdef implot.ImPlotRect rect
@@ -884,33 +884,33 @@ cdef class PlotAxisConfig(baseItem):
         cdef bint hovered = implot.IsAxisHovered(axis)
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self._state.cur.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
-            self._state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
-        cdef bint backup_hovered = self._state.cur.hovered
-        self._state.cur.hovered = hovered
+            self.state.cur.clicked[i] = hovered and imgui.IsMouseClicked(i, False)
+            self.state.cur.double_clicked[i] = hovered and imgui.IsMouseDoubleClicked(i)
+        cdef bint backup_hovered = self.state.cur.hovered
+        self.state.cur.hovered = hovered
         self.run_handlers() # TODO FIX multiple configs tied. Maybe just not support ?
-        if not(backup_hovered) or self._state.cur.hovered:
+        if not(backup_hovered) or self.state.cur.hovered:
             return
         # Restore correct states
         # We do it here and not above to trigger the handlers only once
-        self._state.cur.hovered |= backup_hovered
+        self.state.cur.hovered |= backup_hovered
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self._state.cur.clicked[i] = self._state.cur.hovered and imgui.IsMouseClicked(i, False)
-            self._state.cur.double_clicked[i] = self._state.cur.hovered and imgui.IsMouseDoubleClicked(i)
+            self.state.cur.clicked[i] = self.state.cur.hovered and imgui.IsMouseClicked(i, False)
+            self.state.cur.double_clicked[i] = self.state.cur.hovered and imgui.IsMouseDoubleClicked(i)
 
     cdef void after_plot(self, int axis) noexcept nogil:
         # The fit only impacts the next frame
         if self._enabled and (self._min != self._prev_min or self._max != self._prev_max):
-            self.context._viewport.redraw_needed = True
+            self.context.viewport.redraw_needed = True
 
     cdef void set_hidden(self) noexcept nogil:
         self.set_previous_states()
-        self._state.cur.hovered = False
-        self._state.cur.rendered = False
+        self.state.cur.hovered = False
+        self.state.cur.rendered = False
         cdef int i
         for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-            self._state.cur.clicked[i] = False
-            self._state.cur.double_clicked[i] = False
+            self.state.cur.clicked[i] = False
+            self.state.cur.double_clicked[i] = False
         self.run_handlers()
 
 
@@ -1127,10 +1127,10 @@ cdef class Plot(uiItem):
     """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_plot_element_child = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.has_content_region = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_content_region = True
         self._X1 = PlotAxisConfig(context)
         self._X2 = PlotAxisConfig(context, enabled=False)
         self._X3 = PlotAxisConfig(context, enabled=False)
@@ -1575,13 +1575,13 @@ cdef class Plot(uiItem):
 
         # Check at least one axis of each is enabled ?
 
-        visible = implot.BeginPlot(self.imgui_label.c_str(),
+        visible = implot.BeginPlot(self._imgui_label.c_str(),
                                    Vec2ImVec2(self.scaled_requested_size()),
                                    self._flags)
         # BeginPlot created the imgui Item
-        self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         if visible:
-            self._state.cur.rendered = True
+            self.state.cur.rendered = True
             
             # Setup axes
             self._X1.setup(implot.ImAxis_X1)
@@ -1604,9 +1604,9 @@ cdef class Plot(uiItem):
 
             # These states are valid after SetupFinish
             # Update now to have up to date data for handlers of children.
-            self._state.cur.hovered = implot.IsPlotHovered()
-            update_current_mouse_states(self._state)
-            self._state.cur.content_region_size =ImVec2Vec2( implot.GetPlotSize())
+            self.state.cur.hovered = implot.IsPlotHovered()
+            update_current_mouse_states(self.state)
+            self.state.cur.content_region_size =ImVec2Vec2( implot.GetPlotSize())
             self._content_pos = ImVec2Vec2(implot.GetPlotPos())
 
             self._X1.after_setup(implot.ImAxis_X1)
@@ -1632,7 +1632,7 @@ cdef class Plot(uiItem):
             self._Y1.after_plot(implot.ImAxis_Y1)
             self._Y2.after_plot(implot.ImAxis_Y2)
             self._Y3.after_plot(implot.ImAxis_Y3)
-        elif self._state.cur.rendered:
+        elif self.state.cur.rendered:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             self._X1.set_hidden()
             self._X2.set_hidden()
@@ -1660,13 +1660,13 @@ cdef class plotElementWithLegend(plotElement):
     popup entry that gets shown on a right click (by default).
     """
     def __cinit__(self):
-        self._state.cap.can_be_hovered = True # The legend only
-        self.p_state = &self._state
+        self.state.cap.can_be_hovered = True # The legend only
+        self.p_state = &self.state
         self._enabled = True
         self._enabled_dirty = True
         self._legend_button = imgui.ImGuiMouseButton_Right
         self._legend = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_hovered = True
         self.can_have_widget_child = True
 
     @property
@@ -1809,18 +1809,18 @@ cdef class plotElementWithLegend(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.hovered
+        return self.state.cur.hovered
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
 
         # Check the axes are enabled
         if not(self._show) or \
-           not(self.context._viewport.enabled_axes[self._axes[0]]) or \
-           not(self.context._viewport.enabled_axes[self._axes[1]]):
+           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context.viewport.enabled_axes[self._axes[1]]):
             self.set_previous_states()
-            self._state.cur.rendered = False
-            self._state.cur.hovered = False
+            self.state.cur.rendered = False
+            self.state.cur.hovered = False
             self.propagate_hidden_state_to_children_with_handlers()
             self.run_handlers()
             return
@@ -1831,7 +1831,7 @@ cdef class plotElementWithLegend(plotElement):
         if self._font is not None:
             self._font.push()
 
-        self.context._viewport.push_pending_theme_actions(
+        self.context.viewport.push_pending_theme_actions(
             ThemeEnablers.ANY,
             ThemeCategories.t_plot
         )
@@ -1845,11 +1845,11 @@ cdef class plotElementWithLegend(plotElement):
             implot.HideNextItem(not(self._enabled), implot.ImPlotCond_Always)
             self._enabled_dirty = False
         else:
-            self._enabled = IsItemHidden(self.imgui_label.c_str())
+            self._enabled = IsItemHidden(self._imgui_label.c_str())
         self.draw_element()
 
-        self._state.cur.rendered = True
-        self._state.cur.hovered = False
+        self.state.cur.rendered = True
+        self.state.cur.hovered = False
         cdef Vec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
@@ -1857,26 +1857,26 @@ cdef class plotElementWithLegend(plotElement):
             # display a small rect with nothing in it. It's surely
             # better to not display anything in this case.
             if self.last_widgets_child is not None:
-                if implot.BeginLegendPopup(self.imgui_label.c_str(),
+                if implot.BeginLegendPopup(self._imgui_label.c_str(),
                                            self._legend_button):
                     if self.last_widgets_child is not None:
                         # sub-window
                         pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                         pos_p = pos_w
-                        swap_Vec2(pos_w, self.context._viewport.window_pos)
-                        swap_Vec2(pos_p, self.context._viewport.parent_pos)
+                        swap_Vec2(pos_w, self.context.viewport.window_pos)
+                        swap_Vec2(pos_p, self.context.viewport.parent_pos)
                         draw_ui_children(self)
-                        self.context._viewport.window_pos = pos_w
-                        self.context._viewport.parent_pos = pos_p
+                        self.context.viewport.window_pos = pos_w
+                        self.context.viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
-            self._state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
+            self.state.cur.hovered = implot.IsLegendEntryHovered(self._imgui_label.c_str())
 
 
         # pop theme, font
         if self._theme is not None:
             self._theme.pop()
 
-        self.context._viewport.pop_applied_pending_theme_actions()
+        self.context.viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()
@@ -2048,7 +2048,7 @@ cdef class PlotLine(plotElementXY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotLine[int](self.imgui_label.c_str(),
+            implot.PlotLine[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
@@ -2056,7 +2056,7 @@ cdef class PlotLine(plotElementXY):
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotLine[float](self.imgui_label.c_str(),
+            implot.PlotLine[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
@@ -2064,7 +2064,7 @@ cdef class PlotLine(plotElementXY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotLine[double](self.imgui_label.c_str(),
+            implot.PlotLine[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
@@ -2174,7 +2174,7 @@ cdef class PlotShadedLine(plotElementXYY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotShaded[int](self.imgui_label.c_str(),
+            implot.PlotShaded[int](self._imgui_label.c_str(),
                                    <const int*>cnp.PyArray_DATA(self._X),
                                    <const int*>cnp.PyArray_DATA(self._Y1),
                                    <const int*>cnp.PyArray_DATA(self._Y2),
@@ -2183,7 +2183,7 @@ cdef class PlotShadedLine(plotElementXYY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotShaded[float](self.imgui_label.c_str(),
+            implot.PlotShaded[float](self._imgui_label.c_str(),
                                      <const float*>cnp.PyArray_DATA(self._X),
                                      <const float*>cnp.PyArray_DATA(self._Y1),
                                      <const float*>cnp.PyArray_DATA(self._Y2),
@@ -2192,7 +2192,7 @@ cdef class PlotShadedLine(plotElementXYY):
                                      0,
                                      cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotShaded[double](self.imgui_label.c_str(),
+            implot.PlotShaded[double](self._imgui_label.c_str(),
                                       <const double*>cnp.PyArray_DATA(self._X),
                                       <const double*>cnp.PyArray_DATA(self._Y1),
                                       <const double*>cnp.PyArray_DATA(self._Y2),
@@ -2226,7 +2226,7 @@ cdef class PlotStems(plotElementXY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotStems[int](self.imgui_label.c_str(),
+            implot.PlotStems[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
@@ -2235,7 +2235,7 @@ cdef class PlotStems(plotElementXY):
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotStems[float](self.imgui_label.c_str(),
+            implot.PlotStems[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
@@ -2244,7 +2244,7 @@ cdef class PlotStems(plotElementXY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotStems[double](self.imgui_label.c_str(),
+            implot.PlotStems[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
@@ -2296,7 +2296,7 @@ cdef class PlotBars(plotElementXY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotBars[int](self.imgui_label.c_str(),
+            implot.PlotBars[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
@@ -2305,7 +2305,7 @@ cdef class PlotBars(plotElementXY):
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotBars[float](self.imgui_label.c_str(),
+            implot.PlotBars[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
@@ -2314,7 +2314,7 @@ cdef class PlotBars(plotElementXY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotBars[double](self.imgui_label.c_str(),
+            implot.PlotBars[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
@@ -2369,7 +2369,7 @@ cdef class PlotStairs(plotElementXY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotStairs[int](self.imgui_label.c_str(),
+            implot.PlotStairs[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
@@ -2377,7 +2377,7 @@ cdef class PlotStairs(plotElementXY):
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotStairs[float](self.imgui_label.c_str(),
+            implot.PlotStairs[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
@@ -2385,7 +2385,7 @@ cdef class PlotStairs(plotElementXY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotStairs[double](self.imgui_label.c_str(),
+            implot.PlotStairs[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
@@ -2459,21 +2459,21 @@ cdef class PlotInfLines(plotElementX):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotInfLines[int](self.imgui_label.c_str(),
+            implot.PlotInfLines[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  size,
                                  self._flags,
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotInfLines[float](self.imgui_label.c_str(),
+            implot.PlotInfLines[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    size,
                                    self._flags,
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotInfLines[double](self.imgui_label.c_str(),
+            implot.PlotInfLines[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     size,
                                     self._flags,
@@ -2505,7 +2505,7 @@ cdef class PlotScatter(plotElementXY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotScatter[int](self.imgui_label.c_str(),
+            implot.PlotScatter[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
@@ -2513,7 +2513,7 @@ cdef class PlotScatter(plotElementXY):
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotScatter[float](self.imgui_label.c_str(),
+            implot.PlotScatter[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
@@ -2521,7 +2521,7 @@ cdef class PlotScatter(plotElementXY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotScatter[double](self.imgui_label.c_str(),
+            implot.PlotScatter[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
@@ -2575,7 +2575,7 @@ cdef class PlotHistogram2D(plotElementXY):
             return
 
         if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotScatter[int](self.imgui_label.c_str(),
+            implot.PlotScatter[int](self._imgui_label.c_str(),
                                  <const int*>cnp.PyArray_DATA(self._X),
                                  <const int*>cnp.PyArray_DATA(self._Y),
                                  size,
@@ -2584,7 +2584,7 @@ cdef class PlotHistogram2D(plotElementXY):
                                  0,
                                  cnp.PyArray_STRIDE(self._X, 0))
         elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotScatter[float](self.imgui_label.c_str(),
+            implot.PlotScatter[float](self._imgui_label.c_str(),
                                    <const float*>cnp.PyArray_DATA(self._X),
                                    <const float*>cnp.PyArray_DATA(self._Y),
                                    size,
@@ -2593,7 +2593,7 @@ cdef class PlotHistogram2D(plotElementXY):
                                    0,
                                    cnp.PyArray_STRIDE(self._X, 0))
         else:
-            implot.PlotScatter[double](self.imgui_label.c_str(),
+            implot.PlotScatter[double](self._imgui_label.c_str(),
                                     <const double*>cnp.PyArray_DATA(self._X),
                                     <const double*>cnp.PyArray_DATA(self._Y),
                                     size,
@@ -2608,9 +2608,9 @@ cdef class plotDraggable(plotElement):
     Base class for plot draggable elements.
     """
     def __cinit__(self):
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_active = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_active = True
         self._flags = implot.ImPlotDragToolFlags_None
 
     @property
@@ -2711,7 +2711,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.active
+        return self.state.cur.active
 
     @property
     def clicked(self):
@@ -2724,7 +2724,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self._state.cur.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -2737,7 +2737,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.double_clicked
+        return self.state.cur.double_clicked
 
     @property
     def hovered(self):
@@ -2746,7 +2746,7 @@ cdef class plotDraggable(plotElement):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.hovered
+        return self.state.cur.hovered
 
     cdef void draw(self) noexcept nogil:
         cdef int i
@@ -2754,18 +2754,18 @@ cdef class plotDraggable(plotElement):
 
         # Check the axes are enabled
         if not(self._show) or \
-           not(self.context._viewport.enabled_axes[self._axes[0]]) or \
-           not(self.context._viewport.enabled_axes[self._axes[1]]):
-            self._state.cur.hovered = False
-            self._state.cur.rendered = False
+           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context.viewport.enabled_axes[self._axes[1]]):
+            self.state.cur.hovered = False
+            self.state.cur.rendered = False
             for i in range(imgui.ImGuiMouseButton_COUNT):
-                self._state.cur.clicked[i] = False
-                self._state.cur.double_clicked[i] = False
+                self.state.cur.clicked[i] = False
+                self.state.cur.double_clicked[i] = False
             self.propagate_hidden_state_to_children_with_handlers()
             return
 
         # push theme, font
-        self.context._viewport.push_pending_theme_actions(
+        self.context.viewport.push_pending_theme_actions(
             ThemeEnablers.ANY,
             ThemeCategories.t_plot
         )
@@ -2774,14 +2774,14 @@ cdef class plotDraggable(plotElement):
             self._theme.push()
 
         implot.SetAxes(self._axes[0], self._axes[1])
-        self._state.cur.rendered = True
+        self.state.cur.rendered = True
         self.draw_element()
 
         # pop theme, font
         if self._theme is not None:
             self._theme.pop()
 
-        self.context._viewport.pop_applied_pending_theme_actions()
+        self.context.viewport.pop_applied_pending_theme_actions()
 
         self.run_handlers()
 
@@ -2821,11 +2821,11 @@ cdef class DrawInPlot(plotElementWithLegend):
 
         # Check the axes are enabled
         if not(self._show) or \
-           not(self.context._viewport.enabled_axes[self._axes[0]]) or \
-           not(self.context._viewport.enabled_axes[self._axes[1]]):
+           not(self.context.viewport.enabled_axes[self._axes[0]]) or \
+           not(self.context.viewport.enabled_axes[self._axes[1]]):
             self.set_previous_states()
-            self._state.cur.rendered = False
-            self._state.cur.hovered = False
+            self.state.cur.rendered = False
+            self.state.cur.hovered = False
             self.propagate_hidden_state_to_children_with_handlers()
             self.run_handlers()
             return
@@ -2836,7 +2836,7 @@ cdef class DrawInPlot(plotElementWithLegend):
         if self._font is not None:
             self._font.push()
 
-        self.context._viewport.push_pending_theme_actions(
+        self.context.viewport.push_pending_theme_actions(
             ThemeEnablers.ANY,
             ThemeCategories.t_plot
         )
@@ -2849,18 +2849,18 @@ cdef class DrawInPlot(plotElementWithLegend):
         cdef bint render = True
 
         if self._legend:
-            render = implot.BeginItem(self.imgui_label.c_str(), self._flags, -1)
+            render = implot.BeginItem(self._imgui_label.c_str(), self._flags, -1)
         else:
             implot.PushPlotClipRect(0.)
 
         # Reset current drawInfo
-        self.context._viewport.scales = [1., 1.]
-        self.context._viewport.shifts = [0., 0.]
-        self.context._viewport.in_plot = True
-        self.context._viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
-        self.context._viewport.thickness_multiplier = implot.GetStyle().LineWeight
-        self.context._viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
-        self.context._viewport.parent_pos = ImVec2Vec2(implot.GetPlotPos())
+        self.context.viewport.scales = [1., 1.]
+        self.context.viewport.shifts = [0., 0.]
+        self.context.viewport.in_plot = True
+        self.context.viewport.plot_fit = False if self._ignore_fit else implot.FitThisFrame()
+        self.context.viewport.thickness_multiplier = implot.GetStyle().LineWeight
+        self.context.viewport.size_multiplier = implot.GetPlotSize().x / implot.GetPlotLimits(self._axes[0], self._axes[1]).Size().x
+        self.context.viewport.parent_pos = ImVec2Vec2(implot.GetPlotPos())
 
         if render:
             draw_drawing_children(self, implot.GetPlotDrawList())
@@ -2870,8 +2870,8 @@ cdef class DrawInPlot(plotElementWithLegend):
             else:
                 implot.PopPlotClipRect()
 
-        self._state.cur.rendered = True
-        self._state.cur.hovered = False
+        self.state.cur.rendered = True
+        self.state.cur.hovered = False
         cdef Vec2 pos_w, pos_p
         if self._legend:
             # Popup that gets opened with a click on the entry
@@ -2879,25 +2879,25 @@ cdef class DrawInPlot(plotElementWithLegend):
             # display a small rect with nothing in it. It's surely
             # better to not display anything in this case.
             if self.last_widgets_child is not None:
-                if implot.BeginLegendPopup(self.imgui_label.c_str(),
+                if implot.BeginLegendPopup(self._imgui_label.c_str(),
                                            self._legend_button):
                     if self.last_widgets_child is not None:
                         # sub-window
                         pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                         pos_p = pos_w
-                        swap_Vec2(pos_w, self.context._viewport.window_pos)
-                        swap_Vec2(pos_p, self.context._viewport.parent_pos)
+                        swap_Vec2(pos_w, self.context.viewport.window_pos)
+                        swap_Vec2(pos_p, self.context.viewport.parent_pos)
                         draw_ui_children(self)
-                        self.context._viewport.window_pos = pos_w
-                        self.context._viewport.parent_pos = pos_p
+                        self.context.viewport.window_pos = pos_w
+                        self.context.viewport.parent_pos = pos_p
                     implot.EndLegendPopup()
-            self._state.cur.hovered = implot.IsLegendEntryHovered(self.imgui_label.c_str())
+            self.state.cur.hovered = implot.IsLegendEntryHovered(self._imgui_label.c_str())
 
         # pop theme, font
         if self._theme is not None:
             self._theme.pop()
 
-        self.context._viewport.pop_applied_pending_theme_actions()
+        self.context.viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()

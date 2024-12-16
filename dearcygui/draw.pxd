@@ -160,7 +160,7 @@ cdef class DrawRegularPolygon(drawingItem):
     cdef float _thickness
     cdef int _num_points
     cdef vector[float2] _points
-    cdef bint dirty
+    cdef bint _dirty
     cdef void draw(self, void*) noexcept nogil
 
 cdef class DrawStar(drawingItem):
@@ -174,7 +174,7 @@ cdef class DrawStar(drawingItem):
     cdef int _num_points
     cdef vector[float2] _points
     cdef vector[float2] _inner_points
-    cdef bint dirty
+    cdef bint _dirty
     cdef void draw(self, void*) noexcept nogil
 
 

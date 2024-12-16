@@ -8,7 +8,7 @@ from libcpp.vector cimport vector
 cimport numpy as cnp
 
 cdef class DrawInvisibleButton(drawingItem):
-    cdef itemState _state
+    cdef itemState state
     cdef int _button # imgui.ImGuiButtonFlags
     cdef float _min_side
     cdef float _max_side

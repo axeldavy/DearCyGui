@@ -5,11 +5,11 @@ from .types cimport *
 from .core cimport baseItem, baseFont, Texture
 
 cdef class Font(baseFont):
-    cdef void* font # imgui.ImFont*
-    cdef FontTexture container
-    cdef bint dpi_scaling
+    cdef void* _font # imgui.ImFont*
+    cdef FontTexture _container
+    cdef bint _dpi_scaling
     cdef float _scale
-    cdef vector[float] scales_backup
+    cdef vector[float] _scales_backup
     cdef void push(self) noexcept nogil
     cdef void pop(self) noexcept nogil
 
@@ -39,11 +39,11 @@ cdef class FontTexture(baseItem):
     Packs one or several fonts into
     a texture for internal use by ImGui.
     """
-    cdef void* atlas # imgui.ImFontAtlas *
+    cdef void* _atlas # imgui.ImFontAtlas *
     cdef Texture _texture
     cdef bint _built
-    cdef list fonts_files # content of the font files
-    cdef list fonts
+    cdef list _fonts_files # content of the font files
+    cdef list _fonts
 
 cdef class GlyphSet:
     cdef readonly int height
@@ -58,7 +58,7 @@ cdef class GlyphSet:
                          float advance)
 
 cdef class FontRenderer:
-    cdef object face
+    cdef object _face
     cpdef GlyphSet render_glyph_set(self,
                                     target_pixel_height=?,
                                     target_size=?,

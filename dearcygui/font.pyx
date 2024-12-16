@@ -91,21 +91,21 @@ cdef class Font(baseFont):
     """
     def __cinit__(self, context, *args, **kwargs):
         self.can_have_sibling = False
-        self.font = NULL
-        self.container = None
+        self._font = NULL
+        self._container = None
         self._scale = 1.
-        self.dpi_scaling = True
+        self._dpi_scaling = True
 
     @property
     def texture(self):
-        return self.container
+        return self._container
 
     @property
     def size(self):
         """Readonly attribute: native height of characters"""
-        if self.font == NULL:
+        if self._font == NULL:
             raise ValueError("Uninitialized font")
-        return (<imgui.ImFont*>self.font).FontSize
+        return (<imgui.ImFont*>self._font).FontSize
 
     @property
     def scale(self):
@@ -132,34 +132,34 @@ cdef class Font(baseFont):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return not(self.dpi_scaling)
+        return not(self._dpi_scaling)
 
     @no_scaling.setter
     def no_scaling(self, bint value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        self.dpi_scaling = not(value)
+        self._dpi_scaling = not(value)
 
     cdef void push(self) noexcept nogil:
-        if self.font == NULL:
+        if self._font == NULL:
             return
         self.mutex.lock()
-        cdef imgui.ImFont *font = <imgui.ImFont*>self.font
-        self.scales_backup.push_back(font.Scale)
+        cdef imgui.ImFont *font = <imgui.ImFont*>self._font
+        self._scales_backup.push_back(font.Scale)
         font.Scale = \
-            (self.context._viewport.global_scale if self.dpi_scaling else 1.) * self._scale
+            (self.context.viewport.global_scale if self._dpi_scaling else 1.) * self._scale
         imgui.PushFont(font)
 
     cdef void pop(self) noexcept nogil:
-        if self.font == NULL:
+        if self._font == NULL:
             return
         # If we applied PushFont and the previous Font
         # was already this font, then PopFont will apply
         # the Font again, but the Scale is incorrect if
         # we don't restore it first.
-        cdef imgui.ImFont *font = <imgui.ImFont*>self.font
-        font.Scale = self.scales_backup.back()
-        self.scales_backup.pop_back()
+        cdef imgui.ImFont *font = <imgui.ImFont*>self._font
+        font.Scale = self._scales_backup.back()
+        self._scales_backup.pop_back()
         imgui.PopFont()
         self.mutex.unlock()
 
@@ -263,7 +263,7 @@ cdef class FontMultiScales(baseFont):
 
         # Find font with closest invert scale to current global scale
         # (we want that scale * global_scale == 1, to have sharp fonts)
-        cdef float global_scale = self.context._viewport.global_scale
+        cdef float global_scale = self.context.viewport.global_scale
         cdef float target_scale = logf(global_scale)
         cdef float best_diff = 1e10
         cdef float diff
@@ -346,8 +346,8 @@ cdef class AutoFont(FontMultiScales):
         
         # Create initial font at current global scale
         # Pass exceptions for the first time we create the font
-        self._pending_fonts.add(self.context._viewport.global_scale)
-        self._create_font_at_scale(self.context._viewport.global_scale, False)
+        self._pending_fonts.add(self.context.viewport.global_scale)
+        self._create_font_at_scale(self.context.viewport.global_scale, False)
 
     def __del__(self):
         self._font_creation_executor.shutdown(wait=True)
@@ -383,7 +383,7 @@ cdef class AutoFont(FontMultiScales):
             texture.build()
 
             # Get font and configure scale
-            font = texture.fonts[0] 
+            font = texture._fonts[0] 
             font.scale = 1.0/scale
 
             self._add_new_font_to_list(font)
@@ -463,13 +463,13 @@ cdef class FontTexture(baseItem):
     def __cinit__(self, context, *args, **kwargs):
         self._built = False
         self.can_have_sibling = False
-        self.atlas = <void*>(new imgui.ImFontAtlas())
+        self._atlas = <void*>(new imgui.ImFontAtlas())
         self._texture = Texture(context)
-        self.fonts_files = []
-        self.fonts = []
+        self._fonts_files = []
+        self._fonts = []
 
     def __delalloc__(self):
-        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self._atlas
         atlas.Clear() # Unsure if needed
         del atlas
 
@@ -497,7 +497,7 @@ cdef class FontTexture(baseItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self._atlas
         if self._built:
             raise ValueError("Cannot add Font to built FontTexture")
         if not(os.path.exists(path)):
@@ -528,9 +528,9 @@ cdef class FontTexture(baseItem):
         if font == NULL:
             raise ValueError(f"Failed to load target Font file {path}")
         cdef Font font_object = Font(self.context)
-        font_object.container = self
-        font_object.font = font
-        self.fonts.append(font_object)
+        font_object._container = self
+        font_object._font = font
+        self._fonts.append(font_object)
 
     def add_custom_font(self, GlyphSet glyph_set):
         """
@@ -542,7 +542,7 @@ cdef class FontTexture(baseItem):
         this might not be true in the future, thus
         you should still call build().
         """
-        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self._atlas
         if self._built:
             raise ValueError("Cannot add Font to built FontTexture")
 
@@ -573,9 +573,9 @@ cdef class FontTexture(baseItem):
             assert(j == i)
 
         cdef Font font_object = Font(self.context)
-        font_object.container = self
-        font_object.font = font
-        self.fonts.append(font_object)
+        font_object._container = self
+        font_object._font = font
+        self._fonts.append(font_object)
 
         # build
         if not(atlas.Build()):
@@ -617,12 +617,12 @@ cdef class FontTexture(baseItem):
 
         # Upload texture
         if use_color:
-            self._texture.filtering_mode = 0 # rgba bilinear
+            self._texture._filtering_mode = 0 # rgba bilinear
         else:
-            self._texture.filtering_mode = 2 # 111A bilinear
+            self._texture._filtering_mode = 2 # 111A bilinear
         self._texture.set_value(array)
         assert(self._texture.allocated_texture != NULL)
-        self._texture.readonly = True
+        self._texture._readonly = True
         atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
 
         # Release temporary CPU memory
@@ -652,7 +652,7 @@ cdef class FontTexture(baseItem):
         lock_gil_friendly(m, self.mutex)
         if not(self._built):
             return 0
-        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self._atlas
         return <int>atlas.Fonts.size()
 
     def __getitem__(self, index):
@@ -660,10 +660,10 @@ cdef class FontTexture(baseItem):
         lock_gil_friendly(m, self.mutex)
         if not(self._built):
             raise ValueError("Texture not yet built")
-        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self._atlas
         if index < 0 or index >= <int>atlas.Fonts.size():
             raise IndexError("Outside range")
-        return self.fonts[index]
+        return self._fonts[index]
 
     def build(self):
         """
@@ -674,7 +674,7 @@ cdef class FontTexture(baseItem):
         lock_gil_friendly(m, self.mutex)
         if self._built:
             return
-        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self.atlas
+        cdef imgui.ImFontAtlas *atlas = <imgui.ImFontAtlas*>self._atlas
         if atlas.Fonts.Size == 0:
             raise ValueError("You must add fonts first")
         # build
@@ -691,10 +691,10 @@ cdef class FontTexture(baseItem):
         # Upload texture
         cdef cython.view.array data_array = cython.view.array(shape=(height, width, bpp), itemsize=1, format='B', mode='c', allocate_buffer=False)
         data_array.data = <char*>data
-        self._texture.filtering_mode = 2 # 111A bilinear
+        self._texture._filtering_mode = 2 # 111A bilinear
         self._texture.set_value(np.asarray(data_array, dtype=np.uint8))
         assert(self._texture.allocated_texture != NULL)
-        self._texture.readonly = True
+        self._texture._readonly = True
         atlas.SetTexID(<imgui.ImTextureID>self._texture.allocated_texture)
 
         # Release temporary CPU memory
@@ -1012,8 +1012,8 @@ cdef class FontRenderer:
     def __init__(self, path):
         if not os.path.exists(path):
             raise ValueError(f"Font file {path} not found")
-        self.face = freetype.Face(path)
-        if self.face is None:
+        self._face = freetype.Face(path)
+        if self._face is None:
             raise ValueError("Failed to open the font")
 
     def render_text_to_array(self, text: str,
@@ -1023,7 +1023,7 @@ cdef class FontRenderer:
                              str hinter="light",
                              allow_color=True) -> tuple[np.ndarray, int]:
         """Render text string to a numpy array and return the array and bitmap_top"""
-        self.face.set_pixel_sizes(0, int(round(target_size)))
+        self._face.set_pixel_sizes(0, int(round(target_size)))
 
         load_flags = get_freetype_load_flags(hinter, allow_color)
 
@@ -1054,12 +1054,12 @@ cdef class FontRenderer:
         kerning_mode = freetype.FT_KERNING_DEFAULT if align_to_pixels else freetype.FT_KERNING_UNFITTED
         
         for char in text:
-            self.face.load_char(char, flags=load_flags)
-            glyph = self.face.glyph
+            self._face.load_char(char, flags=load_flags)
+            glyph = self._face.glyph
             bitmap = glyph.bitmap
             
             if enable_kerning and previous_char is not None:
-                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
+                kerning = self._face.get_kerning(previous_char, char, mode=kerning_mode)
                 x_offset += kerning.x / 64.0
 
             # Update bounds
@@ -1097,8 +1097,8 @@ cdef class FontRenderer:
         kerning_mode = freetype.FT_KERNING_DEFAULT if align_to_pixels else freetype.FT_KERNING_UNFITTED
         
         for char in text:
-            self.face.load_char(char, flags=load_flags)
-            glyph = self.face.glyph
+            self._face.load_char(char, flags=load_flags)
+            glyph = self._face.glyph
             bitmap = glyph.bitmap
             top = glyph.bitmap_top
             bottom = bitmap.rows - top
@@ -1111,7 +1111,7 @@ cdef class FontRenderer:
                 width += glyph.linearHoriAdvance/65536
                 
             if enable_kerning and previous_char is not None:
-                kerning = self.face.get_kerning(previous_char, char, mode=kerning_mode)
+                kerning = self._face.get_kerning(previous_char, char, mode=kerning_mode)
                 width += kerning.x / 64.0
             previous_char = char
             
@@ -1195,7 +1195,7 @@ cdef class FontRenderer:
             #req = freetype.raw.FT_Size_Re
             #freetype.raw.FT_Request_Size(face, req)
         else:
-            self.face.set_pixel_sizes(0, int(round(target_size)))
+            self._face.set_pixel_sizes(0, int(round(target_size)))
 
         load_flags = get_freetype_load_flags(hinter, allow_color)
 
@@ -1211,13 +1211,13 @@ cdef class FontRenderer:
         
         # First pass - collect all glyphs and find dimensions
         glyphs_data = []  # Store temporary glyph data
-        for unicode_key, glyph_index in self.face.get_chars():
+        for unicode_key, glyph_index in self._face.get_chars():
             if (restrict_to is not None) and (unicode_key not in restrict_to):
                 continue
                 
             # Render at target scale
-            self.face.load_glyph(glyph_index, flags=load_flags)
-            glyph : freetype.GlyphSlot = self.face.glyph
+            self._face.load_glyph(glyph_index, flags=load_flags)
+            glyph : freetype.GlyphSlot = self._face.glyph
             
             # Apply appropriate rendering mode
             if hinter == "monochrome":

@@ -104,11 +104,11 @@ cdef inline void check_bind_children(baseItem item, baseItem target):
     if item.last_handler_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_handler_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<baseHandler>child).check_bind(target)
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef bint check_state_from_list(baseHandler start_handler,
                                 HandlerListOP op,
@@ -126,12 +126,12 @@ cdef bint check_state_from_list(baseHandler start_handler,
         if op == HandlerListOP.ALL:
             current_state = True
         if (<baseHandler>child) is not None:
-            while (<baseItem>child)._prev_sibling is not None:
-                child = <PyObject *>(<baseItem>child)._prev_sibling
+            while (<baseItem>child).prev_sibling is not None:
+                child = <PyObject *>(<baseItem>child).prev_sibling
         while (<baseHandler>child) is not None:
             child_state = (<baseHandler>child).check_state(item)
             if not((<baseHandler>child)._enabled):
-                child = <PyObject*>((<baseHandler>child)._next_sibling)
+                child = <PyObject*>((<baseHandler>child).next_sibling)
                 continue
             if op == HandlerListOP.ALL:
                 current_state = current_state and child_state
@@ -150,7 +150,7 @@ cdef bint check_state_from_list(baseHandler start_handler,
                 if current_state:
                     # We will return FALSE (at least one cond is met)
                     break
-            child = <PyObject*>((<baseHandler>child)._next_sibling)
+            child = <PyObject*>((<baseHandler>child).next_sibling)
         if op == HandlerListOP.NONE:
             # NONE = not(ANY)
             current_state = not(current_state)
@@ -161,11 +161,11 @@ cdef inline void run_handler_children(baseItem item, baseItem target) noexcept n
     if item.last_handler_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_handler_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<baseHandler>child).run_handler(target)
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef class HandlerList(baseHandler):
     """
@@ -265,7 +265,7 @@ cdef class ConditionalHandler(baseHandler):
         cdef bint child_state
         while child is not <PyObject*>None:
             child_state = (<baseHandler>child).check_state(item)
-            child = <PyObject*>((<baseHandler>child)._prev_sibling)
+            child = <PyObject*>((<baseHandler>child).prev_sibling)
             if not((<baseHandler>child)._enabled):
                 continue
             current_state = current_state and child_state
@@ -284,9 +284,9 @@ cdef class ConditionalHandler(baseHandler):
         cdef PyObject* child = <PyObject*>self.last_handler_child
         cdef bint child_state
         # Note: we already have tested there is at least one child
-        while ((<baseHandler>child)._prev_sibling) is not None:
+        while ((<baseHandler>child).prev_sibling) is not None:
             child_state = (<baseHandler>child).check_state(item)
-            child = <PyObject*>((<baseHandler>child)._prev_sibling)
+            child = <PyObject*>((<baseHandler>child).prev_sibling)
             if not((<baseHandler>child)._enabled):
                 continue
             condition_held = condition_held and child_state

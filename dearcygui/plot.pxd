@@ -30,7 +30,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef double _zoom_max
     cdef double _mouse_coord
     cdef bint _to_fit
-    cdef itemState _state
+    cdef itemState state
     cdef Callback _resize_callback
     cdef string _label
     cdef string _format
@@ -71,7 +71,7 @@ cdef class Plot(uiItem):
     cdef bint draw_item(self) noexcept nogil
 
 cdef class plotElementWithLegend(plotElement):
-    cdef itemState _state
+    cdef itemState state
     cdef bint _legend
     cdef int _legend_button
     cdef baseFont _font

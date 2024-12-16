@@ -34,6 +34,15 @@ Thread safety:
   item/parent mutex. During rendering, the mutex is held.
 """
 
+"""
+Variable naming convention:
+. Variable not prefixed with an underscore are public,
+  and can be accessed by other items.
+. Variable prefixed with an underscore are private, or
+  protected. They should not be accessed by other items,
+  (except for subclasses).
+"""
+
 cdef void lock_gil_friendly_block(unique_lock[recursive_mutex] &m) noexcept
 
 cdef inline void lock_gil_friendly(unique_lock[recursive_mutex] &m,
@@ -64,31 +73,21 @@ cdef inline void append_obj_vector(vector[PyObject *] &items, item_list):
 
 cdef class Context:
     cdef recursive_mutex mutex
-    cdef atomic[long long] next_uuid
-    cdef object threadlocal_data
-    cdef bint waitOneFrame
-    cdef bint started
     # Mutex that must be held for any
     # call to imgui, glfw, etc
     cdef recursive_mutex imgui_mutex
-    cdef Viewport _viewport
+    cdef atomic[long long] next_uuid
+    cdef Viewport viewport
     cdef void* imgui_context # imgui.ImGuiContext
     cdef void* implot_context # implot.ImPlotContext
     cdef void* imnodes_context # imnodes.ImNodesContext
-    #cdef Graphics graphics
-    cdef bint resetTheme
-    #cdef IO IO
-    #cdef ItemRegistry itemRegistry
-    #cdef CallbackRegistry callbackRegistry
-    #cdef ToolManager toolManager
-    #cdef Input input
-    #cdef UUID activeWindow
-    #cdef UUID focusedItem
-    cdef Callback on_close_callback
+    cdef object _threadlocal_data
+    cdef bint _started
+    cdef Callback _on_close_callback
     cdef object _item_creation_callback
     cdef object _item_unused_configure_args_callback
     cdef object _item_deletion_callback
-    cdef object queue
+    cdef object _queue
     cdef void queue_callback_noarg(self, Callback, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1key(self, Callback, baseItem, baseItem, int) noexcept nogil
@@ -126,7 +125,7 @@ A child then points to its previous and next sibling of its category
 """
 cdef class baseItem:
     cdef recursive_mutex mutex
-    cdef int external_lock
+    cdef int _external_lock
     cdef Context context
     cdef long long uuid
     cdef object __weakref__
@@ -160,12 +159,12 @@ cdef class baseItem:
     cdef vector[PyObject*] _handlers # type baseHandler
 
     # Relationships
-    cdef baseItem _parent
+    cdef baseItem parent
     # It is not possible to access an array of children without the gil
     # Thus instead use a list
     # Each element is responsible for calling draw on its sibling
-    cdef baseItem _prev_sibling
-    cdef baseItem _next_sibling
+    cdef baseItem prev_sibling
+    cdef baseItem next_sibling
     cdef drawingItem last_drawings_child
     cdef baseHandler last_handler_child
     cdef uiItem last_menubar_child
@@ -237,17 +236,17 @@ cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 
 cdef class Viewport(baseItem):
-    cdef recursive_mutex mutex_backend
-    cdef void *platform # platformViewport
-    cdef bint initialized
+    cdef recursive_mutex _mutex_backend
+    cdef void *_platform # platformViewport
+    cdef bint _initialized
     cdef Callback _resize_callback
     cdef Callback _close_callback
     cdef baseFont _font
     cdef baseTheme _theme
     cdef bint _disable_close
-    cdef bint drop_is_file_type
+    cdef bint _drop_is_file_type
     cdef vector[string] _drop_data
-    cdef itemState _state # Unused. Just for compatibility with handlers
+    cdef itemState state # Unused. Just for compatibility with handlers
     cdef int _cursor # imgui.ImGuiMouseCursor
     # For timing stats
     cdef long long last_t_before_event_handling
@@ -277,10 +276,10 @@ cdef class Viewport(baseItem):
     cdef bint[6] enabled_axes # <int>implot.ImAxis_COUNT
     cdef int start_pending_theme_actions # managed outside viewport
     cdef vector[theme_action] pending_theme_actions # managed outside viewport
-    cdef vector[theme_action] applied_theme_actions # managed by viewport
-    cdef vector[int] applied_theme_actions_count # managed by viewport
-    cdef ThemeEnablers current_theme_activation_condition_enabled
-    cdef ThemeCategories current_theme_activation_condition_category
+    cdef vector[theme_action] _applied_theme_actions # managed by viewport
+    cdef vector[int] _applied_theme_actions_count # managed by viewport
+    cdef ThemeEnablers _current_theme_activation_condition_enabled
+    cdef ThemeCategories _current_theme_activation_condition_category
     cdef float _scale
     cdef float global_scale
 
@@ -309,71 +308,71 @@ cdef inline void draw_drawing_children(baseItem item,
     if item.last_drawings_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_drawings_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<drawingItem>child).draw(drawlist) # drawlist is imgui.ImDrawList*
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef inline void draw_menubar_children(baseItem item) noexcept nogil:
     if item.last_menubar_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_menubar_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<uiItem>child).draw()
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef inline void draw_plot_element_children(baseItem item) noexcept nogil:
     if item.last_plot_element_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_plot_element_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<plotElement>child).draw()
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef inline void draw_tab_children(baseItem item) noexcept nogil:
     if item.last_tab_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_tab_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<uiItem>child).draw()
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef inline void draw_viewport_drawlist_children(baseItem item) noexcept nogil:
     if item.last_viewport_drawlist_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_viewport_drawlist_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<drawingItem>child).draw(NULL)
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef inline void draw_ui_children(baseItem item) noexcept nogil:
     if item.last_widgets_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_widgets_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<uiItem>child).draw()
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 cdef inline void draw_window_children(baseItem item) noexcept nogil:
     if item.last_window_child is None:
         return
     cdef PyObject *child = <PyObject*> item.last_window_child
-    while (<baseItem>child)._prev_sibling is not None:
-        child = <PyObject *>(<baseItem>child)._prev_sibling
+    while (<baseItem>child).prev_sibling is not None:
+        child = <PyObject *>(<baseItem>child).prev_sibling
     while (<baseItem>child) is not None:
         (<uiItem>child).draw()
-        child = <PyObject *>(<baseItem>child)._next_sibling
+        child = <PyObject *>(<baseItem>child).next_sibling
 
 """
 Drawing Items
@@ -400,28 +399,27 @@ cdef class baseHandler(baseItem):
 cdef void update_current_mouse_states(itemState& state) noexcept nogil
 
 cdef class uiItem(baseItem):
-    cdef string imgui_label
-    cdef str user_label
+    cdef string _imgui_label
+    cdef str _user_label
     cdef bool _show
-    cdef Positioning[2] _pos_policy
-    cdef Sizing[2] _size_policy
-    cdef itemState _state
+    cdef Positioning[2] pos_policy
+    cdef Sizing[2] size_policy
+    cdef itemState state
     cdef bint can_be_disabled
     cdef bint _enabled
-    cdef bint focus_update_requested
-    cdef bint show_update_requested
+    cdef bint _focus_update_requested
+    cdef bint _show_update_requested
     cdef bint size_update_requested
     cdef bint pos_update_requested
-    cdef bint _no_newline
-    cdef bint enabled_update_requested
-    cdef int last_frame_update
-    cdef bint dpi_scaling
+    cdef bint no_newline
+    cdef bint _enabled_update_requested
+    cdef bint _dpi_scaling
     cdef Vec2 requested_size
     cdef float _indent
-    cdef ThemeEnablers theme_condition_enabled
-    cdef ThemeCategories theme_condition_category
-    cdef Callback dragCallback
-    cdef Callback dropCallback
+    cdef ThemeEnablers _theme_condition_enabled
+    cdef ThemeCategories _theme_condition_category
+    cdef Callback _dragCallback
+    cdef Callback _dropCallback
     cdef baseFont _font
     cdef baseTheme _theme
     cdef vector[PyObject*] _callbacks # type Callback
@@ -459,45 +457,44 @@ cdef class TimeWatcher(uiItem):
     pass
 
 cdef class Window(uiItem):
-    cdef int window_flags # imgui.ImGuiWindowFlags
-    cdef bint main_window
-    cdef bint resized
-    cdef bint modal
-    cdef bint popup
-    #cdef bint autosize
-    cdef bint no_resize
-    cdef bint no_title_bar
-    cdef bint no_move
-    cdef bint no_scrollbar
-    cdef bint no_collapse
-    cdef bint horizontal_scrollbar
-    cdef bint no_focus_on_appearing
-    cdef bint no_bring_to_front_on_focus
-    cdef bint has_close_button
-    cdef bint no_background
-    cdef bint no_open_over_existing_popup
-    cdef Callback on_close_callback
-    cdef Callback on_drop_callback
-    cdef Vec2 min_size
-    cdef Vec2 max_size
-    cdef float scroll_x
-    cdef float scroll_y
-    cdef float scroll_max_x
-    cdef float scroll_max_y
-    cdef bint collapse_update_requested
-    cdef bint scroll_x_update_requested
-    cdef bint scroll_y_update_requested
-    cdef int backup_window_flags # imgui.ImGuiWindowFlags
-    cdef Vec2 backup_pos
-    cdef Vec2 backup_rect_size
+    cdef int _window_flags # imgui.ImGuiWindowFlags
+    cdef bint _main_window
+    cdef bint _resized
+    cdef bint _modal
+    cdef bint _popup
+    cdef bint _no_resize
+    cdef bint _no_title_bar
+    cdef bint _no_move
+    cdef bint _no_scrollbar
+    cdef bint _no_collapse
+    cdef bint _horizontal_scrollbar
+    cdef bint _no_focus_on_appearing
+    cdef bint _no_bring_to_front_on_focus
+    cdef bint _has_close_button
+    cdef bint _no_background
+    cdef bint _no_open_over_existing_popup
+    cdef Callback _on_close_callback
+    cdef Callback _on_drop_callback
+    cdef Vec2 _min_size
+    cdef Vec2 _max_size
+    cdef float _scroll_x
+    cdef float _scroll_y
+    cdef float _scroll_max_x
+    cdef float _scroll_max_y
+    cdef bint _collapse_update_requested
+    cdef bint _scroll_x_update_requested
+    cdef bint _scroll_y_update_requested
+    cdef int _backup_window_flags # imgui.ImGuiWindowFlags
+    cdef Vec2 _backup_pos
+    cdef Vec2 _backup_rect_size
     cdef void draw(self) noexcept nogil
 
 """
 Plots
 """
 cdef class plotElement(baseItem):
-    cdef string imgui_label
-    cdef str user_label
+    cdef string _imgui_label
+    cdef str _user_label
     cdef int _flags
     cdef bint _show
     cdef int[2] _axes
@@ -509,16 +506,16 @@ Bindable elements
 """
 
 cdef class Texture(baseItem):
-    cdef recursive_mutex write_mutex
+    cdef recursive_mutex _write_mutex
     cdef bint _hint_dynamic
-    cdef bint dynamic
+    cdef bint _dynamic
     cdef void* allocated_texture
-    cdef int _width
-    cdef int _height
-    cdef int _num_chans
+    cdef int width
+    cdef int height
+    cdef int num_chans
     cdef unsigned _buffer_type
-    cdef int filtering_mode
-    cdef bint readonly
+    cdef int _filtering_mode
+    cdef bint _readonly
     cdef void set_content(self, cnp.ndarray content)
 
 cdef class baseFont(baseItem):
@@ -538,8 +535,8 @@ In that case the caller handles the pops
 """
 
 cdef class baseTheme(baseItem):
-    cdef bint enabled
-    cdef vector[int] last_push_size
+    cdef bint _enabled
+    cdef vector[int] _last_push_size
     cdef void push(self) noexcept nogil
     cdef void push_to_list(self, vector[theme_action]&) noexcept nogil
     cdef void pop(self) noexcept nogil

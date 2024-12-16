@@ -137,13 +137,13 @@ cdef class DrawInvisibleButton(drawingItem):
     """
     def __cinit__(self):
         self._button = 1
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.has_rect_size = True
-        self._state.cap.has_position = True
-        self.p_state = &self._state
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_rect_size = True
+        self.state.cap.has_position = True
+        self.p_state = &self.state
         self.can_have_drawing_child = True
         self._min_side = 0
         self._max_side = INFINITY
@@ -297,7 +297,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.active and not(self._state.prev.active)
+        return self.state.cur.active and not(self.state.prev.active)
 
     @property
     def active(self):
@@ -306,7 +306,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.active
+        return self.state.cur.active
 
     @property
     def clicked(self):
@@ -319,7 +319,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return tuple(self._state.cur.clicked)
+        return tuple(self.state.cur.clicked)
 
     @property
     def double_clicked(self):
@@ -332,7 +332,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.double_clicked
+        return self.state.cur.double_clicked
 
     @property
     def deactivated(self):
@@ -341,7 +341,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.prev.active and not(self._state.cur.active)
+        return self.state.prev.active and not(self.state.cur.active)
 
     @property
     def hovered(self):
@@ -350,7 +350,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.hovered
+        return self.state.cur.hovered
 
     @property
     def pos_to_viewport(self):
@@ -362,7 +362,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self._state.cur.pos_to_viewport)
+        return Coord.build_v(self.state.cur.pos_to_viewport)
 
     @property
     def pos_to_window(self):
@@ -373,7 +373,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self._state.cur.pos_to_window)
+        return Coord.build_v(self.state.cur.pos_to_window)
 
     @property
     def pos_to_parent(self):
@@ -383,7 +383,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self._state.cur.pos_to_parent)
+        return Coord.build_v(self.state.cur.pos_to_parent)
 
     @property
     def rect_size(self):
@@ -392,7 +392,7 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return Coord.build_v(self._state.cur.rect_size)
+        return Coord.build_v(self.state.cur.rect_size)
 
     @property
     def resized(self):
@@ -403,8 +403,8 @@ cdef class DrawInvisibleButton(drawingItem):
         """
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        return self._state.cur.rect_size.x != self._state.prev.rect_size.x or \
-               self._state.cur.rect_size.y != self._state.prev.rect_size.y
+        return self.state.cur.rect_size.x != self.state.prev.rect_size.x or \
+               self.state.cur.rect_size.y != self.state.prev.rect_size.y
 
     @property
     def no_input(self):
@@ -463,8 +463,8 @@ cdef class DrawInvisibleButton(drawingItem):
         # Get button position in screen space
         cdef float[2] p1
         cdef float[2] p2
-        self.context._viewport.apply_current_transform(p1, self._p1)
-        self.context._viewport.apply_current_transform(p2, self._p2)
+        self.context.viewport.apply_current_transform(p1, self._p1)
+        self.context.viewport.apply_current_transform(p2, self._p2)
         cdef imgui.ImVec2 top_left
         cdef imgui.ImVec2 bottom_right
         cdef imgui.ImVec2 center
@@ -500,15 +500,15 @@ cdef class DrawInvisibleButton(drawingItem):
         top_left.y = center.y - size.y * 0.5
         bottom_right.y = top_left.y + size.y
         # Update rect and position size
-        self._state.cur.rect_size = ImVec2Vec2(size)
-        self._state.cur.pos_to_viewport = ImVec2Vec2(top_left)
-        self._state.cur.pos_to_window.x = self._state.cur.pos_to_viewport.x - self.context._viewport.window_pos.x
-        self._state.cur.pos_to_window.y = self._state.cur.pos_to_viewport.y - self.context._viewport.window_pos.y
-        self._state.cur.pos_to_parent.x = self._state.cur.pos_to_viewport.x - self.context._viewport.parent_pos.x
-        self._state.cur.pos_to_parent.y = self._state.cur.pos_to_viewport.y - self.context._viewport.parent_pos.y
-        cdef bint was_visible = self._state.cur.rendered
-        self._state.cur.rendered = imgui.IsRectVisible(top_left, bottom_right) or self._state.cur.active
-        if not(was_visible) and not(self._state.cur.rendered):
+        self.state.cur.rect_size = ImVec2Vec2(size)
+        self.state.cur.pos_to_viewport = ImVec2Vec2(top_left)
+        self.state.cur.pos_to_window.x = self.state.cur.pos_to_viewport.x - self.context.viewport.window_pos.x
+        self.state.cur.pos_to_window.y = self.state.cur.pos_to_viewport.y - self.context.viewport.window_pos.y
+        self.state.cur.pos_to_parent.x = self.state.cur.pos_to_viewport.x - self.context.viewport.parent_pos.x
+        self.state.cur.pos_to_parent.y = self.state.cur.pos_to_viewport.y - self.context.viewport.parent_pos.y
+        cdef bint was_visible = self.state.cur.rendered
+        self.state.cur.rendered = imgui.IsRectVisible(top_left, bottom_right) or self.state.cur.active
+        if not(was_visible) and not(self.state.cur.rendered):
             # Item is entirely clipped.
             # Do not skip the first time it is clipped,
             # in order to update the relevant states to False.
@@ -516,25 +516,25 @@ cdef class DrawInvisibleButton(drawingItem):
             return
 
         # Render children if any
-        cdef double[2] cur_scales = self.context._viewport.scales
-        cdef double[2] cur_shifts = self.context._viewport.shifts
-        cdef bint cur_in_plot = self.context._viewport.in_plot
+        cdef double[2] cur_scales = self.context.viewport.scales
+        cdef double[2] cur_shifts = self.context.viewport.shifts
+        cdef bint cur_in_plot = self.context.viewport.in_plot
 
         # draw children
         if self.last_drawings_child is not None:
-            self.context._viewport.shifts[0] = <double>top_left.x
-            self.context._viewport.shifts[1] = <double>top_left.y
-            self.context._viewport.scales = [<double>size.x, <double>size.y]
-            self.context._viewport.in_plot = False
+            self.context.viewport.shifts[0] = <double>top_left.x
+            self.context.viewport.shifts[1] = <double>top_left.y
+            self.context.viewport.scales = [<double>size.x, <double>size.y]
+            self.context.viewport.in_plot = False
             # TODO: Unsure...
-            self.context._viewport.thickness_multiplier = 1.
-            self.context._viewport.size_multiplier = 1.
+            self.context.viewport.thickness_multiplier = 1.
+            self.context.viewport.size_multiplier = 1.
             draw_drawing_children(self, drawlist)
 
         # restore states
-        self.context._viewport.scales = cur_scales
-        self.context._viewport.shifts = cur_shifts
-        self.context._viewport.in_plot = cur_in_plot
+        self.context.viewport.scales = cur_scales
+        self.context.viewport.shifts = cur_shifts
+        self.context.viewport.in_plot = cur_in_plot
 
         cdef bint mouse_down = False
         if (self._button & 1) != 0 and imgui.IsMouseDown(imgui.ImGuiMouseButton_Left):
@@ -562,10 +562,10 @@ cdef class DrawInvisibleButton(drawingItem):
         else:
             activated = False
         self._capture_mouse = False
-        self._state.cur.active = activated or held
-        self._state.cur.hovered = hovered
+        self.state.cur.active = activated or held
+        self.state.cur.hovered = hovered
         if activated:
-            if self.context._viewport.in_plot:
+            if self.context.viewport.in_plot:
                 # IMPLOT_AUTO uses current axes
                 cur_mouse_pos_plot = \
                     implot.GetPlotMousePos(implot.IMPLOT_AUTO,
@@ -577,8 +577,8 @@ cdef class DrawInvisibleButton(drawingItem):
                 self._initial_mouse_position = ImVec2Vec2(imgui.GetMousePos())
         cdef bint dragging = False
         cdef int i
-        if self._state.cur.active:
-            if self.context._viewport.in_plot:
+        if self.state.cur.active:
+            if self.context.viewport.in_plot:
                 cur_mouse_pos_plot = implot.GetPlotMousePos(implot.IMPLOT_AUTO,
                                                             implot.IMPLOT_AUTO)
                 cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
@@ -588,22 +588,22 @@ cdef class DrawInvisibleButton(drawingItem):
             dragging = cur_mouse_pos.x != self._initial_mouse_position.x or \
                        cur_mouse_pos.y != self._initial_mouse_position.y
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self._state.cur.dragging[i] = dragging and imgui.IsMouseDown(i)
+                self.state.cur.dragging[i] = dragging and imgui.IsMouseDown(i)
                 if dragging:
-                    self._state.cur.drag_deltas[i].x = cur_mouse_pos.x - self._initial_mouse_position.x
-                    self._state.cur.drag_deltas[i].y = cur_mouse_pos.y - self._initial_mouse_position.y
+                    self.state.cur.drag_deltas[i].x = cur_mouse_pos.x - self._initial_mouse_position.x
+                    self.state.cur.drag_deltas[i].y = cur_mouse_pos.y - self._initial_mouse_position.y
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self._state.cur.dragging[i] = False
+                self.state.cur.dragging[i] = False
 
-        if self._state.cur.hovered:
+        if self.state.cur.hovered:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self._state.cur.clicked[i] = imgui.IsMouseClicked(i, False)
-                self._state.cur.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
+                self.state.cur.clicked[i] = imgui.IsMouseClicked(i, False)
+                self.state.cur.double_clicked[i] = imgui.IsMouseDoubleClicked(i)
         else:
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):
-                self._state.cur.clicked[i] = False
-                self._state.cur.double_clicked[i] = False
+                self.state.cur.clicked[i] = False
+                self.state.cur.double_clicked[i] = False
 
         self.run_handlers()
 
@@ -641,10 +641,10 @@ cdef class DrawInWindow(uiItem):
     """
     def __cinit__(self):
         self.can_have_drawing_child = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_active = True
-        self._state.cap.has_rect_size = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
 
     cdef bint draw_item(self) noexcept nogil:
         # negative width is used to indicate UI alignment
@@ -662,14 +662,14 @@ cdef class DrawInWindow(uiItem):
         cdef float starty = <float>imgui.GetCursorScreenPos().y
 
         # Reset current drawInfo
-        self.context._viewport.in_plot = False
-        self.context._viewport.parent_pos = ImVec2Vec2(imgui.GetCursorScreenPos())
-        self.context._viewport.shifts[0] = <double>startx
-        self.context._viewport.shifts[1] = <double>starty
-        cdef double scale = <double>self.context._viewport.global_scale if self.dpi_scaling else 1.
-        self.context._viewport.scales = [scale, scale]
-        self.context._viewport.thickness_multiplier = scale
-        self.context._viewport.size_multiplier = scale
+        self.context.viewport.in_plot = False
+        self.context.viewport.parent_pos = ImVec2Vec2(imgui.GetCursorScreenPos())
+        self.context.viewport.shifts[0] = <double>startx
+        self.context.viewport.shifts[1] = <double>starty
+        cdef double scale = <double>self.context.viewport.global_scale if self._dpi_scaling else 1.
+        self.context.viewport.scales = [scale, scale]
+        self.context.viewport.thickness_multiplier = scale
+        self.context.viewport.size_multiplier = scale
 
         imgui.PushClipRect(imgui.ImVec2(startx, starty),
                            imgui.ImVec2(startx + clip_width,
@@ -684,7 +684,7 @@ cdef class DrawInWindow(uiItem):
         # for correct hovering tests. Indeed the user might want
         # to insert some UI on top of the draw elements.
         imgui.SetNextItemAllowOverlap()
-        cdef bint active = imgui.InvisibleButton(self.imgui_label.c_str(),
+        cdef bint active = imgui.InvisibleButton(self._imgui_label.c_str(),
                                  imgui.ImVec2(clip_width,
                                               clip_height),
                                  imgui.ImGuiButtonFlags_MouseButtonLeft | \
@@ -697,13 +697,13 @@ cdef class DrawInWindow(uiItem):
 
 cdef class SimplePlot(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_simpleplot
+        self._theme_condition_category = ThemeCategories.t_simpleplot
         self._value = <SharedValue>(SharedFloatVect.__new__(SharedFloatVect, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._scale_min = 0.
         self._scale_max = 0.
         self.histogram = False
@@ -801,7 +801,7 @@ cdef class SimplePlot(uiItem):
                         self._scale_max = data[i]
 
         if self._histogram:
-            imgui.PlotHistogram(self.imgui_label.c_str(),
+            imgui.PlotHistogram(self._imgui_label.c_str(),
                                 &data[0],
                                 <int>data.shape[0],
                                 0,
@@ -811,7 +811,7 @@ cdef class SimplePlot(uiItem):
                                 Vec2ImVec2(self.scaled_requested_size()),
                                 sizeof(float))
         else:
-            imgui.PlotLines(self.imgui_label.c_str(),
+            imgui.PlotLines(self._imgui_label.c_str(),
                             &data[0],
                             <int>data.shape[0],
                             0,
@@ -825,13 +825,13 @@ cdef class SimplePlot(uiItem):
 
 cdef class Button(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_button
+        self._theme_condition_category = ThemeCategories.t_button
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._direction = imgui.ImGuiDir_Up
         self._small = False
         self._arrow = False
@@ -905,30 +905,30 @@ cdef class Button(uiItem):
         cdef bint activated
         imgui.PushItemFlag(imgui.ImGuiItemFlags_ButtonRepeat, self._repeat)
         if self._small:
-            activated = imgui.SmallButton(self.imgui_label.c_str())
+            activated = imgui.SmallButton(self._imgui_label.c_str())
         elif self._arrow:
-            activated = imgui.ArrowButton(self.imgui_label.c_str(), <imgui.ImGuiDir>self._direction)
+            activated = imgui.ArrowButton(self._imgui_label.c_str(), <imgui.ImGuiDir>self._direction)
         else:
-            activated = imgui.Button(self.imgui_label.c_str(),
+            activated = imgui.Button(self._imgui_label.c_str(),
                                      Vec2ImVec2(self.scaled_requested_size()))
         imgui.PopItemFlag()
         self.update_current_state()
-        SharedBool.set(<SharedBool>self._value, self._state.cur.active) # Unsure. Not in original
+        SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
         return activated
 
 
 cdef class Combo(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_combo
+        self._theme_condition_category = ThemeCategories.t_combo
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_toggled = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self._flags = imgui.ImGuiComboFlags_HeightRegular
 
     @property
@@ -956,7 +956,7 @@ cdef class Combo(uiItem):
         else:
             raise ValueError(f"Invalid type {type(value)} passed as items. Expected array of strings")
         lock_gil_friendly(value_m, self._value.mutex)
-        if self._value.num_attached == 1 and \
+        if self._value._num_attached == 1 and \
            self._value._last_frame_update == -1 and \
            self._items.size() > 0:
             # initialize the value with the first element
@@ -1075,14 +1075,14 @@ cdef class Combo(uiItem):
         cdef int i
         cdef string current_value
         SharedStr.get(<SharedStr>self._value, current_value)
-        open = imgui.BeginCombo(self.imgui_label.c_str(),
+        open = imgui.BeginCombo(self._imgui_label.c_str(),
                                 current_value.c_str(),
                                 self._flags)
         # Old code called update_current_state now, and updated edited state
         # later. Looking at ImGui code there seems to be two items. One
         # for the combo, and one for the popup that opens. The edited flag
         # is not set, looking at imgui demo so we have to handle it manually.
-        self._state.cur.open = open
+        self.state.cur.open = open
         self.update_current_state_subset()
 
         cdef bool pressed = False
@@ -1117,23 +1117,23 @@ cdef class Combo(uiItem):
             imgui.PopID()
             imgui.EndCombo()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
-        self._state.cur.edited = changed
-        self._state.cur.deactivated_after_edited = self._state.prev.active and changed and not(self._state.cur.active)
+        self.state.cur.edited = changed
+        self.state.cur.deactivated_after_edited = self.state.prev.active and changed and not(self.state.cur.active)
         return pressed
 
 
 cdef class Checkbox(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_checkbox
+        self._theme_condition_category = ThemeCategories.t_checkbox
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     cdef bint draw_item(self) noexcept nogil:
         cdef bool checked = SharedBool.get(<SharedBool>self._value)
-        cdef bint pressed = imgui.Checkbox(self.imgui_label.c_str(),
+        cdef bint pressed = imgui.Checkbox(self._imgui_label.c_str(),
                                              &checked)
         if self._enabled:
             SharedBool.set(<SharedBool>self._value, checked)
@@ -1151,7 +1151,7 @@ cdef extern from * nogil:
 
 cdef class Slider(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_slider
+        self._theme_condition_category = ThemeCategories.t_slider
         self._format = 1
         self._size = 1
         self._drag = False
@@ -1162,12 +1162,12 @@ cdef class Slider(uiItem):
         self._max = 100.
         self._vertical = False
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self._state.cap.can_be_active = True # unsure
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True # unsure
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     def configure(self, **kwargs):
         # Since some options cancel each other, one
@@ -1527,7 +1527,7 @@ cdef class Slider(uiItem):
         # Draw
         if self._drag:
             if self._size == 1:
-                modified = imgui.DragScalar(self.imgui_label.c_str(),
+                modified = imgui.DragScalar(self._imgui_label.c_str(),
                                             type,
                                             data,
                                             self._drag_speed,
@@ -1536,7 +1536,7 @@ cdef class Slider(uiItem):
                                             self._print_format.c_str(),
                                             flags)
             else:
-                modified = imgui.DragScalarN(self.imgui_label.c_str(),
+                modified = imgui.DragScalarN(self._imgui_label.c_str(),
                                              type,
                                              data,
                                              self._size,
@@ -1548,7 +1548,7 @@ cdef class Slider(uiItem):
         else:
             if self._size == 1:
                 if self._vertical:
-                    modified = imgui.VSliderScalar(self.imgui_label.c_str(),
+                    modified = imgui.VSliderScalar(self._imgui_label.c_str(),
                                                    GetDefaultItemSize(Vec2ImVec2(self.scaled_requested_size())),
                                                    type,
                                                    data,
@@ -1557,7 +1557,7 @@ cdef class Slider(uiItem):
                                                    self._print_format.c_str(),
                                                    flags)
                 else:
-                    modified = imgui.SliderScalar(self.imgui_label.c_str(),
+                    modified = imgui.SliderScalar(self._imgui_label.c_str(),
                                                   type,
                                                   data,
                                                   data_min,
@@ -1565,7 +1565,7 @@ cdef class Slider(uiItem):
                                                   self._print_format.c_str(),
                                                   flags)
             else:
-                modified = imgui.SliderScalarN(self.imgui_label.c_str(),
+                modified = imgui.SliderScalarN(self._imgui_label.c_str(),
                                                type,
                                                data,
                                                self._size,
@@ -1597,15 +1597,15 @@ cdef class Slider(uiItem):
 
 cdef class ListBox(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_listbox
+        self._theme_condition_category = ThemeCategories.t_listbox
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._num_items_shown_when_open = -1
 
     @property
@@ -1633,7 +1633,7 @@ cdef class ListBox(uiItem):
         else:
             raise ValueError(f"Invalid type {type(value)} passed as items. Expected array of strings")
         lock_gil_friendly(value_m, self._value.mutex)
-        if self._value.num_attached == 1 and \
+        if self._value._num_attached == 1 and \
            self._value._last_frame_update == -1 and \
            self._items.size() > 0:
             # initialize the value with the first element
@@ -1670,16 +1670,16 @@ cdef class ListBox(uiItem):
         # Computation from imgui
         popup_size.y = trunc(<float>0.25 + <float>num_items) * text_height
         popup_size.y += 2. * imgui.GetStyle().FramePadding.y
-        open = imgui.BeginListBox(self.imgui_label.c_str(),
+        open = imgui.BeginListBox(self._imgui_label.c_str(),
                                   popup_size)
 
         # Old code called update_current_state now, and updated edited state
         # later. Looking at ImGui code there seems to be two items. One
         # for the combo, and one for the popup that opens. The edited flag
         # is not set, looking at imgui demo so we have to handle it manually.
-        self._state.cur.active = open # TODO move to toggled ?
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_edited = True
+        self.state.cur.active = open # TODO move to toggled ?
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
         self.update_current_state_subset()
 
         cdef bool pressed = False
@@ -1717,22 +1717,22 @@ cdef class ListBox(uiItem):
             imgui.PopID()
             imgui.EndListBox()
         # TODO: rect_size/min/max: with the popup ? Use clipper for rect_max ?
-        self._state.cur.edited = changed
-        #self._state.cur.deactivated_after_edited = self._state.cur.deactivated and changed -> TODO Unsure. Isn't it rather focus loss ?
+        self.state.cur.edited = changed
+        #self.state.cur.deactivated_after_edited = self.state.cur.deactivated and changed -> TODO Unsure. Isn't it rather focus loss ?
         return pressed
 
 
 cdef class RadioButton(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_radiobutton
+        self._theme_condition_category = ThemeCategories.t_radiobutton
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._horizontal = False
 
     @property
@@ -1760,7 +1760,7 @@ cdef class RadioButton(uiItem):
         else:
             raise ValueError(f"Invalid type {type(value)} passed as items. Expected array of strings")
         lock_gil_friendly(value_m, self._value.mutex)
-        if self._value.num_attached == 1 and \
+        if self._value._num_attached == 1 and \
            self._value._last_frame_update == -1 and \
            self._items.size() > 0:
             # initialize the value with the first element
@@ -1817,15 +1817,15 @@ cdef class RadioButton(uiItem):
 
 cdef class InputText(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_inputtext
+        self._theme_condition_category = ThemeCategories.t_inputtext
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._multiline = False
         self._max_characters = 1024
         self._flags = imgui.ImGuiInputTextFlags_None
@@ -2190,20 +2190,20 @@ cdef class InputText(uiItem):
 
         if self._multiline:
             changed = imgui.InputTextMultiline(
-                self.imgui_label.c_str(),
+                self._imgui_label.c_str(),
                 self._buffer,
                 self._max_characters+1,
                 Vec2ImVec2(self.scaled_requested_size()),
                 flags)
         elif self._hint.empty():
             changed = imgui.InputText(
-                self.imgui_label.c_str(),
+                self._imgui_label.c_str(),
                 self._buffer,
                 self._max_characters+1,
                 flags)
         else:
             changed = imgui.InputTextWithHint(
-                self.imgui_label.c_str(),
+                self._imgui_label.c_str(),
                 self._hint.c_str(),
                 self._buffer,
                 self._max_characters+1,
@@ -2216,9 +2216,9 @@ cdef class InputText(uiItem):
 
         if not(self._enabled):
             changed = False
-            self._state.cur.edited = False
-            self._state.cur.deactivated_after_edited = False
-            self._state.cur.active = False
+            self.state.cur.edited = False
+            self.state.cur.deactivated_after_edited = False
+            self.state.cur.active = False
 
         return changed
 
@@ -2247,7 +2247,7 @@ cdef inline void clamp4(clamp_types[4] &value, double lower, double upper) noexc
 
 cdef class InputValue(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_inputvalue
+        self._theme_condition_category = ThemeCategories.t_inputvalue
         self._format = 1
         self._size = 1
         self._print_format = b"%.3f"
@@ -2258,12 +2258,12 @@ cdef class InputValue(uiItem):
         self._step_fast = 1.
         self._flags = imgui.ImGuiInputTextFlags_None
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self._state.cap.can_be_active = True # unsure
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True # unsure
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     def configure(self, **kwargs):
         # Since some options cancel each other, one
@@ -2746,7 +2746,7 @@ cdef class InputValue(uiItem):
 
         # Draw
         if self._size == 1:
-            modified = imgui.InputScalar(self.imgui_label.c_str(),
+            modified = imgui.InputScalar(self._imgui_label.c_str(),
                                          type,
                                          data,
                                          data_step,
@@ -2754,7 +2754,7 @@ cdef class InputValue(uiItem):
                                          self._print_format.c_str(),
                                          flags)
         else:
-            modified = imgui.InputScalarN(self.imgui_label.c_str(),
+            modified = imgui.InputScalarN(self._imgui_label.c_str(),
                                           type,
                                           data,
                                           self._size,
@@ -2799,17 +2799,17 @@ cdef class InputValue(uiItem):
 
 cdef class Text(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_text
+        self._theme_condition_category = ThemeCategories.t_text
         self._color = 0 # invisible
         self._wrap = -1
         self._bullet = False
         self._show_label = False
         self._value = <SharedValue>(SharedStr.__new__(SharedStr, self.context))
-        self._state.cap.can_be_active = True # unsure
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True # unsure
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     @property
     def color(self):
@@ -2837,19 +2837,19 @@ cdef class Text(uiItem):
         Writable attribute: label assigned to the item.
         Used for text fields, window titles, etc
         """
-        return self.user_label
+        return self._user_label
     @label.setter
     def label(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value is None:
-            self.user_label = ""
+            self._user_label = ""
         else:
-            self.user_label = value
+            self._user_label = value
         # uuid is not used for text, and we don't want to
         # add it when we show the label, thus why we override
         # the label property here.
-        self.imgui_label = bytes(self.user_label, 'utf-8')
+        self._imgui_label = bytes(self._user_label, 'utf-8')
 
     @property
     def wrap(self):
@@ -2908,7 +2908,7 @@ cdef class Text(uiItem):
         if self._wrap == 0:
             imgui.PushTextWrapPos(0.)
         elif self._wrap > 0:
-            imgui.PushTextWrapPos(imgui.GetCursorPosX() + <float>self._wrap * (self.context._viewport.global_scale if self.dpi_scaling else 1.))
+            imgui.PushTextWrapPos(imgui.GetCursorPosX() + <float>self._wrap * (self.context.viewport.global_scale if self._dpi_scaling else 1.))
         if self._show_label or self._bullet:
             imgui.BeginGroup()
         if self._bullet:
@@ -2926,7 +2926,7 @@ cdef class Text(uiItem):
 
         if self._show_label:
             imgui.SameLine(0., -1.)
-            imgui.TextUnformatted(self.imgui_label.c_str(), NULL)
+            imgui.TextUnformatted(self._imgui_label.c_str(), NULL)
         if self._show_label or self._bullet:
             # Group enables to share the states for all items
             # And have correct rect_size
@@ -2941,15 +2941,15 @@ cdef class Text(uiItem):
 
 cdef class Selectable(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_selectable
+        self._theme_condition_category = ThemeCategories.t_selectable
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._flags = imgui.ImGuiSelectableFlags_None
 
     @property
@@ -3026,7 +3026,7 @@ cdef class Selectable(uiItem):
             flags |= imgui.ImGuiSelectableFlags_Disabled
 
         cdef bool checked = SharedBool.get(<SharedBool>self._value)
-        cdef bint changed = imgui.Selectable(self.imgui_label.c_str(),
+        cdef bint changed = imgui.Selectable(self._imgui_label.c_str(),
                                              &checked,
                                              flags,
                                              Vec2ImVec2(self.scaled_requested_size()))
@@ -3038,14 +3038,14 @@ cdef class Selectable(uiItem):
 
 cdef class MenuItem(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_menuitem
+        self._theme_condition_category = ThemeCategories.t_menuitem
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._check = False
 
     @property
@@ -3081,7 +3081,7 @@ cdef class MenuItem(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         # TODO dpg does overwrite textdisabled...
         cdef bool current_value = SharedBool.get(<SharedBool>self._value)
-        cdef bint activated = imgui.MenuItem(self.imgui_label.c_str(),
+        cdef bint activated = imgui.MenuItem(self._imgui_label.c_str(),
                                              self._shortcut.c_str(),
                                              &current_value if self._check else NULL,
                                              self._enabled)
@@ -3091,12 +3091,12 @@ cdef class MenuItem(uiItem):
 
 cdef class ProgressBar(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_progressbar
+        self._theme_condition_category = ThemeCategories.t_progressbar
         self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     @property
     def overlay(self):
@@ -3126,11 +3126,11 @@ cdef class ProgressBar(uiItem):
 
 cdef class Image(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_image
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self._theme_condition_category = ThemeCategories.t_image
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._uv = [0., 0., 1., 1.]
         self._border_color = 0
         self._color_multiplier = 4294967295
@@ -3191,9 +3191,9 @@ cdef class Image(uiItem):
             return False
         cdef Vec2 size = self.scaled_requested_size()
         if size.x == 0.:
-            size.x = self._texture._width * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
+            size.x = self._texture.width * (self.context.viewport.global_scale if self._dpi_scaling else 1.)
         if size.y == 0.:
-            size.y = self._texture._height * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
+            size.y = self._texture.height * (self.context.viewport.global_scale if self._dpi_scaling else 1.)
 
         imgui.PushID(self.uuid)
         imgui.Image(<imgui.ImTextureID>self._texture.allocated_texture,
@@ -3209,12 +3209,12 @@ cdef class Image(uiItem):
 
 cdef class ImageButton(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_imagebutton
+        self._theme_condition_category = ThemeCategories.t_imagebutton
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._background_color = 0
         self._color_multiplier = 4294967295
         self._frame_padding = -1
@@ -3286,9 +3286,9 @@ cdef class ImageButton(uiItem):
             return False
         cdef Vec2 size = self.scaled_requested_size()
         if size.x == 0.:
-            size.x = self._texture._width * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
+            size.x = self._texture.width * (self.context.viewport.global_scale if self._dpi_scaling else 1.)
         if size.y == 0.:
-            size.y = self._texture._height * (self.context._viewport.global_scale if self.dpi_scaling else 1.)
+            size.y = self._texture.height * (self.context.viewport.global_scale if self._dpi_scaling else 1.)
 
         imgui.PushID(self.uuid)
         if self._frame_padding >= 0:
@@ -3296,7 +3296,7 @@ cdef class ImageButton(uiItem):
                                imgui.ImVec2(<float>self._frame_padding,
                                             <float>self._frame_padding))
         cdef bint activated
-        activated = imgui.ImageButton(self.imgui_label.c_str(),
+        activated = imgui.ImageButton(self._imgui_label.c_str(),
                                       <imgui.ImTextureID>self._texture.allocated_texture,
                                       Vec2ImVec2(size),
                                       imgui.ImVec2(self._uv[0], self._uv[1]),
@@ -3321,26 +3321,26 @@ cdef class Separator(uiItem):
         Writable attribute: label assigned to the item.
         Used for text fields, window titles, etc
         """
-        return self.user_label
+        return self._user_label
     @label.setter
     def label(self, str value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
         if value is None:
-            self.user_label = ""
+            self._user_label = ""
         else:
-            self.user_label = value
+            self._user_label = value
         # uuid is not used for text, and we don't want to
         # add it when we show the label, thus why we override
         # the label property here.
-        self.imgui_label = bytes(self.user_label, 'utf-8')
+        self._imgui_label = bytes(self._user_label, 'utf-8')
 
     cdef bint draw_item(self) noexcept nogil:
-        if self.user_label is None:
+        if self._user_label is None:
             imgui.Separator()
         else:
-            imgui.SeparatorText(self.imgui_label.c_str())
-        self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+            imgui.SeparatorText(self._imgui_label.c_str())
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         return False
 
 cdef class Spacer(uiItem):
@@ -3353,7 +3353,7 @@ cdef class Spacer(uiItem):
             # TODO rect_size
         else:
             imgui.Dummy(Vec2ImVec2(self.scaled_requested_size()))
-        self._state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         return False
 
 cdef class MenuBar(uiItem):
@@ -3361,25 +3361,25 @@ cdef class MenuBar(uiItem):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_menubar
-        self.theme_condition_category = ThemeCategories.t_menubar
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.has_content_region = True # TODO
+        self._theme_condition_category = ThemeCategories.t_menubar
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_content_region = True # TODO
 
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
 
         if not(self._show):
-            if self.show_update_requested:
+            if self._show_update_requested:
                 self.set_previous_states()
                 self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
                 self.run_handlers()
-                self.show_update_requested = False
+                self._show_update_requested = False
             return
 
-        cdef float original_scale = self.context._viewport.global_scale
-        self.context._viewport.global_scale = original_scale * self._scaling_factor
+        cdef float original_scale = self.context.viewport.global_scale
+        self.context.viewport.global_scale = original_scale * self._scaling_factor
 
         self.set_previous_states()
         # handle fonts
@@ -3387,9 +3387,9 @@ cdef class MenuBar(uiItem):
             self._font.push()
 
         # themes
-        self.context._viewport.push_pending_theme_actions(
-            self.theme_condition_enabled,
-            self.theme_condition_category
+        self.context.viewport.push_pending_theme_actions(
+            self._theme_condition_enabled,
+            self._theme_condition_category
         )
         if self._theme is not None:
             self._theme.push()
@@ -3399,7 +3399,7 @@ cdef class MenuBar(uiItem):
             imgui.PushItemFlag(1 << 10, True) #ImGuiItemFlags_Disabled
 
         cdef bint menu_allowed
-        cdef bint parent_viewport = self._parent is self.context._viewport
+        cdef bint parent_viewport = self.parent is self.context.viewport
         if parent_viewport:
             menu_allowed = imgui.BeginMainMenuBar()
         else:
@@ -3407,19 +3407,19 @@ cdef class MenuBar(uiItem):
         cdef Vec2 pos_w, pos_p, parent_size_backup
         if menu_allowed:
             self.update_current_state()
-            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             if self.last_widgets_child is not None:
                 # We are at the top of the window, but behave as if popup
                 pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                 pos_p = pos_w
-                swap_Vec2(pos_w, self.context._viewport.window_pos)
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
-                parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self._state.cur.content_region_size
+                swap_Vec2(pos_w, self.context.viewport.window_pos)
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
+                parent_size_backup = self.context.viewport.parent_size
+                self.context.viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
-                self.context._viewport.window_pos = pos_w
-                self.context._viewport.parent_pos = pos_p
-                self.context._viewport.parent_size = parent_size_backup
+                self.context.viewport.window_pos = pos_w
+                self.context.viewport.parent_pos = pos_p
+                self.context.viewport.parent_size = parent_size_backup
             if parent_viewport:
                 imgui.EndMainMenuBar()
             else:
@@ -3428,7 +3428,7 @@ cdef class MenuBar(uiItem):
             # We should hit this only if window is invisible
             # or has no menu bar
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
-        cdef bint activated = self._state.cur.active and not(self._state.prev.active)
+        cdef bint activated = self.state.cur.active and not(self.state.prev.active)
         cdef int i
         if activated and not(self._callbacks.empty()):
             for i in range(<int>self._callbacks.size()):
@@ -3439,13 +3439,13 @@ cdef class MenuBar(uiItem):
 
         if self._theme is not None:
             self._theme.pop()
-        self.context._viewport.pop_applied_pending_theme_actions()
+        self.context.viewport.pop_applied_pending_theme_actions()
 
         if self._font is not None:
             self._font.pop()
 
         # Restore original scale
-        self.context._viewport.global_scale = original_scale 
+        self.context.viewport.global_scale = original_scale 
 
         self.run_handlers()
 
@@ -3456,49 +3456,49 @@ cdef class Menu(uiItem):
         # We should maybe restrict to menuitem ?
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self.theme_condition_category = ThemeCategories.t_menu
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_active = True
-        self._state.cap.has_rect_size = True
+        self._theme_condition_category = ThemeCategories.t_menu
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef bint menu_open = imgui.BeginMenu(self.imgui_label.c_str(),
+        cdef bint menu_open = imgui.BeginMenu(self._imgui_label.c_str(),
                                               self._enabled)
         self.update_current_state()
         cdef Vec2 pos_w, pos_p, parent_size_backup
         if menu_open:
-            self._state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self._state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self._state.cur.rect_size.x = imgui.GetWindowWidth()
-            self._state.cur.rect_size.y = imgui.GetWindowHeight()
+            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self.state.cur.rect_size.x = imgui.GetWindowWidth()
+            self.state.cur.rect_size.y = imgui.GetWindowHeight()
             if self.last_widgets_child is not None:
                 # We are in a separate window
                 pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                 pos_p = pos_w
-                swap_Vec2(pos_w, self.context._viewport.window_pos)
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
-                parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self._state.cur.rect_size
+                swap_Vec2(pos_w, self.context.viewport.window_pos)
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
+                parent_size_backup = self.context.viewport.parent_size
+                self.context.viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
-                self.context._viewport.window_pos = pos_w
-                self.context._viewport.parent_pos = pos_p
-                self.context._viewport.parent_size = parent_size_backup
+                self.context.viewport.window_pos = pos_w
+                self.context.viewport.parent_pos = pos_p
+                self.context.viewport.parent_size = parent_size_backup
             imgui.EndMenu()
         else:
             self.propagate_hidden_state_to_children_with_handlers()
         SharedBool.set(<SharedBool>self._value, menu_open)
-        return self._state.cur.active and not(self._state.prev.active)
+        return self.state.cur.active and not(self.state.prev.active)
 
 cdef class Tooltip(uiItem):
     def __cinit__(self):
         # We should maybe restrict to menuitem ?
         self.can_have_widget_child = True
-        self.theme_condition_category = ThemeCategories.t_tooltip
-        self._state.cap.can_be_active = True # TODO unsure. Maybe use open instead ?
-        self._state.cap.has_position = False
-        self._state.cap.has_rect_size = False
+        self._theme_condition_category = ThemeCategories.t_tooltip
+        self.state.cap.can_be_active = True # TODO unsure. Maybe use open instead ?
+        self.state.cap.has_position = False
+        self.state.cap.has_rect_size = False
         self._delay = 0.
         self._hide_on_activity = False
         self._target = None
@@ -3611,24 +3611,24 @@ cdef class Tooltip(uiItem):
            imgui.GetIO().MouseDelta.y != 0.:
             display_condition = False
 
-        cdef bint was_visible = self._state.cur.rendered
+        cdef bint was_visible = self.state.cur.rendered
         cdef Vec2 pos_w, pos_p, parent_size_backup
         cdef Vec2 content_min, content_max
         if display_condition and imgui.BeginTooltip():
-            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             if self.last_widgets_child is not None:
                 # We are in a popup window
                 pos_w = ImVec2Vec2(imgui.GetCursorScreenPos())
                 pos_p = pos_w
                 self._content_pos = pos_w
-                swap_Vec2(pos_w, self.context._viewport.window_pos)
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
-                parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self._state.cur.content_region_size
+                swap_Vec2(pos_w, self.context.viewport.window_pos)
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
+                parent_size_backup = self.context.viewport.parent_size
+                self.context.viewport.parent_size = self.state.cur.content_region_size
                 draw_ui_children(self)
-                self.context._viewport.window_pos = pos_w
-                self.context._viewport.parent_pos = pos_p
-                self.context._viewport.parent_size = parent_size_backup
+                self.context.viewport.window_pos = pos_w
+                self.context.viewport.parent_pos = pos_p
+                self.context.viewport.parent_size = parent_size_backup
 
             imgui.EndTooltip()
             self.update_current_state()
@@ -3636,23 +3636,23 @@ cdef class Tooltip(uiItem):
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
             # NOTE: we could also set the rects. DPG does it.
         # The sizing of a tooltip takes a few frames to converge
-        if self._state.cur.rendered != was_visible or \
-           self._state.cur.content_region_size.x != self._state.prev.content_region_size.x or \
-           self._state.cur.content_region_size.y != self._state.prev.content_region_size.y:
-            self.context._viewport.redraw_needed = True
-        return self._state.cur.rendered and not(was_visible)
+        if self.state.cur.rendered != was_visible or \
+           self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
+           self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
+            self.context.viewport.redraw_needed = True
+        return self.state.cur.rendered and not(was_visible)
 
 cdef class TabButton(uiItem):
     def __cinit__(self):
-        self.theme_condition_category = ThemeCategories.t_tabbutton
+        self._theme_condition_category = ThemeCategories.t_tabbutton
         self.element_child_category = child_type.cat_tab
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_deactivated_after_edited = True
-        self._state.cap.can_be_edited = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_deactivated_after_edited = True
+        self.state.cap.can_be_edited = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
         self._flags = imgui.ImGuiTabItemFlags_None
 
     @property
@@ -3729,10 +3729,10 @@ cdef class TabButton(uiItem):
             self._flags |= imgui.ImGuiTabItemFlags_NoTooltip
 
     cdef bint draw_item(self) noexcept nogil:
-        cdef bint pressed = imgui.TabItemButton(self.imgui_label.c_str(),
+        cdef bint pressed = imgui.TabItemButton(self._imgui_label.c_str(),
                                                 self._flags)
         self.update_current_state()
-        #SharedBool.set(<SharedBool>self._value, self._state.cur.active) # Unsure. Not in original
+        #SharedBool.set(<SharedBool>self._value, self.state.cur.active) # Unsure. Not in original
         return pressed
 
 
@@ -3741,12 +3741,12 @@ cdef class Tab(uiItem):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
         self.element_child_category = child_type.cat_tab
-        self.theme_condition_category = ThemeCategories.t_tab
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_active = True
-        self._state.cap.has_rect_size = True
+        self._theme_condition_category = ThemeCategories.t_tab
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
         self._closable = False
         self._flags = imgui.ImGuiTabItemFlags_None
 
@@ -3840,45 +3840,45 @@ cdef class Tab(uiItem):
 
     cdef bint draw_item(self) noexcept nogil:
         cdef imgui.ImGuiTabItemFlags flags = self._flags
-        if (<SharedBool>self._value)._last_frame_change == self.context._viewport.frame_count:
+        if (<SharedBool>self._value)._last_frame_change == self.context.viewport.frame_count:
             # The value was changed after the last time we drew
             # TODO: will have no effect if we switch from show to no show.
             # maybe have a counter here.
             if SharedBool.get(<SharedBool>self._value):
                 flags |= imgui.ImGuiTabItemFlags_SetSelected
-        cdef bint menu_open = imgui.BeginTabItem(self.imgui_label.c_str(),
+        cdef bint menu_open = imgui.BeginTabItem(self._imgui_label.c_str(),
                                                  &self._show if self._closable else NULL,
                                                  flags)
         if not(self._show):
-            self.show_update_requested = True
+            self._show_update_requested = True
         self.update_current_state()
         cdef Vec2 pos_p, parent_size_backup
         if menu_open:
             if self.last_widgets_child is not None:
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
-                parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self._state.cur.rect_size # unsure
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
+                parent_size_backup = self.context.viewport.parent_size
+                self.context.viewport.parent_size = self.state.cur.rect_size # unsure
                 draw_ui_children(self)
-                self.context._viewport.parent_pos = pos_p
-                self.context._viewport.parent_size = parent_size_backup
+                self.context.viewport.parent_pos = pos_p
+                self.context.viewport.parent_size = parent_size_backup
             imgui.EndTabItem()
         else:
             self.propagate_hidden_state_to_children_with_handlers()
         SharedBool.set(<SharedBool>self._value, menu_open)
-        return self._state.cur.active and not(self._state.prev.active)
+        return self.state.cur.active and not(self.state.prev.active)
 
 
 cdef class TabBar(uiItem):
     def __cinit__(self):
         #self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_tab_child = True
-        self.theme_condition_category = ThemeCategories.t_tabbar
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_active = True
-        self._state.cap.has_rect_size = True
+        self._theme_condition_category = ThemeCategories.t_tabbar
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.has_rect_size = True
         self._flags = imgui.ImGuiTabBarFlags_None
 
     @property
@@ -4039,16 +4039,16 @@ cdef class TabBar(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         imgui.PushID(self.uuid)
         imgui.BeginGroup() # from original. Unsure if needed
-        cdef bint visible = imgui.BeginTabBar(self.imgui_label.c_str(),
+        cdef bint visible = imgui.BeginTabBar(self._imgui_label.c_str(),
                                               self._flags)
         self.update_current_state()
         cdef Vec2 pos_p
         if visible:
             if self.last_tab_child is not None:
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
                 draw_tab_children(self)
-                self.context._viewport.parent_pos = pos_p
+                self.context.viewport.parent_pos = pos_p
             imgui.EndTabBar()
         else:
             self.propagate_hidden_state_to_children_with_handlers()
@@ -4060,7 +4060,7 @@ cdef class TabBar(uiItem):
         imgui.EndGroup()
         #imgui.PopStyleVar(1)
         imgui.PopID()
-        return self._state.cur.active and not(self._state.prev.active)
+        return self.state.cur.active and not(self.state.prev.active)
 
 
 
@@ -4068,15 +4068,15 @@ cdef class TreeNode(uiItem):
     def __cinit__(self):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_toggled = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self._selectable = False
         self._flags = imgui.ImGuiTreeNodeFlags_None
-        self.theme_condition_category = ThemeCategories.t_treenode
+        self._theme_condition_category = ThemeCategories.t_treenode
 
     @property
     def selectable(self):
@@ -4229,26 +4229,26 @@ cdef class TreeNode(uiItem):
             flags |= imgui.ImGuiTreeNodeFlags_Selected
 
         imgui.SetNextItemOpen(was_open, imgui.ImGuiCond_Always)
-        self._state.cur.open = was_open
-        cdef bint open_and_visible = imgui.TreeNodeEx(self.imgui_label.c_str(),
+        self.state.cur.open = was_open
+        cdef bint open_and_visible = imgui.TreeNodeEx(self._imgui_label.c_str(),
                                                       flags)
         self.update_current_state()
-        if self._state.cur.open and not(was_open):
+        if self.state.cur.open and not(was_open):
             SharedBool.set(<SharedBool>self._value, True)
-        elif self._state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
+        elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
             SharedBool.set(<SharedBool>self._value, False)
-            self._state.cur.open = False
+            self.state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
         cdef Vec2 pos_p, parent_size_backup
         if open_and_visible:
             if self.last_widgets_child is not None:
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
-                parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self._state.cur.rect_size
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
+                parent_size_backup = self.context.viewport.parent_size
+                self.context.viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
-                self.context._viewport.parent_pos = pos_p
-                self.context._viewport.parent_size = parent_size_backup
+                self.context.viewport.parent_pos = pos_p
+                self.context.viewport.parent_size = parent_size_backup
             imgui.TreePop()
 
         #imgui.PushStyleVar(imgui.ImGuiStyleVar_ItemSpacing,
@@ -4262,15 +4262,15 @@ cdef class CollapsingHeader(uiItem):
     def __cinit__(self):
         self._value = <SharedValue>(SharedBool.__new__(SharedBool, self.context))
         self.can_have_widget_child = True
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.can_be_toggled = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True
         self._closable = False
         self._flags = imgui.ImGuiTreeNodeFlags_None
-        self.theme_condition_category = ThemeCategories.t_collapsingheader
+        self._theme_condition_category = ThemeCategories.t_collapsingheader
 
     @property
     def closable(self):
@@ -4367,32 +4367,32 @@ cdef class CollapsingHeader(uiItem):
             flags |= imgui.ImGuiTreeNodeFlags_Selected
 
         imgui.SetNextItemOpen(was_open, imgui.ImGuiCond_Always)
-        self._state.cur.open = was_open
+        self.state.cur.open = was_open
         cdef bint open_and_visible = \
-            imgui.CollapsingHeader(self.imgui_label.c_str(),
+            imgui.CollapsingHeader(self._imgui_label.c_str(),
                                    &self._show if self._closable else NULL,
                                    flags)
         if not(self._show):
-            self.show_update_requested = True
+            self._show_update_requested = True
         self.update_current_state()
-        if self._state.cur.open and not(was_open):
+        if self.state.cur.open and not(was_open):
             SharedBool.set(<SharedBool>self._value, True)
-        elif self._state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
+        elif self.state.cur.rendered and was_open and not(open_and_visible): # TODO: unsure
             SharedBool.set(<SharedBool>self._value, False)
-            self._state.cur.open = False
+            self.state.cur.open = False
             self.propagate_hidden_state_to_children_with_handlers()
         cdef Vec2 pos_p, parent_size_backup
         if open_and_visible:
             if self.last_widgets_child is not None:
                 pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
-                swap_Vec2(pos_p, self.context._viewport.parent_pos)
-                parent_size_backup = self.context._viewport.parent_size
-                self.context._viewport.parent_size = self._state.cur.rect_size
+                swap_Vec2(pos_p, self.context.viewport.parent_pos)
+                parent_size_backup = self.context.viewport.parent_size
+                self.context.viewport.parent_size = self.state.cur.rect_size
                 draw_ui_children(self)
-                self.context._viewport.parent_pos = pos_p
-                self.context._viewport.parent_size = parent_size_backup
+                self.context.viewport.parent_pos = pos_p
+                self.context.viewport.parent_size = parent_size_backup
         # TODO: rect_size from group ?
-        return not(was_open) and self._state.cur.open
+        return not(was_open) and self.state.cur.open
 
 cdef class ChildWindow(uiItem):
     """A child window container that enables hierarchical UI layout.
@@ -4451,13 +4451,13 @@ cdef class ChildWindow(uiItem):
         # TODO scrolling
         self.can_have_widget_child = True
         self.can_have_menubar_child = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
-        self._state.cap.has_content_region = True
-        #self._state.cap.can_be_toggled = True # maybe ?
-        self.theme_condition_category = ThemeCategories.t_child
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.has_content_region = True
+        #self.state.cap.can_be_toggled = True # maybe ?
+        self._theme_condition_category = ThemeCategories.t_child
 
     @property
     def always_show_vertical_scrollvar(self):
@@ -4752,33 +4752,33 @@ cdef class ChildWindow(uiItem):
         if child_flags & imgui.ImGuiChildFlags_AlwaysAutoResize:
             if (child_flags & (imgui.ImGuiChildFlags_AutoResizeX | imgui.ImGuiChildFlags_AutoResizeY)) == 0:
                 child_flags &= ~imgui.ImGuiChildFlags_AlwaysAutoResize
-        if imgui.BeginChild(self.imgui_label.c_str(),
+        if imgui.BeginChild(self._imgui_label.c_str(),
                             Vec2ImVec2(requested_size),
                             child_flags,
                             flags):
-            self._state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
+            self.state.cur.content_region_size = ImVec2Vec2(imgui.GetContentRegionAvail())
             pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
             pos_w = pos_p
             self._content_pos = pos_p
-            swap_Vec2(pos_p, self.context._viewport.parent_pos)
-            swap_Vec2(pos_w, self.context._viewport.window_pos)
-            parent_size_backup = self.context._viewport.parent_size
-            self.context._viewport.parent_size = self._state.cur.content_region_size
+            swap_Vec2(pos_p, self.context.viewport.parent_pos)
+            swap_Vec2(pos_w, self.context.viewport.window_pos)
+            parent_size_backup = self.context.viewport.parent_size
+            self.context.viewport.parent_size = self.state.cur.content_region_size
             draw_ui_children(self)
             draw_menubar_children(self)
-            self.context._viewport.window_pos = pos_w
-            self.context._viewport.parent_pos = pos_p
-            self.context._viewport.parent_size = parent_size_backup
-            self._state.cur.rendered = True
-            self._state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
-            self._state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
-            self._state.cur.rect_size = ImVec2Vec2(imgui.GetWindowSize())
-            update_current_mouse_states(self._state)
+            self.context.viewport.window_pos = pos_w
+            self.context.viewport.parent_pos = pos_p
+            self.context.viewport.parent_size = parent_size_backup
+            self.state.cur.rendered = True
+            self.state.cur.hovered = imgui.IsWindowHovered(imgui.ImGuiHoveredFlags_None)
+            self.state.cur.focused = imgui.IsWindowFocused(imgui.ImGuiFocusedFlags_None)
+            self.state.cur.rect_size = ImVec2Vec2(imgui.GetWindowSize())
+            update_current_mouse_states(self.state)
             # TODO scrolling
             # The sizing of windows might not converge right away
-            if self._state.cur.content_region_size.x != self._state.prev.content_region_size.x or \
-               self._state.cur.content_region_size.y != self._state.prev.content_region_size.y:
-                self.context._viewport.redraw_needed = True
+            if self.state.cur.content_region_size.x != self.state.prev.content_region_size.x or \
+               self.state.cur.content_region_size.y != self.state.prev.content_region_size.y:
+                self.context.viewport.redraw_needed = True
         else:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
         imgui.EndChild()
@@ -4787,13 +4787,13 @@ cdef class ChildWindow(uiItem):
 cdef class ColorButton(uiItem):
     def __cinit__(self):
         self._flags = imgui.ImGuiColorEditFlags_DefaultOptions_
-        self.theme_condition_category = ThemeCategories.t_colorbutton
+        self._theme_condition_category = ThemeCategories.t_colorbutton
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     @property
     def no_alpha(self):
@@ -4868,7 +4868,7 @@ cdef class ColorButton(uiItem):
     cdef bint draw_item(self) noexcept nogil:
         cdef bint activated
         cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
-        activated = imgui.ColorButton(self.imgui_label.c_str(),
+        activated = imgui.ColorButton(self._imgui_label.c_str(),
                                       Vec4ImVec4(col),
                                       self._flags,
                                       Vec2ImVec2(self.scaled_requested_size()))
@@ -4880,13 +4880,13 @@ cdef class ColorButton(uiItem):
 cdef class ColorEdit(uiItem):
     def __cinit__(self):
         self._flags = imgui.ImGuiColorEditFlags_DefaultOptions_
-        self.theme_condition_category = ThemeCategories.t_coloredit
+        self._theme_condition_category = ThemeCategories.t_coloredit
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     @property
     def no_alpha(self):
@@ -5030,7 +5030,7 @@ cdef class ColorEdit(uiItem):
         cdef bint activated
         cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
         cdef float[4] color = [col.x, col.y, col.z, col.w]
-        activated = imgui.ColorEdit4(self.imgui_label.c_str(),
+        activated = imgui.ColorEdit4(self._imgui_label.c_str(),
                                       color,
                                       self._flags)
         self.update_current_state()
@@ -5042,13 +5042,13 @@ cdef class ColorEdit(uiItem):
 cdef class ColorPicker(uiItem):
     def __cinit__(self):
         self._flags = imgui.ImGuiColorEditFlags_DefaultOptions_
-        self.theme_condition_category = ThemeCategories.t_colorpicker
+        self._theme_condition_category = ThemeCategories.t_colorpicker
         self._value = <SharedValue>(SharedColor.__new__(SharedColor, self.context))
-        self._state.cap.can_be_active = True
-        self._state.cap.can_be_clicked = True
-        self._state.cap.can_be_dragged = True
-        self._state.cap.can_be_focused = True
-        self._state.cap.can_be_hovered = True
+        self.state.cap.can_be_active = True
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_focused = True
+        self.state.cap.can_be_hovered = True
 
     @property
     def no_alpha(self):
@@ -5158,7 +5158,7 @@ cdef class ColorPicker(uiItem):
         cdef bint activated
         cdef Vec4 col = SharedColor.getF4(<SharedColor>self._value)
         cdef float[4] color = [col.x, col.y, col.z, col.w]
-        activated = imgui.ColorPicker4(self.imgui_label.c_str(),
+        activated = imgui.ColorPicker4(self._imgui_label.c_str(),
                                        color,
                                        self._flags,
                                        NULL) # ref_col ??
