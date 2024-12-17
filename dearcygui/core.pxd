@@ -72,6 +72,7 @@ cdef inline void append_obj_vector(vector[PyObject *] &items, item_list):
         items.push_back(<PyObject*>item)
 
 cdef class Context:
+    ### Read-only public variables ###
     cdef recursive_mutex mutex
     # Mutex that must be held for any
     # call to imgui, glfw, etc
@@ -81,13 +82,16 @@ cdef class Context:
     cdef void* imgui_context # imgui.ImGuiContext
     cdef void* implot_context # implot.ImPlotContext
     cdef void* imnodes_context # imnodes.ImNodesContext
-    cdef object _threadlocal_data
-    cdef bint _started
+    ### protected variables ###
     cdef Callback _on_close_callback
     cdef object _item_creation_callback
     cdef object _item_unused_configure_args_callback
     cdef object _item_deletion_callback
     cdef object _queue
+    ### private variables ###
+    cdef object _threadlocal_data
+    cdef bint _started
+    ### public methods ###
     cdef void queue_callback_noarg(self, Callback, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1obj(self, Callback, baseItem, baseItem, baseItem) noexcept nogil
     cdef void queue_callback_arg1key(self, Callback, baseItem, baseItem, int) noexcept nogil
@@ -124,45 +128,11 @@ for the four main children categories.
 A child then points to its previous and next sibling of its category
 """
 cdef class baseItem:
-    cdef recursive_mutex mutex
-    cdef int _external_lock
+    ### Read-only public variables managed by this class ###
     cdef Context context
     cdef long long uuid
-    cdef object __weakref__
-    cdef object _user_data
-    # Attributes set by subclasses
-    # to indicate what kind of parent
-    # and children they can have.
-    # Allowed children:
-    cdef bint can_have_drawing_child
-    # DOES NOT mean "bound" to an item
-    cdef bint can_have_handler_child
-    cdef bint can_have_menubar_child
-    cdef bint can_have_plot_element_child
-    cdef bint can_have_tab_child
-    cdef bint can_have_theme_child
-    cdef bint can_have_viewport_drawlist_child
-    cdef bint can_have_widget_child
-    cdef bint can_have_window_child
-    # Allowed siblings:
-    cdef bint can_have_sibling
-    # Type of child for the parent
-    cdef int element_child_category
-
-    # States
-    # p_state: pointer to the itemState inside
-    # the item structure for fast access if needed.
-    # Set to NULL if the item doesn't have
-    # an itemState field
-    cdef itemState* p_state
-    # Always empty if p_state is NULL.
-    cdef vector[PyObject*] _handlers # type baseHandler
-
-    # Relationships
+    cdef recursive_mutex mutex
     cdef baseItem parent
-    # It is not possible to access an array of children without the gil
-    # Thus instead use a list
-    # Each element is responsible for calling draw on its sibling
     cdef baseItem prev_sibling
     cdef baseItem next_sibling
     cdef drawingItem last_drawings_child
@@ -174,16 +144,33 @@ cdef class baseItem:
     cdef drawingItem last_viewport_drawlist_child
     cdef uiItem last_widgets_child
     cdef Window last_window_child
+    ### Read-only public variables set by subclasses during cinit ###
+    cdef bint can_have_drawing_child
+    cdef bint can_have_handler_child
+    cdef bint can_have_menubar_child
+    cdef bint can_have_plot_element_child
+    cdef bint can_have_tab_child
+    cdef bint can_have_theme_child
+    cdef bint can_have_viewport_drawlist_child
+    cdef bint can_have_widget_child
+    cdef bint can_have_window_child
+    cdef bint can_have_sibling
+    cdef int element_child_category
+    cdef itemState* p_state # pointer to the itemState. set to NULL if the item doesn't have any.
+    ### protected variables ###
+    cdef vector[PyObject*] _handlers # type baseHandler. Always empty if p_state is NULL.
+    ### private variables ###
+    cdef int _external_lock
+    cdef object __weakref__
+    cdef object _user_data
+    ### public methods ###
     cdef void lock_parent_and_item_mutex(self, unique_lock[recursive_mutex]&, unique_lock[recursive_mutex]&)
     cdef void lock_and_previous_siblings(self) noexcept nogil
     cdef void unlock_and_previous_siblings(self) noexcept nogil
-    cdef bint __check_rendered(self)
     cpdef void attach_to_parent(self, target_parent)
     cpdef void attach_before(self, target_before)
-    cdef void __detach_item_and_lock(self, unique_lock[recursive_mutex]&)
     cpdef void detach_item(self)
     cpdef void delete_item(self)
-    cdef void __delete_and_siblings(self)
     cdef void set_previous_states(self) noexcept nogil
     cdef void run_handlers(self) noexcept nogil
     cdef void update_current_state_as_hidden(self) noexcept nogil
@@ -193,7 +180,14 @@ cdef class baseItem:
     cdef void set_hidden_and_propagate_to_siblings_no_handlers(self) noexcept
     cdef void set_hidden_no_handler_and_propagate_to_children_with_handlers(self) noexcept nogil
     cdef void set_hidden_and_propagate_to_children_no_handlers(self) noexcept
+    ### private methods ###
+    cdef bint __check_rendered(self)
+    cdef void __detach_item_and_lock(self, unique_lock[recursive_mutex]&)
+    cdef void __delete_and_siblings(self)
 
+
+# The capabilities are set during item creation
+# and indicate which itemStateValues are valid
 cdef struct itemStateCapabilities:
     bint can_be_active
     bint can_be_clicked
@@ -215,39 +209,32 @@ cdef struct itemStateValues:
     bint[5] double_clicked
     bint[5] dragging
     Vec2[5] drag_deltas # only valid when dragging
-    bint edited
+    bint edited # text fields, etc
     bint deactivated_after_edited
-    bint open
+    bint open # menu open, etc
     Vec2 pos_to_viewport
     Vec2 pos_to_window
     Vec2 pos_to_parent
     Vec2 pos_to_default
-    Vec2 rect_size
-    Vec2 content_region_size
-    # No optimization due to parent menu not open or clipped
-    bint rendered
+    Vec2 rect_size # size on screen in pixels
+    Vec2 content_region_size # size available to the children in pixels
+    bint rendered # No optimization due to parent menu not open or clipped
 
 cdef struct itemState:
+    ### Read-only public variables set by subclasses during cinit ###
     itemStateCapabilities cap
-    itemStateValues prev
-    itemStateValues cur
+    ### Read-only public variables - updated in draw() and when attached/detached ###
+    itemStateValues prev # state on the previous frame
+    itemStateValues cur # state on the current frame
 
 cdef void update_current_mouse_states(itemState&) noexcept nogil
 
 
 cdef class Viewport(baseItem):
-    cdef recursive_mutex _mutex_backend
-    cdef void *_platform # platformViewport
-    cdef bint _initialized
-    cdef Callback _resize_callback
-    cdef Callback _close_callback
-    cdef baseFont _font
-    cdef baseTheme _theme
-    cdef bint _disable_close
-    cdef bint _drop_is_file_type
-    cdef vector[string] _drop_data
-    cdef itemState state # Unused. Just for compatibility with handlers
-    cdef int _cursor # imgui.ImGuiMouseCursor
+    ### Public read-only variables
+    cdef int frame_count # frame count
+    cdef bint skipped_last_frame
+    cdef itemState state
     # For timing stats
     cdef long long last_t_before_event_handling
     cdef long long last_t_before_rendering
@@ -258,43 +245,55 @@ cdef class Viewport(baseItem):
     cdef double delta_rendering
     cdef double delta_swapping
     cdef double delta_frame
-    cdef int frame_count # frame count
+    ### Public read-write variables ###
     # Temporary info to be accessed during rendering
     # Shouldn't be accessed outside draw()
-    cdef bint redraw_needed
-    cdef bint skipped_last_frame
-    cdef double[2] scales
-    cdef double[2] shifts
-    cdef Vec2 window_pos
-    cdef Vec2 parent_pos
-    cdef Vec2 parent_size
-    cdef Vec2 window_cursor # Window layout
-    cdef bint in_plot
-    cdef bint plot_fit
-    cdef float thickness_multiplier
-    cdef float size_multiplier # May not be scales[0]
-    cdef bint[6] enabled_axes # <int>implot.ImAxis_COUNT
-    cdef int start_pending_theme_actions # managed outside viewport
-    cdef vector[theme_action] pending_theme_actions # managed outside viewport
-    cdef vector[theme_action] _applied_theme_actions # managed by viewport
-    cdef vector[int] _applied_theme_actions_count # managed by viewport
+    cdef float global_scale # Current scale factor to apply to all rendering
+    cdef bint redraw_needed # Request the viewport to redraw right away without displaying
+    cdef double[2] scales # Draw*: Current multiplication factor (integrates global_scale) for all coordinates
+    cdef double[2] shifts # Draw*: Current shift for all coordinates
+    cdef Vec2 window_pos # Coordinates (Viewport space) of the parent window
+    cdef Vec2 parent_pos # Coordinates (Viewport space) of the direct parent
+    cdef Vec2 parent_size # Content region size (in pixels) of the direct parent
+    cdef Vec2 window_cursor # Position of the next window (Window layout specific)
+    cdef bint in_plot # Current rendering occurs withing a plot
+    cdef bint plot_fit # Current plot is fitting the axes to the data
+    cdef float thickness_multiplier # scale for the thickness of all lines (Draw*)
+    cdef float size_multiplier # scale for the size of all Draw* elements.
+    cdef bint[6] enabled_axes # <int>implot.ImAxis_COUNT. Enabled plot axes.
+    cdef int start_pending_theme_actions # Used when applying theme actions
+    cdef vector[theme_action] pending_theme_actions # Used when applying theme actions
+    ### private variables ###
+    cdef recursive_mutex _mutex_backend
+    cdef void *_platform # platformViewport
+    cdef bint _initialized
+    cdef Callback _resize_callback
+    cdef Callback _close_callback
+    cdef baseFont _font
+    cdef baseTheme _theme
+    cdef bint _disable_close
+    cdef bint _drop_is_file_type
+    cdef vector[string] _drop_data
+    cdef int _cursor # imgui.ImGuiMouseCursor
+    cdef vector[theme_action] _applied_theme_actions
+    cdef vector[int] _applied_theme_actions_count
     cdef ThemeEnablers _current_theme_activation_condition_enabled
     cdef ThemeCategories _current_theme_activation_condition_category
     cdef float _scale
-    cdef float global_scale
-
-    cdef void __check_initialized(self)
-    cdef void __check_not_initialized(self)
-    cdef void __on_resize(self)
-    cdef void __on_close(self)
-    cdef void __on_drop(self, int, const char*)
-    cdef void __render(self) noexcept nogil
+    ### public methods ###
     cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil
     cdef void push_pending_theme_actions(self, ThemeEnablers, ThemeCategories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil
     cdef void cwake(self) noexcept nogil
     cdef Vec2 get_size(self) noexcept nogil
+    ### private methods ###
+    cdef void __check_initialized(self)
+    cdef void __check_not_initialized(self)
+    cdef void __on_resize(self)
+    cdef void __on_close(self)
+    cdef void __on_drop(self, int, const char*)
+    cdef void __render(self) noexcept nogil
 
 
 cdef class Callback:
