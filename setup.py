@@ -24,8 +24,9 @@ def get_platform():
         'linux1' : 'Linux',
         'linux2' : 'Linux',
         'darwin' : 'OS X',
-        'win32' : 'Windows'
     }
+    if "win" in sys.platform:
+        return "Windows"
     if sys.platform not in platforms:
         return sys.platform
     
@@ -46,8 +47,10 @@ def build_SDL3():
     ]
     command = 'cmake -S thirdparty/SDL/ -B build_SDL ' + ' '.join(cmake_config_args)
     subprocess.check_call(command, shell=True)
-    command = 'cmake --build build_SDL'
+    command = 'cmake --build build_SDL --config Release'
     subprocess.check_call(command, shell=True)
+    if get_platform() == "Windows":
+        return os.path.abspath(os.path.join("build_SDL", "Release/SDL3-static.lib"))
     return os.path.abspath(os.path.join("build_SDL", "libSDL3.a"))
 
 def build_FREETYPE():
@@ -63,8 +66,10 @@ def build_FREETYPE():
     ]
     command = 'cmake -S thirdparty/freetype/ -B build_FT ' + ' '.join(cmake_config_args)
     subprocess.check_call(command, shell=True)
-    command = 'cmake --build build_FT'
+    command = 'cmake --build build_FT --config Release'
     subprocess.check_call(command, shell=True)
+    if get_platform() == "Windows":
+        return os.path.abspath(os.path.join("build_FT", "Release/freetype.lib"))
     return os.path.abspath(os.path.join("build_FT", "libfreetype.a"))
 
 def setup_package():
@@ -127,7 +132,8 @@ def setup_package():
         linking_args += ["-framework", "Cocoa", "-framework", "IOKit", "-framework", "CoreFoundation", "-framework", "CoreVideo", "-framework", "OpenGL"]
     elif get_platform() == "Windows":
         compile_args += ["/O2", "/DNDEBUG", "/D_WINDOWS", "/D_UNICODE", "/DWIN32_LEAN_AND_MEAN"]
-        libraries = ["user32", "gdi32", "shell32", "advapi32", "ole32", "oleaut32", "uuid", "opengl32"]
+        libraries = ["user32", "gdi32", "shell32", "advapi32", "ole32", "oleaut32", "uuid", "opengl32", \
+                     "setupapi", "cfgmgr32", "version", "winmm"]
         linking_args += ["/MACHINE:X64"]
     else:
         # Please test and tell us what changes are needed to the build
