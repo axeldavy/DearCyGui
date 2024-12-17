@@ -390,30 +390,48 @@ A drawable item with various UI states
 cdef class baseHandler(baseItem):
     cdef bint _enabled
     cdef Callback _callback
+    # Check (outside rendering) if the handler can
+    # be bound to the target. Should raise an error
+    # if it is not.
     cdef void check_bind(self, baseItem)
+    # Returns True/False if the conditions holds.
     cdef bint check_state(self, baseItem) noexcept nogil
+    # Checks True/False if the condition holds, and if
+    # True performs an action (for instance run the callback).
     cdef void run_handler(self, baseItem) noexcept nogil
+    # Helper (implemented by baseHandler) to call the
+    # attached callback. You may want to call it yourself
+    # if you need to pass specific arguments
     cdef void run_callback(self, baseItem) noexcept nogil
 
 cdef void update_current_mouse_states(itemState& state) noexcept nogil
 
 cdef class uiItem(baseItem):
-    cdef string _imgui_label
-    cdef str _user_label
-    cdef bool _show
-    cdef Positioning[2] pos_policy
-    cdef Sizing[2] size_policy
+    ### Public read-write ###
+    # In general state is public read-only. Managed by subclasses.
+    # However external items are allowed to write the states to
+    # request a state change of the item. In that case the appropriate
+    # '....._requested' must be set to True.
     cdef itemState state
-    cdef bint can_be_disabled
-    cdef bint _enabled
-    cdef bint _focus_update_requested
-    cdef bint _show_update_requested
-    cdef bint size_update_requested
-    cdef bint pos_update_requested
+    # Variables below are maintained by uiItem but can be set externally.
+    cdef Positioning[2] pos_policy
     cdef bint no_newline
-    cdef bint _enabled_update_requested
-    cdef bint _dpi_scaling
+    cdef bint pos_update_requested
+    cdef bint _focus_update_requested
     cdef Vec2 requested_size
+    cdef bint size_update_requested
+    cdef Sizing[2] size_policy
+    ### Set by subclass (but has default value) ###
+    cdef bint can_be_disabled
+    cdef SharedValue _value
+    ### Protected variables. Managed by uiItem by should be read by subclasses to alter rendering ###
+    cdef string _imgui_label # The hidden unique imgui label for this item
+    cdef str _user_label # Label assigned by the user
+    cdef bool _show # If False, rendering should not occur.
+    cdef bint _show_update_requested # Filled by uiItem on show value change 
+    cdef bint _enabled # Needs can_be_disabled. Contrary to show, the item is rendered, but if False is unactive.
+    cdef bint _enabled_update_requested # Filled by uiItem on enabled value change 
+    cdef bint _dpi_scaling # Whether to apply the global scale on the requested size.
     cdef float _indent
     cdef ThemeEnablers _theme_condition_enabled
     cdef ThemeCategories _theme_condition_category
@@ -422,27 +440,33 @@ cdef class uiItem(baseItem):
     cdef baseFont _font
     cdef baseTheme _theme
     cdef vector[PyObject*] _callbacks # type Callback
-    cdef SharedValue _value
     cdef float _scaling_factor
     cdef Vec2 _content_pos
 
     cdef void update_current_state(self) noexcept nogil
     cdef void update_current_state_subset(self) noexcept nogil
     cdef Vec2 scaled_requested_size(self) noexcept nogil
+    # draw: main function called every frame to render the item
     cdef void draw(self) noexcept nogil
+    # draw_item: called by the default implementation of draw.
+    # It is recommanded to overwrite draw_item instead of draw
+    # if possible as draw() handle the positioning, theme, font,
+    # mutex locking, calling handlers, etc.
+    # draw_item just needs to draw the item.
     cdef bint draw_item(self) noexcept nogil
 
 """
 Shared values (sources)
-
-Should we use cdef recursive_mutex mutex ?
 """
 cdef class SharedValue:
+    # Public read-only variables
     cdef recursive_mutex mutex
     cdef Context context
+    cdef int _last_frame_update # Last frame count the value was updated
+    cdef int _last_frame_change # Last frame count the value changed (>= updated)
     cdef int _num_attached # number of items the value is attached to
-    cdef int _last_frame_update
-    cdef int _last_frame_change
+    # call when the value is updated. the second argument should be True if the
+    # value changed, False else.
     cdef void on_update(self, bint) noexcept nogil
     cdef void inc_num_attached(self) noexcept nogil
     cdef void dec_num_attached(self) noexcept nogil
@@ -490,6 +514,10 @@ cdef class Window(uiItem):
 
 """
 Plots
+
+NOTE: it is unlikely you want to subclass this.
+For custom plots, it is usually better to subclass
+drawingItem.
 """
 cdef class plotElement(baseItem):
     cdef string _imgui_label
@@ -505,13 +533,15 @@ Bindable elements
 """
 
 cdef class Texture(baseItem):
-    cdef recursive_mutex _write_mutex
-    cdef bint _hint_dynamic
-    cdef bint _dynamic
+    ### Public read-only variables ###
     cdef void* allocated_texture
     cdef int width
     cdef int height
     cdef int num_chans
+    ### private variables ###
+    cdef recursive_mutex _write_mutex
+    cdef bint _hint_dynamic
+    cdef bint _dynamic
     cdef unsigned _buffer_type
     cdef int _filtering_mode
     cdef bint _readonly
