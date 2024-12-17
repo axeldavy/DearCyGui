@@ -140,6 +140,7 @@ cdef class baseItem:
     cdef uiItem last_menubar_child
     cdef plotElement last_plot_element_child
     cdef uiItem last_tab_child
+    cdef AxisTag last_tag_child
     cdef baseTheme last_theme_child
     cdef drawingItem last_viewport_drawlist_child
     cdef uiItem last_widgets_child
@@ -150,6 +151,7 @@ cdef class baseItem:
     cdef bint can_have_menubar_child
     cdef bint can_have_plot_element_child
     cdef bint can_have_tab_child
+    cdef bint can_have_tag_child
     cdef bint can_have_theme_child
     cdef bint can_have_viewport_drawlist_child
     cdef bint can_have_widget_child
@@ -373,6 +375,7 @@ cdef inline void draw_window_children(baseItem item) noexcept nogil:
         (<uiItem>child).draw()
         child = <PyObject *>(<baseItem>child).next_sibling
 
+
 """
 Drawing Items
 """
@@ -527,6 +530,16 @@ cdef class plotElement(baseItem):
     cdef int[2] _axes
     cdef baseTheme _theme
     cdef void draw(self) noexcept nogil
+
+
+# We don't define draw() for this class as
+# the parent axis handles it.
+cdef class AxisTag(baseItem):
+    ### Public read-only variables ###
+    cdef bint show
+    cdef double coord
+    cdef string text
+    cdef int bg_color # imgui.U32
 
 """
 Bindable elements

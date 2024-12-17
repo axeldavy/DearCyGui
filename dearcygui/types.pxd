@@ -11,6 +11,7 @@ cdef enum child_type:
     cat_menubar
     cat_plot_element
     cat_tab
+    cat_tag
     cat_theme
     cat_viewport_drawlist
     cat_widget

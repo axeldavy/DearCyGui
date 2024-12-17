@@ -1352,6 +1352,10 @@ cdef class baseItem:
         while item is not None:
             result.append(item)
             item = item.prev_sibling
+        item = self.last_tag_child
+        while item is not None:
+            result.append(item)
+            item = item.prev_sibling
         item = self.last_drawings_child
         while item is not None:
             result.append(item)
@@ -1447,6 +1451,12 @@ cdef class baseItem:
                 break
             (<baseItem>child).detach_item()
             child = self.last_tab_child
+        child = self.last_tag_child
+        while child is not None:
+            if already_attached.find((<baseItem>child).uuid) != already_attached.end():
+                break
+            (<baseItem>child).detach_item()
+            child = self.last_tag_child
         child = self.last_drawings_child
         while child is not None:
             if already_attached.find((<baseItem>child).uuid) != already_attached.end():
@@ -1486,6 +1496,8 @@ cdef class baseItem:
             type = type | ChildType.PLOTELEMENT
         if self.can_have_tab_child:
             type = type | ChildType.TAB
+        if self.can_have_tag_child:
+            type = type | ChildType.AXISTAG
         if self.can_have_theme_child:
             type = type | ChildType.THEME
         if self.can_have_viewport_drawlist_child:
@@ -1526,6 +1538,7 @@ cdef class baseItem:
            self.can_have_menubar_child or \
            self.can_have_plot_element_child or \
            self.can_have_tab_child or \
+           self.can_have_tag_child or \
            self.can_have_theme_child or \
            self.can_have_widget_child or \
            self.can_have_window_child):
@@ -1661,6 +1674,9 @@ cdef class baseItem:
         elif self.element_child_category == child_type.cat_tab:
             if target_parent.can_have_tab_child:
                 compatible = True
+        elif self.element_child_category == child_type.cat_tag:
+            if target_parent.can_have_tag_child:
+                compatible = True
         elif self.element_child_category == child_type.cat_theme:
             if target_parent.can_have_theme_child:
                 compatible = True
@@ -1737,6 +1753,15 @@ cdef class baseItem:
                 self.prev_sibling = target_parent.last_tab_child
                 self.parent = target_parent
                 target_parent.last_tab_child = <uiItem>self
+                attached = True
+        elif self.element_child_category == child_type.cat_tag:
+            if target_parent.can_have_tag_child:
+                if target_parent.last_tag_child is not None:
+                    lock_gil_friendly(m3, target_parent.last_tag_child.mutex)
+                    target_parent.last_tag_child.next_sibling = self
+                self.prev_sibling = target_parent.last_tag_child
+                self.parent = target_parent
+                target_parent.last_tag_child = <AxisTag>self
                 attached = True
         elif self.element_child_category == child_type.cat_theme:
             if target_parent.can_have_theme_child:
@@ -1879,6 +1904,8 @@ cdef class baseItem:
                     self.parent.last_plot_element_child = self.prev_sibling
                 elif self.parent.last_tab_child is self:
                     self.parent.last_tab_child = self.prev_sibling
+                elif self.parent.last_tag_child is self:
+                    self.parent.last_tag_child = self.prev_sibling
                 elif self.parent.last_theme_child is self:
                     self.parent.last_theme_child = self.prev_sibling
                 elif self.parent.last_widgets_child is self:
@@ -1935,6 +1962,8 @@ cdef class baseItem:
             (<baseItem>self.last_plot_element_child).__delete_and_siblings()
         if self.last_tab_child is not None:
             (<baseItem>self.last_tab_child).__delete_and_siblings()
+        if self.last_tag_child is not None:
+            (<baseItem>self.last_tag_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
         if self.last_widgets_child is not None:
@@ -1947,6 +1976,7 @@ cdef class baseItem:
         self.last_menubar_child = None
         self.last_plot_element_child = None
         self.last_tab_child = None
+        self.last_tag_child = None
         self.last_theme_child = None
         self.last_widgets_child = None
         self.last_window_child = None
@@ -1969,6 +1999,8 @@ cdef class baseItem:
             (<baseItem>self.last_plot_element_child).__delete_and_siblings()
         if self.last_tab_child is not None:
             (<baseItem>self.last_tab_child).__delete_and_siblings()
+        if self.last_tag_child is not None:
+            (<baseItem>self.last_tag_child).__delete_and_siblings()
         if self.last_theme_child is not None:
             (<baseItem>self.last_theme_child).__delete_and_siblings()
         if self.last_widgets_child is not None:
@@ -1987,6 +2019,7 @@ cdef class baseItem:
         self.last_menubar_child = None
         self.last_plot_element_child = None
         self.last_tab_child = None
+        self.last_tag_child = None
         self.last_theme_child = None
         self.last_widgets_child = None
         self.last_window_child = None
@@ -3470,6 +3503,7 @@ cdef class PlaceHolderParent(baseItem):
         self.can_have_menubar_child = True
         self.can_have_plot_element_child = True
         self.can_have_tab_child = True
+        self.can_have_tag_child = True
         self.can_have_theme_child = True
         self.can_have_viewport_drawlist_child = True
         self.can_have_widget_child = True
@@ -5923,6 +5957,89 @@ cdef class plotElement(baseItem):
     cdef void draw(self) noexcept nogil:
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return
+
+
+cdef class AxisTag(baseItem):
+    """
+    Class for Axis tags. Can only be child
+    of a plot Axis.
+    """
+    def __cinit__(self):
+        self.can_have_sibling = True
+        self.element_child_category = child_type.cat_tag
+        self.show = True
+        # 0 means no background, in which case ImPlotCol_AxisText
+        # is used for the text color. Else Text is automatically
+        # set to white or black depending on the background color
+        self.bg_color = 0
+
+    @property
+    def show(self):
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.show
+
+    @show.setter
+    def show(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.show = value
+
+    @property
+    def bg_color(self):
+        """
+        Writable attribute: Background color of the tag.
+        0 means no background, in which case ImPlotCol_AxisText
+        is used for the text color. Else Text is automatically
+        set to white or black depending on the background color
+
+        Returns:
+            list: RGBA values in [0,1] range
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self.bg_color)
+        return list(color)
+
+    @bg_color.setter
+    def bg_color(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.bg_color = parse_color(value)
+
+    @property
+    def coord(self):
+        """
+        Writable attribute: Coordinate of the tag.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self.coord
+
+    @coord.setter
+    def coord(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.coord = value
+
+    @property
+    def text(self):
+        """
+        Writable attribute: Text of the tag.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(self.text, encoding='utf-8')
+
+    @text.setter
+    def text(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self.text = bytes(str(value), 'utf-8')
 
 """
 Textures

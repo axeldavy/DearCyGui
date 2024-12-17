@@ -753,7 +753,8 @@ class ChildType(IntFlag):
     THEME = 32,
     VIEWPORTDRAWLIST = 64,
     WIDGET = 128,
-    WINDOW = 256
+    WINDOW = 256,
+    AXISTAG = 512,
 
 class Key(IntEnum):
     """

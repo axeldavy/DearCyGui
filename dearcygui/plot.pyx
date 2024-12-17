@@ -20,7 +20,7 @@ from dearcygui.wrapper cimport imgui, implot
 from libc.math cimport INFINITY
 from cpython cimport PyObject
 
-from .core cimport baseHandler, baseItem, uiItem, \
+from .core cimport baseHandler, baseItem, uiItem, AxisTag, \
     lock_gil_friendly, clear_obj_vector, append_obj_vector, \
     draw_drawing_children, \
     draw_ui_children, baseFont, plotElement, \
@@ -202,6 +202,7 @@ cdef class PlotAxisConfig(baseItem):
         self._zoom_min = 0
         self._zoom_max = INFINITY
         self._keep_default_ticks = False
+        self.can_have_tag_child = True
 
     @property
     def enabled(self):
@@ -878,6 +879,30 @@ cdef class PlotAxisConfig(baseItem):
             if self.state.cur.rendered:
                 self.set_hidden()
             return
+
+        # Render the tags
+        cdef PyObject *child
+        cdef char[3] format_str = [37, 115, 0] # %s 
+        if self.last_tag_child is not None:
+            implot.SetAxis(axis)
+            child = <PyObject*> self.last_tag_child
+            while (<baseItem>child).prev_sibling is not None:
+                child = <PyObject *>(<baseItem>child).prev_sibling
+            if axis <= implot.ImAxis_X3:
+                while (<baseItem>child) is not None:
+                    if (<AxisTag>child).show:
+                        implot.TagX((<AxisTag>child).coord,
+                                    imgui_ColorConvertU32ToFloat4((<AxisTag>child).bg_color),
+                                    format_str, (<AxisTag>child).text.c_str())
+                    child = <PyObject *>(<baseItem>child).next_sibling
+            else:
+                while (<baseItem>child) is not None:
+                    if (<AxisTag>child).show:
+                        implot.TagY((<AxisTag>child).coord,
+                                    imgui_ColorConvertU32ToFloat4((<AxisTag>child).bg_color),
+                                    format_str, (<AxisTag>child).text.c_str())
+                    child = <PyObject *>(<baseItem>child).next_sibling
+
         cdef implot.ImPlotRect rect
         #self._prev_min = self._min
         #self._prev_max = self._max
@@ -1632,7 +1657,7 @@ cdef class Plot(uiItem):
             self.state.cur.rendered = True
             
             # Setup mouse position text
-            implot.SetupMouseText(self._mouse_location)
+            implot.SetupMouseText(self._mouse_location, 0)
             
             # Setup axes
             self._X1.setup(implot.ImAxis_X1)
@@ -2581,79 +2606,6 @@ cdef class PlotScatter(plotElementXY):
                                     cnp.PyArray_STRIDE(self._X, 0))
 
 '''
-cdef class PlotHistogram2D(plotElementXY):
-    @property
-    def density(self):
-        """
-        Counts will be normalized, i.e. the PDF will be visualized
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self._flags & implot.ImPlotHistogramFlags_Density) != 0
-
-    @density.setter
-    def density(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._flags &= ~implot.ImPlotHistogramFlags_Density
-        if value:
-            self._flags |= implot.ImPlotHistogramFlags_Density
-
-    @property
-    def no_outliers(self):
-        """
-        Exclude values outside the specifed histogram range
-        from the count toward normalizing and cumulative counts.
-        """
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        return (self._flags & implot.ImPlotHistogramFlags_NoOutliers) != 0
-
-    @no_outliers.setter
-    def no_outliers(self, bint value):
-        cdef unique_lock[recursive_mutex] m
-        lock_gil_friendly(m, self.mutex)
-        self._flags &= ~implot.ImPlotHistogramFlags_NoOutliers
-        if value:
-            self._flags |= implot.ImPlotHistogramFlags_NoOutliers
-
-# TODO: row col flag ???
-
-    cdef void draw_element(self) noexcept nogil:
-        self.check_arrays()
-        cdef int size = min(self._X.shape[0], self._Y.shape[0])
-        if size == 0:
-            return
-
-        if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
-            implot.PlotScatter[int](self._imgui_label.c_str(),
-                                 <const int*>cnp.PyArray_DATA(self._X),
-                                 <const int*>cnp.PyArray_DATA(self._Y),
-                                 size,
-                                 self._weight,
-                                 self._flags,
-                                 0,
-                                 cnp.PyArray_STRIDE(self._X, 0))
-        elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
-            implot.PlotScatter[float](self._imgui_label.c_str(),
-                                   <const float*>cnp.PyArray_DATA(self._X),
-                                   <const float*>cnp.PyArray_DATA(self._Y),
-                                   size,
-                                   self._weight,
-                                   self._flags,
-                                   0,
-                                   cnp.PyArray_STRIDE(self._X, 0))
-        else:
-            implot.PlotScatter[double](self._imgui_label.c_str(),
-                                    <const double*>cnp.PyArray_DATA(self._X),
-                                    <const double*>cnp.PyArray_DATA(self._Y),
-                                    size,
-                                    self._weight,
-                                    self._flags,
-                                    0,
-                                    cnp.PyArray_STRIDE(self._X, 0))
-'''
-'''
 cdef class plotDraggable(plotElement):
     """
     Base class for plot draggable elements.
@@ -3275,3 +3227,528 @@ cdef class Subplots(uiItem):
         elif self.state.cur.rendered:
             self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
         return False
+
+cdef class PlotBarGroups(plotElementWithLegend):
+    def __cinit__(self):
+        self._group_size = 0.67
+        self._shift = 0
+        self._values = np.zeros(shape=(1,1), dtype=np.float64)
+        self._labels = vector[string]()
+        self._labels.push_back(b"Item 0")
+
+    @property
+    def values(self):
+        """
+        A row-major array with item_count rows and group_count columns.
+        Each row represents one label/plotline/color.
+
+        By default, will try to use the passed array
+        directly for its internal backing (no copy).
+        Supported types for no copy are np.int32,
+        np.float32, np.float64.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._values
+
+    @values.setter
+    def values(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value)
+        if array.ndim != 2:
+            raise ValueError("values must be a 2D array")
+        # We don't support array of pointers. Must be data,
+        # with eventually a non-standard stride
+        # type must also be one of the supported types
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._values = array
+        else:
+            self._values = np.ascontiguousarray(array, dtype=np.float64)
+        cdef int k
+        for k in range(<int>self._labels.size(), self._values.shape[0]):
+            self._labels.push_back(string(b"Item %d" % k))
+
+    @property
+    def labels(self):
+        """
+        Array of item labels. Must match the number of rows in values.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [str(v, encoding='utf-8') for v in self._labels]
+
+    @labels.setter 
+    def labels(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef int i, k
+        self._labels.clear()
+        if value is None:
+            return
+        if hasattr(value, '__len__'):
+            i = 0
+            for v in value:
+                self._labels.push_back(bytes(v, 'utf-8'))
+                i = i + 1
+            for k in range(i, self._values.shape[0]):
+                self._labels.push_back(string(b"Item %d" % k))
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as labels. Expected array of strings")
+
+    @property 
+    def group_size(self):
+        """
+        Size of each group.
+        Default is 0.67
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._group_size
+
+    @group_size.setter
+    def group_size(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._group_size = value
+
+    @property
+    def shift(self):
+        """
+        Shift in plot units to offset groups.
+        Default is 0 
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._shift
+
+    @shift.setter
+    def shift(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._shift = value
+
+    @property
+    def horizontal(self):
+        """
+        Bar groups will be rendered horizontally on the current y-axis
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotBarGroupsFlags_Horizontal) != 0
+
+    @horizontal.setter
+    def horizontal(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotBarGroupsFlags_Horizontal
+        if value:
+            self._flags |= implot.ImPlotBarGroupsFlags_Horizontal
+
+    @property
+    def stacked(self):
+        """
+        Items in a group will be stacked on top of each other
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotBarGroupsFlags_Stacked) != 0
+
+    @stacked.setter
+    def stacked(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotBarGroupsFlags_Stacked
+        if value:
+            self._flags |= implot.ImPlotBarGroupsFlags_Stacked
+
+    cdef void draw_element(self) noexcept nogil:
+        if self._values.shape[0] == 0 or self._values.shape[1] == 0:
+            return
+
+        cdef int i
+        # Note: we ensured that self._values.shape[0] <= <int>self._labels.size()
+
+        cdef vector[const char*] labels_cstr
+        for i in range(self._values.shape[0]):
+            labels_cstr.push_back(self._labels[i].c_str())
+
+        if cnp.PyArray_TYPE(self._values) == cnp.NPY_INT:
+            implot.PlotBarGroups[int](labels_cstr.data(),
+                                      <const int*>cnp.PyArray_DATA(self._values),
+                                      <int>self._values.shape[0],
+                                      <int>self._values.shape[1],
+                                      self._group_size,
+                                      self._shift,
+                                      self._flags)
+        elif cnp.PyArray_TYPE(self._values) == cnp.NPY_FLOAT:
+            implot.PlotBarGroups[float](labels_cstr.data(),
+                                      <const float*>cnp.PyArray_DATA(self._values),
+                                      <int>self._values.shape[0],
+                                      <int>self._values.shape[1],
+                                      self._group_size,
+                                      self._shift,
+                                      self._flags)
+        else:
+            implot.PlotBarGroups[double](labels_cstr.data(),
+                                       <const double*>cnp.PyArray_DATA(self._values),
+                                       <int>self._values.shape[0],
+                                       <int>self._values.shape[1],
+                                       self._group_size,
+                                       self._shift,
+                                       self._flags)
+
+cdef class PlotPieChart(plotElementWithLegend):
+    """
+    Plots a pie chart with the given values and labels.
+    The pie chart is centered at (x,y) with the given radius.
+    """
+    def __cinit__(self):
+        self._values = np.zeros(shape=(1,), dtype=np.float64)
+        self._x = 0.0
+        self._y = 0.0
+        self._radius = 1.0
+        self._angle = 90.0
+        self._labels = vector[string]()
+        self._labels.push_back(b"Slice 0")
+
+    @property
+    def values(self):
+        """
+        Array of values for each pie slice.
+
+        By default, will try to use the passed array directly for its 
+        internal backing (no copy). Supported types for no copy are 
+        np.int32, np.float32, np.float64.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._values
+
+    @values.setter
+    def values(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef cnp.ndarray array = np.asarray(value).reshape([-1])
+        if cnp.PyArray_CHKFLAGS(array, cnp.NPY_ARRAY_ELEMENTSTRIDES) and \
+           (cnp.PyArray_TYPE(array) == cnp.NPY_INT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_FLOAT or \
+            cnp.PyArray_TYPE(array) == cnp.NPY_DOUBLE):
+            self._values = array
+        else:
+            self._values = np.ascontiguousarray(array, dtype=np.float64)
+        cdef int k
+        for k in range(<int>self._labels.size(), self._values.shape[0]):
+            self._labels.push_back(string(b"Slice %d" % k))
+
+    @property
+    def labels(self):
+        """
+        Array of labels for each pie slice. Must match the number of values.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [str(v, encoding='utf-8') for v in self._labels]
+
+    @labels.setter
+    def labels(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._labels.clear()
+        cdef int k
+        if value is None:
+            return
+        if hasattr(value, '__len__'):
+            for v in value:
+                self._labels.push_back(bytes(v, 'utf-8'))
+            for k in range(len(value), self._values.shape[0]):
+                self._labels.push_back(string(b"Slice %d" % k))
+        else:
+            raise ValueError(f"Invalid type {type(value)} passed as labels. Expected array of strings")
+
+    @property
+    def x(self):
+        """X coordinate of pie chart center in plot units"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._x
+
+    @x.setter
+    def x(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._x = value
+
+    @property
+    def y(self):
+        """Y coordinate of pie chart center in plot units"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._y
+
+    @y.setter
+    def y(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._y = value
+
+    @property
+    def radius(self):
+        """Radius of pie chart in plot units"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._radius
+
+    @radius.setter
+    def radius(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._radius = value
+
+    @property
+    def angle(self):
+        """Starting angle for first slice in degrees. Default is 90."""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._angle
+
+    @angle.setter
+    def angle(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._angle = value
+
+    @property
+    def normalize(self):
+        """
+        Force normalization of pie chart values (i.e. always make
+        a full circle if sum < 0)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotPieChartFlags_Normalize) != 0
+
+    @normalize.setter
+    def normalize(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotPieChartFlags_Normalize
+        if value:
+            self._flags |= implot.ImPlotPieChartFlags_Normalize
+
+    @property
+    def ignore_hidden(self):
+        """
+        Ignore hidden slices when drawing the pie chart
+        (as if they were not there)
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotPieChartFlags_IgnoreHidden) != 0
+
+    @ignore_hidden.setter
+    def ignore_hidden(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotPieChartFlags_IgnoreHidden
+        if value:
+            self._flags |= implot.ImPlotPieChartFlags_IgnoreHidden
+
+    cdef void draw_element(self) noexcept nogil:
+        if self._values.shape[0] == 0:
+            return
+
+        cdef int i
+        # Note: we ensured that self._values.shape[0] <= <int>self._labels.size()
+
+        cdef vector[const char*] labels_cstr
+        for i in range(self._values.shape[0]):
+            labels_cstr.push_back(self._labels[i].c_str())
+
+        if cnp.PyArray_TYPE(self._values) == cnp.NPY_INT:
+            implot.PlotPieChart[int](labels_cstr.data(),
+                                    <const int*>cnp.PyArray_DATA(self._values),
+                                    <int>self._values.shape[0],
+                                    self._x,
+                                    self._y,
+                                    self._radius,
+                                    "%.1f",
+                                    self._angle,
+                                    self._flags)
+        elif cnp.PyArray_TYPE(self._values) == cnp.NPY_FLOAT:
+            implot.PlotPieChart[float](labels_cstr.data(),
+                                      <const float*>cnp.PyArray_DATA(self._values),
+                                      <int>self._values.shape[0],
+                                      self._x,
+                                      self._y,
+                                      self._radius,
+                                      "%.1f",
+                                      self._angle,
+                                      self._flags)
+        else:
+            implot.PlotPieChart[double](labels_cstr.data(),
+                                       <const double*>cnp.PyArray_DATA(self._values),
+                                       <int>self._values.shape[0],
+                                       self._x,
+                                       self._y,
+                                       self._radius,
+                                       "%.1f",
+                                       self._angle,
+                                       self._flags)
+
+cdef class PlotDigital(plotElementXY):
+    """
+    Plots a digital signal as a step function from X,Y data.
+    Digital plots are always referenced to the bottom of the plot,
+    do not respond to y axis zooming.
+    """
+
+    cdef void draw_element(self) noexcept nogil:
+        self.check_arrays()
+        cdef int size = min(self._X.shape[0], self._Y.shape[0])
+        if size == 0:
+            return
+
+        if cnp.PyArray_TYPE(self._X) == cnp.NPY_INT:
+            implot.PlotDigital[int](self._imgui_label.c_str(),
+                                   <const int*>cnp.PyArray_DATA(self._X),
+                                   <const int*>cnp.PyArray_DATA(self._Y),
+                                   size,
+                                   self._flags,
+                                   0,
+                                   cnp.PyArray_STRIDE(self._X, 0))
+        elif cnp.PyArray_TYPE(self._X) == cnp.NPY_FLOAT:
+            implot.PlotDigital[float](self._imgui_label.c_str(),
+                                     <const float*>cnp.PyArray_DATA(self._X),
+                                     <const float*>cnp.PyArray_DATA(self._Y),
+                                     size,
+                                     self._flags,
+                                     0,
+                                     cnp.PyArray_STRIDE(self._X, 0))
+        else:
+            implot.PlotDigital[double](self._imgui_label.c_str(),
+                                      <const double*>cnp.PyArray_DATA(self._X),
+                                      <const double*>cnp.PyArray_DATA(self._Y),
+                                      size,
+                                      self._flags,
+                                      0,
+                                      cnp.PyArray_STRIDE(self._X, 0))
+
+
+cdef class PlotAnnotation(plotElement):
+    """
+    Adds an annotation to the plot.
+    Annotations are always rendered on top.
+    """
+    def __cinit__(self):
+        self._x = 0.0
+        self._y = 0.0
+        self._text = b""
+        self._offset = make_Vec2(0., 0.)
+
+    @property
+    def x(self):
+        """X coordinate of the annotation in plot units"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._x
+
+    @x.setter
+    def x(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._x = value
+
+    @property
+    def y(self):
+        """Y coordinate of the annotation in plot units"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._y
+
+    @y.setter
+    def y(self, double value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._y = value
+
+    @property
+    def text(self):
+        """Text of the annotation"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(self._text, encoding='utf-8')
+
+    @text.setter
+    def text(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._text = bytes(str(value), 'utf-8')
+
+    @property
+    def bg_color(self):
+        """Background color of the annotation
+        0 means no background, in which case ImPlotCol_InlayText
+        is used for the text color. Else Text is automatically
+        set to white or black depending on the background color
+
+        Returns:
+            list: RGBA values in [0,1] range
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._bg_color)
+        return list(color)
+
+    @bg_color.setter
+    def bg_color(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._bg_color = parse_color(value)
+
+    @property
+    def offset(self):
+        """Offset in pixels from the plot coordinate
+        at which to display the annotation"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._offset.x, self._offset.y)
+
+    @offset.setter
+    def offset(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if not(hasattr(value, '__len__')) or len(value) != 2:
+            raise ValueError("Offset must be a 2-tuple")
+        self._offset = make_Vec2(value[0], value[1])
+
+    @property
+    def clamp(self):
+        """Clamp the annotation to the plot area.
+        Without this setting, the annotation will not be
+        drawn if outside the plot area. Else it is displayed
+        no matter what.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._clamp
+
+    @clamp.setter
+    def clamp(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._clamp = value
+
+    cdef void draw_element(self) noexcept nogil:
+        cdef char[3] format_str = [37, 115, 0] # %s 
+        implot.Annotation(self._x,
+                          self._y,
+                          imgui_ColorConvertU32ToFloat4(self._bg_color),
+                          Vec2ImVec2(self._offset),
+                          self._clamp,
+                          format_str,
+                          self._text.c_str())

@@ -29,7 +29,6 @@ cdef class PlotAxisConfig(baseItem):
     cdef double _zoom_min
     cdef double _zoom_max
     cdef double _mouse_coord
-    cdef int _mouse_location # LegendLocation
     cdef bint _to_fit
     cdef itemState state
     cdef Callback _resize_callback
@@ -69,6 +68,7 @@ cdef class Plot(uiItem):
     cdef bint _use_local_time
     cdef bint _use_ISO8601
     cdef bint _use_24hour_clock
+    cdef int _mouse_location # LegendLocation
     cdef int _flags # implot.ImPlotFlags
     cdef bint draw_item(self) noexcept nogil
 
@@ -131,7 +131,31 @@ cdef class Subplots(uiItem):
     cdef int _flags # implot.ImPlotSubplotFlags
     cdef bint draw_item(self) noexcept nogil
 
-"""
-cdef class PlotHistogram2D(plotElementXY):
+cdef class PlotBarGroups(plotElementWithLegend):
+    cdef cnp.ndarray _values
+    cdef vector[string] _labels
+    cdef double _group_size
+    cdef double _shift
     cdef void draw_element(self) noexcept nogil
-"""
+
+cdef class PlotPieChart(plotElementWithLegend):
+    cdef cnp.ndarray _values
+    cdef vector[string] _labels
+    cdef double _x
+    cdef double _y
+    cdef double _radius
+    cdef double _angle
+    cdef void draw_element(self) noexcept nogil
+
+cdef class PlotDigital(plotElementXY):
+    cdef void draw_element(self) noexcept nogil
+
+cdef class PlotAnnotation(plotElement):
+    cdef string _text
+    cdef double _x
+    cdef double _y
+    cdef int _bg_color
+    cdef Vec2 _offset
+    cdef bint _clamp
+    cdef void draw_element(self) noexcept nogil
+
