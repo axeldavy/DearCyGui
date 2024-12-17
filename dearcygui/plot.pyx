@@ -18,6 +18,7 @@ from libcpp cimport bool
 
 from dearcygui.wrapper cimport imgui, implot
 from libc.math cimport INFINITY
+from cpython cimport PyObject
 
 from .core cimport baseHandler, baseItem, uiItem, \
     lock_gil_friendly, clear_obj_vector, append_obj_vector, \
@@ -2903,3 +2904,324 @@ cdef class DrawInPlot(plotElementWithLegend):
             self._font.pop()
 
         self.run_handlers()
+
+cdef class Subplots(uiItem):
+    """
+    Creates a grid of plots that share various axis properties.
+    
+    Can have Plot items as children. The plots are added in row-major order
+    by default (can be changed to column major).
+
+    Attributes:
+    - rows (int): Number of subplot rows 
+    - cols (int): Number of subplot columns
+    - row_ratios (List[float]): Size ratios for each row
+    - col_ratios (List[float]): Size ratios for each column
+    - no_legend (bool): Hide subplot legends (if share_legends is True)
+    - no_title (bool): Hide subplot titles
+    - no_menus (bool): Disable context menus
+    - no_resize (bool): Disable subplot resize splitters 
+    - no_align (bool): Disable subplot edge alignment
+    - col_major (bool): Add plots in column-major order
+    - share_legends (bool): Share legend items across subplots
+    - share_rows (bool): Link X1/Y1-axis limits by rows
+    - share_cols (bool): Link X1/Y1-axis limits by columns
+    - share_x_all (bool): Link X1-axis limits across all plots
+    - share_y_all (bool): Link Y1-axis limits across all plots
+    """
+    def __cinit__(self):
+        self.can_have_widget_child = True
+        self._flags = implot.ImPlotSubplotFlags_None
+        self._rows = 1
+        self._cols = 1
+        self.state.cap.can_be_clicked = True
+        self.state.cap.can_be_dragged = True
+        self.state.cap.can_be_hovered = True
+
+    @property
+    def rows(self):
+        """Number of subplot rows"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex) 
+        return self._rows
+
+    @rows.setter 
+    def rows(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < 1:
+            raise ValueError("Rows must be > 0")
+        self._rows = value
+
+    @property
+    def cols(self):
+        """Number of subplot columns"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._cols
+
+    @cols.setter
+    def cols(self, int value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value < 1:
+            raise ValueError("Columns must be > 0")
+        self._cols = value
+
+    @property
+    def row_ratios(self):
+        """Size ratios for subplot rows"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [v for v in self._row_ratios]
+
+    @row_ratios.setter
+    def row_ratios(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._row_ratios.clear()
+        cdef float v
+        if hasattr(value, '__len__'):
+            if len(value) < self._rows:
+                raise ValueError("Not enough row ratios provided")
+            for v in value:
+                if v <= 0:
+                    raise ValueError("Ratios must be > 0")
+                self._row_ratios.push_back(v)
+
+    @property
+    def col_ratios(self):
+        """Size ratios for subplot columns"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return [v for v in self._col_ratios]
+
+    @col_ratios.setter
+    def col_ratios(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._col_ratios.clear()
+        cdef float v
+        if hasattr(value, '__len__'):
+            if len(value) < self._cols:
+                raise ValueError("Not enough column ratios provided") 
+            for v in value:
+                if v <= 0:
+                    raise ValueError("Ratios must be > 0")
+                self._col_ratios.push_back(v)
+
+    @property
+    def no_legend(self):
+        """Hide subplot legends"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_NoLegend) != 0
+
+    @property 
+    def no_title(self):
+        """Hide subplot titles"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_NoTitle) != 0
+
+    @no_title.setter
+    def no_title(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_NoTitle
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_NoTitle
+
+    @property 
+    def no_menus(self):
+        """Disable subplot context menus"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_NoMenus) != 0
+
+    @no_menus.setter
+    def no_menus(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex) 
+        self._flags &= ~implot.ImPlotSubplotFlags_NoMenus
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_NoMenus
+
+    @property
+    def no_resize(self):
+        """Disable subplot resize splitters"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_NoResize) != 0
+
+    @no_resize.setter
+    def no_resize(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_NoResize
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_NoResize
+
+    @property
+    def no_align(self): 
+        """Disable subplot edge alignment"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_NoAlign) != 0
+
+    @no_align.setter
+    def no_align(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_NoAlign
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_NoAlign
+
+    @property
+    def col_major(self):
+        """Add plots in column-major order"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_ColMajor) != 0
+
+    @col_major.setter
+    def col_major(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_ColMajor
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_ColMajor
+
+    @property
+    def share_legends(self):
+        """Share legend items across subplots"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_ShareItems) != 0
+
+    @share_legends.setter
+    def share_legends(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_ShareItems
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_ShareItems
+
+    @property
+    def share_x_all(self):
+        """Link X1-axis limits across all plots"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_LinkAllX) != 0
+
+    @share_x_all.setter
+    def share_x_all(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_LinkAllX
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_LinkAllX
+
+    @property
+    def share_rows(self):
+        """Link X1/Y1-axis limits within each row"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_LinkRows) != 0
+
+    @share_rows.setter
+    def share_rows(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_LinkRows
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_LinkRows
+
+    @property
+    def share_cols(self):
+        """Link X1/Y1-axis limits within each column""" 
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_LinkCols) != 0
+
+    @share_cols.setter
+    def share_cols(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_LinkCols
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_LinkCols
+
+    @property
+    def share_y_all(self):
+        """Link Y1-axis limits across all plots"""
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return (self._flags & implot.ImPlotSubplotFlags_LinkAllY) != 0
+
+    @share_y_all.setter
+    def share_y_all(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._flags &= ~implot.ImPlotSubplotFlags_LinkAllY
+        if value:
+            self._flags |= implot.ImPlotSubplotFlags_LinkAllY
+
+    cdef bint draw_item(self) noexcept nogil:
+        cdef float* row_sizes = NULL
+        cdef float* col_sizes = NULL
+        cdef bint visible
+        cdef Vec2 pos_p, parent_size_backup
+        cdef PyObject *child
+        cdef int n = self._rows * self._cols
+        cdef int i
+
+        # TODO: Not sure if shared legend needs specific handling.
+
+        # Get row/col ratios if specified
+        if self._row_ratios.size() >= self._rows:
+            row_sizes = self._row_ratios.data()
+        if self._col_ratios.size() >= self._cols:
+            col_sizes = self._col_ratios.data()
+
+        # Begin subplot layout
+        visible = implot.BeginSubplots(self._imgui_label.c_str(),
+                                       self._rows,
+                                       self._cols,
+                                       Vec2ImVec2(self.scaled_requested_size()),
+                                       self._flags,
+                                       row_sizes,
+                                       col_sizes)
+        self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
+        if visible:
+            self.state.cur.hovered = implot.IsSubplotsHovered()
+            update_current_mouse_states(self.state)
+
+            pos_p = ImVec2Vec2(imgui.GetCursorScreenPos())
+            swap_Vec2(pos_p, self.context.viewport.parent_pos)
+            parent_size_backup = self.context.viewport.parent_size
+            self.context.viewport.parent_size = self.state.cur.rect_size
+            # Render child plots
+            if self.last_widgets_child is not None:
+                child = <PyObject*> self.last_widgets_child
+                while (<baseItem>child).prev_sibling is not None:
+                    child = <PyObject *>(<baseItem>child).prev_sibling
+                # There must be at maximum n children
+                for i in range(n):
+                    if (<uiItem>child) is None:
+                        break
+                    # Only accept plot children
+                    # for now only plots set can_have_plot_element_child
+                    if not((<uiItem>child).can_have_plot_element_child):
+                        continue
+                    (<uiItem>child).draw()
+                    child = <PyObject *>(<baseItem>child).next_sibling
+
+            self.context.viewport.parent_pos = pos_p
+            self.context.viewport.parent_size = parent_size_backup
+
+            # End subplot 
+            implot.EndSubplots()
+        elif self.state.cur.rendered:
+            self.set_hidden_no_handler_and_propagate_to_children_with_handlers()
+        return False

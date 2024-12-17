@@ -5796,7 +5796,7 @@ def subplots(rows : int, columns : int, *, label: str =None, user_data: Any =Non
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
-    #return subplots(rows, columns, label=label, user_data=user_data, width=width, height=height, indent=indent, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, row_ratios=row_ratios, column_ratios=column_ratios, no_title=no_title, no_menus=no_menus, no_resize=no_resize, no_align=no_align, share_series=share_series, link_rows=link_rows, link_columns=link_columns, link_all_x=link_all_x, link_all_y=link_all_y, column_major=column_major, **kwargs)
+    return dcg.SubPlots(CONTEXT, rows=rows, cols=columns, label=label, user_data=user_data, width=width, height=height, indent=indent, callback=wrap_callback(callback), show=show, pos=pos, filter_key=filter_key, tracked=tracked, track_offset=track_offset, row_ratios=row_ratios, column_ratios=column_ratios, no_title=no_title, no_menus=no_menus, no_resize=no_resize, no_align=no_align, share_legends=share_series, share_rows=link_rows, share_cols=link_columns, share_x_all=link_all_x, share_y_all=link_all_y, col_major=column_major, **kwargs)
 
 def tab(*, label: str =None, user_data: Any =None, indent: int =0, payload_type: str ='$$DPG_PAYLOAD', drop_callback: Callable =None, show: bool =True, filter_key: str ='', tracked: bool =False, track_offset: float =0.5, closable: bool =False, no_tooltip: bool =False, order_mode: int =0, **kwargs) -> Union[int, str]:
     """     Adds a tab to a tab bar.

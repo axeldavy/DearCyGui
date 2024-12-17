@@ -121,6 +121,14 @@ cdef class DrawInPlot(plotElementWithLegend):
     cdef bint _ignore_fit
     cdef void draw(self) noexcept nogil
 
+cdef class Subplots(uiItem):
+    cdef int _rows 
+    cdef int _cols
+    cdef vector[float] _row_ratios
+    cdef vector[float] _col_ratios
+    cdef int _flags # implot.ImPlotSubplotFlags
+    cdef bint draw_item(self) noexcept nogil
+
 """
 cdef class PlotHistogram2D(plotElementXY):
     cdef void draw_element(self) noexcept nogil
