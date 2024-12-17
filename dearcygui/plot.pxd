@@ -38,6 +38,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef vector[string] _labels
     cdef vector[const char*] _labels_cstr
     cdef vector[double] _labels_coord
+    cdef bint _keep_default_ticks
     cdef void setup(self, int) noexcept nogil # implot.ImAxis
     cdef void after_setup(self, int) noexcept nogil # implot.ImAxis
     cdef void after_plot(self, int) noexcept nogil # implot.ImAxis

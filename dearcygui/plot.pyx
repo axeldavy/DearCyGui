@@ -201,6 +201,7 @@ cdef class PlotAxisConfig(baseItem):
         self._constraint_max = INFINITY
         self._zoom_min = 0
         self._zoom_max = INFINITY
+        self._keep_default_ticks = False
 
     @property
     def enabled(self):
@@ -788,6 +789,23 @@ cdef class PlotAxisConfig(baseItem):
         else:
             raise ValueError(f"Invalid type {type(value)} passed as labels_coord. Expected array of strings")
 
+    @property 
+    def keep_default_ticks(self):
+        """
+        If set to True, when custom labels are provided via the labels property,
+        the default ticks will be kept in addition to the custom labels.
+        Default is False.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._keep_default_ticks
+
+    @keep_default_ticks.setter
+    def keep_default_ticks(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._keep_default_ticks = value
+
     cdef void setup(self, int axis) noexcept nogil:
         """
         Apply the config to the target axis during plot
@@ -849,7 +867,8 @@ cdef class PlotAxisConfig(baseItem):
             implot.SetupAxisTicks(axis,
                                   self._labels_coord.data(),
                                   label_count,
-                                  self._labels_cstr.data())
+                                  self._labels_cstr.data(),
+                                  self._keep_default_ticks)
 
     cdef void after_setup(self, int axis) noexcept nogil:
         """
