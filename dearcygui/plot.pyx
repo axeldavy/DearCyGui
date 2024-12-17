@@ -1149,6 +1149,7 @@ cdef class Plot(uiItem):
         self._use_local_time = False
         self._use_ISO8601 = False
         self._use_24hour_clock = False
+        self._mouse_location = implot.ImPlotLocation_SouthEast
         # Box select/Query rects. To remove
         # Disabling implot query rects. This is better
         # to have it implemented outside implot.
@@ -1551,6 +1552,33 @@ cdef class Plot(uiItem):
         if value:
             self._flags |= implot.ImPlotFlags_NoLegend
 
+    @property
+    def mouse_location(self):
+        """
+        Location where the mouse position text will be displayed.
+        Default is LegendLocation.southeast.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return <LegendLocation>self._mouse_location
+
+    @mouse_location.setter
+    def mouse_location(self, LegendLocation value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if value == LegendLocation.CENTER or \
+           value == LegendLocation.NORTH or \
+           value == LegendLocation.SOUTH or \
+           value == LegendLocation.WEST or \
+           value == LegendLocation.EAST or \
+           value == LegendLocation.NORTHEAST or \
+           value == LegendLocation.NORTHWEST or \
+           value == LegendLocation.SOUTHEAST or \
+           value == LegendLocation.SOUTHWEST:
+            self._mouse_location = <int>value
+        else:
+            raise ValueError("Invalid location. Must be a LegendLocation")
+
     cdef bint draw_item(self) noexcept nogil:
         cdef int i
         cdef Vec2 rect_size
@@ -1583,6 +1611,9 @@ cdef class Plot(uiItem):
         self.state.cur.rect_size = ImVec2Vec2(imgui.GetItemRectSize())
         if visible:
             self.state.cur.rendered = True
+            
+            # Setup mouse position text
+            implot.SetupMouseText(self._mouse_location)
             
             # Setup axes
             self._X1.setup(implot.ImAxis_X1)

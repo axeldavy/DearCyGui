@@ -29,6 +29,7 @@ cdef class PlotAxisConfig(baseItem):
     cdef double _zoom_min
     cdef double _zoom_max
     cdef double _mouse_coord
+    cdef int _mouse_location # LegendLocation
     cdef bint _to_fit
     cdef itemState state
     cdef Callback _resize_callback
