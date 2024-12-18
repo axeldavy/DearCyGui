@@ -7373,7 +7373,7 @@ def get_frame_count(**kwargs) -> int:
         int
     """
 
-    #return internal_dpg.get_frame_count(**kwargs)
+    return CONTEXT.viewport.metrics["frame_count"]
 
 def get_frame_rate(**kwargs) -> float:
     """     Returns the average frame rate across 120 frames.
@@ -8363,6 +8363,31 @@ def set_exit_callback(callback : Callable, *, user_data: Any =None, **kwargs) ->
 
     #return internal_dpg.set_exit_callback(callback, user_data=user_data, **kwargs)
 
+class FrameCallback:
+    def __init__(self, C : dcg.Context, frame : int, callback : Callable, *, user_data: Any =None, **kwargs):
+        self.context = C
+        self.frame = frame
+        self.callback = dcg.DPGCallback(callback)
+        self.handler = dcg.RenderHandler(C, callback=self.check_frame, user_data=user_data)
+        with C.viewport.mutex:
+            C.viewport.handlers += [
+                self.handler
+            ]
+        self.run = False
+    def check_frame(self):
+        if self.run:
+            return
+        if self.context.viewport.metrics["frame_count"] < self.frame:
+            return
+        self.callback(self, self, None)
+        with self.context.viewport.mutex:
+            self.context.viewport.handlers = \
+            [
+                h for h in self.context.viewport.handlers if h is not self.handler
+            ]
+        self.run = True
+
+
 def set_frame_callback(frame : int, callback : Callable, *, user_data: Any =None, **kwargs) -> str:
     """     Sets a callback to run on first frame.
 
@@ -8374,7 +8399,7 @@ def set_frame_callback(frame : int, callback : Callable, *, user_data: Any =None
         str
     """
 
-    #return internal_dpg.set_frame_callback(frame, callback, user_data=user_data, **kwargs)
+    return FrameCallback(CONTEXT, frame, callback, user_data=user_data, **kwargs)
 
 def set_global_font_scale(scale : float, **kwargs) -> None:
     """     Sets global font scale.
