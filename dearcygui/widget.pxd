@@ -262,3 +262,13 @@ cdef class SharedTime:
     cdef tm get(self) noexcept nogil
     cdef void set(self, tm) noexcept nogil
 """
+
+cdef class TableColumnConfig(baseItem):
+    cdef itemState state
+    cdef int _flags # ImGuiTableColumnFlags_
+    cdef bint _stretch
+    cdef bint _fixed
+    cdef float _width
+    cdef float _stretch_weight
+    cdef bint _dpi_scaling
+    cdef int _bg_color # imgui.U32

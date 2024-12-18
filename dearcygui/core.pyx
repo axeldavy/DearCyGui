@@ -5528,7 +5528,7 @@ cdef class Window(uiItem):
             # backup previous state
             self._backup_window_flags = self._window_flags
             self._backup_pos = self.state.cur.pos_to_viewport
-            self._backup_rect_size = self._requested_size # We should backup self.state.cur.rect_size, but the we have a dpi scaling issue
+            self._backup_rect_size = self.requested_size # We should backup self.state.cur.rect_size, but the we have a dpi scaling issue
             # Make primary
             self._window_flags = \
                 imgui.ImGuiWindowFlags_NoBringToFrontOnFocus | \
@@ -5538,15 +5538,15 @@ cdef class Window(uiItem):
                 imgui.ImGuiWindowFlags_NoTitleBar
             self.state.cur.pos_to_viewport.x = 0
             self.state.cur.pos_to_viewport.y = 0
-            self._requested_size.x = 0
-            self._requested_size.y = 0
+            self.requested_size.x = 0
+            self.requested_size.y = 0
             self.pos_update_requested = True
             self.size_update_requested = True
         else:
             # Restore previous state
             self._window_flags = self._backup_window_flags
             self.state.cur.pos_to_viewport = self._backup_pos
-            self._requested_size = self._backup_rect_size
+            self.requested_size = self._backup_rect_size
             # Tell imgui to update the window shape
             self.pos_update_requested = True
             self.size_update_requested = True
