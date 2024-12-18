@@ -29,6 +29,8 @@ cdef extern from "backend.h" nogil:
         bint updateDynamicTexture(void*, unsigned, unsigned, unsigned, unsigned, void*, unsigned)
         bint updateStaticTexture(void*, unsigned, unsigned, unsigned, unsigned, void*, unsigned)
 
+        bint downloadBackBuffer(void*, int)
+
         # Public members
         float dpiScale
         bint isFullScreen

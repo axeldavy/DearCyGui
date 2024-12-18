@@ -1150,6 +1150,14 @@ cdef class baseItem:
                     if parent is not None:
                         try:
                             self.attach_to_parent(parent)
+                        except ValueError as e:
+                            # Needed for tag support
+                            if self.context._item_unused_configure_args_callback is not None and \
+                                isinstance(parent, str):
+                                self.context._item_unused_configure_args_callback(self, {"parent": parent})
+                                pass
+                            else:
+                                raise(e)
                         except TypeError as e:
                             if not(ignore_if_fail):
                                 raise(e)
@@ -2985,6 +2993,30 @@ cdef class Viewport(baseItem):
             "frame_count" : self.frame_count-1,
         }
 
+    @property
+    def retrieve_framebuffer(self):
+        """
+        Whether to activate the framebuffer retrieval.
+        If set to true, the framebuffer field will be
+        populated. This has a performance cost.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._retrieve_framebuffer
+
+    @retrieve_framebuffer.setter
+    def retrieve_framebuffer(self, bint value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._retrieve_framebuffer = value
+
+    @property
+    def framebuffer(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._frame_buffer
+
+
     def configure(self, **kwargs):
         for (key, value) in kwargs.items():
             setattr(self, key, value)
@@ -3364,6 +3396,15 @@ cdef class Viewport(baseItem):
             # Present doesn't use imgui but can take time (vsync)
             backend_m.lock()
             if should_present:
+                if self._retrieve_framebuffer:
+                    with gil:
+                        framebuffer = np.empty((
+                            (<platformViewport*>self._platform).frameWidth,
+                            (<platformViewport*>self._platform).frameHeight,
+                            4),
+                            dtype=np.uint8)
+                        if (<platformViewport*>self._platform).downloadBackBuffer(cnp.PyArray_DATA(framebuffer), framebuffer.nbytes):
+                            self._frame_buffer = framebuffer
                 (<platformViewport*>self._platform).present()
             backend_m.unlock()
         if not(should_present) and (<platformViewport*>self._platform).hasVSync:

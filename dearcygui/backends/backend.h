@@ -42,6 +42,7 @@ public:
     virtual bool updateStaticTexture(void* texture, unsigned width, unsigned height,
                                    unsigned num_chans, unsigned type, void* data, 
                                    unsigned src_stride) = 0;
+    virtual bool downloadBackBuffer(void* data, int size) = 0;
 
 	// Window state
     float dpiScale = 1.;
@@ -122,6 +123,7 @@ public:
     virtual bool updateStaticTexture(void* texture, unsigned width, unsigned height,
                                      unsigned num_chans, unsigned type, void* data, 
                                      unsigned src_stride) override;
+    virtual bool downloadBackBuffer(void* data, int size) override;
 
     static SDLViewport* create(render_fun render,
                                on_resize_fun on_resize,

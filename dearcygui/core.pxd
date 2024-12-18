@@ -269,6 +269,8 @@ cdef class Viewport(baseItem):
     cdef recursive_mutex _mutex_backend
     cdef void *_platform # platformViewport
     cdef bint _initialized
+    cdef bint _retrieve_framebuffer
+    cdef object _frame_buffer
     cdef Callback _resize_callback
     cdef Callback _close_callback
     cdef baseFont _font

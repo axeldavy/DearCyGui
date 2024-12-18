@@ -1507,7 +1507,7 @@ def get_viewport_client_width() -> int:
     Returns:
         viewport width
     """
-    return CONTEXT.viewport.client_width
+    return CONTEXT.viewport.width
 
 
 def get_viewport_client_height() -> int:
@@ -1516,7 +1516,7 @@ def get_viewport_client_height() -> int:
     Returns:
         viewport width
     """
-    return CONTEXT.viewport.client_height
+    return CONTEXT.viewport.height
 
 
 def get_viewport_height() -> int:
@@ -8090,6 +8090,32 @@ def move_item_up(item : Union[int, str], **kwargs) -> None:
     if prev_sibling is not None:
         item.next_sibling = prev_sibling
 
+class FrameBufferCallback:
+    def __init__(self, C : dcg.Context, callback : Callable, *, user_data: Any =None, **kwargs):
+        self.context = C
+        assert(callback is not None) # TODO
+        self.callback = callback
+        self.handler = dcg.RenderHandler(C, callback=self.check_frame, user_data=user_data)
+        with C.viewport.mutex:
+            C.viewport.handlers += [
+                self.handler
+            ]
+        self.run = False
+    def check_frame(self):
+        if self.run:
+            return
+        if self.context.viewport.framebuffer is None:
+            return
+        # Technically there is an issue here if the frame
+        # buffer is not updated. TODO
+        self.callback(self.context.viewport, self.context.viewport.framebuffer)
+        with self.context.viewport.mutex:
+            self.context.viewport.handlers = \
+            [
+                h for h in self.context.viewport.handlers if h is not self.handler
+            ]
+        self.run = True
+
 def output_frame_buffer(file : str ='', *, callback: Callable =None, **kwargs) -> Any:
     """     Outputs frame buffer as a png if file is specified or through the second argument of a callback if specified. Render loop must have been started.
 
@@ -8100,6 +8126,8 @@ def output_frame_buffer(file : str ='', *, callback: Callable =None, **kwargs) -
         Any
     """
 
+    CONTEXT.viewport.retrieve_framebuffer=True
+    return FrameBufferCallback(CONTEXT, callback, **kwargs)
     #return internal_dpg.output_frame_buffer(file, callback=wrap_callback(callback), **kwargs)
 
 def pop_container_stack(**kwargs) -> Union[int, str]:

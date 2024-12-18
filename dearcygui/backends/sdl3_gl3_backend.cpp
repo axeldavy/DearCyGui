@@ -682,3 +682,21 @@ void SDLViewport::releaseUploadContext() {
     uploadContextLock.unlock();
     needsRefresh.store(true);
 }
+
+bool SDLViewport::downloadBackBuffer(void* data, int size) {
+    renderContextLock.lock();
+    SDL_GL_MakeCurrent(windowHandle, glContext);
+    
+    // Read the framebuffer into the provided buffer
+    // We assume RGBA8 format (4 bytes per pixel)
+    glReadBuffer(GL_BACK);
+    if (size < frameWidth * frameHeight * 4)
+        return false;
+    glReadPixels(0, 0, frameWidth, frameHeight, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        
+    // Check for errors
+    GLenum error = glGetError();
+    SDL_GL_MakeCurrent(windowHandle, NULL);
+    renderContextLock.unlock();
+    return error == GL_NO_ERROR;
+}
