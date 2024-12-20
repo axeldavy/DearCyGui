@@ -1,4 +1,4 @@
-from dearcygui.wrapper cimport imgui
+from dearcygui.wrapper cimport imgui, implot
 from .core cimport Context
 from .c_types cimport *
 
@@ -17,8 +17,8 @@ cdef void draw_line(Context context, void* drawlist,
     pos1[1] = y1 
     pos2[0] = x2
     pos2[1] = y2
-    (context.viewport).apply_current_transform(p1, pos1)
-    (context.viewport).apply_current_transform(p2, pos2)
+    (context.viewport).coordinate_to_screen(p1, pos1)
+    (context.viewport).coordinate_to_screen(p2, pos2)
 
     # Create imgui.ImVec2 points
     cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
@@ -37,8 +37,8 @@ cdef void draw_rect(Context context, void* drawlist,
     pos1[1] = y1
     pos2[0] = x2
     pos2[1] = y2
-    (context.viewport).apply_current_transform(pmin, pos1)
-    (context.viewport).apply_current_transform(pmax, pos2)
+    (context.viewport).coordinate_to_screen(pmin, pos1)
+    (context.viewport).coordinate_to_screen(pmax, pos2)
 
     # Create imgui.ImVec2 points
     cdef imgui.ImVec2 ipmin = imgui.ImVec2(pmin[0], pmin[1])
@@ -75,8 +75,8 @@ cdef void draw_rect_multicolor(Context context, void* drawlist,
     pos1[1] = y1
     pos2[0] = x2
     pos2[1] = y2
-    (context.viewport).apply_current_transform(pmin, pos1)
-    (context.viewport).apply_current_transform(pmax, pos2)
+    (context.viewport).coordinate_to_screen(pmin, pos1)
+    (context.viewport).coordinate_to_screen(pmax, pos2)
 
     cdef imgui.ImVec2 ipmin = imgui.ImVec2(pmin[0], pmin[1])
     cdef imgui.ImVec2 ipmax = imgui.ImVec2(pmax[0], pmax[1])
@@ -111,9 +111,9 @@ cdef void draw_triangle(Context context, void* drawlist,
     pos2[1] = y2
     pos3[0] = x3
     pos3[1] = y3
-    (context.viewport).apply_current_transform(p1, pos1)
-    (context.viewport).apply_current_transform(p2, pos2)
-    (context.viewport).apply_current_transform(p3, pos3)
+    (context.viewport).coordinate_to_screen(p1, pos1)
+    (context.viewport).coordinate_to_screen(p2, pos2)
+    (context.viewport).coordinate_to_screen(p3, pos3)
 
     cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
     cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
@@ -150,10 +150,10 @@ cdef void draw_quad(Context context, void* drawlist,
     pos3[1] = y3
     pos4[0] = x4
     pos4[1] = y4
-    (context.viewport).apply_current_transform(p1, pos1)
-    (context.viewport).apply_current_transform(p2, pos2)
-    (context.viewport).apply_current_transform(p3, pos3)
-    (context.viewport).apply_current_transform(p4, pos4)
+    (context.viewport).coordinate_to_screen(p1, pos1)
+    (context.viewport).coordinate_to_screen(p2, pos2)
+    (context.viewport).coordinate_to_screen(p3, pos3)
+    (context.viewport).coordinate_to_screen(p4, pos4)
 
     cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
     cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
@@ -191,7 +191,7 @@ cdef void draw_circle(Context context, void* drawlist,
     pos[0] = x
     pos[1] = y
     radius = abs(radius)
-    (context.viewport).apply_current_transform(center, pos)
+    (context.viewport).coordinate_to_screen(center, pos)
 
     cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
     
@@ -221,10 +221,10 @@ cdef void draw_image_quad(Context context, void* drawlist,
     pos3[1] = y3
     pos4[0] = x4
     pos4[1] = y4
-    (context.viewport).apply_current_transform(p1, pos1)
-    (context.viewport).apply_current_transform(p2, pos2)
-    (context.viewport).apply_current_transform(p3, pos3)
-    (context.viewport).apply_current_transform(p4, pos4)
+    (context.viewport).coordinate_to_screen(p1, pos1)
+    (context.viewport).coordinate_to_screen(p2, pos2)
+    (context.viewport).coordinate_to_screen(p3, pos3)
+    (context.viewport).coordinate_to_screen(p4, pos4)
 
     cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
     cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
@@ -272,7 +272,7 @@ cdef void draw_regular_polygon(Context context, void* drawlist,
     cdef double[2] pos
     pos[0] = centerx 
     pos[1] = centery
-    (context.viewport).apply_current_transform(center, pos)
+    (context.viewport).coordinate_to_screen(center, pos)
 
     radius = abs(radius)
 
@@ -331,7 +331,7 @@ cdef void draw_star(Context context, void* drawlist,
     cdef double[2] pos
     pos[0] = centerx
     pos[1] = centery
-    (context.viewport).apply_current_transform(center, pos)
+    (context.viewport).coordinate_to_screen(center, pos)
     
     radius = abs(radius)
     inner_radius = min(radius, abs(inner_radius))
@@ -407,7 +407,7 @@ cdef void draw_text(Context context, void* drawlist,
     cdef double[2] coord
     coord[0] = x
     coord[1] = y
-    (context.viewport).apply_current_transform(pos, coord)
+    (context.viewport).coordinate_to_screen(pos, coord)
     
     # Create ImVec2 point
     cdef imgui.ImVec2 ipos = imgui.ImVec2(pos[0], pos[1])
@@ -442,10 +442,10 @@ cdef void draw_text_quad(Context context, void* drawlist,
     pos3[1] = y3
     pos4[0] = x4
     pos4[1] = y4
-    (context.viewport).apply_current_transform(p1, pos1)
-    (context.viewport).apply_current_transform(p2, pos2)
-    (context.viewport).apply_current_transform(p3, pos3)
-    (context.viewport).apply_current_transform(p4, pos4)
+    (context.viewport).coordinate_to_screen(p1, pos1)
+    (context.viewport).coordinate_to_screen(p2, pos2)
+    (context.viewport).coordinate_to_screen(p3, pos3)
+    (context.viewport).coordinate_to_screen(p4, pos4)
 
     # Get draw list for low-level operations
     cdef imgui.ImDrawList* draw_list = <imgui.ImDrawList*>drawlist
@@ -568,6 +568,7 @@ cdef void draw_text_quad(Context context, void* drawlist,
     # Pop font if pushed
     if font != NULL:
         imgui.PopFont()
+
 
 cdef void push_theme_color(ThemeCol idx, float r, float g, float b, float a) noexcept nogil:
     imgui.PushStyleColor(idx, imgui.ImVec4(r, g, b, a))

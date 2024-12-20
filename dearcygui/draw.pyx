@@ -236,8 +236,8 @@ cdef class DrawingClip(drawingItem):
         cdef float[2] p2
         cdef float scale
 
-        self.context.viewport.apply_current_transform(pmin, self._pmin)
-        self.context.viewport.apply_current_transform(pmax, self._pmax)
+        self.context.viewport.coordinate_to_screen(pmin, self._pmin)
+        self.context.viewport.coordinate_to_screen(pmax, self._pmax)
 
         cdef imgui.ImVec2 rect_min = (<imgui.ImDrawList*>drawlist).GetClipRectMin()
         cdef imgui.ImVec2 rect_max = (<imgui.ImDrawList*>drawlist).GetClipRectMax()
@@ -255,8 +255,8 @@ cdef class DrawingClip(drawingItem):
             unscaled_p1[1] = 0
             unscaled_p2[0] = 1
             unscaled_p2[1] = 0
-            self.context.viewport.apply_current_transform(p1, unscaled_p1)
-            self.context.viewport.apply_current_transform(p2, unscaled_p2)
+            self.context.viewport.coordinate_to_screen(p1, unscaled_p1)
+            self.context.viewport.coordinate_to_screen(p2, unscaled_p2)
             scale = p2[0] - p1[0]
             if not(self._no_global_scale):
                 scale /= self.context.viewport.global_scale
@@ -379,7 +379,7 @@ cdef class DrawingScale(drawingItem):
 
         cdef float[2] p
         if self._no_parent_scale:
-            self.context.viewport.apply_current_transform(p, self._shifts)
+            self.context.viewport.coordinate_to_screen(p, self._shifts)
             self.context.viewport.shifts[0] = <double>p[0]
             self.context.viewport.shifts[1] = <double>p[1]
         else:
@@ -561,10 +561,10 @@ cdef class DrawArrow(drawingItem):
         cdef float[2] tend
         cdef float[2] tcorner1
         cdef float[2] tcorner2
-        self.context.viewport.apply_current_transform(tstart, self._start)
-        self.context.viewport.apply_current_transform(tend, self._end)
-        self.context.viewport.apply_current_transform(tcorner1, self._corner1)
-        self.context.viewport.apply_current_transform(tcorner2, self._corner2)
+        self.context.viewport.coordinate_to_screen(tstart, self._start)
+        self.context.viewport.coordinate_to_screen(tend, self._end)
+        self.context.viewport.coordinate_to_screen(tcorner1, self._corner1)
+        self.context.viewport.coordinate_to_screen(tcorner2, self._corner2)
         cdef imgui.ImVec2 itstart = imgui.ImVec2(tstart[0], tstart[1])
         cdef imgui.ImVec2 itend  = imgui.ImVec2(tend[0], tend[1])
         cdef imgui.ImVec2 itcorner1 = imgui.ImVec2(tcorner1[0], tcorner1[1])
@@ -684,10 +684,10 @@ cdef class DrawBezierCubic(drawingItem):
         cdef float[2] p2
         cdef float[2] p3
         cdef float[2] p4
-        self.context.viewport.apply_current_transform(p1, self._p1)
-        self.context.viewport.apply_current_transform(p2, self._p2)
-        self.context.viewport.apply_current_transform(p3, self._p3)
-        self.context.viewport.apply_current_transform(p4, self._p4)
+        self.context.viewport.coordinate_to_screen(p1, self._p1)
+        self.context.viewport.coordinate_to_screen(p2, self._p2)
+        self.context.viewport.coordinate_to_screen(p3, self._p3)
+        self.context.viewport.coordinate_to_screen(p4, self._p4)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -792,9 +792,9 @@ cdef class DrawBezierQuadratic(drawingItem):
         cdef float[2] p1
         cdef float[2] p2
         cdef float[2] p3
-        self.context.viewport.apply_current_transform(p1, self._p1)
-        self.context.viewport.apply_current_transform(p2, self._p2)
-        self.context.viewport.apply_current_transform(p3, self._p3)
+        self.context.viewport.coordinate_to_screen(p1, self._p1)
+        self.context.viewport.coordinate_to_screen(p2, self._p2)
+        self.context.viewport.coordinate_to_screen(p3, self._p3)
         cdef imgui.ImVec2 ip1 = imgui.ImVec2(p1[0], p1[1])
         cdef imgui.ImVec2 ip2 = imgui.ImVec2(p2[0], p2[1])
         cdef imgui.ImVec2 ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -906,7 +906,7 @@ cdef class DrawCircle(drawingItem):
         radius = abs(radius)
 
         cdef float[2] center
-        self.context.viewport.apply_current_transform(center, self._center)
+        self.context.viewport.coordinate_to_screen(center, self._center)
         cdef imgui.ImVec2 icenter = imgui.ImVec2(center[0], center[1])
         if self._fill & imgui.IM_COL32_A_MASK != 0:
             (<imgui.ImDrawList*>drawlist).AddCircleFilled(icenter, radius, <imgui.ImU32>self._fill, self._segments)
@@ -1077,7 +1077,7 @@ cdef class DrawEllipse(drawingItem):
         cdef int i
         cdef float[2] p
         for i in range(<int>self._points.size()):
-            self.context.viewport.apply_current_transform(p, self._points[i].p)
+            self.context.viewport.coordinate_to_screen(p, self._points[i].p)
             transformed_points.push_back(imgui.ImVec2(p[0], p[1]))
         # TODO imgui requires clockwise order for correct AA
         # Reverse order if needed
@@ -1506,18 +1506,18 @@ cdef class DrawImage(drawingItem):
         cdef double actual_height
 
         if self._width >= 0 and self._height >= 0:
-            self.context.viewport.apply_current_transform(p1, self._p1)
-            self.context.viewport.apply_current_transform(p2, self._p2)
-            self.context.viewport.apply_current_transform(p3, self._p3)
-            self.context.viewport.apply_current_transform(p4, self._p4)
+            self.context.viewport.coordinate_to_screen(p1, self._p1)
+            self.context.viewport.coordinate_to_screen(p2, self._p2)
+            self.context.viewport.coordinate_to_screen(p3, self._p3)
+            self.context.viewport.coordinate_to_screen(p4, self._p4)
         else:
-            self.context.viewport.apply_current_transform(center, self._center)
+            self.context.viewport.coordinate_to_screen(center, self._center)
             actual_width = -self._width
             actual_height = -self._height
             if self._height >= 0 or self._width >= 0:
-                self.context.viewport.apply_current_transform(p1, self._p1)
-                self.context.viewport.apply_current_transform(p2, self._p2)
-                self.context.viewport.apply_current_transform(p3, self._p3)
+                self.context.viewport.coordinate_to_screen(p1, self._p1)
+                self.context.viewport.coordinate_to_screen(p2, self._p2)
+                self.context.viewport.coordinate_to_screen(p3, self._p3)
                 if actual_width < 0:
                     # compute the coordinate space width
                     actual_width = sqrt(
@@ -1740,10 +1740,10 @@ cdef class DrawLine(drawingItem):
         cdef float[2] center
         cdef float dx, dy
         if self._length >= 0:
-            self.context.viewport.apply_current_transform(p1, self._p1)
-            self.context.viewport.apply_current_transform(p2, self._p2)
+            self.context.viewport.coordinate_to_screen(p1, self._p1)
+            self.context.viewport.coordinate_to_screen(p2, self._p2)
         else:
-            self.context.viewport.apply_current_transform(center, self._center)
+            self.context.viewport.coordinate_to_screen(center, self._center)
             dx = -0.5 * cos(self._direction) * self._length
             dy = -0.5 * sin(self._direction) * self._length
             p1[0] = center[0] - dx
@@ -1867,14 +1867,14 @@ cdef class DrawPolyline(drawingItem):
         cdef imgui.ImVec2 ip1
         cdef imgui.ImVec2 ip1_
         cdef imgui.ImVec2 ip2
-        self.context.viewport.apply_current_transform(p, self._points[0].p)
+        self.context.viewport.coordinate_to_screen(p, self._points[0].p)
         ip1 = imgui.ImVec2(p[0], p[1])
         ip1_ = ip1
         # imgui requires clockwise order + convexity for correct AA of AddPolyline
         # Thus we only call AddLine
         cdef int i
         for i in range(1, <int>self._points.size()):
-            self.context.viewport.apply_current_transform(p, self._points[i].p)
+            self.context.viewport.coordinate_to_screen(p, self._points[i].p)
             ip2 = imgui.ImVec2(p[0], p[1])
             (<imgui.ImDrawList*>drawlist).AddLine(ip1, ip2, <imgui.ImU32>self._color, thickness)
             ip1 = ip2
@@ -2022,7 +2022,7 @@ cdef class DrawPolygon(drawingItem):
         cdef bint ccw
         ipoints.reserve(self._points.size())
         for i in range(<int>self._points.size()):
-            self.context.viewport.apply_current_transform(p, self._points[i].p)
+            self.context.viewport.coordinate_to_screen(p, self._points[i].p)
             ip = imgui.ImVec2(p[0], p[1])
             ipoints.push_back(ip)
 
@@ -2217,10 +2217,10 @@ cdef class DrawQuad(drawingItem):
         cdef imgui.ImVec2 ip4
         cdef bint ccw
 
-        self.context.viewport.apply_current_transform(p1, self._p1)
-        self.context.viewport.apply_current_transform(p2, self._p2)
-        self.context.viewport.apply_current_transform(p3, self._p3)
-        self.context.viewport.apply_current_transform(p4, self._p4)
+        self.context.viewport.coordinate_to_screen(p1, self._p1)
+        self.context.viewport.coordinate_to_screen(p2, self._p2)
+        self.context.viewport.coordinate_to_screen(p3, self._p3)
+        self.context.viewport.coordinate_to_screen(p4, self._p4)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])
@@ -2482,8 +2482,8 @@ cdef class DrawRect(drawingItem):
         cdef imgui.ImU32 col_bot_left = self._color_bottom_left
         cdef imgui.ImU32 col_bot_right = self._color_bottom_right
 
-        self.context.viewport.apply_current_transform(pmin, self._pmin)
-        self.context.viewport.apply_current_transform(pmax, self._pmax)
+        self.context.viewport.coordinate_to_screen(pmin, self._pmin)
+        self.context.viewport.coordinate_to_screen(pmax, self._pmax)
         ipmin = imgui.ImVec2(pmin[0], pmin[1])
         ipmax = imgui.ImVec2(pmax[0], pmax[1])
 
@@ -2716,7 +2716,7 @@ cdef class DrawRegularPolygon(drawingItem):
         else:
             radius = radius * self.context.viewport.size_multiplier
 
-        self.context.viewport.apply_current_transform(center, self._center)
+        self.context.viewport.coordinate_to_screen(center, self._center)
         icenter = imgui.ImVec2(center[0], center[1])
 
         if num_points == 1:
@@ -2964,7 +2964,7 @@ cdef class DrawStar(drawingItem):
             inner_radius = abs(inner_radius) * self.context.viewport.size_multiplier
         inner_radius = min(radius, inner_radius)
 
-        self.context.viewport.apply_current_transform(center, self._center)
+        self.context.viewport.coordinate_to_screen(center, self._center)
         icenter = imgui.ImVec2(center[0], center[1])
 
         ipoints.reserve(self._points.size())
@@ -3112,7 +3112,7 @@ cdef class DrawText(drawingItem):
 
         cdef float[2] p
 
-        self.context.viewport.apply_current_transform(p, self._pos)
+        self.context.viewport.coordinate_to_screen(p, self._pos)
         cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
         cdef float size = self._size
         if size > 0:
@@ -3273,9 +3273,9 @@ cdef class DrawTriangle(drawingItem):
         cdef imgui.ImVec2 ip3
         cdef bint ccw
 
-        self.context.viewport.apply_current_transform(p1, self._p1)
-        self.context.viewport.apply_current_transform(p2, self._p2)
-        self.context.viewport.apply_current_transform(p3, self._p3)
+        self.context.viewport.coordinate_to_screen(p1, self._p1)
+        self.context.viewport.coordinate_to_screen(p2, self._p2)
+        self.context.viewport.coordinate_to_screen(p3, self._p3)
         ip1 = imgui.ImVec2(p1[0], p1[1])
         ip2 = imgui.ImVec2(p2[0], p2[1])
         ip3 = imgui.ImVec2(p3[0], p3[1])

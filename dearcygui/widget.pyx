@@ -414,8 +414,8 @@ cdef class DrawInvisibleButton(drawingItem):
         # Get button position in screen space
         cdef float[2] p1
         cdef float[2] p2
-        self.context.viewport.apply_current_transform(p1, self._p1)
-        self.context.viewport.apply_current_transform(p2, self._p2)
+        self.context.viewport.coordinate_to_screen(p1, self._p1)
+        self.context.viewport.coordinate_to_screen(p2, self._p2)
         cdef imgui.ImVec2 top_left
         cdef imgui.ImVec2 bottom_right
         cdef imgui.ImVec2 center
@@ -497,7 +497,8 @@ cdef class DrawInvisibleButton(drawingItem):
 
 
         cdef Vec2 cur_mouse_pos
-        cdef implot.ImPlotPoint cur_mouse_pos_plot
+        cdef float[2] screen_p
+        cdef double[2] coordinate_p
 
         cdef bool hovered = False
         cdef bool held = False
@@ -519,26 +520,22 @@ cdef class DrawInvisibleButton(drawingItem):
         self.state.cur.active = activated or held
         self.state.cur.hovered = hovered
         if activated:
-            if self.context.viewport.in_plot:
-                # IMPLOT_AUTO uses current axes
-                cur_mouse_pos_plot = \
-                    implot.GetPlotMousePos(implot.IMPLOT_AUTO,
-                                           implot.IMPLOT_AUTO)
-                cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
-                cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
-                self._initial_mouse_position = cur_mouse_pos
-            else:
-                self._initial_mouse_position = ImVec2Vec2(imgui.GetMousePos())
+            cur_mouse_pos = ImVec2Vec2(imgui.GetMousePos())
+            screen_p[0] = cur_mouse_pos.x
+            screen_p[1] = cur_mouse_pos.y
+            self.context.viewport.screen_to_coordinate(coordinate_p, screen_p)
+            cur_mouse_pos.x = coordinate_p[0]
+            cur_mouse_pos.y = coordinate_p[1]
+            self._initial_mouse_position = cur_mouse_pos
         cdef bint dragging = False
         cdef int i
         if self.state.cur.active:
-            if self.context.viewport.in_plot:
-                cur_mouse_pos_plot = implot.GetPlotMousePos(implot.IMPLOT_AUTO,
-                                                            implot.IMPLOT_AUTO)
-                cur_mouse_pos.x = <float>cur_mouse_pos_plot.x
-                cur_mouse_pos.y = <float>cur_mouse_pos_plot.y
-            else:
-                cur_mouse_pos = ImVec2Vec2(imgui.GetMousePos())
+            cur_mouse_pos = ImVec2Vec2(imgui.GetMousePos())
+            screen_p[0] = cur_mouse_pos.x
+            screen_p[1] = cur_mouse_pos.y
+            self.context.viewport.screen_to_coordinate(coordinate_p, screen_p)
+            cur_mouse_pos.x = coordinate_p[0]
+            cur_mouse_pos.y = coordinate_p[1]
             dragging = cur_mouse_pos.x != self._initial_mouse_position.x or \
                        cur_mouse_pos.y != self._initial_mouse_position.y
             for i in range(<int>imgui.ImGuiMouseButton_COUNT):

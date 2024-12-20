@@ -18,8 +18,11 @@ global_scale (float):
     transform.
 
 scales/shifts (double[2]):
-    Current coordinate space transform. The helpers already include
-    this transform.
+    Current coordinate space transform (when not in a plot, else
+    implot handles the transform).
+    The helpers already include this transform.
+    To apply the transform, call viewport.coordinate_to_screen.
+    To reverse the transform, call viewport.screen_to_coordinate.
 
 thickness_multiplier (float):
     Factor to apply to line thicknesses. Already includes global_scale.
@@ -33,10 +36,10 @@ size_multiplier (float):
     The helpers DO NOT include this transform.
 
 window_pos (Vec2):
-    Position of parent window in viewport coordinates.
+    Position of parent window in viewport screen coordinates.
 
 parent_pos (Vec2):
-    Position of direct parent in viewport coordinates.
+    Position of direct parent in viewport screen coordinates.
     Note the coordinate transform already takes that into account,
     and the coordinates passed are relative to the parent, and
     its transform.
@@ -207,11 +210,11 @@ cdef void draw_image_quad(Context context, void* drawlist,
 
 
 cdef void draw_regular_polygon(Context context, void* drawlist,
-                             double centerx, double centery,
-                             double radius, double direction,  
-                             int num_points,
-                             unsigned int color, unsigned int fill_color,
-                             float thickness) noexcept nogil
+                               double centerx, double centery,
+                               double radius, double direction,  
+                               int num_points,
+                               unsigned int color, unsigned int fill_color,
+                               float thickness) noexcept nogil
 """
     Draw a regular polygon with n points.
 

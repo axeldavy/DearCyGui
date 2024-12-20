@@ -305,7 +305,8 @@ cdef class Viewport(baseItem):
     cdef ThemeCategories _current_theme_activation_condition_category
     cdef float _scale
     ### public methods ###
-    cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil
+    cdef void coordinate_to_screen(self, float *dst_p, double[2] src_p) noexcept nogil
+    cdef void screen_to_coordinate(self, double *dst_p, float[2] src_p) noexcept nogil
     cdef void push_pending_theme_actions(self, ThemeEnablers, ThemeCategories) noexcept nogil
     cdef void push_pending_theme_actions_on_subset(self, int, int) noexcept nogil
     cdef void pop_applied_pending_theme_actions(self) noexcept nogil

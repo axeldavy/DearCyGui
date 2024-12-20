@@ -3162,7 +3162,7 @@ cdef class Viewport(baseItem):
             self.skipped_last_frame = False
         return
 
-    cdef void apply_current_transform(self, float *dst_p, double[2] src_p) noexcept nogil:
+    cdef void coordinate_to_screen(self, float *dst_p, double[2] src_p) noexcept nogil:
         """
         Used during rendering as helper to convert drawing coordinates to pixel coordinates
         """
@@ -3187,6 +3187,26 @@ cdef class Viewport(baseItem):
             # When in a plot, PlotToPixel already handles that.
             dst_p[0] = <float>p[0]
             dst_p[1] = <float>p[1]
+
+    cdef void screen_to_coordinate(self, double *dst_p, float[2] src_p) noexcept nogil:
+        """
+        Used during rendering as helper to convert pixel coordinates to drawing coordinates
+        """
+        # assumes imgui + viewport mutex are held
+        cdef imgui.ImVec2 screen_pos
+        cdef implot.ImPlotPoint plot_pos
+        if self.in_plot:
+            screen_pos = imgui.ImVec2(src_p[0], src_p[1])
+            # IMPLOT_AUTO uses current axes
+            plot_pos = \
+                implot.PixelsToPlot(screen_pos,
+                                    implot.IMPLOT_AUTO,
+                                    implot.IMPLOT_AUTO)
+            dst_p[0] = plot_pos.x
+            dst_p[1] = plot_pos.y
+        else:
+            dst_p[0] = <double>(src_p[0] - self.shifts[0]) / <double>self.scales[0]
+            dst_p[1] = <double>(src_p[1] - self.shifts[1]) / <double>self.scales[1]
 
     cdef void push_pending_theme_actions(self,
                                          ThemeEnablers theme_activation_condition_enabled,
