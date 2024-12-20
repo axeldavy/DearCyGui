@@ -6138,6 +6138,7 @@ def texture_registry(*, label: str =None, user_data: Any =None, show: bool =Fals
         warnings.warn('id keyword renamed to tag', DeprecationWarning, 2)
         tag=kwargs['id']
 
+    return dcg.PlaceHolderParent(CONTEXT)
     #return texture_registry(label=label, user_data=user_data, show=show, **kwargs)
 
 def theme(*, label: str =None, user_data: Any =None, **kwargs) -> Union[int, str]:

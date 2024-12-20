@@ -26,7 +26,7 @@ from libc.math cimport INFINITY
 from .core cimport baseHandler, drawingItem, uiItem, \
     lock_gil_friendly, read_point, clear_obj_vector, append_obj_vector, \
     draw_drawing_children, draw_menubar_children, \
-    draw_ui_children, \
+    draw_ui_children, button_area, \
     draw_tab_children, Callback, \
     Context, read_vec4, read_point, \
     SharedValue, update_current_mouse_states
@@ -38,56 +38,6 @@ from .types cimport *
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
-
-"""
-InvisibleDrawButton: main difference with InvisibleButton
-is that it doesn't use the cursor and doesn't change
-the window maximum content area. In addition it allows
-overlap of InvisibleDrawButtons and considers itself
-in a pressed state as soon as the mouse is down.
-"""
-
-cdef extern from * nogil:
-    """
-    bool InvisibleDrawButton(int uuid, const ImVec2& pos, const ImVec2& size,
-                                           ImGuiButtonFlags flags,
-                                           bool catch_if_hovered,
-                                           bool *out_hovered, bool *out_held)
-    {
-        ImGuiContext& g = *GImGui;
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        const ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
-        const ImRect bb(pos, end);
-
-        const ImGuiID id = window->GetID(uuid);
-        ImGui::KeepAliveID(id);
-
-        // Catch mouse if we are just in front of it
-        if (catch_if_hovered && ImGui::IsMouseHoveringRect(bb.Min, bb.Max)) {
-            // If we are in front of a window, and the button is not
-            // made inside the window (for example viewport front drawlist),
-            // the will catch hovering and prevent activation. This is why we
-            // need to set HoveredWindow.
-            // After we have activation, or if the click initiated outside of any
-            // window, this is not needed anymore.
-            g.HoveredWindow = window;
-            // Replace any item that thought was hovered
-            ImGui::SetHoveredID(id);
-            // Enable ourselves to catch activation if clicked.
-            ImGui::ClearActiveID();
-            // Ignore if another item had registered the click for
-            // themselves
-            flags |= ImGuiButtonFlags_NoTestKeyOwner;
-        }
-
-        flags |= ImGuiButtonFlags_AllowOverlap | ImGuiButtonFlags_PressedOnClick;
-
-        bool pressed = ImGui::ButtonBehavior(bb, id, out_hovered, out_held, flags);
-
-        return pressed;
-    }
-    """
-    bint InvisibleDrawButton(int, imgui.ImVec2&, imgui.ImVec2&, imgui.ImGuiButtonFlags, bint, bint *, bint *)
 
 
 
@@ -136,7 +86,7 @@ cdef class DrawInvisibleButton(drawingItem):
     where top left is (0, 0) and bottom right is (1, 1).
     """
     def __cinit__(self):
-        self._button = 1
+        self._button = 31
         self.state.cap.can_be_active = True
         self.state.cap.can_be_clicked = True
         self.state.cap.can_be_dragged = True
@@ -156,12 +106,14 @@ cdef class DrawInvisibleButton(drawingItem):
         Mouse button mask that makes the invisible button
         active and triggers the item's callback.
 
-        Default is left-click.
+        Default is all buttons
 
         The mask is an (OR) combination of
         1: left button
         2: right button
         4: middle button
+        8: X1
+        16: X2
         (See also MouseButtonMask)
         """
         cdef unique_lock[recursive_mutex] m
@@ -172,8 +124,7 @@ cdef class DrawInvisibleButton(drawingItem):
     def button(self, MouseButtonMask value):
         cdef unique_lock[recursive_mutex] m
         lock_gil_friendly(m, self.mutex)
-        if <int>value < 0 or <int>value > 7:
-            # X1 and X2 not supported
+        if <int>value < 0 or <int>value > 31:
             raise ValueError(f"Invalid button mask {value} passed to {self}")
         self._button = <imgui.ImGuiButtonFlags>value
 
@@ -552,13 +503,16 @@ cdef class DrawInvisibleButton(drawingItem):
         cdef bool held = False
         cdef bint activated
         if not(self._no_input):
-            activated = InvisibleDrawButton(self.uuid,
-                                            top_left,
-                                            size,
-                                            self._button,
-                                            self._capture_mouse,
-                                            &hovered,
-                                            &held)
+            activated = button_area(self.context,
+                                    self.uuid,
+                                    ImVec2Vec2(top_left),
+                                    ImVec2Vec2(size),
+                                    self._button,
+                                    True,
+                                    True,
+                                    self._capture_mouse,
+                                    &hovered,
+                                    &held)
         else:
             activated = False
         self._capture_mouse = False

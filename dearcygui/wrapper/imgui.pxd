@@ -2185,3 +2185,6 @@ cdef extern from "imgui_internal.h" namespace "ImGui" nogil:
     ImGuiID GetActiveID()
     ImGuiID GetHoveredID()
     ImGuiID GetFocusID()
+
+cdef extern from "imgui_internal.h" nogil:
+    int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end)

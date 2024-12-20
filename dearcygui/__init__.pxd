@@ -13,3 +13,6 @@ from dearcygui.widget cimport *
 
 # We do not import imgui_types on purpose,
 # to enable cython interfacing without imgui
+# instead we provide this helper to do manual
+# imgui calls
+from dearcygui cimport imgui

@@ -728,6 +728,12 @@ cdef class Context:
             return None
         return parent_queue[0]
 
+    cdef bint c_is_key_down(self, int key) noexcept nogil:
+        return imgui.IsKeyDown(<imgui.ImGuiKey>key)
+
+    cdef int c_get_keymod_mask(self) noexcept nogil:
+        return <int>imgui.GetIO().KeyMods
+
     def is_key_down(self, key : Key, keymod : KeyMod = None):
         """
         Check if a key is being held down.
@@ -753,6 +759,9 @@ cdef class Context:
         if keymod is not None and (<int>keymod & imgui.ImGuiMod_Mask_) != imgui.GetIO().KeyMods:
             return False
         return imgui.IsKeyDown(keycode)
+
+    cdef bint c_is_key_pressed(self, int key, bint repeat) noexcept nogil:
+        return imgui.IsKeyPressed(<imgui.ImGuiKey>key, repeat)
 
     def is_key_pressed(self, key : Key, keymod : KeyMod = None, bint repeat=True):
         """
@@ -782,6 +791,9 @@ cdef class Context:
             return False
         return imgui.IsKeyPressed(keycode, repeat)
 
+    cdef bint c_is_key_released(self, int key) noexcept nogil:
+        return imgui.IsKeyReleased(<imgui.ImGuiKey>key)
+
     def is_key_released(self, key : Key, keymod : KeyMod = None):
         """
         Check if a key was released (went from Down to !Down).
@@ -808,6 +820,9 @@ cdef class Context:
             return True
         return imgui.IsKeyReleased(keycode)
 
+    cdef bint c_is_mouse_down(self, int button) noexcept nogil:
+        return imgui.IsMouseDown(button)
+
     def is_mouse_down(self, MouseButton button):
         """
         Check if a mouse button is held down.
@@ -826,6 +841,9 @@ cdef class Context:
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.IsMouseDown(<int>button)
+
+    cdef bint c_is_mouse_clicked(self, int button, bint repease) noexcept nogil:
+        return imgui.IsMouseClicked(button, repease)
 
     def is_mouse_clicked(self, MouseButton button, bint repeat=False):
         """
@@ -867,6 +885,9 @@ cdef class Context:
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.IsMouseDoubleClicked(<int>button)
 
+    cdef int c_get_mouse_clicked_count(self, int button) noexcept nogil:
+        return imgui.GetMouseClickedCount(button)
+
     def get_mouse_clicked_count(self, MouseButton button):
         """
         Get the number of times a mouse button is clicked in a row.
@@ -886,6 +907,9 @@ cdef class Context:
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.GetMouseClickedCount(<int>button)
 
+    cdef bint c_is_mouse_released(self, int button) noexcept nogil:
+        return imgui.IsMouseReleased(button)
+
     def is_mouse_released(self, MouseButton button):
         """
         Check if a mouse button was released (went from Down to !Down).
@@ -904,6 +928,13 @@ cdef class Context:
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.IsMouseReleased(<int>button)
+
+    cdef Vec2 c_get_mouse_pos(self) noexcept nogil:
+        return ImVec2Vec2(imgui.GetMousePos())
+
+    cdef Vec2 c_get_mouse_prev_pos(self) noexcept nogil:
+        cdef imgui.ImGuiIO io = imgui.GetIO()
+        return ImVec2Vec2(io.MousePosPrev)
 
     def get_mouse_position(self):
         """
@@ -926,6 +957,9 @@ cdef class Context:
         cdef double[2] coord = [pos.x, pos.y]
         return Coord.build(coord)
 
+    cdef bint c_is_mouse_dragging(self, int button, float lock_threshold) noexcept nogil:
+        return imgui.IsMouseDragging(button, lock_threshold)
+
     def is_mouse_dragging(self, MouseButton button, float lock_threshold=-1.):
         """
         Check if the mouse is dragging.
@@ -946,6 +980,9 @@ cdef class Context:
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
         return imgui.IsMouseDragging(<int>button, lock_threshold)
+
+    cdef Vec2 c_get_mouse_drag_delta(self, int button, float threshold) noexcept nogil:
+        return ImVec2Vec2(imgui.GetMouseDragDelta(button, threshold))
 
     def get_mouse_drag_delta(self, MouseButton button, float lock_threshold=-1.):
         """
@@ -1032,6 +1069,7 @@ cdef class Context:
         ensure_correct_imgui_context(self)
         lock_gil_friendly(m, self.imgui_mutex)
         imgui.SetClipboardText(value_str.c_str())
+
 
 
 cdef class baseItem:
@@ -1157,7 +1195,8 @@ cdef class baseItem:
                                 self.context._item_unused_configure_args_callback(self, {"parent": parent})
                                 pass
                             else:
-                                raise(e)
+                                if not(ignore_if_fail):
+                                    raise(e)
                         except TypeError as e:
                             if not(ignore_if_fail):
                                 raise(e)
@@ -3617,6 +3656,249 @@ cdef class drawingItem(baseItem):
         cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
         return
 
+
+"""
+InvisibleDrawButton: main difference with InvisibleButton
+is that it doesn't use the cursor and doesn't change
+the window maximum content area. In addition it allows
+overlap of InvisibleDrawButtons and considers itself
+in a pressed state as soon as the mouse is down.
+"""
+
+cdef extern from * nogil:
+    """
+    bool InvisibleDrawButton(int uuid,
+                             const ImVec2& pos,
+                             const ImVec2& size,
+                             ImGuiID prev_last_id_button_catch[5],
+                             ImGuiID cur_last_id_button_catch[5],
+                             int button_mask,
+                             bool catch_hover,
+                             bool retain_hovership,
+                             bool catch_active,
+                             bool *out_hovered,
+                             bool *out_held)
+    {
+        ImGuiContext& g = *GImGui;
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        const ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
+        const ImRect bb(pos, end);
+        int i;
+        bool toplevel = false;
+
+        const ImGuiID id = window->GetID(uuid);
+        ImGui::KeepAliveID(id);
+
+        bool hovered, pressed, held;
+        bool mouse_down = false;
+        hovered = ImGui::IsMouseHoveringRect(bb.Min, bb.Max);
+        if ((!hovered || g.HoveredWindow != window) && g.ActiveId != id) {
+            // Fast path
+            return false;
+        }
+
+        // We are either hovered, or active.
+        if (g.HoveredWindow != window)
+            hovered = false;
+
+        if (button_mask == 0) {
+            // No button mask, we are not interested
+            // in the button state, and want a simple
+            // hover test.
+            *out_hovered |= hovered;
+            return false;
+        }
+
+        // Retrieve for each registered button the toplevel
+        // status.
+        for (i=0; i<5; i++) {
+            if (button_mask & (1 << i)) {
+                cur_last_id_button_catch[i] = id;
+                if (prev_last_id_button_catch[i] == id) {
+                    toplevel = true;
+                    break;
+                }
+            }
+        }
+
+        // Prevent over IDs to be toplevel
+        if (hovered && retain_hovership) {
+            for (i=0; i<5; i++) {
+                if (button_mask & (1 << i)) {
+                    prev_last_id_button_catch[i] = id;
+                }
+            }
+            toplevel = true;
+            if (g.HoveredIdPreviousFrame == id)
+                ImGui::SetHoveredID(id);
+        }
+
+        // Another item is hovered.
+        if (g.HoveredId != 0 && g.HoveredId != id) {
+            if (catch_hover && toplevel) {
+                // We are toplevel for at least
+                // one registered button.
+                ImGui::SetHoveredID(id);
+            }
+        }
+
+        hovered = hovered && toplevel;
+
+        if (hovered && g.HoveredId == 0)
+            ImGui::SetHoveredID(id);
+
+        if (g.ActiveId != 0 && g.ActiveId != id && !catch_active) {
+            // Another item is active, and we are not
+            // allowed to catch active.
+            *out_hovered |= hovered;
+            return false;
+        }
+
+        for (i=0; i<5; i++) {
+            if (button_mask & (1 << i)) {
+                if (g.IO.MouseDown[i]) {
+                    mouse_down = true;
+                    break;
+                }
+            }
+        }
+
+        if (hovered && mouse_down) {
+            // we are hovered, toplevel and the mouse is down
+            if (g.ActiveId == 0 || catch_active) {
+                // We are not active, and we are hovered.
+                // We are now active.
+                ImGui::SetFocusID(id, window);
+                ImGui::FocusWindow(window);
+                ImGui::SetActiveID(id, window);
+                // TODO: KeyOwner ??
+                pressed = true; // Pressed on click
+            }
+        }
+
+        if (!mouse_down && g.ActiveId == id) {
+            // We are not hovered, but we are active.
+            // We are no longer active.
+            ImGui::ClearActiveID();
+        }
+
+        *out_hovered |= hovered;
+        *out_held |= g.ActiveId == id;
+
+        return pressed;
+    }
+    """
+    bint InvisibleDrawButton(int uuid,
+                             imgui.ImVec2& pos,
+                             imgui.ImVec2& size,
+                             unsigned int[5] &prev_last_id_button_catch,
+                             unsigned int[5] &cur_last_id_button_catch,
+                             int button_mask,
+                             bint catch_hover,
+                             bint retain_hovership,
+                             bint catch_active,
+                             bool *out_hovered,
+                             bool *out_held)
+
+cdef bint button_area(Context context,
+                      int uuid,
+                      Vec2 pos,
+                      Vec2 size,
+                      int button_mask,
+                      bint catch_hover,
+                      bint retain_hovership,
+                      bint catch_active,
+                      bool *out_hovered,
+                      bool *out_held) noexcept nogil:
+    """
+    Register a button area and check its status.
+    Must be called in draw() everytime the item is rendered.
+
+    Context: the context instance
+    uuid: Must be unique (for example the item uuid for which the button is registered).
+        If you need to register several buttons for an item, you have two choices:
+        - Generate a different uuid for each button. Each will have a different state.
+        - Share the uuid for all buttons. In that case they will share the active (held) state.
+    pos: position of the top left corner of the button in screen space (top-down y)
+    size: size of the button in pixels
+    button_mask: binary mask for the 5 possible buttons (0 = left, 1 = right, 2 = middle)
+        pressed and held will only react to mouse buttons in button_mask.
+        If a button is not in button_mask, it allows another overlapped
+        button to take the active state.
+    catch_hover:
+        If True, when hovered and top level for at least one button,
+        will catch the hover state even if another item is hovered.
+        For instance if you are overlapping a plot, the plot
+        will be considered hovered if catch_hover=False, and
+        not hovered if catch_hover=True. This does not affect
+        other items using this function, as it allows several
+        items to be hovered at the same time if they register
+        different button masks.
+    retain_hovership:
+        If True, when hovered for at least one button the previous frame,
+        will retain the hovered state.
+        Other items with similar button_mask will not considered
+        themselves top-level even if submitted after during rendering,
+        and thus will not be hovered.
+        if False, only the top-level item will be hovered in case of overlap,
+        no matter which item was hovered the previous frame.
+        In general you want to set this to True, unless you have
+        small buttons completly included in other large buttons,
+        in which can you want to set this to False to be able
+        to access the small buttons.
+    catch_active:
+        Usually one want in case of overlapping items to retain the
+        active state on the first item that registers the active state.
+        This state blocks this behaviour by catching the active state
+        even if another item is active. active == held == registered itself
+        when the mouse clicked on it and no other item stole activation,
+        and the mouse is not released.
+    out_hovered:
+        WARNING: Should be initialized to False before this call.
+        Will be set to True if the button is hovered.
+        if button_mask is 0, a simple hovering test is performed,
+        without checking the hovering state of other items.
+        Else, the button will be hovered only if it is toplevel
+        for at least one button in button_mask (+ behaviour described
+        in catch_hover)
+    out_held:
+        WARNING: Should be initialized to False before this call.
+        Will be set to True if the button is held. A button is held
+        if it was clicked on and the mouse is not released. See
+        the description of catch_active.
+
+    out_held and out_hovered must be initialized outside
+    the function (to False), this behaviour enables to accumulate
+    the states for several buttons. Their content has no impact
+    of the logic inside the function.
+
+    Returns True if the button was pressed (clicked on), False else.
+    Only the first frame of the click is considered.
+
+    This function is very fast and in most cases will be a simple
+    rectangular boundary check.
+
+    Use cases:
+    - Simple hover test: button_mask = 0
+    - Many buttons of similar sizes with overlapping and equal priority:
+        retain_hovership = True, catch_hover = True, catch_active = False
+    - Creating a button in front of the mouse to catch the click:
+        catch_active = True
+
+    button_mask can be played with in order to have overlapping
+    buttons of various sizes listening to separate buttons.
+    """
+    return InvisibleDrawButton(uuid,
+                               Vec2ImVec2(pos),
+                               Vec2ImVec2(size),
+                               context.prev_last_id_button_catch,
+                               context.cur_last_id_button_catch,
+                               button_mask,
+                               catch_hover,
+                               retain_hovership,
+                               catch_active,
+                               out_hovered,
+                               out_held)
 
 """
 Sources

@@ -82,6 +82,8 @@ cdef class Context:
     cdef void* imgui_context # imgui.ImGuiContext
     cdef void* implot_context # implot.ImPlotContext
     cdef void* imnodes_context # imnodes.ImNodesContext
+    cdef unsigned int[5] prev_last_id_button_catch # for custom buttons
+    cdef unsigned int[5] cur_last_id_button_catch
     ### protected variables ###
     cdef Callback _on_close_callback
     cdef object _item_creation_callback
@@ -111,6 +113,24 @@ cdef class Context:
     cpdef void pop_next_parent(self)
     cpdef object fetch_parent_queue_back(self)
     cpdef object fetch_parent_queue_front(self)
+    # Helpers to write custom handlers without locking the gil
+    # No validation is performed on the arguments.
+    # button, key and key_chord are imgui values that should
+    # be obtained by getting the int representation of the corresponding
+    # Button, Key or KeyChord enum.
+    # Must be called from inside draw()
+    cdef Vec2 c_get_mouse_pos(self) noexcept nogil # negative pos means invalid
+    cdef Vec2 c_get_mouse_prev_pos(self) noexcept nogil  
+    cdef Vec2 c_get_mouse_drag_delta(self, int button, float threshold) noexcept nogil
+    cdef bint c_is_mouse_down(self, int button) noexcept nogil
+    cdef bint c_is_mouse_clicked(self, int button, bint repeat) noexcept nogil
+    cdef int c_get_mouse_clicked_count(self, int button) noexcept nogil
+    cdef bint c_is_mouse_released(self, int button) noexcept nogil
+    cdef bint c_is_mouse_dragging(self, int button, float delta) noexcept nogil
+    cdef bint c_is_key_down(self, int key) noexcept nogil
+    cdef int c_get_keymod_mask(self) noexcept nogil
+    cdef bint c_is_key_pressed(self, int key, bint repeat) noexcept nogil
+    cdef bint c_is_key_released(self, int key) noexcept nogil
 
 """
 Main item types
@@ -386,6 +406,96 @@ cdef class drawingItem(baseItem):
     cdef bint _show
     cdef void draw(self, void *) noexcept nogil # imgui.ImDrawList*
     pass
+
+
+cdef bint button_area(Context context,
+                      int uuid,
+                      Vec2 pos,
+                      Vec2 size,
+                      int button_mask,
+                      bint catch_hover,
+                      bint retain_hovership,
+                      bint catch_active,
+                      bool *out_hovered,
+                      bool *out_held) noexcept nogil
+"""
+    Register a button area and check its status.
+    Must be called in draw() everytime the item is rendered.
+
+    Context: the context instance
+    uuid: Must be unique (for example the item uuid for which the button is registered).
+        If you need to register several buttons for an item, you have two choices:
+        - Generate a different uuid for each button. Each will have a different state.
+        - Share the uuid for all buttons. In that case they will share the active (held) state.
+    pos: position of the top left corner of the button in screen space (top-down y)
+    size: size of the button in pixels
+    button_mask: binary mask for the 5 possible buttons (0 = left, 1 = right, 2 = middle)
+        pressed and held will only react to mouse buttons in button_mask.
+        If a button is not in button_mask, it allows another overlapped
+        button to take the active state.
+    catch_hover:
+        If True, when hovered and top level for at least one button,
+        will catch the hover state even if another item is hovered.
+        For instance if you are overlapping a plot, the plot
+        will be considered hovered if catch_hover=False, and
+        not hovered if catch_hover=True. This does not affect
+        other items using this function, as it allows several
+        items to be hovered at the same time if they register
+        different button masks.
+    retain_hovership:
+        If True, when hovered for at least one button the previous frame,
+        will retain the hovered state.
+        Other items with similar button_mask will not considered
+        themselves top-level even if submitted after during rendering,
+        and thus will not be hovered.
+        if False, only the top-level item will be hovered in case of overlap,
+        no matter which item was hovered the previous frame.
+        In general you want to set this to True, unless you have
+        small buttons completly included in other large buttons,
+        in which can you want to set this to False to be able
+        to access the small buttons.
+    catch_active:
+        Usually one want in case of overlapping items to retain the
+        active state on the first item that registers the active state.
+        This state blocks this behaviour by catching the active state
+        even if another item is active. active == held == registered itself
+        when the mouse clicked on it and no other item stole activation,
+        and the mouse is not released.
+    out_hovered:
+        WARNING: Should be initialized to False before this call.
+        Will be set to True if the button is hovered.
+        if button_mask is 0, a simple hovering test is performed,
+        without checking the hovering state of other items.
+        Else, the button will be hovered only if it is toplevel
+        for at least one button in button_mask (+ behaviour described
+        in catch_hover)
+    out_held:
+        WARNING: Should be initialized to False before this call.
+        Will be set to True if the button is held. A button is held
+        if it was clicked on and the mouse is not released. See
+        the description of catch_active.
+
+    out_held and out_hovered must be initialized outside
+    the function (to False), this behaviour enables to accumulate
+    the states for several buttons. Their content has no impact
+    of the logic inside the function.
+
+    Returns True if the button was pressed (clicked on), False else.
+    Only the first frame of the click is considered.
+
+    This function is very fast and in most cases will be a simple
+    rectangular boundary check.
+
+    Use cases:
+    - Simple hover test: button_mask = 0
+    - Many buttons of similar sizes with overlapping and equal priority:
+        retain_hovership = True, catch_hover = True, catch_active = False
+    - Creating a button in front of the mouse to catch the click:
+        catch_active = True
+
+    button_mask can be played with in order to have overlapping
+    buttons of various sizes listening to separate buttons.
+"""
 
 """
 UI item
