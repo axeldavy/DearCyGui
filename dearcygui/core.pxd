@@ -430,10 +430,13 @@ cdef bint button_area(Context context,
         - Share the uuid for all buttons. In that case they will share the active (held) state.
     pos: position of the top left corner of the button in screen space (top-down y)
     size: size of the button in pixels
-    button_mask: binary mask for the 5 possible buttons (0 = left, 1 = right, 2 = middle)
-        pressed and held will only react to mouse buttons in button_mask.
+    button_mask: binary mask for the 5 possible buttons:
+        1 = left, 2 = right, 4 = middle, 8 = X1, 16 = X2.
+        Thus a value of 31 will cover all buttons currently supported.
+        'pressed' and 'held' will only react to mouse buttons in button_mask.
         If a button is not in button_mask, it allows another overlapped
-        button to take the active state.
+        button to take the active state. If set to 0, button_area
+        reverts to a simple hover test.
     catch_hover:
         If True, when hovered and top level for at least one button,
         will catch the hover state even if another item is hovered.

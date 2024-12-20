@@ -3711,6 +3711,7 @@ cdef extern from * nogil:
 
         bool hovered, pressed, held;
         bool mouse_down = false;
+        bool mouse_clicked = false;
         hovered = ImGui::IsMouseHoveringRect(bb.Min, bb.Max);
         if ((!hovered || g.HoveredWindow != window) && g.ActiveId != id) {
             // Fast path
@@ -3728,6 +3729,8 @@ cdef extern from * nogil:
             *out_hovered |= hovered;
             return false;
         }
+
+        button_mask >> 1;
 
         // Retrieve for each registered button the toplevel
         // status.
@@ -3783,6 +3786,16 @@ cdef extern from * nogil:
             }
         }
 
+        for (i=0; i<5; i++) {
+            if (button_mask & (1 << i)) {
+                if (g.IO.MouseClicked[i]) {
+                    mouse_clicked = true;
+                    break;
+                }
+            }
+        }
+
+        pressed = false;
         if (hovered && mouse_down) {
             // we are hovered, toplevel and the mouse is down
             if (g.ActiveId == 0 || catch_active) {
@@ -3792,7 +3805,7 @@ cdef extern from * nogil:
                 ImGui::FocusWindow(window);
                 ImGui::SetActiveID(id, window);
                 // TODO: KeyOwner ??
-                pressed = true; // Pressed on click
+                pressed = mouse_clicked; // Pressed on click
             }
         }
 
