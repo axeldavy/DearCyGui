@@ -5422,11 +5422,11 @@ cdef class TableColumnConfig(baseItem):
 
     def __cinit__(self):
         self.p_state = &self.state
-        self.state.can_be_hovered = True
-        self.state.can_be_toggled = True # hide/enable
-        self.state.can_be_active = True # sort request
-        self.state.has_position = True
-        self.state.has_content_region = True
+        self.state.cap.can_be_hovered = True
+        self.state.cap.can_be_toggled = True # hide/enable
+        self.state.cap.can_be_active = True # sort request
+        self.state.cap.has_position = True
+        self.state.cap.has_content_region = True
         self._flags = imgui.ImGuiTableColumnFlags_None
         self._width = 0.0
         self._stretch_weight = 1.0

@@ -1696,6 +1696,434 @@ class AxesResizeHandler(baseHandler):
         ...
 
 
+class AxisTag(baseItem):
+    """
+    Class for Axis tags. Can only be child
+    of a plot Axis.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bg_color : list = [0.0, 0.0, 0.0, 0.0], children : list[baseItem] = [], coord : float = 0.0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, text : str = "", user_data : Any = ...):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        bg_color: Background color of the tag.
+            0 means no background, in which case ImPlotCol_AxisText
+            is used for the text color. Else Text is automatically
+            set to white or black depending on the background color
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        coord: Coordinate of the tag.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+        text: Text of the tag.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., bg_color : list = [0.0, 0.0, 0.0, 0.0], children : list[baseItem] = [], coord : float = 0.0, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, text : str = "", user_data : Any = ...):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        bg_color: Background color of the tag.
+            0 means no background, in which case ImPlotCol_AxisText
+            is used for the text color. Else Text is automatically
+            set to white or black depending on the background color
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        coord: Coordinate of the tag.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+        text: Text of the tag.
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> AxisTag:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def bg_color(self) -> list:
+        """
+        Writable attribute: Background color of the tag.
+        0 means no background, in which case ImPlotCol_AxisText
+        is used for the text color. Else Text is automatically
+        set to white or black depending on the background color
+
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
+        ...
+
+
+    @bg_color.setter
+    def bg_color(self, value : list):
+        ...
+
+
+    @property
+    def children(self) -> list[baseItem]:
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : list[baseItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def coord(self) -> float:
+        """
+        Writable attribute: Coordinate of the tag.
+        
+        """
+        ...
+
+
+    @coord.setter
+    def coord(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parent(self) -> baseItem | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def text(self) -> str:
+        """
+        Writable attribute: Text of the tag.
+        
+        """
+        ...
+
+
+    @text.setter
+    def text(self, value : str):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
 class Button(uiItem):
     def __init__(self, context : Context, arrow : bool = False, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : None  = [], direction : ButtonDirection = 2, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_newline : bool = False, no_scaling : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, repeat : bool = False, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, small : bool = False, theme : Any = ..., user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
@@ -21195,7 +21623,7 @@ class DrawInvisibleButton(drawingItem):
     where top left is (0, 0) and bottom right is (1, 1).
     
     """
-    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., button : Any = ..., capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -21262,7 +21690,7 @@ class DrawInvisibleButton(drawingItem):
         ...
 
 
-    def configure(self, attach : Any = ..., before : Any = ..., button : MouseButtonMask = 1, capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
+    def configure(self, attach : Any = ..., before : Any = ..., button : Any = ..., capture_mouse : bool = True, children : list[drawingItem] = [], handlers : list = [], max_side : float = inf, min_side : float = 0.0, next_sibling : baseItem | None = None, no_input : bool = False, p1 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), p2 : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), parent : DrawInWindow | DrawInPlot | ViewportDrawList | drawingItem | None = None, previous_sibling : baseItem | None = None, show : bool = True, user_data : Any = ...):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -21415,17 +21843,19 @@ class DrawInvisibleButton(drawingItem):
 
 
     @property
-    def button(self) -> MouseButtonMask:
+    def button(self):
         """
         Mouse button mask that makes the invisible button
         active and triggers the item's callback.
 
-        Default is left-click.
+        Default is all buttons
 
         The mask is an (OR) combination of
         1: left button
         2: right button
         4: middle button
+        8: X1
+        16: X2
         (See also MouseButtonMask)
         
         """
@@ -21433,7 +21863,7 @@ class DrawInvisibleButton(drawingItem):
 
 
     @button.setter
-    def button(self, value : MouseButtonMask):
+    def button(self, value):
         ...
 
 
@@ -53932,7 +54362,7 @@ class Plot(uiItem):
     to the plot (+ some logic in your callbacks). 
     
     """
-    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : bool = False, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
+    def __init__(self, context : Context, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, mouse_location : LegendLocation = 10, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : bool = False, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -53988,6 +54418,8 @@ class Plot(uiItem):
         menu_button: Button that opens context menus
             (if enabled) when clicked.
             Default is the right mouse button.
+        mouse_location: Location where the mouse position text will be displayed.
+            Default is LegendLocation.southeast.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         no_frame: Writable attribute to disable the drawing of the
@@ -54111,7 +54543,7 @@ class Plot(uiItem):
         ...
 
 
-    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : bool = False, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
+    def configure(self, X1 : PlotAxisConfig = ..., X2 : PlotAxisConfig = ..., X3 : PlotAxisConfig = ..., Y1 : PlotAxisConfig = ..., Y2 : PlotAxisConfig = ..., Y3 : PlotAxisConfig = ..., attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[plotElement] = [], crosshairs : bool = False, enabled : bool = True, equal_aspects : bool = False, fit_button : MouseButton = 0, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", legend_config : PlotLegendConfig = ..., menu_button : MouseButton = 1, mouse_location : LegendLocation = 10, next_sibling : baseItem | None = None, no_frame : bool = False, no_inputs : bool = False, no_legend : bool = False, no_menus : bool = False, no_mouse_pos : bool = False, no_newline : bool = False, no_scaling : bool = False, no_title : bool = False, pan_button : MouseButton = 0, pan_mod : KeyMod = 0, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., use_24hour_clock : bool = False, use_ISO8601 : bool = False, use_local_time : bool = False, user_data : Any = ..., value : Any = ..., width : float = 0.0, zoom_mod : KeyMod = 0, zoom_rate : float = 0.10000000149011612):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -54166,6 +54598,8 @@ class Plot(uiItem):
         menu_button: Button that opens context menus
             (if enabled) when clicked.
             Default is the right mouse button.
+        mouse_location: Location where the mouse position text will be displayed.
+            Default is LegendLocation.southeast.
         next_sibling: child of the parent of the item that
             is rendered just after this item.
         no_frame: Writable attribute to disable the drawing of the
@@ -54744,6 +55178,21 @@ class Plot(uiItem):
 
     @menu_button.setter
     def menu_button(self, value : MouseButton):
+        ...
+
+
+    @property
+    def mouse_location(self) -> LegendLocation:
+        """
+        Location where the mouse position text will be displayed.
+        Default is LegendLocation.southeast.
+        
+        """
+        ...
+
+
+    @mouse_location.setter
+    def mouse_location(self, value : LegendLocation):
         ...
 
 
@@ -55493,8 +55942,555 @@ class Plot(uiItem):
         ...
 
 
+class PlotAnnotation(plotElement):
+    """
+    Adds an annotation to the plot.
+    Annotations are always rendered on top.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., bg_color : list = [0.0, 0.0, 0.0, 0.0], children : None  = [], clamp : bool = False, label : str = "", next_sibling : baseItem | None = None, offset : tuple = (0.0, 0.0), parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, text : str = "", theme : Any = ..., user_data : Any = ..., x : float = 0.0, y : float = 0.0):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        bg_color: Background color of the annotation
+            0 means no background, in which case ImPlotCol_InlayText
+            is used for the text color. Else Text is automatically
+            set to white or black depending on the background color
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        clamp: Clamp the annotation to the plot area.
+            Without this setting, the annotation will not be
+            drawn if outside the plot area. Else it is displayed
+            no matter what.
+        label: label assigned to the element
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        offset: Offset in pixels from the plot coordinate
+            at which to display the annotation
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        text: Text of the annotation
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        x: X coordinate of the annotation in plot units
+        y: Y coordinate of the annotation in plot units
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., bg_color : list = [0.0, 0.0, 0.0, 0.0], children : None  = [], clamp : bool = False, label : str = "", next_sibling : baseItem | None = None, offset : tuple = (0.0, 0.0), parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, text : str = "", theme : Any = ..., user_data : Any = ..., x : float = 0.0, y : float = 0.0):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        bg_color: Background color of the annotation
+            0 means no background, in which case ImPlotCol_InlayText
+            is used for the text color. Else Text is automatically
+            set to white or black depending on the background color
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        clamp: Clamp the annotation to the plot area.
+            Without this setting, the annotation will not be
+            drawn if outside the plot area. Else it is displayed
+            no matter what.
+        label: label assigned to the element
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        offset: Offset in pixels from the plot coordinate
+            at which to display the annotation
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        text: Text of the annotation
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        x: X coordinate of the annotation in plot units
+        y: Y coordinate of the annotation in plot units
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> PlotAnnotation:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def axes(self) -> tuple:
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this plot element.
+        Default is (X1, Y1)
+        
+        """
+        ...
+
+
+    @axes.setter
+    def axes(self, value : tuple):
+        ...
+
+
+    @property
+    def bg_color(self) -> list:
+        """Background color of the annotation
+        0 means no background, in which case ImPlotCol_InlayText
+        is used for the text color. Else Text is automatically
+        set to white or black depending on the background color
+
+        Returns:
+            list: RGBA values in [0,1] range
+        
+        """
+        ...
+
+
+    @bg_color.setter
+    def bg_color(self, value : list):
+        ...
+
+
+    @property
+    def children(self) -> None :
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : None ):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def clamp(self) -> bool:
+        """Clamp the annotation to the plot area.
+        Without this setting, the annotation will not be
+        drawn if outside the plot area. Else it is displayed
+        no matter what.
+        
+        """
+        ...
+
+
+    @clamp.setter
+    def clamp(self, value : bool):
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def label(self) -> str:
+        """
+        Writable attribute: label assigned to the element
+        
+        """
+        ...
+
+
+    @label.setter
+    def label(self, value : str):
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def offset(self) -> tuple:
+        """Offset in pixels from the plot coordinate
+        at which to display the annotation
+        """
+        ...
+
+
+    @offset.setter
+    def offset(self, value : tuple):
+        ...
+
+
+    @property
+    def parent(self) -> Plot | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : Plot | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def text(self) -> str:
+        """Text of the annotation
+        """
+        ...
+
+
+    @text.setter
+    def text(self, value : str):
+        ...
+
+
+    @property
+    def theme(self):
+        """
+        Writable attribute: theme for the legend and plot
+        
+        """
+        ...
+
+
+    @theme.setter
+    def theme(self, value):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+    @property
+    def x(self) -> float:
+        """X coordinate of the annotation in plot units
+        """
+        ...
+
+
+    @x.setter
+    def x(self, value : float):
+        ...
+
+
+    @property
+    def y(self) -> float:
+        """Y coordinate of the annotation in plot units
+        """
+        ...
+
+
+    @y.setter
+    def y(self, value : float):
+        ...
+
+
 class PlotAxisConfig(baseItem):
-    def __init__(self, context : Context, attach : Any = ..., auto_fit : bool = False, before : Any = ..., children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
+    def __init__(self, context : Context, attach : Any = ..., auto_fit : bool = False, before : Any = ..., children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, keep_default_ticks : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -55515,6 +56511,9 @@ class PlotAxisConfig(baseItem):
         handlers: bound handlers for the axis.
             Only visible, hovered and clicked handlers are compatible.
         invert: Writable attribute to invert the values of the axis
+        keep_default_ticks: If set to True, when custom labels are provided via the labels property,
+            the default ticks will be kept in addition to the custom labels.
+            Default is False.
         label: axis name
         labels: array of strings to display as labels
         labels_coord: coordinate for each label in labels at
@@ -55583,7 +56582,7 @@ class PlotAxisConfig(baseItem):
         ...
 
 
-    def configure(self, attach : Any = ..., auto_fit : bool = False, before : Any = ..., children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
+    def configure(self, attach : Any = ..., auto_fit : bool = False, before : Any = ..., children : list[baseItem] = [], constraint_max : float = inf, constraint_min : float = -inf, enabled : bool = True, foreground_grid : bool = False, format : str = "", handlers : list = [], invert : bool = False, keep_default_ticks : bool = False, label : str = "", labels : list = [], labels_coord : list = [], lock_max : bool = False, lock_min : bool = False, max : float = 1.0, min : float = 0.0, next_sibling : baseItem | None = None, no_gridlines : bool = False, no_highlight : bool = False, no_initial_fit : bool = False, no_label : bool = False, no_menus : bool = False, no_side_switch : bool = False, no_tick_labels : bool = False, no_tick_marks : bool = False, opposite : bool = False, pan_stretch : bool = False, parent : baseItem | None = None, previous_sibling : baseItem | None = None, restrict_fit_to_range : bool = False, scale : AxisScale = 0, user_data : Any = ..., zoom_max : float = inf, zoom_min : float = 0.0):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         auto_fit: Writable attribute to force the axis to fit its range
@@ -55603,6 +56602,9 @@ class PlotAxisConfig(baseItem):
         handlers: bound handlers for the axis.
             Only visible, hovered and clicked handlers are compatible.
         invert: Writable attribute to invert the values of the axis
+        keep_default_ticks: If set to True, when custom labels are provided via the labels property,
+            the default ticks will be kept in addition to the custom labels.
+            Default is False.
         label: axis name
         labels: array of strings to display as labels
         labels_coord: coordinate for each label in labels at
@@ -55927,6 +56929,22 @@ class PlotAxisConfig(baseItem):
     def item_type(self) -> ChildType:
         """Returns which type of child this item is
         """
+        ...
+
+
+    @property
+    def keep_default_ticks(self) -> bool:
+        """
+        If set to True, when custom labels are provided via the labels property,
+        the default ticks will be kept in addition to the custom labels.
+        Default is False.
+        
+        """
+        ...
+
+
+    @keep_default_ticks.setter
+    def keep_default_ticks(self, value : bool):
         ...
 
 
@@ -56422,6 +57440,687 @@ class PlotAxisConfig(baseItem):
 
     @zoom_min.setter
     def zoom_min(self, value : float):
+        ...
+
+
+class PlotBarGroups(plotElementWithLegend):
+    def __init__(self, context : Context, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : list[uiItem] = [], enabled : bool = True, font : Font = None, group_size : float = 0.67, horizontal : bool = False, ignore_fit : bool = False, label : str = "", labels : list = ['Item 0'], legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, shift : float = 0.0, show : bool = True, stacked : bool = False, theme : Any = ..., user_data : Any = ..., values : ndarray = [[0.]]):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: show/hide
+            the item while still having a toggable
+            entry in the menu.
+        font: font used for the text rendered
+            of this item and its subitems
+        group_size: Size of each group.
+            Default is 0.67
+        horizontal: Bar groups will be rendered horizontally on the current y-axis
+        ignore_fit: Writable attribute to make this element
+            be ignored during plot fits
+        label: label assigned to the element
+        labels: Array of item labels. Must match the number of rows in values.
+        legend_button: Button that opens the legend entry for
+            this element.
+            Default is the right mouse button.
+        legend_handlers: bound handlers for the legend.
+            Only visible (set for the plot) and hovered (set 
+            for the legend) handlers are compatible.
+            To detect if the plot element is hovered, check
+            the hovered state of the plot.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_legend: Writable attribute to disable the legend for this plot
+            element
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        shift: Shift in plot units to offset groups.
+            Default is 0 
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        stacked: Items in a group will be stacked on top of each other
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        values: A row-major array with item_count rows and group_count columns.
+            Each row represents one label/plotline/color.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : list[uiItem] = [], enabled : bool = True, font : Font = None, group_size : float = 0.67, horizontal : bool = False, ignore_fit : bool = False, label : str = "", labels : list = ['Item 0'], legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, shift : float = 0.0, show : bool = True, stacked : bool = False, theme : Any = ..., user_data : Any = ..., values : ndarray = [[0.]]):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: show/hide
+            the item while still having a toggable
+            entry in the menu.
+        font: font used for the text rendered
+            of this item and its subitems
+        group_size: Size of each group.
+            Default is 0.67
+        horizontal: Bar groups will be rendered horizontally on the current y-axis
+        ignore_fit: Writable attribute to make this element
+            be ignored during plot fits
+        label: label assigned to the element
+        labels: Array of item labels. Must match the number of rows in values.
+        legend_button: Button that opens the legend entry for
+            this element.
+            Default is the right mouse button.
+        legend_handlers: bound handlers for the legend.
+            Only visible (set for the plot) and hovered (set 
+            for the legend) handlers are compatible.
+            To detect if the plot element is hovered, check
+            the hovered state of the plot.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_legend: Writable attribute to disable the legend for this plot
+            element
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        shift: Shift in plot units to offset groups.
+            Default is 0 
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        stacked: Items in a group will be stacked on top of each other
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        values: A row-major array with item_count rows and group_count columns.
+            Each row represents one label/plotline/color.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> PlotBarGroups:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def axes(self) -> tuple:
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this plot element.
+        Default is (X1, Y1)
+        
+        """
+        ...
+
+
+    @axes.setter
+    def axes(self, value : tuple):
+        ...
+
+
+    @property
+    def children(self) -> list[uiItem]:
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        """
+        Writable attribute: show/hide
+        the item while still having a toggable
+        entry in the menu.
+        
+        """
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def font(self) -> Font:
+        """
+        Writable attribute: font used for the text rendered
+        of this item and its subitems
+        
+        """
+        ...
+
+
+    @font.setter
+    def font(self, value : Font):
+        ...
+
+
+    @property
+    def group_size(self) -> float:
+        """
+        Size of each group.
+        Default is 0.67
+        
+        """
+        ...
+
+
+    @group_size.setter
+    def group_size(self, value : float):
+        ...
+
+
+    @property
+    def horizontal(self) -> bool:
+        """
+        Bar groups will be rendered horizontally on the current y-axis
+        
+        """
+        ...
+
+
+    @horizontal.setter
+    def horizontal(self, value : bool):
+        ...
+
+
+    @property
+    def ignore_fit(self) -> bool:
+        """
+        Writable attribute to make this element
+        be ignored during plot fits
+        
+        """
+        ...
+
+
+    @ignore_fit.setter
+    def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def label(self) -> str:
+        """
+        Writable attribute: label assigned to the element
+        
+        """
+        ...
+
+
+    @label.setter
+    def label(self, value : str):
+        ...
+
+
+    @property
+    def labels(self) -> list:
+        """
+        Array of item labels. Must match the number of rows in values.
+        
+        """
+        ...
+
+
+    @labels.setter
+    def labels(self, value : list):
+        ...
+
+
+    @property
+    def legend_button(self) -> MouseButton:
+        """
+        Button that opens the legend entry for
+        this element.
+        Default is the right mouse button.
+        
+        """
+        ...
+
+
+    @legend_button.setter
+    def legend_button(self, value : MouseButton):
+        ...
+
+
+    @property
+    def legend_handlers(self) -> list:
+        """
+        Writable attribute: bound handlers for the legend.
+        Only visible (set for the plot) and hovered (set 
+        for the legend) handlers are compatible.
+        To detect if the plot element is hovered, check
+        the hovered state of the plot.
+        
+        """
+        ...
+
+
+    @legend_handlers.setter
+    def legend_handlers(self, value : list):
+        ...
+
+
+    @property
+    def legend_hovered(self) -> bool:
+        """
+        Readonly attribute: Is the legend of this
+        item hovered.
+        
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def no_legend(self) -> bool:
+        """
+        Writable attribute to disable the legend for this plot
+        element
+        
+        """
+        ...
+
+
+    @no_legend.setter
+    def no_legend(self, value : bool):
+        ...
+
+
+    @property
+    def parent(self) -> Plot | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : Plot | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def shift(self) -> float:
+        """
+        Shift in plot units to offset groups.
+        Default is 0 
+        
+        """
+        ...
+
+
+    @shift.setter
+    def shift(self, value : float):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def stacked(self) -> bool:
+        """
+        Items in a group will be stacked on top of each other
+        
+        """
+        ...
+
+
+    @stacked.setter
+    def stacked(self, value : bool):
+        ...
+
+
+    @property
+    def theme(self):
+        """
+        Writable attribute: theme for the legend and plot
+        
+        """
+        ...
+
+
+    @theme.setter
+    def theme(self, value):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+    @property
+    def values(self) -> ndarray:
+        """
+        A row-major array with item_count rows and group_count columns.
+        Each row represents one label/plotline/color.
+
+        By default, will try to use the passed array
+        directly for its internal backing (no copy).
+        Supported types for no copy are np.int32,
+        np.float32, np.float64.
+        
+        """
+        ...
+
+
+    @values.setter
+    def values(self, value : ndarray):
         ...
 
 
@@ -57055,6 +58754,613 @@ class PlotBars(plotElementXY):
 
     @weight.setter
     def weight(self, value : float):
+        ...
+
+
+class PlotDigital(plotElementXY):
+    """
+    Plots a digital signal as a step function from X,Y data.
+    Digital plots are always referenced to the bottom of the plot,
+    do not respond to y axis zooming.
+    
+    """
+    def __init__(self, context : Context, X : ndarray = [0.], Y : ndarray = [0.], attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
+        """
+
+        X: Values on the X axis.
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: show/hide
+            the item while still having a toggable
+            entry in the menu.
+        font: font used for the text rendered
+            of this item and its subitems
+        ignore_fit: Writable attribute to make this element
+            be ignored during plot fits
+        label: label assigned to the element
+        legend_button: Button that opens the legend entry for
+            this element.
+            Default is the right mouse button.
+        legend_handlers: bound handlers for the legend.
+            Only visible (set for the plot) and hovered (set 
+            for the legend) handlers are compatible.
+            To detect if the plot element is hovered, check
+            the hovered state of the plot.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_legend: Writable attribute to disable the legend for this plot
+            element
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, X : ndarray = [0.], Y : ndarray = [0.], attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, label : str = "", legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, show : bool = True, theme : Any = ..., user_data : Any = ...):
+        """
+        X: Values on the X axis.
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: show/hide
+            the item while still having a toggable
+            entry in the menu.
+        font: font used for the text rendered
+            of this item and its subitems
+        ignore_fit: Writable attribute to make this element
+            be ignored during plot fits
+        label: label assigned to the element
+        legend_button: Button that opens the legend entry for
+            this element.
+            Default is the right mouse button.
+        legend_handlers: bound handlers for the legend.
+            Only visible (set for the plot) and hovered (set 
+            for the legend) handlers are compatible.
+            To detect if the plot element is hovered, check
+            the hovered state of the plot.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_legend: Writable attribute to disable the legend for this plot
+            element
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> PlotDigital:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def X(self) -> ndarray:
+        """Values on the X axis.
+
+        By default, will try to use the passed array
+        directly for its internal backing (no copy).
+        Supported types for no copy are np.int32,
+        np.float32, np.float64.
+        
+        """
+        ...
+
+
+    @X.setter
+    def X(self, value : ndarray):
+        ...
+
+
+    @property
+    def Y(self) -> ndarray:
+        ...
+
+
+    @Y.setter
+    def Y(self, value : ndarray):
+        ...
+
+
+    @property
+    def axes(self) -> tuple:
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this plot element.
+        Default is (X1, Y1)
+        
+        """
+        ...
+
+
+    @axes.setter
+    def axes(self, value : tuple):
+        ...
+
+
+    @property
+    def children(self) -> list[uiItem]:
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        """
+        Writable attribute: show/hide
+        the item while still having a toggable
+        entry in the menu.
+        
+        """
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def font(self) -> Font:
+        """
+        Writable attribute: font used for the text rendered
+        of this item and its subitems
+        
+        """
+        ...
+
+
+    @font.setter
+    def font(self, value : Font):
+        ...
+
+
+    @property
+    def ignore_fit(self) -> bool:
+        """
+        Writable attribute to make this element
+        be ignored during plot fits
+        
+        """
+        ...
+
+
+    @ignore_fit.setter
+    def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def label(self) -> str:
+        """
+        Writable attribute: label assigned to the element
+        
+        """
+        ...
+
+
+    @label.setter
+    def label(self, value : str):
+        ...
+
+
+    @property
+    def legend_button(self) -> MouseButton:
+        """
+        Button that opens the legend entry for
+        this element.
+        Default is the right mouse button.
+        
+        """
+        ...
+
+
+    @legend_button.setter
+    def legend_button(self, value : MouseButton):
+        ...
+
+
+    @property
+    def legend_handlers(self) -> list:
+        """
+        Writable attribute: bound handlers for the legend.
+        Only visible (set for the plot) and hovered (set 
+        for the legend) handlers are compatible.
+        To detect if the plot element is hovered, check
+        the hovered state of the plot.
+        
+        """
+        ...
+
+
+    @legend_handlers.setter
+    def legend_handlers(self, value : list):
+        ...
+
+
+    @property
+    def legend_hovered(self) -> bool:
+        """
+        Readonly attribute: Is the legend of this
+        item hovered.
+        
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def no_legend(self) -> bool:
+        """
+        Writable attribute to disable the legend for this plot
+        element
+        
+        """
+        ...
+
+
+    @no_legend.setter
+    def no_legend(self, value : bool):
+        ...
+
+
+    @property
+    def parent(self) -> Plot | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : Plot | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def theme(self):
+        """
+        Writable attribute: theme for the legend and plot
+        
+        """
+        ...
+
+
+    @theme.setter
+    def theme(self, value):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
         ...
 
 
@@ -58856,6 +61162,712 @@ class PlotLine(plotElementXY):
         preferred to pass the objects directly. 
         
         """
+        ...
+
+
+class PlotPieChart(plotElementWithLegend):
+    """
+    Plots a pie chart with the given values and labels.
+    The pie chart is centered at (x,y) with the given radius.
+    
+    """
+    def __init__(self, context : Context, angle : float = 90.0, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, ignore_hidden : bool = False, label : str = "", labels : list = ['Slice 0'], legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, normalize : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, show : bool = True, theme : Any = ..., user_data : Any = ..., values : ndarray = [0.], x : float = 0.0, y : float = 0.0):
+        """
+
+        angle: Starting angle for first slice in degrees. Default is 90.
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: show/hide
+            the item while still having a toggable
+            entry in the menu.
+        font: font used for the text rendered
+            of this item and its subitems
+        ignore_fit: Writable attribute to make this element
+            be ignored during plot fits
+        ignore_hidden: Ignore hidden slices when drawing the pie chart
+            (as if they were not there)
+        label: label assigned to the element
+        labels: Array of labels for each pie slice. Must match the number of values.
+        legend_button: Button that opens the legend entry for
+            this element.
+            Default is the right mouse button.
+        legend_handlers: bound handlers for the legend.
+            Only visible (set for the plot) and hovered (set 
+            for the legend) handlers are compatible.
+            To detect if the plot element is hovered, check
+            the hovered state of the plot.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_legend: Writable attribute to disable the legend for this plot
+            element
+        normalize: Force normalization of pie chart values (i.e. always make
+            a full circle if sum < 0)
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        radius: Radius of pie chart in plot units
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        values: Array of values for each pie slice.
+        x: X coordinate of pie chart center in plot units
+        y: Y coordinate of pie chart center in plot units
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, angle : float = 90.0, attach : Any = ..., axes : tuple = (0, 3), before : Any = ..., children : list[uiItem] = [], enabled : bool = True, font : Font = None, ignore_fit : bool = False, ignore_hidden : bool = False, label : str = "", labels : list = ['Slice 0'], legend_button : MouseButton = 1, legend_handlers : list = [], next_sibling : baseItem | None = None, no_legend : bool = False, normalize : bool = False, parent : Plot | None = None, previous_sibling : baseItem | None = None, radius : float = 1.0, show : bool = True, theme : Any = ..., user_data : Any = ..., values : ndarray = [0.], x : float = 0.0, y : float = 0.0):
+        """
+        angle: Starting angle for first slice in degrees. Default is 90.
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        axes: (X axis, Y axis)
+            used for this plot element.
+            Default is (X1, Y1)
+        before: Attach the item just before the target item. Default is None (disabled)
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: show/hide
+            the item while still having a toggable
+            entry in the menu.
+        font: font used for the text rendered
+            of this item and its subitems
+        ignore_fit: Writable attribute to make this element
+            be ignored during plot fits
+        ignore_hidden: Ignore hidden slices when drawing the pie chart
+            (as if they were not there)
+        label: label assigned to the element
+        labels: Array of labels for each pie slice. Must match the number of values.
+        legend_button: Button that opens the legend entry for
+            this element.
+            Default is the right mouse button.
+        legend_handlers: bound handlers for the legend.
+            Only visible (set for the plot) and hovered (set 
+            for the legend) handlers are compatible.
+            To detect if the plot element is hovered, check
+            the hovered state of the plot.
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_legend: Writable attribute to disable the legend for this plot
+            element
+        normalize: Force normalization of pie chart values (i.e. always make
+            a full circle if sum < 0)
+        parent: parent of the item in the rendering tree.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        radius: Radius of pie chart in plot units
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        theme: theme for the legend and plot
+        user_data: User data of any type.
+        values: Array of values for each pie slice.
+        x: X coordinate of pie chart center in plot units
+        y: Y coordinate of pie chart center in plot units
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> PlotPieChart:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def angle(self) -> float:
+        """Starting angle for first slice in degrees. Default is 90.
+        """
+        ...
+
+
+    @angle.setter
+    def angle(self, value : float):
+        ...
+
+
+    @property
+    def axes(self) -> tuple:
+        """
+        Writable attribute: (X axis, Y axis)
+        used for this plot element.
+        Default is (X1, Y1)
+        
+        """
+        ...
+
+
+    @axes.setter
+    def axes(self, value : tuple):
+        ...
+
+
+    @property
+    def children(self) -> list[uiItem]:
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        """
+        Writable attribute: show/hide
+        the item while still having a toggable
+        entry in the menu.
+        
+        """
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def font(self) -> Font:
+        """
+        Writable attribute: font used for the text rendered
+        of this item and its subitems
+        
+        """
+        ...
+
+
+    @font.setter
+    def font(self, value : Font):
+        ...
+
+
+    @property
+    def ignore_fit(self) -> bool:
+        """
+        Writable attribute to make this element
+        be ignored during plot fits
+        
+        """
+        ...
+
+
+    @ignore_fit.setter
+    def ignore_fit(self, value : bool):
+        ...
+
+
+    @property
+    def ignore_hidden(self) -> bool:
+        """
+        Ignore hidden slices when drawing the pie chart
+        (as if they were not there)
+        
+        """
+        ...
+
+
+    @ignore_hidden.setter
+    def ignore_hidden(self, value : bool):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def label(self) -> str:
+        """
+        Writable attribute: label assigned to the element
+        
+        """
+        ...
+
+
+    @label.setter
+    def label(self, value : str):
+        ...
+
+
+    @property
+    def labels(self) -> list:
+        """
+        Array of labels for each pie slice. Must match the number of values.
+        
+        """
+        ...
+
+
+    @labels.setter
+    def labels(self, value : list):
+        ...
+
+
+    @property
+    def legend_button(self) -> MouseButton:
+        """
+        Button that opens the legend entry for
+        this element.
+        Default is the right mouse button.
+        
+        """
+        ...
+
+
+    @legend_button.setter
+    def legend_button(self, value : MouseButton):
+        ...
+
+
+    @property
+    def legend_handlers(self) -> list:
+        """
+        Writable attribute: bound handlers for the legend.
+        Only visible (set for the plot) and hovered (set 
+        for the legend) handlers are compatible.
+        To detect if the plot element is hovered, check
+        the hovered state of the plot.
+        
+        """
+        ...
+
+
+    @legend_handlers.setter
+    def legend_handlers(self, value : list):
+        ...
+
+
+    @property
+    def legend_hovered(self) -> bool:
+        """
+        Readonly attribute: Is the legend of this
+        item hovered.
+        
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def no_legend(self) -> bool:
+        """
+        Writable attribute to disable the legend for this plot
+        element
+        
+        """
+        ...
+
+
+    @no_legend.setter
+    def no_legend(self, value : bool):
+        ...
+
+
+    @property
+    def normalize(self) -> bool:
+        """
+        Force normalization of pie chart values (i.e. always make
+        a full circle if sum < 0)
+        
+        """
+        ...
+
+
+    @normalize.setter
+    def normalize(self, value : bool):
+        ...
+
+
+    @property
+    def parent(self) -> Plot | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : Plot | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def radius(self) -> float:
+        """Radius of pie chart in plot units
+        """
+        ...
+
+
+    @radius.setter
+    def radius(self, value : float):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def theme(self):
+        """
+        Writable attribute: theme for the legend and plot
+        
+        """
+        ...
+
+
+    @theme.setter
+    def theme(self, value):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+    @property
+    def values(self) -> ndarray:
+        """
+        Array of values for each pie slice.
+
+        By default, will try to use the passed array directly for its 
+        internal backing (no copy). Supported types for no copy are 
+        np.int32, np.float32, np.float64.
+        
+        """
+        ...
+
+
+    @values.setter
+    def values(self, value : ndarray):
+        ...
+
+
+    @property
+    def x(self) -> float:
+        """X coordinate of pie chart center in plot units
+        """
+        ...
+
+
+    @x.setter
+    def x(self, value : float):
+        ...
+
+
+    @property
+    def y(self) -> float:
+        """Y coordinate of pie chart center in plot units
+        """
+        ...
+
+
+    @y.setter
+    def y(self, value : float):
         ...
 
 
@@ -71090,6 +74102,1332 @@ class Spacer(uiItem):
         ...
 
 
+class Subplots(uiItem):
+    """
+    Creates a grid of plots that share various axis properties.
+    
+    Can have Plot items as children. The plots are added in row-major order
+    by default (can be changed to column major).
+
+    Attributes:
+    - rows (int): Number of subplot rows 
+    - cols (int): Number of subplot columns
+    - row_ratios (List[float]): Size ratios for each row
+    - col_ratios (List[float]): Size ratios for each column
+    - no_legend (bool): Hide subplot legends (if share_legends is True)
+    - no_title (bool): Hide subplot titles
+    - no_menus (bool): Disable context menus
+    - no_resize (bool): Disable subplot resize splitters 
+    - no_align (bool): Disable subplot edge alignment
+    - col_major (bool): Add plots in column-major order
+    - share_legends (bool): Share legend items across subplots
+    - share_rows (bool): Link X1/Y1-axis limits by rows
+    - share_cols (bool): Link X1/Y1-axis limits by columns
+    - share_x_all (bool): Link X1-axis limits across all plots
+    - share_y_all (bool): Link Y1-axis limits across all plots
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], col_major : bool = False, col_ratios : list = [], cols : int = 1, enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_align : bool = False, no_menus : bool = False, no_newline : bool = False, no_resize : bool = False, no_scaling : bool = False, no_title : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, row_ratios : list = [], rows : int = 1, scaling_factor : float = 1.0, share_cols : bool = False, share_legends : bool = False, share_rows : bool = False, share_x_all : bool = False, share_y_all : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        callback: callback object or list of callback objects
+            which is called when the value of the item is changed.
+            If read, always returns a list of callbacks. This enables
+            to do item.callbacks += [new_callback]
+        callbacks: callback object or list of callback objects
+            which is called when the value of the item is changed.
+            If read, always returns a list of callbacks. This enables
+            to do item.callbacks += [new_callback]
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        col_major: Add plots in column-major order
+        col_ratios: Size ratios for subplot columns
+        cols: Number of subplot columns
+        enabled: Should the object be displayed as enabled ?
+            the enabled state can be used to prevent edition of editable fields,
+            or to use a specific disabled element theme.
+            Note a disabled item is still rendered. Use show=False to hide
+            an object.
+            A disabled item does not react to hovering or clicking.
+        font: font used for the text rendered
+            of this item and its subitems
+        handlers: bound handlers for the item.
+            If read returns a list of handlers. Accept
+            a handler or a list of handlers as input.
+            This enables to do item.handlers += [new_handler].
+        height: Requested height of the item.
+            When it is written, it is set to a 'requested value' that is not
+            entirely guaranteed to be enforced.
+            Specific values:
+                . 0 is meant to define the default size. For some items,
+                  such as windows, it triggers a fit to the content size.
+                  For other items, there is a default size deduced from the
+                  style policy. And for some items (such as child windows),
+                  it triggers a fit to the full size available within the
+                  parent window.
+                . > 0 values is meant as a hint for rect_size.
+                . < 0 values to be interpreted as 'take remaining space
+                  of the parent's content region from the current position,
+                  and subtract this value'. For example -1 will stretch to the
+                  remaining area minus one pixel.
+        indent: Shifts horizontally the DEFAULT
+            position of the item by the requested amount of pixels.
+        label: label assigned to the item.
+            Used for text fields, window titles, etc
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_align: Disable subplot edge alignment
+        no_menus: Disable subplot context menus
+        no_newline: Disables moving the
+            cursor (DEFAULT position) by one line
+            after this item.
+        no_resize: Disable subplot resize splitters
+        no_scaling: boolean. Defaults to False.
+            By default, the requested width and
+            height are multiplied internally by the global
+            scale which is defined by the dpi and the
+            viewport/window scale.
+            If set, disables this automated scaling.
+        no_title: Hide subplot titles
+        parent: parent of the item in the rendering tree.
+        pos_policy: Positioning policy
+        pos_to_default: Relative position to the item's default position.
+        pos_to_parent: Relative position to the parent's position, or to
+            its starting inner content area if any.
+        pos_to_viewport: Current screen-space position of the top left
+            of the item's rectangle. Basically the coordinate relative
+            to the top left of the viewport.
+        pos_to_window: Relative position to the window's starting inner
+            content area.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        row_ratios: Size ratios for subplot rows
+        rows: Number of subplot rows
+        scaling_factor: scaling factor
+            that multiplies the global viewport scaling and
+            applies to this item and its children.
+            The global scaling (thus this parameter as well)
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
+            Defaults to 1.0.
+        share_cols: Link X1/Y1-axis limits within each column
+        share_legends: Share legend items across subplots
+        share_rows: Link X1/Y1-axis limits within each row
+        share_x_all: Link X1-axis limits across all plots
+        share_y_all: Link Y1-axis limits across all plots
+        shareable_value: Same as the value field, but rather than a copy of the internal value
+            of the object, return a python object that holds a value field that
+            is in sync with the internal value of the object. This python object
+            can be passed to other items using an internal value of the same
+            type to share it.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        theme: bound theme for the item
+        user_data: User data of any type.
+        value: main internal value for the object.
+            For buttons, it is set when pressed; For text it is the
+            text itself; For selectable whether it is selected, etc.
+            Reading the value attribute returns a copy, while writing
+            to the value attribute will edit the field of the value.
+            In case the value is shared among items, setting the value
+            attribute will change it for all the sharing items.
+            To share a value attribute among objects, one should use
+            the shareable_value attribute
+        width: Requested width of the item.
+            When it is written, it is set to a 'requested value' that is not
+            entirely guaranteed to be enforced.
+            Specific values:
+                . 0 is meant to define the default size. For some items,
+                  such as windows, it triggers a fit to the content size.
+                  For other items, there is a default size deduced from the
+                  style policy. And for some items (such as child windows),
+                  it triggers a fit to the full size available within the
+                  parent window.
+                . > 0 values is meant as a hint for rect_size.
+                . < 0 values to be interpreted as 'take remaining space
+                  of the parent's content region from the current position,
+                  and subtract this value'. For example -1 will stretch to the
+                  remaining area minus one pixel.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], col_major : bool = False, col_ratios : list = [], cols : int = 1, enabled : bool = True, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", next_sibling : baseItem | None = None, no_align : bool = False, no_menus : bool = False, no_newline : bool = False, no_resize : bool = False, no_scaling : bool = False, no_title : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, row_ratios : list = [], rows : int = 1, scaling_factor : float = 1.0, share_cols : bool = False, share_legends : bool = False, share_rows : bool = False, share_x_all : bool = False, share_y_all : bool = False, shareable_value : SharedValue = ..., show : bool = True, theme : Any = ..., user_data : Any = ..., value : Any = ..., width : float = 0.0):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        callback: callback object or list of callback objects
+            which is called when the value of the item is changed.
+            If read, always returns a list of callbacks. This enables
+            to do item.callbacks += [new_callback]
+        callbacks: callback object or list of callback objects
+            which is called when the value of the item is changed.
+            If read, always returns a list of callbacks. This enables
+            to do item.callbacks += [new_callback]
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        col_major: Add plots in column-major order
+        col_ratios: Size ratios for subplot columns
+        cols: Number of subplot columns
+        enabled: Should the object be displayed as enabled ?
+            the enabled state can be used to prevent edition of editable fields,
+            or to use a specific disabled element theme.
+            Note a disabled item is still rendered. Use show=False to hide
+            an object.
+            A disabled item does not react to hovering or clicking.
+        font: font used for the text rendered
+            of this item and its subitems
+        handlers: bound handlers for the item.
+            If read returns a list of handlers. Accept
+            a handler or a list of handlers as input.
+            This enables to do item.handlers += [new_handler].
+        height: Requested height of the item.
+            When it is written, it is set to a 'requested value' that is not
+            entirely guaranteed to be enforced.
+            Specific values:
+                . 0 is meant to define the default size. For some items,
+                  such as windows, it triggers a fit to the content size.
+                  For other items, there is a default size deduced from the
+                  style policy. And for some items (such as child windows),
+                  it triggers a fit to the full size available within the
+                  parent window.
+                . > 0 values is meant as a hint for rect_size.
+                . < 0 values to be interpreted as 'take remaining space
+                  of the parent's content region from the current position,
+                  and subtract this value'. For example -1 will stretch to the
+                  remaining area minus one pixel.
+        indent: Shifts horizontally the DEFAULT
+            position of the item by the requested amount of pixels.
+        label: label assigned to the item.
+            Used for text fields, window titles, etc
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_align: Disable subplot edge alignment
+        no_menus: Disable subplot context menus
+        no_newline: Disables moving the
+            cursor (DEFAULT position) by one line
+            after this item.
+        no_resize: Disable subplot resize splitters
+        no_scaling: boolean. Defaults to False.
+            By default, the requested width and
+            height are multiplied internally by the global
+            scale which is defined by the dpi and the
+            viewport/window scale.
+            If set, disables this automated scaling.
+        no_title: Hide subplot titles
+        parent: parent of the item in the rendering tree.
+        pos_policy: Positioning policy
+        pos_to_default: Relative position to the item's default position.
+        pos_to_parent: Relative position to the parent's position, or to
+            its starting inner content area if any.
+        pos_to_viewport: Current screen-space position of the top left
+            of the item's rectangle. Basically the coordinate relative
+            to the top left of the viewport.
+        pos_to_window: Relative position to the window's starting inner
+            content area.
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        row_ratios: Size ratios for subplot rows
+        rows: Number of subplot rows
+        scaling_factor: scaling factor
+            that multiplies the global viewport scaling and
+            applies to this item and its children.
+            The global scaling (thus this parameter as well)
+            impacts themes, sizes and fonts. Themes and fonts
+            that were applied by a parent are unaffected.
+            Defaults to 1.0.
+        share_cols: Link X1/Y1-axis limits within each column
+        share_legends: Share legend items across subplots
+        share_rows: Link X1/Y1-axis limits within each row
+        share_x_all: Link X1-axis limits across all plots
+        share_y_all: Link Y1-axis limits across all plots
+        shareable_value: Same as the value field, but rather than a copy of the internal value
+            of the object, return a python object that holds a value field that
+            is in sync with the internal value of the object. This python object
+            can be passed to other items using an internal value of the same
+            type to share it.
+        show: Should the object be drawn/shown ?
+            In case show is set to False, this disables any
+            callback (for example the close callback won't be called
+            if a window is hidden with show = False).
+            In the case of items that can be closed,
+            show is set to False automatically on close.
+        theme: bound theme for the item
+        user_data: User data of any type.
+        value: main internal value for the object.
+            For buttons, it is set when pressed; For text it is the
+            text itself; For selectable whether it is selected, etc.
+            Reading the value attribute returns a copy, while writing
+            to the value attribute will edit the field of the value.
+            In case the value is shared among items, setting the value
+            attribute will change it for all the sharing items.
+            To share a value attribute among objects, one should use
+            the shareable_value attribute
+        width: Requested width of the item.
+            When it is written, it is set to a 'requested value' that is not
+            entirely guaranteed to be enforced.
+            Specific values:
+                . 0 is meant to define the default size. For some items,
+                  such as windows, it triggers a fit to the content size.
+                  For other items, there is a default size deduced from the
+                  style policy. And for some items (such as child windows),
+                  it triggers a fit to the full size available within the
+                  parent window.
+                . > 0 values is meant as a hint for rect_size.
+                . < 0 values to be interpreted as 'take remaining space
+                  of the parent's content region from the current position,
+                  and subtract this value'. For example -1 will stretch to the
+                  remaining area minus one pixel.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> Subplots:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def callbacks(self) -> list[DCGCallable]:
+        """
+        Writable attribute: callback object or list of callback objects
+        which is called when the value of the item is changed.
+        If read, always returns a list of callbacks. This enables
+        to do item.callbacks += [new_callback]
+        
+        """
+        ...
+
+
+    @callbacks.setter
+    def callbacks(self, value : list[DCGCallable]):
+        ...
+
+
+    @property
+    def children(self) -> list[uiItem]:
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : list[uiItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def clicked(self) -> tuple:
+        """
+        Readonly attribute: has the item just been clicked.
+        The returned value is a tuple of len 5 containing the individual test
+        mouse buttons (up to 5 buttons)
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        
+        """
+        ...
+
+
+    @property
+    def col_major(self) -> bool:
+        """Add plots in column-major order
+        """
+        ...
+
+
+    @col_major.setter
+    def col_major(self, value : bool):
+        ...
+
+
+    @property
+    def col_ratios(self) -> list:
+        """Size ratios for subplot columns
+        """
+        ...
+
+
+    @col_ratios.setter
+    def col_ratios(self, value : list):
+        ...
+
+
+    @property
+    def cols(self) -> int:
+        """Number of subplot columns
+        """
+        ...
+
+
+    @cols.setter
+    def cols(self, value : int):
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def double_clicked(self) -> list:
+        """
+        Readonly attribute: has the item just been double-clicked.
+        The returned value is a tuple of len 5 containing the individual test
+        mouse buttons (up to 5 buttons)
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        """
+        Writable attribute: Should the object be displayed as enabled ?
+        the enabled state can be used to prevent edition of editable fields,
+        or to use a specific disabled element theme.
+        Note a disabled item is still rendered. Use show=False to hide
+        an object.
+        A disabled item does not react to hovering or clicking.
+        
+        """
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def font(self) -> Font:
+        """
+        Writable attribute: font used for the text rendered
+        of this item and its subitems
+        
+        """
+        ...
+
+
+    @font.setter
+    def font(self, value : Font):
+        ...
+
+
+    @property
+    def handlers(self) -> list:
+        """
+        Writable attribute: bound handlers for the item.
+        If read returns a list of handlers. Accept
+        a handler or a list of handlers as input.
+        This enables to do item.handlers += [new_handler].
+        
+        """
+        ...
+
+
+    @handlers.setter
+    def handlers(self, value : list):
+        ...
+
+
+    @property
+    def height(self) -> float:
+        """
+        Writable attribute: Requested height of the item.
+        When it is written, it is set to a 'requested value' that is not
+        entirely guaranteed to be enforced.
+        Specific values:
+            . 0 is meant to define the default size. For some items,
+              such as windows, it triggers a fit to the content size.
+              For other items, there is a default size deduced from the
+              style policy. And for some items (such as child windows),
+              it triggers a fit to the full size available within the
+              parent window.
+            . > 0 values is meant as a hint for rect_size.
+            . < 0 values to be interpreted as 'take remaining space
+              of the parent's content region from the current position,
+              and subtract this value'. For example -1 will stretch to the
+              remaining area minus one pixel.
+
+        Note that for some items, the actual rect_size of the element cannot
+        be changed to the requested values (for example Text). In that case, the
+        item is not resized, but it behaves as if it has the requested size in terms
+        of impact on the layout (default position of other items).
+
+        In addition the real height may change if the object is resizable.
+        In this case, the height may be changed back by setting again the value
+        of this field.
+        
+        """
+        ...
+
+
+    @height.setter
+    def height(self, value : float):
+        ...
+
+
+    @property
+    def hovered(self) -> bool:
+        """
+        Readonly attribute: Is the mouse inside the region of the item.
+        Only one element is hovered at a time, thus
+        subitems/subwindows take priority over their parent.
+        
+        """
+        ...
+
+
+    @property
+    def indent(self) -> float:
+        """
+        Writable attribute: Shifts horizontally the DEFAULT
+        position of the item by the requested amount of pixels.
+
+        A value < 0 indicates an indentation of the default size
+        according to the style policy.
+        
+        """
+        ...
+
+
+    @indent.setter
+    def indent(self, value : float):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def label(self) -> str:
+        """
+        Writable attribute: label assigned to the item.
+        Used for text fields, window titles, etc
+        
+        """
+        ...
+
+
+    @label.setter
+    def label(self, value : str):
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def no_align(self) -> bool:
+        """Disable subplot edge alignment
+        """
+        ...
+
+
+    @no_align.setter
+    def no_align(self, value : bool):
+        ...
+
+
+    @property
+    def no_legend(self) -> bool:
+        """Hide subplot legends
+        """
+        ...
+
+
+    @property
+    def no_menus(self) -> bool:
+        """Disable subplot context menus
+        """
+        ...
+
+
+    @no_menus.setter
+    def no_menus(self, value : bool):
+        ...
+
+
+    @property
+    def no_newline(self) -> bool:
+        """
+        Writable attribute: Disables moving the
+        cursor (DEFAULT position) by one line
+        after this item.
+
+        Might be modified by the layout
+        
+        """
+        ...
+
+
+    @no_newline.setter
+    def no_newline(self, value : bool):
+        ...
+
+
+    @property
+    def no_resize(self) -> bool:
+        """Disable subplot resize splitters
+        """
+        ...
+
+
+    @no_resize.setter
+    def no_resize(self, value : bool):
+        ...
+
+
+    @property
+    def no_scaling(self) -> bool:
+        """
+        boolean. Defaults to False.
+        By default, the requested width and
+        height are multiplied internally by the global
+        scale which is defined by the dpi and the
+        viewport/window scale.
+        If set, disables this automated scaling.
+        
+        """
+        ...
+
+
+    @no_scaling.setter
+    def no_scaling(self, value : bool):
+        ...
+
+
+    @property
+    def no_title(self) -> bool:
+        """Hide subplot titles
+        """
+        ...
+
+
+    @no_title.setter
+    def no_title(self, value : bool):
+        ...
+
+
+    @property
+    def parent(self) -> uiItem | plotElement | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : uiItem | plotElement | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def pos_policy(self) -> tuple[Positioning, Positioning]:
+        """
+        Writable attribute: Positioning policy
+
+        Changing the policy enables the user to
+        change the position of the item relative to
+        its default position.
+
+        - DEFAULT: The item is drawn at the position
+          given by ImGUI's cursor position, which by
+          default is incremented vertically after each item is
+          rendered.
+        - REL_DEFAULT: The item is drawn at the same position
+          as default, but after adding as offset the value
+          contained in the pos_to_default field.
+        - REL_PARENT: The item is rendered at the position
+          contained in the pos_to_parent's field,
+          which is respective to the top left of the content
+          area of the parent.
+        - REL_WINDOW: The item is rendered at the position
+          contained in the pos_to_window's field,
+          which is respective to the top left of the containing
+          window or child window content area.
+        - REL_VIEWPORT: The item is rendered in viewport
+          coordinates, at the position pos_to_viewport.
+
+        Items rendered with the DEFAULT or REL_DEFAULT policy do
+        increment the cursor position, while REL_PARENT, REL_WINDOW
+        and REL_VIEWPORT do not.
+
+        Each axis has it's own positioning policy.
+        pos_policy = DEFAULT will update both policies, while
+        pos_policy = (None, DEFAULT) will only update the vertical
+        axis policy.
+
+        Regardless of the policy, all position fields are updated
+        when the item is rendered. Only the position corresponding to
+        the positioning policy can be expected to remain fixed, with no
+        strong guarantees.
+
+        Since some items react dynamically to the size of their contents,
+        while items react dynamically to the size of their parent, a few
+        frames may be needed for positions to stabilize.
+        
+        """
+        ...
+
+
+    @pos_policy.setter
+    def pos_policy(self, value : tuple[Positioning, Positioning]):
+        ...
+
+
+    @property
+    def pos_to_default(self) -> Coord:
+        """
+        Writable attribute:
+        Relative position to the item's default position.
+
+        User set attribute to offset the object relative to
+        the position it would be drawn by default given the other
+        items drawn. The position corresponds to the top left of
+        the item's rectangle.
+
+        User writing this attribute automatically switches the 
+        positioning policy to relative to the default position.
+
+        Setting None to one of component will ignore the update
+        of this component.
+        
+        """
+        ...
+
+
+    @pos_to_default.setter
+    def pos_to_default(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def pos_to_parent(self) -> Coord:
+        """
+        Writable attribute:
+        Relative position to the parent's position, or to
+        its starting inner content area if any.
+
+        The position corresponds to the top left of the item's
+        rectangle
+
+        User writing this attribute automatically switches
+        the positioning policy to relative position to the
+        parent.
+
+        Note that the position may place the item outside the
+        parent's content region, in which case the item is not
+        visible.
+
+        Setting None to one of component will ignore the update
+        of this component.
+        
+        """
+        ...
+
+
+    @pos_to_parent.setter
+    def pos_to_parent(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def pos_to_viewport(self) -> Coord:
+        """
+        Writable attribute:
+        Current screen-space position of the top left
+        of the item's rectangle. Basically the coordinate relative
+        to the top left of the viewport.
+
+        User writing this attribute automatically switches
+        the positioning mode to REL_VIEWPORT position.
+
+        Note that item is still clipped from the parent's clipping
+        region, and thus the item will not be visible if placed
+        outside.
+
+        Setting None to one of component will ignore the update
+        of this component.
+        For example item.pos_to_viewport = (x, None) will only
+        set the horizontal component of the pos_to_viewport position,
+        and update the positioning policy for this component
+        only.
+        
+        """
+        ...
+
+
+    @pos_to_viewport.setter
+    def pos_to_viewport(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def pos_to_window(self) -> Coord:
+        """
+        Writable attribute:
+        Relative position to the window's starting inner
+        content area.
+
+        The position corresponds to the top left of the item's
+        rectangle
+
+        User writing this attribute automatically switches
+        the positioning policy to relative position to the
+        window.
+
+        Note that the position may place the item outside the
+        parent's content region, in which case the item is not
+        visible.
+
+        Setting None to one of component will ignore the update
+        of this component.
+        
+        """
+        ...
+
+
+    @pos_to_window.setter
+    def pos_to_window(self, value : Sequence[float] | tuple[float, float] | Coord):
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def rect_size(self) -> Coord:
+        """
+        Readonly attribute: actual (width, height) of the element,
+        including margins.
+
+        The space taken by the item corresponds to a rectangle
+        of size rect_size with top left coordinate
+        the position given by the position fields.
+
+        Not the rect_size refers to the size within the parent
+        window. If a popup menu is opened, it is not included.
+        
+        """
+        ...
+
+
+    @property
+    def resized(self) -> bool:
+        """
+        Readonly attribute: has the item size just changed
+        If True, the attribute is reset the next frame. It's better to rely
+        on handlers to catch this event.
+        
+        """
+        ...
+
+
+    @property
+    def row_ratios(self) -> list:
+        """Size ratios for subplot rows
+        """
+        ...
+
+
+    @row_ratios.setter
+    def row_ratios(self, value : list):
+        ...
+
+
+    @property
+    def rows(self) -> int:
+        """Number of subplot rows
+        """
+        ...
+
+
+    @rows.setter
+    def rows(self, value : int):
+        ...
+
+
+    @property
+    def scaling_factor(self) -> float:
+        """
+        Writable attribute: scaling factor
+        that multiplies the global viewport scaling and
+        applies to this item and its children.
+        The global scaling (thus this parameter as well)
+        impacts themes, sizes and fonts. Themes and fonts
+        that were applied by a parent are unaffected.
+        Defaults to 1.0.
+        
+        """
+        ...
+
+
+    @scaling_factor.setter
+    def scaling_factor(self, value : float):
+        ...
+
+
+    @property
+    def share_cols(self) -> bool:
+        """Link X1/Y1-axis limits within each column
+        """
+        ...
+
+
+    @share_cols.setter
+    def share_cols(self, value : bool):
+        ...
+
+
+    @property
+    def share_legends(self) -> bool:
+        """Share legend items across subplots
+        """
+        ...
+
+
+    @share_legends.setter
+    def share_legends(self, value : bool):
+        ...
+
+
+    @property
+    def share_rows(self) -> bool:
+        """Link X1/Y1-axis limits within each row
+        """
+        ...
+
+
+    @share_rows.setter
+    def share_rows(self, value : bool):
+        ...
+
+
+    @property
+    def share_x_all(self) -> bool:
+        """Link X1-axis limits across all plots
+        """
+        ...
+
+
+    @share_x_all.setter
+    def share_x_all(self, value : bool):
+        ...
+
+
+    @property
+    def share_y_all(self) -> bool:
+        """Link Y1-axis limits across all plots
+        """
+        ...
+
+
+    @share_y_all.setter
+    def share_y_all(self, value : bool):
+        ...
+
+
+    @property
+    def shareable_value(self) -> SharedValue:
+        """
+        Same as the value field, but rather than a copy of the internal value
+        of the object, return a python object that holds a value field that
+        is in sync with the internal value of the object. This python object
+        can be passed to other items using an internal value of the same
+        type to share it.
+        
+        """
+        ...
+
+
+    @shareable_value.setter
+    def shareable_value(self, value : SharedValue):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Should the object be drawn/shown ?
+        In case show is set to False, this disables any
+        callback (for example the close callback won't be called
+        if a window is hidden with show = False).
+        In the case of items that can be closed,
+        show is set to False automatically on close.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def theme(self):
+        """
+        Writable attribute: bound theme for the item
+        
+        """
+        ...
+
+
+    @theme.setter
+    def theme(self, value):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+    @property
+    def value(self):
+        """
+        Writable attribute: main internal value for the object.
+        For buttons, it is set when pressed; For text it is the
+        text itself; For selectable whether it is selected, etc.
+        Reading the value attribute returns a copy, while writing
+        to the value attribute will edit the field of the value.
+        In case the value is shared among items, setting the value
+        attribute will change it for all the sharing items.
+        To share a value attribute among objects, one should use
+        the shareable_value attribute
+        
+        """
+        ...
+
+
+    @value.setter
+    def value(self, value):
+        ...
+
+
+    @property
+    def visible(self) -> bool:
+        """
+        True if the item was rendered (inside the rendering region + show = True
+        for the item and its ancestors). Note when an item is not visible,
+        rendering is skipped (as well as running their handlers, etc).
+        
+        """
+        ...
+
+
+    @property
+    def width(self) -> float:
+        """
+        Writable attribute: Requested width of the item.
+        When it is written, it is set to a 'requested value' that is not
+        entirely guaranteed to be enforced.
+        Specific values:
+            . 0 is meant to define the default size. For some items,
+              such as windows, it triggers a fit to the content size.
+              For other items, there is a default size deduced from the
+              style policy. And for some items (such as child windows),
+              it triggers a fit to the full size available within the
+              parent window.
+            . > 0 values is meant as a hint for rect_size.
+            . < 0 values to be interpreted as 'take remaining space
+              of the parent's content region from the current position,
+              and subtract this value'. For example -1 will stretch to the
+              remaining area minus one pixel.
+
+        Note that for some items, the actual rect_size of the element cannot
+        be changed to the requested values (for example Text). In that case, the
+        item is not resized, but it behaves as if it has the requested size in terms
+        of impact on the layout (default position of other items).
+
+        In addition the real width may change if the object is resizable.
+        In this case, the width may be changed back by setting again the value
+        of this field.
+        
+        """
+        ...
+
+
+    @width.setter
+    def width(self, value : float):
+        ...
+
+
 class Tab(uiItem):
     def __init__(self, context : Context, attach : Any = ..., before : Any = ..., callback : DCGCallable | None = None, callbacks : list[DCGCallable] = [], children : list[uiItem] = [], closable : bool = False, enabled : bool = True, focused : bool = False, font : Font = None, handlers : list = [], height : float = 0.0, indent : float = 0.0, label : str = "", leading : bool = False, next_sibling : baseItem | None = None, no_newline : bool = False, no_reorder : bool = False, no_scaling : bool = False, no_tooltip : bool = False, parent : uiItem | plotElement | None = None, pos_policy : tuple[Positioning, Positioning] = ..., pos_to_default : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_parent : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_viewport : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), pos_to_window : Sequence[float] | tuple[float, float] | Coord = (0.0, 0.0), previous_sibling : baseItem | None = None, scaling_factor : float = 1.0, shareable_value : SharedBool = ..., show : bool = True, theme : Any = ..., trailing : bool = False, user_data : Any = ..., value : bool = False, width : float = 0.0):
         """
@@ -74878,6 +79216,641 @@ class TabButton(uiItem):
         In this case, the width may be changed back by setting again the value
         of this field.
         
+        """
+        ...
+
+
+    @width.setter
+    def width(self, value : float):
+        ...
+
+
+class TableColumnConfig(baseItem):
+    """
+    Configuration for a table column.
+
+    A table column can be hidden, stretched, resized, etc.
+
+    The states can be changed by the user, but also by the
+    application.
+    To listen for state changes use:
+    - ActivatedHandler to listen if the user requests
+        the column to be sorted.
+    - ToggledOpenHandler/ToggledCloseHandler to listen if the user
+        requests the column to be shown/hidden.
+    - ContentResizeHandler to listen if the user resizes the column.
+    - HoveredHandler to listen if the user hovers the column.
+    
+    """
+    def __init__(self, context : Context, attach : Any = ..., before : Any = ..., bg_color : list = [0.0, 0.0, 0.0, 0.0], children : list[baseItem] = [], enabled : bool = False, handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_hide : bool = False, no_reorder : bool = False, no_resize : bool = False, no_scaling : bool = True, no_sort : bool = False, parent : baseItem | None = None, prefer_sort_ascending : bool = False, prefer_sort_descending : bool = False, previous_sibling : baseItem | None = None, show : bool = True, stretch : Any = ..., stretch_weight : float = 1.0, user_data : Any = ..., width : float = 0.0):
+        """
+
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        bg_color: Background color for the whole column.
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: Writable attribute (and can change with user interaction):
+            Whether the table is hidden (user can control this
+            in the context menu).
+        handlers: bound handlers for the item.
+            If read returns a list of handlers. Accept
+            a handler or a list of handlers as input.
+            This enables to do item.handlers += [new_handler].
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_clip: Disable clipping for this column
+        no_hide: Disable ability to hide this column
+        no_reorder: Disable manual reordering
+        no_resize: Disable manual resizing
+        no_scaling: boolean. Defaults to False.
+            By default, the requested width and
+            height are multiplied internally by the global
+            scale which is defined by the dpi and the
+            viewport/window scale.
+            If set, disables this automated scaling.
+        no_sort: Disable sorting for this column
+        parent: parent of the item in the rendering tree.
+        prefer_sort_ascending: Make the initial sort direction ascending when first sorting
+        prefer_sort_descending: Make the initial sort direction descending when first sorting
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Show the column.
+        stretch: Writable attribute to enable stretching for this column.
+            True: Stretch, using the stretch_weight factor
+            False: Fixed width, using the width value.
+            None: Default depending on Table policy.
+        stretch_weight: Weight used when stretching this column. Must be >= 0.
+        user_data: User data of any type.
+        width: Requested fixed width of the column in pixels.
+            Unused if in stretch mode.
+            Set to 0 for auto-width.
+        """
+        ...
+
+
+    def attach_before(self, target):
+        """
+        Same as item.next_sibling = target,
+        but target must not be None
+        
+        """
+        ...
+
+
+    def attach_to_parent(self, target):
+        """
+        Same as item.parent = target, but
+        target must not be None
+        
+        """
+        ...
+
+
+    def configure(self, attach : Any = ..., before : Any = ..., bg_color : list = [0.0, 0.0, 0.0, 0.0], children : list[baseItem] = [], enabled : bool = False, handlers : list = [], next_sibling : baseItem | None = None, no_clip : bool = False, no_hide : bool = False, no_reorder : bool = False, no_resize : bool = False, no_scaling : bool = True, no_sort : bool = False, parent : baseItem | None = None, prefer_sort_ascending : bool = False, prefer_sort_descending : bool = False, previous_sibling : baseItem | None = None, show : bool = True, stretch : Any = ..., stretch_weight : float = 1.0, user_data : Any = ..., width : float = 0.0):
+        """
+        attach: Whether to attach the item to a parent. Default is None (auto)
+        before: Attach the item just before the target item. Default is None (disabled)
+        bg_color: Background color for the whole column.
+        children: List of all the children of the item,
+            from first rendered, to last rendered.
+        enabled: Writable attribute (and can change with user interaction):
+            Whether the table is hidden (user can control this
+            in the context menu).
+        handlers: bound handlers for the item.
+            If read returns a list of handlers. Accept
+            a handler or a list of handlers as input.
+            This enables to do item.handlers += [new_handler].
+        next_sibling: child of the parent of the item that
+            is rendered just after this item.
+        no_clip: Disable clipping for this column
+        no_hide: Disable ability to hide this column
+        no_reorder: Disable manual reordering
+        no_resize: Disable manual resizing
+        no_scaling: boolean. Defaults to False.
+            By default, the requested width and
+            height are multiplied internally by the global
+            scale which is defined by the dpi and the
+            viewport/window scale.
+            If set, disables this automated scaling.
+        no_sort: Disable sorting for this column
+        parent: parent of the item in the rendering tree.
+        prefer_sort_ascending: Make the initial sort direction ascending when first sorting
+        prefer_sort_descending: Make the initial sort direction descending when first sorting
+        previous_sibling: child of the parent of the item that
+            is rendered just before this item.
+        show: Show the column.
+        stretch: Writable attribute to enable stretching for this column.
+            True: Stretch, using the stretch_weight factor
+            False: Fixed width, using the width value.
+            None: Default depending on Table policy.
+        stretch_weight: Weight used when stretching this column. Must be >= 0.
+        user_data: User data of any type.
+        width: Requested fixed width of the column in pixels.
+            Unused if in stretch mode.
+            Set to 0 for auto-width.
+        """
+        ...
+
+
+    def delete_item(self):
+        """
+        When an item is not referenced anywhere, it might
+        not get deleted immediately, due to circular references.
+        The Python garbage collector will eventually catch
+        the circular references, but to speedup the process,
+        delete_item will recursively detach the item
+        and all elements in its subtree, as well as bound
+        items. As a result, items with no more references
+        will be freed immediately.
+        
+        """
+        ...
+
+
+    def detach_item(self):
+        """
+        Same as item.parent = None
+
+        The item states (if any) are updated
+        to indicate it is not rendered anymore,
+        and the information propagated to the
+        children.
+        
+        """
+        ...
+
+
+    def lock_mutex(self, wait=False):
+        """
+        Lock the internal item mutex.
+        **Know what you are doing**
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+        This is useful if you want to edit several attributes
+        in several commands of an item or its subtree,
+        and prevent rendering or other threads from accessing
+        the item until you have finished.
+        If you plan on moving the item position in the rendering
+        tree, to avoid deadlock you must hold the mutex of a
+        parent of all the items involved in the motion (a common
+        parent of the source and target parent). This mutex has to
+        be locked before you lock any mutex of your child item
+        if this item is already in the rendering tree (to avoid
+        deadlock with the rendering thread).
+        If you are unsure and plans to move an item already
+        in the rendering tree, it is thus best to lock the viewport
+        mutex first.
+
+        Input argument:
+        . wait (default = False): if locking the mutex fails (mutex
+          held by another thread), wait it is released
+
+        Returns: True if the mutex is held, False else.
+
+        The mutex is a recursive mutex, thus you can lock it several
+        times in the same thread. Each lock has to be matched to an unlock.
+        
+        """
+        ...
+
+
+    def unlock_mutex(self):
+        """
+        Unlock a previously held mutex on this object by this thread.
+        Returns True on success, False if no lock was held by this thread.
+        
+        """
+        ...
+
+
+    def __enter__(self) -> TableColumnConfig:
+        ...
+
+
+    def __exit__(self, exc_type : Any, exc_value : Any, traceback : Any) -> bool:
+        ...
+
+
+    @property
+    def bg_color(self) -> list:
+        """Background color for the whole column.
+
+        Set to 0 (default) to disable.
+        
+        """
+        ...
+
+
+    @bg_color.setter
+    def bg_color(self, value : list):
+        ...
+
+
+    @property
+    def children(self) -> list[baseItem]:
+        """
+        Writable attribute: List of all the children of the item,
+        from first rendered, to last rendered.
+
+        When written to, an error is raised if the children already
+        have other parents. This error is meant to prevent programming
+        mistakes, as users might not realize the children were
+        unattached from their former parents.
+        
+        """
+        ...
+
+
+    @children.setter
+    def children(self, value : list[baseItem]):
+        ...
+
+
+    @property
+    def children_types(self) -> ChildType:
+        """Returns which types of children can be attached to this item
+        """
+        ...
+
+
+    @property
+    def context(self) -> Context:
+        """
+        Read-only attribute: Context in which the item resides
+        
+        """
+        ...
+
+
+    @property
+    def enabled(self) -> bool:
+        """
+        Writable attribute (and can change with user interaction):
+        Whether the table is hidden (user can control this
+        in the context menu).
+        
+        """
+        ...
+
+
+    @enabled.setter
+    def enabled(self, value : bool):
+        ...
+
+
+    @property
+    def handlers(self) -> list:
+        """
+        Writable attribute: bound handlers for the item.
+        If read returns a list of handlers. Accept
+        a handler or a list of handlers as input.
+        This enables to do item.handlers += [new_handler].
+        
+        """
+        ...
+
+
+    @handlers.setter
+    def handlers(self, value : list):
+        ...
+
+
+    @property
+    def item_type(self) -> ChildType:
+        """Returns which type of child this item is
+        """
+        ...
+
+
+    @property
+    def mutex(self) -> wrap_mutex:
+        """
+        Context manager instance for the item mutex
+
+        Locking the mutex will prevent:
+        . Other threads from reading/writing
+          attributes or calling methods with this item,
+          editing the children/parent of the item
+        . Any rendering of this item and its children.
+          If the viewport attemps to render this item,
+          it will be blocked until the mutex is released.
+          (if the rendering thread is holding the mutex,
+           no blocking occurs)
+
+        In general, you don't need to use any mutex in your code,
+        unless you are writing a library and cannot make assumptions
+        on what the users will do, or if you know your code manipulates
+        the same objects with multiple threads.
+
+        All attribute accesses are mutex protected.
+
+        If you want to subclass and add attributes, you
+        can use this mutex to protect your new attributes.
+        Be careful not to hold the mutex if your thread
+        intends to access the attributes of a parent item.
+        In case of doubt use parents_mutex instead.
+        
+        """
+        ...
+
+
+    @property
+    def next_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just after this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just before the target item.
+        In case of failure, the item remains in a detached state.
+        
+        """
+        ...
+
+
+    @next_sibling.setter
+    def next_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def no_clip(self) -> bool:
+        """Disable clipping for this column
+        """
+        ...
+
+
+    @no_clip.setter
+    def no_clip(self, value : bool):
+        ...
+
+
+    @property
+    def no_hide(self) -> bool:
+        """Disable ability to hide this column
+        """
+        ...
+
+
+    @no_hide.setter
+    def no_hide(self, value : bool):
+        ...
+
+
+    @property
+    def no_reorder(self) -> bool:
+        """Disable manual reordering
+        """
+        ...
+
+
+    @no_reorder.setter
+    def no_reorder(self, value : bool):
+        ...
+
+
+    @property
+    def no_resize(self) -> bool:
+        """Disable manual resizing
+        """
+        ...
+
+
+    @no_resize.setter
+    def no_resize(self, value : bool):
+        ...
+
+
+    @property
+    def no_scaling(self) -> bool:
+        """
+        boolean. Defaults to False.
+        By default, the requested width and
+        height are multiplied internally by the global
+        scale which is defined by the dpi and the
+        viewport/window scale.
+        If set, disables this automated scaling.
+        
+        """
+        ...
+
+
+    @no_scaling.setter
+    def no_scaling(self, value : bool):
+        ...
+
+
+    @property
+    def no_sort(self) -> bool:
+        """Disable sorting for this column
+        """
+        ...
+
+
+    @no_sort.setter
+    def no_sort(self, value : bool):
+        ...
+
+
+    @property
+    def parent(self) -> baseItem | None:
+        """
+        Writable attribute: parent of the item in the rendering tree.
+
+        Rendering starts from the viewport. Then recursively each child
+        is rendered from the first to the last, and each child renders
+        their subtree.
+
+        Only an item inserted in the rendering tree is rendered.
+        An item that is not in the rendering tree can have children.
+        Thus it is possible to build and configure various items, and
+        attach them to the tree in a second phase.
+
+        The children hold a reference to their parent, and the parent
+        holds a reference to its children. Thus to be release memory
+        held by an item, two options are possible:
+        . Remove the item from the tree, remove all your references.
+          If the item has children or siblings, the item will not be
+          released until Python's garbage collection detects a
+          circular reference.
+        . Use delete_item to remove the item from the tree, and remove
+          all the internal references inside the item structure and
+          the item's children, thus allowing them to be removed from
+          memory as soon as the user doesn't hold a reference on them.
+
+        Note the viewport is referenced by the context.
+
+        If you set this attribute, the item will be inserted at the last
+        position of the children of the parent (regardless whether this
+        item is already a child of the parent).
+        If you set None, the item will be removed from its parent's children
+        list.
+        
+        """
+        ...
+
+
+    @parent.setter
+    def parent(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def parents_mutex(self) -> wrap_this_and_parents_mutex:
+        """Context manager instance for the item mutex and all its parents
+        
+        Similar to mutex but locks not only this item, but also all
+        its current parents.
+        If you want to access parent fields, or if you are unsure,
+        lock this mutex rather than self.mutex.
+        This mutex will lock the item and all its parent in a safe
+        way that does not deadlock.
+        
+        """
+        ...
+
+
+    @property
+    def prefer_sort_ascending(self) -> bool:
+        """Make the initial sort direction ascending when first sorting
+        """
+        ...
+
+
+    @prefer_sort_ascending.setter
+    def prefer_sort_ascending(self, value : bool):
+        ...
+
+
+    @property
+    def prefer_sort_descending(self) -> bool:
+        """Make the initial sort direction descending when first sorting
+        """
+        ...
+
+
+    @prefer_sort_descending.setter
+    def prefer_sort_descending(self, value : bool):
+        ...
+
+
+    @property
+    def previous_sibling(self) -> baseItem | None:
+        """
+        Writable attribute: child of the parent of the item that
+        is rendered just before this item.
+
+        It is not possible to have siblings if you have no parent,
+        thus if you intend to attach together items outside the
+        rendering tree, there must be a toplevel parent item.
+
+        If you write to this attribute, the item will be moved
+        to be inserted just after the target item.
+        In case of failure, the item remains in a detached state.
+
+        Note that a parent can have several child queues, and thus
+        child elements are not guaranteed to be siblings of each other.
+        
+        """
+        ...
+
+
+    @previous_sibling.setter
+    def previous_sibling(self, value : baseItem | None):
+        ...
+
+
+    @property
+    def show(self) -> bool:
+        """
+        Writable attribute: Show the column.
+
+        show = False differs from hidden=True as
+        the latter can be changed by user interaction.
+        Defaults to True.
+        
+        """
+        ...
+
+
+    @show.setter
+    def show(self, value : bool):
+        ...
+
+
+    @property
+    def stretch(self):
+        """
+        Writable attribute to enable stretching for this column.
+        True: Stretch, using the stretch_weight factor
+        False: Fixed width, using the width value.
+        None: Default depending on Table policy.
+        
+        """
+        ...
+
+
+    @stretch.setter
+    def stretch(self, value):
+        ...
+
+
+    @property
+    def stretch_weight(self) -> float:
+        """Weight used when stretching this column. Must be >= 0.
+        """
+        ...
+
+
+    @stretch_weight.setter
+    def stretch_weight(self, value : float):
+        ...
+
+
+    @property
+    def user_data(self):
+        """
+        User data of any type.
+        
+        """
+        ...
+
+
+    @user_data.setter
+    def user_data(self, value):
+        ...
+
+
+    @property
+    def uuid(self) -> int:
+        """
+        Readonly attribute: uuid is an unique identifier created
+        by the context for the item.
+        uuid can be used to access the object by name for parent=,
+        previous_sibling=, next_sibling= arguments, but it is
+        preferred to pass the objects directly. 
+        
+        """
+        ...
+
+
+    @property
+    def width(self) -> float:
+        """Requested fixed width of the column in pixels.
+        Unused if in stretch mode.
+        Set to 0 for auto-width.
         """
         ...
 
@@ -87845,7 +92818,7 @@ class Viewport(baseItem):
     - metrics: Rendering related metrics relative to the last frame.
     
     """
-    def __init__(self, context : Context, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : bool = False, min_height : int = 250, min_width : int = 250, minimized : bool = False, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "DearCyGui Window", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def __init__(self, context : Context, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : bool = False, min_height : int = 250, min_width : int = 250, minimized : bool = False, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., retrieve_framebuffer : bool = False, scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "DearCyGui Window", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -87866,6 +92839,9 @@ class Viewport(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         resize_callback: Callback to be issued when the viewport is resized.
+        retrieve_framebuffer: Whether to activate the framebuffer retrieval.
+            If set to true, the framebuffer field will be
+            populated. This has a performance cost.
         scale: Multiplicative scale that, multiplied by
             the value of dpi, is used to scale
             automatically all items.
@@ -87899,7 +92875,7 @@ class Viewport(baseItem):
         ...
 
 
-    def configure(self, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : bool = False, min_height : int = 250, min_width : int = 250, minimized : bool = False, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "DearCyGui Window", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def configure(self, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, maximized : bool = False, min_height : int = 250, min_width : int = 250, minimized : bool = False, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., retrieve_framebuffer : bool = False, scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "DearCyGui Window", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
         attach: Whether to attach the item to a parent. Default is None (auto)
         before: Attach the item just before the target item. Default is None (disabled)
@@ -87919,6 +92895,9 @@ class Viewport(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         resize_callback: Callback to be issued when the viewport is resized.
+        retrieve_framebuffer: Whether to activate the framebuffer retrieval.
+            If set to true, the framebuffer field will be
+            populated. This has a performance cost.
         scale: Multiplicative scale that, multiplied by
             the value of dpi, is used to scale
             automatically all items.
@@ -87962,7 +92941,7 @@ class Viewport(baseItem):
         ...
 
 
-    def initialize(self, minimized=False, maximized=False, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, min_height : int = 250, min_width : int = 250, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "DearCyGui Window", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
+    def initialize(self, minimized=False, maximized=False, always_on_top : bool = False, attach : Any = ..., before : Any = ..., children : list[Window, ViewportDrawList, MenuBar] = [], clear_color : tuple = (0.0, 0.0, 0.0, 1.0), close_callback : Any = ..., cursor : MouseCursor = 0, decorated : bool = True, disable_close : bool = False, font : Font = None, fullscreen : bool = False, handlers : list = [], height : int = 800, large_icon : str = "b''", max_height : int = 10000, max_width : int = 10000, min_height : int = 250, min_width : int = 250, next_sibling : baseItem | None = None, parent : baseItem | None = None, previous_sibling : baseItem | None = None, resizable : bool = True, resize_callback : Any = ..., retrieve_framebuffer : bool = False, scale : float = 1.0, small_icon : str = "b''", theme : Any = ..., title : str = "DearCyGui Window", user_data : Any = ..., vsync : bool = True, wait_for_input : bool = False, width : int = 1280, x_pos : int = 100, y_pos : int = 100):
         """
 
         attach: Whether to attach the item to a parent. Default is None (auto)
@@ -87983,6 +92962,9 @@ class Viewport(baseItem):
         previous_sibling: child of the parent of the item that
             is rendered just before this item.
         resize_callback: Callback to be issued when the viewport is resized.
+        retrieve_framebuffer: Whether to activate the framebuffer retrieval.
+            If set to true, the framebuffer field will be
+            populated. This has a performance cost.
         scale: Multiplicative scale that, multiplied by
             the value of dpi, is used to scale
             automatically all items.
@@ -88235,6 +93217,11 @@ class Viewport(baseItem):
 
     @font.setter
     def font(self, value : Font):
+        ...
+
+
+    @property
+    def framebuffer(self):
         ...
 
 
@@ -88523,6 +93510,22 @@ class Viewport(baseItem):
 
     @resize_callback.setter
     def resize_callback(self, value):
+        ...
+
+
+    @property
+    def retrieve_framebuffer(self) -> bool:
+        """
+        Whether to activate the framebuffer retrieval.
+        If set to true, the framebuffer field will be
+        populated. This has a performance cost.
+        
+        """
+        ...
+
+
+    @retrieve_framebuffer.setter
+    def retrieve_framebuffer(self, value : bool):
         ...
 
 
