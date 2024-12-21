@@ -30,12 +30,6 @@ pip install .
 * Documentation: See the `docs` directory or run `documentation.py` in the demos
 
 
-
-## DearPyGui
-
-This project started as a re-implementation of DearPyGui (https://github.com/hoffstadt/DearPyGui) in Cython. But it has evolved with lots of new functionalities !
-
-
 ## Design Philosophy
 DearCyGui bridges the gap between Python's ease of use and Dear ImGui's performance. Rather than making direct Dear ImGui calls each frame from Python (which would be slow), DearCyGui:
 
