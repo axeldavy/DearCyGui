@@ -1745,7 +1745,7 @@ cdef extern from "imgui.h" namespace "ImGui" nogil:
     ImGuiID GetID(int)
     void TextUnformatted(const char*)
     void TextUnformatted(const char*, const char*)
-    void Text(const char*)
+    void Text(const char*, ...)
     void TextV(const char*, int)
     void TextColored(ImVec4&, const char*)
     void TextColoredV(ImVec4&, const char*, int)
@@ -2188,3 +2188,4 @@ cdef extern from "imgui_internal.h" namespace "ImGui" nogil:
 
 cdef extern from "imgui_internal.h" nogil:
     int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end)
+    int ImFormatString(char* buf, size_t buf_size, const char* fmt, ...) 

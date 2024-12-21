@@ -17,6 +17,8 @@
 from dearcygui.wrapper cimport imgui
 from .core cimport baseItem, drawingItem, \
     lock_gil_friendly, draw_drawing_children, read_point, read_coord
+from .widget cimport SharedBool, SharedInt, SharedFloat, SharedDouble, \
+    SharedColor, SharedInt4, SharedFloat4, SharedDouble4, SharedStr
 from .imgui_types cimport \
     unparse_color, parse_color
 from .c_types cimport *
@@ -25,6 +27,7 @@ from .types cimport child_type, Coord
 from libcpp.algorithm cimport swap
 from libcpp.cmath cimport atan, atan2, sin, cos, sqrt, trunc, floor, round as cround
 from libc.math cimport M_PI, INFINITY
+from libcpp cimport bool
 
 import scipy
 import scipy.spatial
@@ -3292,3 +3295,250 @@ cdef class DrawTriangle(drawingItem):
             if self._fill & imgui.IM_COL32_A_MASK != 0:
                 (<imgui.ImDrawList*>drawlist).AddTriangleFilled(ip1, ip2, ip3, <imgui.ImU32>self._fill)
             (<imgui.ImDrawList*>drawlist).AddTriangle(ip1, ip2, ip3, <imgui.ImU32>self._color, thickness)
+
+
+cdef class DrawValue(drawingItem):
+    """
+    Draws a SharedValue in coordinate space.
+
+    The text is positioned at a specific point and can use a custom font and size.
+    The size can be specified in coordinate space (positive values) or screen space (negative values).
+
+    Unlike TextValue, SharedFloatVect cannot be displayed, however
+    SharedStr can be.
+
+    For security reasons, an intermediate buffer of fixed size is used,
+    and the limit of characters is currently 256.
+
+    Attributes:
+        pos (tuple): Position coordinates (x,y) of the text
+        text (str): The text string to display
+        color (list): RGBA color of the text
+        font (Font): Optional custom font to use
+        size (float): Text size. Negative means screen space units.
+        shareable_value (SharedValue): SharedValue to display
+    """
+    def __cinit__(self):
+        self._print_format = b"%.3f"
+        self._value = <SharedValue>(SharedFloat.__new__(SharedFloat, self.context))
+        self._type = 2
+        self._color = 4294967295 # 0xffffffff
+        self._size = 0. # 0: default size. DearPyGui uses 1. internally, then 10. in the wrapper.
+
+    @property
+    def pos(self):
+        """
+        Position of the drawing element in coordinate space.
+        
+        Returns:
+            tuple: (x, y) coordinates
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return Coord.build(self._pos)
+    @pos.setter
+    def pos(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        read_coord(self._pos, value)
+    @property
+    def color(self):
+        """
+        Color of the text.
+        
+        Returns:
+            list: RGBA values in [0,1] range
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        cdef float[4] color
+        unparse_color(color, self._color)
+        return list(color)
+    @color.setter
+    def color(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._color = parse_color(value)
+    @property
+    def font(self):
+        """
+        Writable attribute: font used for the text rendered
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._font
+
+    @font.setter
+    def font(self, baseFont value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._font = value
+
+    @property
+    def text(self):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(self._text, encoding='utf-8')
+    @text.setter
+    def text(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._text = bytes(value, 'utf-8')
+    @property
+    def size(self):
+        """
+        Text size. Negative means screen space units.
+        
+        Returns:
+            float: Size value
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._size
+    @size.setter
+    def size(self, float value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._size = value
+
+    @property
+    def shareable_value(self):
+        """
+        Same as the value field, but rather than a copy of the internal value
+        of the object, return a python object that holds a value field that
+        is in sync with the internal value of the object. This python object
+        can be passed to other items using an internal value of the same
+        type to share it.
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return self._value
+
+    @shareable_value.setter
+    def shareable_value(self, value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        if self._value is value:
+            return
+        if not(isinstance(value, SharedBool) or
+               isinstance(value, SharedInt) or
+               isinstance(value, SharedFloat) or
+               isinstance(value, SharedDouble) or
+               isinstance(value, SharedColor) or
+               isinstance(value, SharedInt4) or
+               isinstance(value, SharedFloat4) or
+               isinstance(value, SharedDouble4) or
+               isinstance(value, SharedStr)):
+            raise ValueError(f"Unsupported type. Received {type(value)}")
+        if isinstance(value, SharedBool):
+            self._type = 0
+        elif isinstance(value, SharedInt):
+            self._type = 1
+        elif isinstance(value, SharedFloat):
+            self._type = 2
+        elif isinstance(value, SharedDouble):
+            self._type = 3
+        elif isinstance(value, SharedColor):
+            self._type = 4
+        elif isinstance(value, SharedInt4):
+            self._type = 5
+        elif isinstance(value, SharedFloat4):
+            self._type = 6
+        elif isinstance(value, SharedDouble4):
+            self._type = 7
+        elif isinstance(value, SharedStr):
+            self._type = 9
+        self._value.dec_num_attached()
+        self._value = value
+        self._value.inc_num_attached()
+
+    @property
+    def print_format(self):
+        """
+        Writable attribute: format string
+        for the value -> string conversion
+        for display.
+
+        For example:
+        %d for a SharedInt
+        [%d, %d, %d, %d] for a SharedInt4
+        (%f, %f, %f, %f) for a SharedFloat4 or a SharedColor (which are displayed as floats)
+        %s for a SharedStr
+        """
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        return str(bytes(self._print_format), encoding="utf-8")
+
+    @print_format.setter
+    def print_format(self, str value):
+        cdef unique_lock[recursive_mutex] m
+        lock_gil_friendly(m, self.mutex)
+        self._print_format = bytes(value, 'utf-8')
+
+    cdef void draw(self,
+                   void* drawlist) noexcept nogil:
+        cdef unique_lock[recursive_mutex] m = unique_lock[recursive_mutex](self.mutex)
+        if not(self._show):
+            return
+
+        cdef float[2] p
+
+        self.context.viewport.coordinate_to_screen(p, self._pos)
+        cdef imgui.ImVec2 ip = imgui.ImVec2(p[0], p[1])
+        cdef float size = self._size
+        if size > 0:
+            size *= self.context.viewport.size_multiplier
+        else:
+            size *= self.context.viewport.global_scale
+        size = abs(size)
+        if self._font is not None:
+            self._font.push()
+
+        cdef bool value_bool
+        cdef int value_int
+        cdef float value_float
+        cdef double value_double
+        cdef Vec4 value_color
+        cdef int[4] value_int4
+        cdef float[4] value_float4
+        cdef double[4] value_double4
+        cdef string value_str
+
+        cdef int ret
+
+        if self._type == 0:
+            value_bool = SharedBool.get(<SharedBool>self._value)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_bool)
+        elif self._type == 1:
+            value_int = SharedInt.get(<SharedInt>self._value)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_int)
+        elif self._type == 2:
+            value_float = SharedFloat.get(<SharedFloat>self._value)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_float)
+        elif self._type == 3:
+            value_double = SharedDouble.get(<SharedDouble>self._value)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_double)
+        elif self._type == 4:
+            value_color = SharedColor.getF4(<SharedColor>self._value)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_color.x, value_color.y, value_color.z, value_color.w)
+        elif self._type == 5:
+            SharedInt4.get(<SharedInt4>self._value, value_int4)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_int4[0], value_int4[1], value_int4[2], value_int4[3])
+        elif self._type == 6:
+            SharedFloat4.get(<SharedFloat4>self._value, value_float4)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_float4[0], value_float4[1], value_float4[2], value_float4[3])
+        elif self._type == 7:
+            SharedDouble4.get(<SharedDouble4>self._value, value_double4)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_double4[0], value_double4[1], value_double4[2], value_double4[3])
+        elif self._type == 9:
+            SharedStr.get(<SharedStr>self._value, value_str)
+            ret = imgui.ImFormatString(self.buffer, 256, self._print_format.c_str(), value_str.c_str())
+        # just in case
+        self.buffer[255] = 0
+        if size == 0:
+            (<imgui.ImDrawList*>drawlist).AddText(ip, <imgui.ImU32>self._color, self.buffer)
+        else:
+            (<imgui.ImDrawList*>drawlist).AddText(NULL, size, ip, <imgui.ImU32>self._color, self.buffer)
+
+        if self._font is not None:
+            self._font.pop()

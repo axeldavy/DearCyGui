@@ -104,6 +104,10 @@ cdef class Text(uiItem):
     cdef bint _show_label
     cdef bint draw_item(self) noexcept nogil
 
+cdef class TextValue(uiItem):
+    cdef string _print_format
+    cdef int _type
+    cdef bint draw_item(self) noexcept nogil
 
 cdef class Selectable(uiItem):
     cdef int _flags # imgui.ImGuiSelectableFlags

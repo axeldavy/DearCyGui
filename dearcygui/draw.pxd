@@ -1,4 +1,4 @@
-from .core cimport drawingItem, Texture, baseFont
+from .core cimport drawingItem, Texture, baseFont, SharedValue
 from .c_types cimport double2, float2
 
 from libcpp.string cimport string
@@ -177,7 +177,6 @@ cdef class DrawStar(drawingItem):
     cdef bint _dirty
     cdef void draw(self, void*) noexcept nogil
 
-
 cdef class DrawText(drawingItem):
     cdef double[2] _pos
     cdef string _text
@@ -193,4 +192,15 @@ cdef class DrawTriangle(drawingItem):
     cdef unsigned int _color # imgui.ImU32
     cdef unsigned int _fill # imgui.ImU32
     cdef float _thickness
+    cdef void draw(self, void*) noexcept nogil
+
+cdef class DrawValue(drawingItem):
+    cdef char[256] buffer
+    cdef double[2] _pos
+    cdef string _print_format
+    cdef unsigned int _color  # imgui.ImU32
+    cdef int _type
+    cdef float _size
+    cdef baseFont _font
+    cdef SharedValue _value
     cdef void draw(self, void*) noexcept nogil
