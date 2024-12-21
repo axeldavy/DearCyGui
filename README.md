@@ -3,14 +3,15 @@
 DearCyGui is an easy to use library to make graphical interfaces in Python.
 
 Main features are:
-* Fast. Speed to create and manage the interface has been one of the main focus.
-* Dynamic interface. It is based on Dear ImGui (https://github.com/ocornut/imgui) to render. Each frame is new, and there is no cost if the content changes a lot a frame to another.
-* Unlike other libraries based on Dear ImGui that provide access to its low-level API, DearCyGui is more high level. As a result your code is easier to read, and less prone to errors. Python is not adapted to call the low-level API as it would quickly become slow (as you would be required to re-render every frame). In DearCyGui you build objects and the backend handles calling the low-level API.
-* Customization. You can create your own widgets or draw elements, and alter how they are rendered.
-* Even more customization, if using Cython. You can `cimport` DearCyGui and directly access the item internals or create your own drawing functions.
-* Adapted for Object Oriented programming (All items can be subclassed), though you can use other styles as well.
-* Uses SDL3, and thus has high quality and up-to-date support for DPI handling, etc.
+* *Fast*. Speed to create and manage the interface has been one of the main focus.
+* *Dynamic interface*. It is based on Dear ImGui (https://github.com/ocornut/imgui) to render. Each frame is new, and there is no cost if the content changes a lot a frame to another.
+* Unlike other libraries based on Dear ImGui that provide access to its low-level API, DearCyGui is more *high level*. As a result your code is easier to read, and less prone to errors. Python is not adapted to call the low-level API as it would quickly become slow (as you would be required to re-render every frame). In DearCyGui you build objects and the backend handles calling the low-level API.
+* *Customization*. You can create your own widgets or draw elements, and alter how they are rendered.
+* *Even more customization*, if using Cython. You can `cimport` DearCyGui and directly access the item internals or create your own drawing functions.
+* Adapted for *Object Oriented Programming* (All items can be subclassed), though you can use other styles as well.
+* Uses *SDL3*, and thus has high quality and up-to-date support for DPI handling, etc.
 * MIT Licensed.
+* Low GPU/CPU usage.
 
 
 ## Installing
