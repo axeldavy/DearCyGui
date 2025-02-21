@@ -1,4 +1,4 @@
-**Developpement for DearCyGui was moved to [https://github.com/DearCyGui/DearCyGui/]**
+**Development for DearCyGui was moved to [https://github.com/DearCyGui/DearCyGui/]**
 
 ## DearCyGui: a Multi-platform (Windows, Linux, Mac) GUI library for Python
 
